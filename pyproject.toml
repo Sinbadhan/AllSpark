@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "allspark"
+version = "0.2.0"
+description = "火种 AllSpark — 离线人工智能生存系统"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0",
+    "rich>=13.0",
+    "prompt-toolkit>=3.0",
+    "jieba>=0.42",
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+]
+
+[project.scripts]
+allspark = "allspark.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["allspark*"]
+
+[tool.setuptools.package-data]
+allspark = ["data/*.yaml"]

@@ -1,0 +1,62 @@
+# Internal documents (not for public repo)
+PRD.md
+PROGRESS.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+*.egg-info/
+*.egg
+dist/
+build/
+eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AllSpark runtime data
+.allspark/
+.spark/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# LLM models (large binary files)
+*.gguf
+
+# Logs
+*.log
+
+# Backups & snapshots (generated at runtime)
+backups/
+snapshots/
+
+# Environment / secrets
+.env
+.env.*
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# mypy
+.mypy_cache/
