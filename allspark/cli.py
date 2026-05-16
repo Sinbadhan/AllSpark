@@ -65,21 +65,21 @@ class SparkCLI:
 
     def _print_banner(self):
         banner = Text()
-        banner.append("🔥 火 种 / AllSpark\n", style="bold red")
-        banner.append(f"离线人工智能生存系统 v{__version__}\n", style="dim")
+        banner.append(f"ALLSPARK v{__version__}\n", style="bold red")
+        banner.append(t("app_subtitle") + "\n", style="dim")
         banner.append("━━━━━━━━━━━━━━━━━━━━━━━━━━", style="dim")
-        banner.append("\n在极端环境下，保存并重建人类文明。", style="italic")
+        banner.append(f"\n{t('app_mission')}", style="italic")
         console.print(Panel(banner, border_style="red", padding=(1, 2)))
 
     def _print_initial_status(self):
         warnings = self.engine.resource_mgr.check_warnings()
         mode, changed = self.engine.resource_mgr.update_operating_mode()
         mode_names = {
-            OperatingMode.PROACTIVE: "主动模式",
-            OperatingMode.STANDARD: "标准模式",
-            OperatingMode.ECONOMY: "节能模式",
-            OperatingMode.HIBERNATION: "休眠模式",
-            OperatingMode.RECOVERY: "恢复模式",
+            OperatingMode.PROACTIVE: t("mode_proactive"),
+            OperatingMode.STANDARD: t("mode_standard"),
+            OperatingMode.ECONOMY: t("mode_economy"),
+            OperatingMode.HIBERNATION: t("mode_hibernation"),
+            OperatingMode.RECOVERY: t("mode_recovery"),
         }
         self.engine.personality.determine_mode(
             mode, warnings,
@@ -87,17 +87,66 @@ class SparkCLI:
         )
         greeting = self.engine.personality.greet()
         console.print(f"\n{greeting}")
-        console.print(f"运行模式：{mode_names.get(mode, mode.value)}")
+
+        mode_emoji = {
+            OperatingMode.PROACTIVE: "🟢",
+            OperatingMode.STANDARD: "🟡",
+            OperatingMode.ECONOMY: "🟠",
+            OperatingMode.HIBERNATION: "🔴",
+            OperatingMode.RECOVERY: "🔵",
+        }
+        emoji = mode_emoji.get(mode, "⚪")
+        mode_label = mode_names.get(mode, mode.value)
+        console.print(t("operating_mode_fmt", emoji=emoji, mode=mode_label))
 
         if warnings:
+            console.print("")
             for w in warnings:
                 style = "bold red" if w["level"] == "critical" else "yellow"
-                console.print(f"[{style}]{w['message']}[/]")
+                icon = "🚨" if w["level"] == "critical" else "⚠️"
+                console.print(f"  {icon} [{style}]{w['message']}[/]")
 
-        console.print("\n输入 [bold]'帮助'[/] 查看可用命令。")
+        resources = self.engine.resource_mgr.get_all_resources()
+        has_data = any(r.current_amount > 0 for r in resources)
+        if not has_data:
+            console.print(f"\n[dim]{t('resource_offline_hint')}[/]")
+
+        console.print(f"\n[dim]{t('help_help')}[/]")
+
+        self._phase7_post_init()
+
+    def _phase7_post_init(self):
+        if hasattr(self.engine, 'timeline') and self.engine.timeline:
+            self.engine.timeline.add_event(
+                event_type="system_event",
+                title=t("spark_activated"),
+                description=t("spark_activated_desc"),
+            )
+
+        if hasattr(self.engine, 'goal_engine') and self.engine.goal_engine:
+            active_goals = self.engine.goal_engine.get_active_goals()
+            if not active_goals:
+                console.print(f"\n[bold blue]{t('goals_auto_generating')}[/]")
+                goals = self.engine.goal_engine.auto_generate_goals()
+                if goals:
+                    console.print(f"[green]{t('goals_auto_generated', count=len(goals))}[/]")
+                    for g in goals[:3]:
+                        icon = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🟢"}.get(g.priority, "⚪")
+                        console.print(f"  {icon} [{g.category}] {g.title}")
+                    if len(goals) > 3:
+                        console.print(f"  {t('goals_and_more', count=len(goals) - 3)}")
+                else:
+                    console.print(f"[dim]{t('goals_no_urgent')}[/]")
+
+        if hasattr(self.engine, 'daily_briefing') and self.engine.daily_briefing:
+            console.print(f"\n[bold cyan]{t('briefing_generating')}[/]")
+            briefing = self.engine.daily_briefing.generate()
+            console.print(briefing)
 
     def _process_command(self, user_input: str):
         parts = user_input.split()
+        if not parts:
+            return
         cmd = parts[0].lower()
 
         if cmd in ("退出", "exit", "quit", "q"):
@@ -185,6 +234,46 @@ class SparkCLI:
             self._handle_resources()
             return
 
+        if cmd in ("目标", "goals", "goal"):
+            self._handle_goal(parts[1:] if len(parts) > 1 else [])
+            return
+
+        if cmd in ("重置", "reset"):
+            self._handle_reset(parts[1:] if len(parts) > 1 else [])
+            return
+
+        if cmd in ("简报", "briefing", "daily"):
+            self._handle_briefing()
+            return
+
+        if cmd in ("时间线", "timeline", "时间"):
+            self._handle_timeline(parts[1:] if len(parts) > 1 else [])
+            return
+
+        if cmd in ("日记", "diary"):
+            self._handle_diary(parts[1:] if len(parts) > 1 else [])
+            return
+
+        if cmd in ("天气", "weather"):
+            self._handle_weather(parts[1:] if len(parts) > 1 else [])
+            return
+
+        if cmd in ("心理", "psychology", "mood"):
+            self._handle_psychology(parts[1:] if len(parts) > 1 else [])
+            return
+
+        if cmd in ("定位", "gps", "位置"):
+            self._handle_gps(parts[1:] if len(parts) > 1 else [])
+            return
+
+        if cmd in ("环境", "env", "environment"):
+            self._handle_environment()
+            return
+
+        if cmd in ("语音", "voice", "录音"):
+            self._handle_voice(parts[1:] if len(parts) > 1 else [])
+            return
+
         response = self.engine.process_input(user_input)
         console.print(response)
 
@@ -194,80 +283,108 @@ class SparkCLI:
         warnings = self.engine.resource_mgr.check_warnings()
 
         mode_names = {
-            OperatingMode.PROACTIVE: "主动模式 🟢",
-            OperatingMode.STANDARD: "标准模式 🟡",
-            OperatingMode.ECONOMY: "节能模式 🟠",
-            OperatingMode.HIBERNATION: "休眠模式 🔴",
-            OperatingMode.RECOVERY: "恢复模式 🔵",
+            OperatingMode.PROACTIVE: f"{t('mode_proactive')} 🟢",
+            OperatingMode.STANDARD: f"{t('mode_standard')} 🟡",
+            OperatingMode.ECONOMY: f"{t('mode_economy')} 🟠",
+            OperatingMode.HIBERNATION: f"{t('mode_hibernation')} 🔴",
+            OperatingMode.RECOVERY: f"{t('mode_recovery')} 🔵",
         }
 
         phase_desc = assessment["phase_description"]
 
-        status_table = Table(title="🔥 生存评估报告", show_header=True, header_style="bold")
-        status_table.add_column("项目", style="cyan")
-        status_table.add_column("状态", style="white")
-        status_table.add_row("运行模式", mode_names.get(mode, str(mode)))
-        status_table.add_row("生存阶段", phase_desc)
+        status_table = Table(title=t("assessment_title"), show_header=True, header_style="bold")
+        status_table.add_column(t("field_item"), style="cyan")
+        status_table.add_column(t("field_status"), style="white")
+        status_table.add_row(t("field_mode"), mode_names.get(mode, str(mode)))
+        status_table.add_row(t("field_phase"), phase_desc)
 
         if assessment["bottleneck"]:
             b = assessment["bottleneck"]
             status_table.add_row(
-                "🚨 关键瓶颈",
-                f"{b['resource']}（剩余 {b['remaining']:.1f}{b['unit']}）",
+                t("bottleneck_label"),
+                f"{b['resource']}({b['remaining']:.1f}{b['unit']})",
                 style="bold red"
             )
 
         console.print(status_table)
 
         if warnings:
-            console.print("\n[bold]⚠️ 警告：[/]")
+            console.print(f"\n[bold]{t('warnings_label')}[/]")
             for w in warnings:
                 style = "bold red" if w["level"] == "critical" else "yellow"
                 console.print(f"  [{style}]{w['message']}[/]")
 
         resources = self.engine.resource_mgr.get_all_resources()
-        res_table = Table(title="📦 资源清单", show_header=True, header_style="bold")
-        res_table.add_column("资源", style="cyan")
-        res_table.add_column("当前量", justify="right")
-        res_table.add_column("预计可用", justify="right")
-        res_table.add_column("状态", justify="center")
+        res_table = Table(title=t("resource_title"), show_header=True, header_style="bold")
+        res_table.add_column(t("field_item"), style="cyan")
+        res_table.add_column(t("field_value"), justify="right")
+        res_table.add_column(t("field_estimated"), justify="right")
+        res_table.add_column(t("field_status"), justify="center")
 
         for r in resources:
+            is_offline = r.current_amount == 0 and r.daily_consumption == 0
+
             if r.type == ResourceType.POWER:
-                avail = f"{r.estimated_remaining_hours:.1f}h"
+                name = t("res_power_table")
+                if is_offline:
+                    res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
+                    continue
+                avail = t("res_unit_hours", hours=r.estimated_remaining_hours)
                 status = "🟢" if r.estimated_remaining_hours > 72 else "🟡" if r.estimated_remaining_hours > 24 else "🔴"
-                res_table.add_row("⚡ 电力", f"{r.current_amount:.0f}Wh", avail, status)
+                res_table.add_row(name, f"{r.current_amount:.0f}Wh", avail, status)
             elif r.type == ResourceType.WATER:
+                name = t("res_water_table")
+                if is_offline:
+                    res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
+                    continue
                 days = r.estimated_remaining_hours / 24.0
                 status = "🟢" if days > 7 else "🟡" if days > 3 else "🔴"
-                res_table.add_row("💧 饮水", f"{r.current_amount:.1f}L", f"{days:.1f}天", status)
+                res_table.add_row(name, f"{r.current_amount:.1f}L", t("res_unit_days", days=days), status)
             elif r.type == ResourceType.FOOD:
+                name = t("res_food_table")
+                if is_offline:
+                    res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
+                    continue
                 days = r.estimated_remaining_hours / 24.0
                 status = "🟢" if days > 14 else "🟡" if days > 5 else "🔴"
-                res_table.add_row("🍞 食物", f"{r.current_amount:.0f}kcal", f"{days:.1f}天", status)
+                res_table.add_row(name, f"{r.current_amount:.0f}kcal", t("res_unit_days", days=days), status)
             elif r.type == ResourceType.FIRE:
+                name = t("res_fire_table")
+                if is_offline:
+                    res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
+                    continue
                 status = "🟢" if r.current_amount > 20 else "🟡" if r.current_amount > 10 else "🔴"
-                res_table.add_row("🔥 火源", f"{r.current_amount:.0f}次", f"{r.current_amount/r.daily_consumption:.0f}天" if r.daily_consumption > 0 else "∞", status)
+                fire_avail = t("res_unit_days", days=r.current_amount / r.daily_consumption) if r.daily_consumption > 0 else t("res_infinite")
+                res_table.add_row(name, t("fire_unit", count=r.current_amount), fire_avail, status)
             elif r.type == ResourceType.STORAGE:
+                name = t("res_storage_table")
+                if is_offline:
+                    res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
+                    continue
                 total = r.daily_consumption
                 used = r.daily_intake
                 pct = ((total - used) / total * 100) if total > 0 else 0
                 status = "🟢" if pct > 30 else "🟡" if pct > 10 else "🔴"
-                res_table.add_row("💾 存储", f"{used:.0f}/{total:.0f}GB", f"{pct:.1f}%", status)
+                res_table.add_row(name, f"{used:.0f}/{total:.0f}GB", f"{pct:.1f}%", status)
 
         console.print(res_table)
-        console.print("[dim]⚠️ 以上数据为估算值，仅供参考。使用 '设置' 命令手动校正。[/dim]")
+
+        has_data = any(r.current_amount > 0 for r in resources)
+        if not has_data:
+            console.print(f"[dim]{t('resource_offline_hint')}[/]")
+        else:
+            console.print(f"[dim]{t('data_disclaimer')}[/]")
 
         tasks = self.engine.planner.get_all_active()
         if tasks:
-            task_table = Table(title="📋 活跃任务", show_header=True, header_style="bold")
-            task_table.add_column("ID", style="dim")
-            task_table.add_column("阶段", justify="center")
-            task_table.add_column("任务")
-            task_table.add_column("状态", justify="center")
-            for t in tasks:
-                status_icon = {"pending": "⬜", "in_progress": "🔄", "completed": "✅", "failed": "❌"}.get(t.status, "❓")
-                task_table.add_row(t.id, f"Phase {t.phase}", t.title, status_icon)
+            task_table = Table(title=t("task_title"), show_header=True, header_style="bold")
+            task_table.add_column(t("field_id"), style="dim")
+            task_table.add_column(t("field_phase_col"), justify="center")
+            task_table.add_column(t("field_task"))
+            task_table.add_column(t("field_status"), justify="center")
+            for task in tasks:
+                status_icon = {"pending": "⬜", "in_progress": "🔄", "completed": "✅", "failed": "❌"}.get(task.status, "❓")
+                task_table.add_row(task.id, f"Phase {task.phase}", task.title, status_icon)
             console.print(task_table)
 
     def _handle_resources(self):
@@ -281,27 +398,27 @@ class SparkCLI:
         subcmd = args[0].lower()
 
         if subcmd == "add":
-            console.print("[bold]添加地点到地图[/]")
-            name = console.input("  名称: ").strip()
+            console.print(f"[bold]{t('add_to_map')}[/]")
+            name = console.input(t("map_name_prompt")).strip()
             if not name:
-                console.print("[dim]已取消[/]")
+                console.print(f"[dim]{t('map_add_cancelled')}[/]")
                 return
-            poi_type = console.input("  类型(water/shelter/food/danger/resource/camp/medical/other): ").strip() or "other"
-            desc = console.input("  描述(可选): ").strip()
-            dist_str = console.input("  距离(km, 可选): ").strip()
+            poi_type = console.input(t("map_type_prompt")).strip() or "other"
+            desc = console.input(t("map_desc_prompt")).strip()
+            dist_str = console.input(t("map_dist_prompt")).strip()
             dist = float(dist_str) if dist_str else 0.0
-            direction = console.input("  方向(可选): ").strip()
-            notes = console.input("  备注(可选): ").strip()
+            direction = console.input(t("map_dir_prompt")).strip()
+            notes = console.input(t("map_notes_prompt")).strip()
 
             poi = self.engine.maps.add_poi(
                 name=name, poi_type=poi_type, description=desc,
                 distance_km=dist, direction=direction, notes=notes
             )
-            console.print(f"[green]✓ 已添加：{poi.name} ({poi.id})[/]")
+            console.print(f"[green]{t('map_added', name=poi.name, id=poi.id)}[/]")
 
         elif subcmd == "remove" and len(args) > 1:
             self.engine.maps.remove_poi(args[1])
-            console.print(f"[green]✓ 已删除：{args[1]}[/]")
+            console.print(f"[green]{t('map_deleted', id=args[1])}[/]")
 
         elif subcmd in ("water", "shelter", "food", "danger", "resource", "camp", "medical"):
             pois = self.engine.maps.get_by_type(subcmd)
@@ -310,16 +427,16 @@ class SparkCLI:
                     console.print(self.engine.maps.format_poi_detail(p))
                     console.print("")
             else:
-                console.print(f"[dim]没有类型为 '{subcmd}' 的地点[/]")
+                console.print(f"[dim]{t('map_no_type_locations', type=subcmd)}[/]")
 
         else:
-            console.print("[dim]用法: map | map add | map remove <id> | map <类型>[/]")
+            console.print(f"[dim]{t('map_usage_msg')}[/]")
 
     def _handle_set(self, args: list[str]):
         if len(args) < 2:
-            console.print("[dim]用法: 设置 <资源类型> <值> [消耗率] [充入率]")
-            console.print("资源类型: power/water/food/fire/storage")
-            console.print("示例: 设置 power 100 120 50")
+            console.print(f"[dim]{t('set_usage_msg')}")
+            console.print(f"{t('set_types_msg')}")
+            console.print(f"{t('set_example_msg')}")
             console.print("      设置 water 10 2")
             return
 
@@ -339,7 +456,7 @@ class SparkCLI:
         rtype_str = args[0].lower()
         rtype = type_map.get(rtype_str)
         if rtype is None:
-            console.print(f"[red]未知资源类型：{args[0]}[/]")
+            console.print(f"[red]{t('unknown_resource_type', type=args[0])}[/]")
             return
 
         try:
@@ -347,13 +464,13 @@ class SparkCLI:
             consumption = float(args[2]) if len(args) > 2 else None
             intake = float(args[3]) if len(args) > 3 else None
         except ValueError:
-            console.print("[red]数值格式错误[/]")
+            console.print(f"[red]{t('invalid_numeric')}[/]")
             return
 
         self.engine.resource_mgr.update_resource(rtype, amount, consumption, intake)
-        updated = self.engine.resource_mgr.get_resource(rtype)
-        console.print(f"[green]✓ {rtype.value} 已更新：{updated.current_amount}{updated.unit}[/]")
-        console.print(f"  预计可用：{updated.estimated_remaining_hours:.1f}小时")
+        updated = self.db.get_resource(rtype)
+        console.print(f"[green]{t('set_updated_with_unit', type=rtype.value, amount=updated.current_amount, unit=updated.unit)}[/]")
+        console.print(t("set_remaining_hours", hours=updated.estimated_remaining_hours))
 
         warnings = self.engine.resource_mgr.check_warnings()
         if warnings:
@@ -373,15 +490,15 @@ class SparkCLI:
         subcmd = args[0].lower()
         if subcmd in ("完成", "done", "complete") and len(args) > 1:
             self.engine.planner.complete_task(args[1])
-            console.print(f"[green]✓ 任务 {args[1]} 已完成[/]")
+            console.print(f"[green]{t('task_done_msg', id=args[1])}[/]")
         elif subcmd in ("开始", "start") and len(args) > 1:
             self.engine.planner.start_task(args[1])
-            console.print(f"[green]✓ 任务 {args[1]} 已开始[/]")
+            console.print(f"[green]{t('task_start_msg', id=args[1])}[/]")
         elif subcmd in ("失败", "fail") and len(args) > 1:
             self.engine.planner.fail_task(args[1])
-            console.print(f"[yellow]✓ 任务 {args[1]} 已标记失败[/]")
+            console.print(f"[yellow]{t('task_fail_msg', id=args[1])}[/]")
         else:
-            console.print("[dim]用法: 任务 | 任务 完成 <id> | 任务 开始 <id> | 任务 失败 <id>[/]")
+            console.print(f"[dim]{t('task_usage_msg')}[/]")
 
     def _handle_knowledge(self, args: list[str]):
         if not args:
@@ -480,6 +597,32 @@ class SparkCLI:
             if status.get("error"):
                 table.add_row("Error", f"[red]{status['error']}[/]")
             console.print(table)
+            return
+
+        subcmd = args[0].lower()
+
+        if subcmd in ("load", "加载"):
+            with console.status(t("llm_loading")):
+                ok = llm.load()
+            if ok:
+                self.engine.registry.register("llm", llm)
+                self.engine.registry.save_to_db(self.db)
+                console.print(f"[green]{t('llm_loaded', model=llm.model_name)}[/]")
+            else:
+                console.print(f"[red]{llm.error}[/]")
+            return
+
+        if subcmd in ("chat", "问") and len(args) > 1:
+            message = " ".join(args[1:])
+            if not llm.available:
+                console.print(f"[red]{t('llm_not_available')}[/]")
+                return
+            with console.status(t("llm_thinking")):
+                response = llm.survival_chat(message, phase=self.engine.survival.assess().phase)
+            console.print(Panel(response, title="🤖 AllSpark AI"))
+            return
+
+        console.print(f"[dim]{t('llm_usage')}[/]")
 
     def _handle_governance(self, args: list[str]):
         lang = get_language()
@@ -575,13 +718,13 @@ class SparkCLI:
             if not result:
                 console.print(f"[red]Member {mid} not found[/]")
                 return
-            table = Table(title=self._t(f"生存价值: {result['member_name']}", f"Survival Value: {result['member_name']}"))
-            table.add_column(self._t("维度", "Dimension"), style="cyan")
-            table.add_column(self._t("分数", "Score"))
+            table = Table(title=t("survival_value_title", name=result['member_name']))
+            table.add_column(t("field_dimension"), style="cyan")
+            table.add_column(t("field_score"))
             for dim, val in result["dimensions"].items():
                 bar = "█" * int(val * 10) + "░" * (10 - int(val * 10))
                 table.add_row(dim, f"{val:.3f} {bar}")
-            table.add_row(self._t("[bold]综合[/]", "[bold]Composite[/]"), f"[bold]{result['composite_value']:.3f}[/]")
+            table.add_row(f"[bold]{t('field_composite')}[/]", f"[bold]{result['composite_value']:.3f}[/]")
             console.print(table)
             console.print(f"[dim]{result['disclaimer']}[/]")
 
@@ -635,6 +778,18 @@ class SparkCLI:
 
         sub = args[0].lower()
 
+        if sub in ("status", "状态"):
+            status = trade.get_status()
+            table = Table(title=t("title_trade"))
+            table.add_column(t("field_item"), style="cyan")
+            table.add_column(t("field_value"))
+            table.add_row(t("field_total_trades"), str(status["total_trades"]))
+            table.add_row(t("field_active"), str(status["active_trades"]))
+            table.add_row(t("field_completed"), str(status["completed_trades"]))
+            console.print(table)
+            console.print(f"\n[dim]{t('trade_usage')}[/]")
+            return
+
         if sub in ("propose", "提议", "发起"):
             target = args[1] if len(args) > 1 else ""
             offer_ids = args[2].split(",") if len(args) > 2 else []
@@ -674,80 +829,46 @@ class SparkCLI:
             if not result:
                 console.print(f"[red]Trade {tid} not found[/]")
                 return
-            table = Table(title=self._t(f"交易评估: {tid}", f"Trade Evaluation: {tid}"))
-            table.add_column(self._t("项目", "Field"), style="cyan")
-            table.add_column(self._t("值", "Value"))
-            table.add_row(self._t("评估", "Evaluation"), result["evaluation"])
-            table.add_row(self._t("原因", "Reason"), result["reason"])
-            table.add_row(self._t("己方价值", "Your Offer Value"), str(result["your_offer_value"]))
-            table.add_row(self._t("对方价值", "Their Offer Value"), str(result["their_offer_value"]))
-            table.add_row(self._t("新知识数", "New Knowledge"), str(result["new_knowledge_count"]))
+            table = Table(title=t("trade_eval_title", id=tid))
+            table.add_column(t("field_item"), style="cyan")
+            table.add_column(t("field_value"))
+            table.add_row(t("field_evaluation"), result["evaluation"])
+            table.add_row(t("field_reason"), result["reason"])
+            table.add_row(t("field_your_value"), str(result["your_offer_value"]))
+            table.add_row(t("field_their_value"), str(result["their_offer_value"]))
+            table.add_row(t("field_new_knowledge"), str(result["new_knowledge_count"]))
             console.print(table)
 
         elif sub in ("list", "列表", "ls"):
             trades = trade.get_active_trades()
             if not trades:
-                console.print(self._t("[green]无活跃交易[/]", "[green]No active trades[/]"))
+                console.print(f"[green]{t('no_active_trades')}[/]")
                 return
-            table = Table(title=self._t("活跃交易", "Active Trades"))
-            table.add_column("ID", style="cyan")
-            table.add_column(self._t("目标", "Target"))
-            table.add_column(self._t("提供", "Offer"))
-            table.add_column(self._t("请求", "Request"))
-            table.add_column(self._t("状态", "Status"))
-            for t in trades:
-                table.add_row(t.id, t.target_spark_id,
-                              str(len(t.offer_knowledge_ids)),
-                              str(len(t.request_knowledge_ids)),
-                              t.status)
+            table = Table(title=t("active_trades"))
+            table.add_column(t("field_id"), style="dim")
+            table.add_column(t("field_target"))
+            table.add_column(t("field_offer"))
+            table.add_column(t("field_request"))
+            table.add_column(t("field_status"))
+            for tr in trades:
+                table.add_row(tr.id, tr.target_spark_id,
+                              str(len(tr.offer_knowledge_ids)),
+                              str(len(tr.request_knowledge_ids)),
+                              tr.status)
             console.print(table)
 
         elif sub in ("history", "历史"):
             history = trade.get_trade_history()
             if not history:
-                console.print(self._t("[dim]无交易历史[/]", "[dim]No trade history[/]"))
+                console.print(f"[dim]{t('no_trade_history')}[/]")
                 return
             for h in history:
                 console.print(f"  {h['trade_id']}: {h['proposer']} ↔ {h['target']} | received: {h['received']}")
 
         else:
             console.print(f"[yellow]Unknown trade command: {sub}[/]")
-            if lang == "zh":
-                console.print("\n[dim]用法: llm status | llm chat <消息> | llm load[/]")
-            else:
-                console.print("\n[dim]Usage: llm status | llm chat <message> | llm load[/]")
+            console.print(f"\n[dim]{t('trade_usage')}[/]")
             return
-
-        subcmd = args[0].lower()
-
-        if subcmd in ("load", "加载"):
-            with console.status(self._t("加载模型中...", "Loading model...")):
-                ok = llm.load()
-            if ok:
-                self.engine.registry.register("llm", llm)
-                self.engine.registry.save_to_db(self.db)
-                if lang == "zh":
-                    console.print(f"[green]✓ 模型 {llm.model_name} 加载成功[/]")
-                else:
-                    console.print(f"[green]✓ Model {llm.model_name} loaded[/]")
-            else:
-                console.print(f"[red]{llm.error}[/]")
-            return
-
-        if subcmd in ("chat", "问") and len(args) > 1:
-            message = " ".join(args[1:])
-            if not llm.available:
-                console.print(self._t("[red]LLM 不可用，请先用 'llm load' 加载[/]", "[red]LLM not available. Use 'llm load' first.[/]"))
-                return
-            with console.status(self._t("思考中...", "Thinking...")):
-                response = llm.survival_chat(message, phase=self.engine.survival.assess().phase)
-            console.print(Panel(response, title="🤖 AllSpark AI"))
-            return
-
-        if lang == "zh":
-            console.print("[dim]用法: llm | llm load | llm chat <消息>[/]")
-        else:
-            console.print("[dim]Usage: llm | llm load | llm chat <message>[/]")
 
     def _handle_experience(self, args: list[str]):
         lang = get_language()
@@ -777,10 +898,7 @@ class SparkCLI:
                     )
                 console.print(ptable)
 
-            if lang == "zh":
-                console.print("\n[dim]用法: 经验 | 经验 log <事件> <结果> | 经验 patterns[/]")
-            else:
-                console.print("\n[dim]Usage: exp | exp log <event> <outcome> | exp patterns[/]")
+            console.print(f"\n[dim]{t('exp_usage')}[/]")
             return
 
         subcmd = args[0].lower()
@@ -1069,7 +1187,7 @@ class SparkCLI:
             console.print(table)
 
             if status["nodes"]:
-                ntable = Table(title=self._t("已知节点", "Known Nodes"))
+                ntable = Table(title=t("known_nodes"))
                 ntable.add_column("Name")
                 ntable.add_column("Knowledge", justify="right")
                 ntable.add_column("Status")
@@ -1086,7 +1204,7 @@ class SparkCLI:
         subcmd = args[0].lower()
 
         if subcmd in ("scan", "扫描", "detect", "检测"):
-            with console.status(self._t("扫描通信渠道...", "Scanning channels...")):
+            with console.status(t("scanning_channels")):
                 channels = net.detect_channels()
             table = Table(title=t("title_channel"))
             table.add_column("Channel", style="cyan")
@@ -1212,13 +1330,10 @@ class SparkCLI:
             image_path = " ".join(args)
 
         if not vision.available:
-            if lang == "zh":
-                console.print("[red]视觉引擎不可用，需要先加载 LLM 模型 (使用 'llm load')[/]")
-            else:
-                console.print("[red]Vision engine not available. Load LLM model first ('llm load')[/]")
+            console.print(f"[red]{t('vision_not_available')}[/]")
             return
 
-        with console.status(self._t("分析图像中...", "Analyzing image...")):
+        with console.status(t("analyzing_image")):
             result = vision.analyze_image(image_path, task)
 
         table = Table(title=f"👁 Analysis: {task.value}")
@@ -1243,11 +1358,11 @@ class SparkCLI:
         if not args:
             status = pm.get_status()
             reading = pm.get_current_reading()
-            table = Table(title=self._t("⚡ 电力监控", "⚡ Power Monitor"))
-            table.add_column(self._t("项目", "Field"), style="cyan")
-            table.add_column(self._t("值", "Value"))
+            table = Table(title=t("power_monitor"))
+            table.add_column(t("field_item"), style="cyan")
+            table.add_column(t("field_value"))
             table.add_row("Monitoring", "✅ Active" if status["monitoring"] else "❌ Stopped")
-            table.add_row("GPIO", "✅" if status["gpio_available"] else "❌ (simulated)")
+            table.add_row("GPIO", "✅" if status["gpio_available"] else "❌")
             table.add_row("Voltage", f"{reading.voltage_v}V")
             table.add_row("Current", f"{reading.current_a}A")
             table.add_row("Power", f"{reading.power_w}W")
@@ -1257,9 +1372,14 @@ class SparkCLI:
             table.add_row("Source", reading.source)
             console.print(table)
 
+            if reading.source == "no_data":
+                console.print(f"[dim]{t('power_no_data')}[/]")
+            elif reading.source == "from_db":
+                console.print(f"[dim]{t('power_from_db')}[/]")
+
             runtime = pm.estimate_runtime()
             if "estimated_hours" in runtime:
-                console.print(self._t(f"\n[dim]预计续航: {runtime['estimated_hours']:.1f}h | 推荐模式: {runtime.get('mode_recommendation', '?')}[/]", f"\n[dim]Est. runtime: {runtime['estimated_hours']:.1f}h | Mode: {runtime.get('mode_recommendation', '?')}[/]"))
+                console.print(f"\n[dim]{t('est_runtime', hours=runtime['estimated_hours'], mode=runtime.get('mode_recommendation', '?'))}[/]")
 
             if lang == "zh":
                 console.print("\n[dim]用法:[/]")
@@ -1324,22 +1444,25 @@ class SparkCLI:
         if not args:
             status = hub.get_status()
             snap = hub.get_snapshot()
-            table = Table(title=self._t("📡 传感器", "📡 Sensor Hub"))
-            table.add_column(self._t("项目", "Field"), style="cyan")
-            table.add_column(self._t("值", "Value"))
+            table = Table(title=t("sensor_hub"))
+            table.add_column(t("field_item"), style="cyan")
+            table.add_column(t("field_value"))
             table.add_row("Polling", "✅ Active" if status["polling"] else "❌ Stopped")
             table.add_row("I2C", "✅" if status["i2c_available"] else "❌")
             table.add_row("GPIO", "✅" if status["gpio_available"] else "❌")
             table.add_row("Devices", str(status["devices_registered"]))
             if snap.temperature_c is not None:
-                table.add_row(self._t("温度", "Temperature"), f"{snap.temperature_c}°C")
+                table.add_row(t("temperature"), f"{snap.temperature_c}°C")
             if snap.humidity_pct is not None:
-                table.add_row(self._t("湿度", "Humidity"), f"{snap.humidity_pct}%")
+                table.add_row(t("humidity"), f"{snap.humidity_pct}%")
             if snap.pressure_hpa is not None:
-                table.add_row(self._t("气压", "Pressure"), f"{snap.pressure_hpa}hPa")
+                table.add_row(t("pressure"), f"{snap.pressure_hpa}hPa")
             if snap.light_lux is not None:
-                table.add_row(self._t("光照", "Light"), f"{snap.light_lux}lux")
+                table.add_row(t("light"), f"{snap.light_lux}lux")
             console.print(table)
+
+            if status["devices_registered"] == 0:
+                console.print(f"[dim]{t('sensor_no_devices')}[/]")
 
             if lang == "zh":
                 console.print("\n[dim]用法:[/]")
@@ -1368,11 +1491,11 @@ class SparkCLI:
             if not devices:
                 console.print("[dim]No sensors registered[/]")
                 return
-            table = Table(title=self._t("传感器设备", "Sensor Devices"))
-            table.add_column(self._t("名称", "Name"), style="cyan")
-            table.add_column(self._t("类型", "Type"))
-            table.add_column(self._t("接口", "Interface"))
-            table.add_column(self._t("最新值", "Last Value"))
+            table = Table(title=t("sensor_devices"))
+            table.add_column(t("sensor_name"), style="cyan")
+            table.add_column(t("sensor_type"))
+            table.add_column(t("sensor_interface"))
+            table.add_column(t("sensor_last_value"))
             for d in devices:
                 val = f"{d['last_value']} {d['last_unit']}" if d['last_value'] is not None else "-"
                 table.add_row(d["name"], d["type"], d["interface"], val)
@@ -1403,21 +1526,21 @@ class SparkCLI:
                 console.print(f"  📡 {d['name']} ({d['type']}) via {d['interface']} @ {d['address']}")
         elif sub in ("snapshot", "快照", "env"):
             snap = hub.get_snapshot()
-            table = Table(title=self._t("环境快照", "Environment Snapshot"))
-            table.add_column(self._t("指标", "Metric"), style="cyan")
-            table.add_column(self._t("值", "Value"))
+            table = Table(title=t("env_snapshot"))
+            table.add_column(t("field_metric"), style="cyan")
+            table.add_column(t("field_value"))
             if snap.temperature_c is not None:
-                table.add_row(self._t("温度", "Temperature"), f"{snap.temperature_c}°C")
+                table.add_row(t("temperature"), f"{snap.temperature_c}°C")
             if snap.humidity_pct is not None:
-                table.add_row(self._t("湿度", "Humidity"), f"{snap.humidity_pct}%")
+                table.add_row(t("humidity"), f"{snap.humidity_pct}%")
             if snap.pressure_hpa is not None:
-                table.add_row(self._t("气压", "Pressure"), f"{snap.pressure_hpa}hPa")
+                table.add_row(t("pressure"), f"{snap.pressure_hpa}hPa")
             if snap.latitude is not None:
                 table.add_row("GPS", f"{snap.latitude}, {snap.longitude}")
             if snap.light_lux is not None:
-                table.add_row(self._t("光照", "Light"), f"{snap.light_lux}lux")
+                table.add_row(t("light"), f"{snap.light_lux}lux")
             if snap.air_quality_ppm is not None:
-                table.add_row(self._t("空气质量", "Air Quality"), f"{snap.air_quality_ppm}ppm")
+                table.add_row(t("air_quality"), f"{snap.air_quality_ppm}ppm")
             console.print(table)
         else:
             console.print(f"[yellow]Unknown sensor command: {sub}[/]")
@@ -1430,9 +1553,9 @@ class SparkCLI:
 
         if not args:
             status = dp.get_status()
-            table = Table(title=self._t("💾 数据固化", "💾 Data Preservation"))
-            table.add_column(self._t("项目", "Field"), style="cyan")
-            table.add_column(self._t("值", "Value"))
+            table = Table(title=t("data_preservation"))
+            table.add_column(t("field_item"), style="cyan")
+            table.add_column(t("field_value"))
             table.add_row("Auto-Save", "✅ Active" if status["auto_save_running"] else "❌ Stopped")
             table.add_row("Interval", f"{status['auto_save_interval_s']}s")
             table.add_row("Last Save", status.get("last_save_time") or "Never")
@@ -1499,3 +1622,474 @@ class SparkCLI:
                 console.print(f"[red]❌ Restore failed: {result.get('message', '')}[/]")
         else:
             console.print(f"[yellow]Unknown preserve command: {sub}[/]")
+
+    def _handle_goal(self, args: list[str]):
+        if not hasattr(self.engine, 'goal_engine'):
+            console.print("[yellow]Goal engine not loaded[/]")
+            return
+
+        ge = self.engine.goal_engine
+
+        if not args:
+            summary = ge.get_goal_summary()
+            console.print(summary)
+            return
+
+        sub = args[0].lower()
+
+        if sub in ("添加", "add", "新建", "new"):
+            title = " ".join(args[1:]) if len(args) > 1 else ""
+            if not title:
+                console.print("[yellow]Please specify a goal title[/]")
+                return
+            goal = ge.add_manual_goal(title=title)
+            console.print(t("goal_added", title=goal.title))
+            if goal.milestone_count > 0:
+                milestones = self.db.get_milestones_by_goal(goal.id)
+                for ms in milestones:
+                    status_icon = "✅" if ms.done else "⬜"
+                    console.print(f"  {status_icon} {ms.order}. {ms.description}")
+
+        elif sub in ("完成", "complete", "done"):
+            goal_id = args[1] if len(args) > 1 else ""
+            if not goal_id:
+                console.print("[yellow]Please specify a goal ID[/]")
+                return
+            result = ge.complete_goal(goal_id)
+            if result:
+                goal = self.db.get_goal(goal_id)
+                console.print(t("goal_completed", title=goal.title if goal else goal_id))
+            else:
+                console.print(t("goal_not_found", id=goal_id))
+
+        elif sub in ("放弃", "abandon", "取消"):
+            goal_id = args[1] if len(args) > 1 else ""
+            if not goal_id:
+                console.print("[yellow]Please specify a goal ID[/]")
+                return
+            result = ge.abandon_goal(goal_id)
+            if result:
+                goal = self.db.get_goal(goal_id)
+                console.print(t("goal_abandoned", title=goal.title if goal else goal_id))
+            else:
+                goal = self.db.get_goal(goal_id)
+                if goal and goal.priority == "critical":
+                    console.print(t("goal_cannot_abandon_critical"))
+                else:
+                    console.print(t("goal_not_found", id=goal_id))
+
+        elif sub in ("暂停", "pause"):
+            goal_id = args[1] if len(args) > 1 else ""
+            if not goal_id:
+                console.print("[yellow]Please specify a goal ID[/]")
+                return
+            result = ge.pause_goal(goal_id)
+            if result:
+                goal = self.db.get_goal(goal_id)
+                console.print(t("goal_paused", title=goal.title if goal else goal_id))
+            else:
+                goal = self.db.get_goal(goal_id)
+                if goal and goal.priority == "critical":
+                    console.print(t("goal_cannot_pause_critical"))
+                else:
+                    console.print(t("goal_not_found", id=goal_id))
+
+        elif sub in ("恢复", "resume"):
+            goal_id = args[1] if len(args) > 1 else ""
+            if not goal_id:
+                console.print("[yellow]Please specify a goal ID[/]")
+                return
+            result = ge.resume_goal(goal_id)
+            if result:
+                goal = self.db.get_goal(goal_id)
+                console.print(t("goal_resumed", title=goal.title if goal else goal_id))
+            else:
+                console.print(t("goal_not_found", id=goal_id))
+
+        elif sub in ("里程碑", "milestones", "ms"):
+            goal_id = args[1] if len(args) > 1 else ""
+            if not goal_id:
+                console.print("[yellow]Please specify a goal ID[/]")
+                return
+            detail = ge.get_goal_detail(goal_id)
+            if not detail:
+                console.print(t("goal_not_found", id=goal_id))
+                return
+            goal = detail["goal"]
+            console.print(f"[bold]{goal.title}[/] — {goal.description}")
+            for ms in detail["milestones"]:
+                status_icon = "✅" if ms.done else "⬜"
+                console.print(f"  {status_icon} {ms.order}. {ms.description}")
+            progress_pct = int(goal.progress * 100)
+            console.print(f"\n  进度：{progress_pct}% ({goal.milestone_done}/{goal.milestone_count})")
+
+        elif sub in ("自动生成", "auto", "generate"):
+            generated = ge.auto_generate_goals()
+            if generated:
+                console.print(f"[green]✓ Generated {len(generated)} goal(s):[/]")
+                for g in generated:
+                    console.print(f"  🔴 {g.title}" if g.priority == "critical" else f"  🟡 {g.title}")
+            else:
+                console.print("[dim]No new goals to generate[/]")
+
+        else:
+            console.print(t("goal_usage"))
+
+    def _handle_reset(self, args: list[str]):
+        if not hasattr(self.engine, 'reset_manager'):
+            console.print("[yellow]Reset manager not loaded[/]")
+            return
+
+        rm = self.engine.reset_manager
+
+        if not args:
+            console.print(t("reset_usage"))
+            return
+
+        sub = args[0].lower()
+
+        if sub in ("状态", "status"):
+            status = rm.get_reset_status()
+            table = Table(title="🔄 Reset Status")
+            table.add_column("Field", style="cyan")
+            table.add_column("Value")
+            table.add_row("Last Reset", str(status.get("last_reset", "Never")))
+            table.add_row("Cooldown", f"{status['cooldown_hours']}h")
+            table.add_row("Can Reset", "✅ Yes" if status["can_reset"] else "❌ No (cooldown)")
+            console.print(table)
+
+        elif sub in ("评估", "assessment", "l1"):
+            from allspark.models import ResetLevel
+            evaluation = rm.evaluate_reset(ResetLevel.ASSESSMENT)
+            self._print_reset_evaluation(evaluation)
+            if evaluation["allowed"]:
+                confirm = console.input("[bold red]Confirm L1 reset? (yes/no): [/]").strip().lower()
+                if confirm in ("yes", "是", "y"):
+                    result = rm.execute_reset(ResetLevel.ASSESSMENT)
+                    if result["status"] == "ok":
+                        console.print(t("reset_executed", level="L1"))
+                    else:
+                        console.print(t("reset_rejected", reason=result.get("reason", "")))
+
+        elif sub in ("档案", "archive", "l2"):
+            from allspark.models import ResetLevel
+            evaluation = rm.evaluate_reset(ResetLevel.ARCHIVE)
+            self._print_reset_evaluation(evaluation)
+            if evaluation["allowed"]:
+                confirm = console.input("[bold red]Confirm L2 reset? (yes/no): [/]").strip().lower()
+                if confirm in ("yes", "是", "y"):
+                    result = rm.execute_reset(ResetLevel.ARCHIVE)
+                    if result["status"] == "ok":
+                        console.print(t("reset_executed", level="L2"))
+                    else:
+                        console.print(t("reset_rejected", reason=result.get("reason", "")))
+
+        elif sub in ("出厂", "factory", "l3"):
+            from allspark.models import ResetLevel
+            evaluation = rm.evaluate_reset(ResetLevel.FACTORY)
+            self._print_reset_evaluation(evaluation)
+            if evaluation["allowed"]:
+                confirm = console.input("[bold red]⚠️ FACTORY RESET - ALL DATA WILL BE LOST! Type 'FACTORY' to confirm: [/]").strip()
+                if confirm == "FACTORY":
+                    result = rm.execute_reset(ResetLevel.FACTORY, force=True)
+                    if result["status"] == "ok":
+                        console.print(t("reset_executed", level="L3"))
+                        console.print("[bold yellow]⚠️ System requires restart to complete factory reset.[/]")
+                        console.print("[dim]All data has been erased. Restart AllSpark to begin setup.[/]")
+                        self.running = False
+                    else:
+                        console.print(t("reset_rejected", reason=result.get("reason", "")))
+                else:
+                    console.print("[dim]Factory reset cancelled[/]")
+
+        else:
+            console.print(t("reset_usage"))
+
+    def _print_reset_evaluation(self, evaluation: dict):
+        level_name = evaluation.get("level_name", "")
+        allowed = evaluation.get("allowed", False)
+        description = evaluation.get("description", "")
+
+        console.print(f"\n[bold]Reset Evaluation — {level_name}[/]")
+        console.print(f"  Allowed: {'✅' if allowed else '❌'}")
+        if description:
+            console.print(f"  Description: {description}")
+        if evaluation.get("affected_data"):
+            console.print("  Affected data:")
+            for item in evaluation["affected_data"]:
+                console.print(f"    - {item}")
+        if evaluation.get("warnings"):
+            for w in evaluation["warnings"]:
+                console.print(f"  [yellow]⚠ {w}[/]")
+        if evaluation.get("backup_recommended"):
+            console.print("  [dim]💡 A backup snapshot will be created before reset[/]")
+
+    def _handle_briefing(self):
+        if not hasattr(self.engine, 'daily_briefing'):
+            console.print("[yellow]Daily briefing module not loaded[/]")
+            return
+        briefing = self.engine.daily_briefing.generate()
+        console.print(Panel(briefing, title="📰 Daily Briefing", border_style="cyan"))
+
+    def _handle_timeline(self, args: list[str]):
+        if not hasattr(self.engine, 'timeline'):
+            console.print("[yellow]Timeline module not loaded[/]")
+            return
+        tl = self.engine.timeline
+
+        if not args:
+            output = tl.format_timeline()
+            console.print(output)
+            return
+
+        sub = args[0].lower()
+        if sub in ("天", "day") and len(args) > 1:
+            try:
+                day = int(args[1])
+                summary = tl.get_day_summary(day)
+                if summary["event_count"] == 0:
+                    console.print(f"[dim]No events on day {day}[/]")
+                else:
+                    console.print(tl.format_timeline(summary["events"]))
+            except ValueError:
+                console.print("[yellow]Invalid day number[/]")
+        elif sub in ("添加", "add"):
+            title = " ".join(args[1:]) if len(args) > 1 else ""
+            if not title:
+                console.print("[yellow]Please specify an event title[/]")
+                return
+            tl.add_event("system_event", title, description="Manual entry")
+            console.print(f"[green]✓ Event added: {title}[/]")
+        else:
+            console.print("[dim]Usage: timeline | timeline day <N> | timeline add <title>[/]")
+
+    def _handle_diary(self, args: list[str]):
+        if not hasattr(self.engine, 'diary'):
+            console.print("[yellow]Diary module not loaded[/]")
+            return
+        dm = self.engine.diary
+
+        if not args:
+            output = dm.format_entries()
+            console.print(output)
+            return
+
+        sub = args[0].lower()
+
+        if sub in ("写", "add", "写日记", "new"):
+            console.print("[dim]Enter diary content (type END on a new line to finish):[/]")
+            lines = []
+            while True:
+                try:
+                    line = console.input("").strip()
+                    if line == "END":
+                        break
+                    lines.append(line)
+                except (EOFError, KeyboardInterrupt):
+                    break
+            content = "\n".join(lines)
+            if not content:
+                console.print("[yellow]Empty entry, not saved[/]")
+                return
+            emotion = "neutral"
+            result = dm.add_entry(content=content, emotion=emotion)
+            console.print(f"[green]✓ Diary entry saved: {result['id']} ({result['content_length']} chars)[/]")
+
+        elif sub in ("查看", "view", "show"):
+            entry_id = args[1] if len(args) > 1 else ""
+            if not entry_id:
+                entries = dm.get_entries(limit=10)
+                console.print(dm.format_entries(entries))
+            else:
+                entry = dm.get_entry(entry_id)
+                if entry:
+                    console.print(dm.format_entry_detail(entry))
+                else:
+                    console.print(f"[yellow]Entry not found: {entry_id}[/]")
+
+        elif sub in ("删除", "delete", "remove"):
+            entry_id = args[1] if len(args) > 1 else ""
+            if dm.delete_entry(entry_id):
+                console.print(f"[green]✓ Entry deleted: {entry_id}[/]")
+            else:
+                console.print(f"[yellow]Entry not found: {entry_id}[/]")
+
+        elif sub in ("情绪", "emotion", "stats"):
+            stats = dm.get_emotion_stats()
+            table = Table(title="📝 Diary Stats")
+            table.add_column("Metric", style="cyan")
+            table.add_column("Value")
+            table.add_row("Total Entries", str(stats["total_entries"]))
+            table.add_row("Positive", str(stats["positive"]))
+            table.add_row("Neutral", str(stats["neutral"]))
+            table.add_row("Negative", str(stats["negative"]))
+            table.add_row("Positive Ratio", f"{stats['positive_ratio']:.0%}")
+            console.print(table)
+
+        else:
+            console.print("[dim]Usage: diary | diary add | diary view [ID] | diary delete <ID> | diary stats[/]")
+
+    def _handle_weather(self, args: list[str]):
+        if not hasattr(self.engine, 'weather'):
+            console.print("[yellow]Weather module not loaded[/]")
+            return
+        wp = self.engine.weather
+
+        if not args:
+            output = wp.format_prediction()
+            console.print(Panel(output, title="🌤️ Weather", border_style="cyan"))
+            return
+
+        sub = args[0].lower()
+        if sub in ("云图", "cloud", "clouds"):
+            console.print(wp.get_cloud_guide())
+        elif sub in ("气压", "pressure") and len(args) > 1:
+            try:
+                hpa = float(args[1])
+                wp.set_manual_pressure(hpa)
+                console.print(f"[green]✓ Pressure set: {hpa} hPa[/]")
+            except ValueError:
+                console.print("[yellow]Invalid pressure value[/]")
+        else:
+            console.print("[dim]Usage: weather | weather clouds | weather pressure <hPa>[/]")
+
+    def _handle_psychology(self, args: list[str]):
+        if not hasattr(self.engine, 'psychology'):
+            console.print("[yellow]Psychology module not loaded[/]")
+            return
+        pt = self.engine.psychology
+
+        if not args:
+            output = pt.format_status()
+            console.print(Panel(output, title="🧠 Psychology", border_style="cyan"))
+            return
+
+        sub = args[0].lower()
+        if sub in ("评估", "assess", "问卷", "quiz"):
+            questions = pt.get_self_assessment_questions()
+            console.print(f"[bold]{t('psych_assessment_title')}[/]\n")
+            answers = {}
+            for q in questions:
+                console.print(f"  {q['question']}")
+                for i, opt in enumerate(q["options"]):
+                    console.print(f"    {i+1}. {opt}")
+                try:
+                    choice = console.input("  → ").strip()
+                    idx = int(choice) - 1 if choice.isdigit() else 0
+                    idx = max(0, min(idx, len(q["options"]) - 1))
+                    answers[q["id"]] = idx
+                except (ValueError, EOFError, KeyboardInterrupt):
+                    answers[q["id"]] = 0
+                console.print("")
+
+            result = pt.process_assessment(answers)
+            console.print(f"  {t('psych_score_result', score=result['score'], state=result['state'])}")
+            console.print(f"  {t('psych_advice', advice=result['advice'])}")
+        else:
+            console.print("[dim]Usage: psychology | psychology assess[/]")
+
+    def _handle_gps(self, args: list[str]):
+        if not hasattr(self.engine, 'gps_manager'):
+            console.print("[yellow]GPS module not loaded[/]")
+            return
+        gm = self.engine.gps_manager
+
+        if not args:
+            output = gm.format_position()
+            console.print(output)
+            return
+
+        sub = args[0].lower()
+        if sub in ("设置", "set") and len(args) >= 3:
+            try:
+                lat = float(args[1])
+                lon = float(args[2])
+                alt = float(args[3]) if len(args) > 3 else 0.0
+                pos = gm.set_manual_position(lat, lon, alt)
+                console.print(f"[green]✓ Position set: {lat:.4f}°, {lon:.4f}°[/]")
+            except ValueError:
+                console.print("[yellow]Invalid coordinates. Usage: gps set <lat> <lon> [alt][/]")
+        elif sub in ("轨迹", "track"):
+            output = gm.format_track()
+            console.print(output)
+        elif sub in ("记录", "record"):
+            label = " ".join(args[1:]) if len(args) > 1 else ""
+            result = gm.record_track_point(label)
+            if result:
+                console.print(f"[green]✓ Track point recorded: {result}[/]")
+            else:
+                console.print("[yellow]No position available. Set position first.[/]")
+        elif sub in ("距离", "distance") and len(args) >= 5:
+            try:
+                lat1, lon1 = float(args[1]), float(args[2])
+                lat2, lon2 = float(args[3]), float(args[4])
+                dist = gm.calculate_distance(lat1, lon1, lat2, lon2)
+                bearing = gm.calculate_bearing(lat1, lon1, lat2, lon2)
+                direction = gm.bearing_to_direction(bearing)
+                console.print(f"  {t('gps_distance_result', dist=dist, direction=direction, bearing=bearing)}")
+            except ValueError:
+                console.print("[yellow]Invalid coordinates[/]")
+        else:
+            console.print("[dim]Usage: gps | gps set <lat> <lon> [alt] | gps track | gps record [label] | gps distance <lat1> <lon1> <lat2> <lon2>[/]")
+
+    def _handle_environment(self):
+        if not hasattr(self.engine, 'environment'):
+            console.print("[yellow]Environment module not loaded[/]")
+            return
+        output = self.engine.environment.format_assessment()
+        console.print(Panel(output, title="🌍 Environment", border_style="green"))
+
+    def _handle_voice(self, args: list[str]):
+        if not hasattr(self.engine, 'voice'):
+            console.print("[yellow]Voice module not loaded[/]")
+            return
+        vm = self.engine.voice
+
+        if not args:
+            output = vm.format_status()
+            console.print(output)
+            return
+
+        sub = args[0].lower()
+        if sub in ("加载", "load", "模型"):
+            model_name = args[1] if len(args) > 1 else "base"
+            console.print(f"[dim]Loading Whisper model '{model_name}'... (first time may download)[/]")
+            result = vm.load_whisper(model_name)
+            if result["status"] == "ok":
+                console.print(f"[green]✓ Whisper model '{model_name}' loaded[/]")
+            else:
+                console.print(f"[red]✗ {result['message']}[/]")
+
+        elif sub in ("识别", "transcribe", "转写"):
+            if len(args) > 1:
+                audio_path = args[1]
+                result = vm.transcribe(audio_path)
+            else:
+                console.print("[dim]Recording 5 seconds...[/]")
+                result = vm.transcribe_from_mic(duration=5)
+
+            if result.get("status") == "ok":
+                console.print(f"[green]Transcribed ({result.get('language', '?')}):[/]")
+                console.print(f"  {result['text']}")
+            else:
+                console.print(f"[red]✗ {result.get('message', 'Unknown error')}[/]")
+
+        elif sub in ("说话", "speak", "朗读"):
+            text = " ".join(args[1:]) if len(args) > 1 else t("voice_default_text")
+            result = vm.speak(text)
+            if result["status"] != "ok":
+                console.print(f"[red]✗ {result.get('message', '')}[/]")
+
+        elif sub in ("日记", "diary"):
+            console.print("[dim]Recording voice diary (10 seconds)...[/]")
+            result = vm.voice_diary(duration=10, emotion="neutral")
+            if result.get("status") == "ok":
+                console.print(f"[green]✓ Voice diary saved:[/]")
+                console.print(f"  {result['text']}")
+                if result.get("diary_entry"):
+                    console.print(f"  Entry ID: {result['diary_entry']['id']}")
+            else:
+                console.print(f"[red]✗ {result.get('message', '')}[/]")
+
+        else:
+            console.print("[dim]Usage: voice | voice load [model] | voice transcribe [file] | voice speak <text> | voice diary[/]")

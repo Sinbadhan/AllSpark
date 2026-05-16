@@ -5,7 +5,8 @@ from allspark.database import Database
 from allspark.models import (
     Resource, ResourceType, SurvivorState, OperatingMode
 )
-from allspark.config import PHASE_DESCRIPTIONS, PHASE_GOALS
+from allspark.config import PHASE_GOALS
+from allspark.i18n import t
 from allspark.resource_manager import ResourceManager
 
 
@@ -24,7 +25,7 @@ class SurvivalAssessmentEngine:
 
         return {
             "phase": phase,
-            "phase_description": PHASE_DESCRIPTIONS.get(phase, "未知"),
+            "phase_description": t(f"phase_desc_{phase}"),
             "resources": resources,
             "warnings": warnings,
             "bottleneck": bottleneck,
@@ -57,18 +58,18 @@ class SurvivalAssessmentEngine:
             if r.type == ResourceType.WATER:
                 days = r.estimated_remaining_hours / 24.0
                 if days < 3:
-                    bottlenecks.append(("水", days, "天"))
+                    bottlenecks.append((t("resource_water"), days, t("res_unit_days", days=days).split()[0] if days < 1 else "d"))
             elif r.type == ResourceType.FOOD:
                 days = r.estimated_remaining_hours / 24.0
                 if days < 5:
-                    bottlenecks.append(("食物", days, "天"))
+                    bottlenecks.append((t("resource_food"), days, "d"))
             elif r.type == ResourceType.POWER:
                 hours = r.estimated_remaining_hours
                 if hours < 24:
-                    bottlenecks.append(("电力", hours, "小时"))
+                    bottlenecks.append((t("resource_power"), hours, "h"))
             elif r.type == ResourceType.FIRE:
                 if r.current_amount < 10:
-                    bottlenecks.append(("火源", r.current_amount, "次"))
+                    bottlenecks.append((t("resource_fire"), r.current_amount, ""))
 
         if not bottlenecks:
             return None
@@ -84,31 +85,31 @@ class SurvivalAssessmentEngine:
     def get_assessment_summary(self) -> str:
         a = self.assess()
         lines = [
-            f"═══ 生存评估报告 ═══",
-            f"当前阶段：{a['phase_description']}",
+            f"═══ {t('assessment_title')} ═══",
+            f"{t('phase_desc_' + str(a['phase']))}",
         ]
 
         if a["bottleneck"]:
             b = a["bottleneck"]
-            lines.append(f"🚨 关键瓶颈：{b['resource']}（剩余 {b['remaining']:.1f}{b['unit']}）")
+            lines.append(f"{t('bottleneck_label')}: {b['resource']}({b['remaining']:.1f}{b['unit']})")
 
         if a["warnings"]:
             lines.append("")
-            lines.append("⚠️ 警告：")
+            lines.append(t("warnings_label"))
             for w in a["warnings"]:
                 lines.append(f"  {w['message']}")
 
         lines.append("")
-        lines.append(f"📋 当前任务数：{len(a['active_tasks'])}")
+        lines.append(f"{t('task_title')}: {len(a['active_tasks'])}")
 
         mode, _ = self.resource_mgr.update_operating_mode()
         mode_names = {
-            OperatingMode.PROACTIVE: "主动模式",
-            OperatingMode.STANDARD: "标准模式",
-            OperatingMode.ECONOMY: "节能模式",
-            OperatingMode.HIBERNATION: "休眠模式",
-            OperatingMode.RECOVERY: "恢复模式",
+            OperatingMode.PROACTIVE: t("mode_proactive"),
+            OperatingMode.STANDARD: t("mode_standard"),
+            OperatingMode.ECONOMY: t("mode_economy"),
+            OperatingMode.HIBERNATION: t("mode_hibernation"),
+            OperatingMode.RECOVERY: t("mode_recovery"),
         }
-        lines.append(f"🖥️ 运行模式：{mode_names.get(mode, mode.value)}")
+        lines.append(f"{t('operating_mode_label', mode=mode_names.get(mode, mode.value))}")
 
         return "\n".join(lines)

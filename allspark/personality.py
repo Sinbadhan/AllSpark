@@ -34,8 +34,10 @@ class PersonalitySystem:
         return PERSONALITY_TEMPLATES.get(self.current_mode.value, PERSONALITY_TEMPLATES["stable"])
 
     def greet(self) -> str:
+        i18n_key = f"personality_{self.current_mode.value}_greeting"
+        greeting_text = t(i18n_key)
         tmpl = self.get_template()
-        return f"{tmpl['emoji_prefix']} {tmpl['greeting']}"
+        return f"{tmpl['emoji_prefix']} {greeting_text}"
 
     def format_response(self, content: str, add_greeting: bool = False) -> str:
         tmpl = self.get_template()

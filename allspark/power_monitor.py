@@ -130,29 +130,29 @@ class PowerMonitor:
     def _read_simulated(self) -> PowerReading:
         if self.db:
             power = self.db.get_resource(ResourceType.POWER)
-            if power:
+            if power and power.current_amount > 0:
                 hours = power.estimated_remaining_hours
                 pct = min(100, max(0, (hours / 72.0) * 100))
                 return PowerReading(
                     timestamp=datetime.now().isoformat(),
-                    voltage_v=round(3.7 + (pct / 100) * 0.5, 2),
-                    current_a=round(power.daily_consumption / 24.0 / 3.7, 3) if power.daily_consumption > 0 else 0,
-                    power_w=round(power.daily_consumption / 24.0, 2) if power.daily_consumption > 0 else 0,
+                    voltage_v=0.0,
+                    current_a=0.0,
+                    power_w=0.0,
                     energy_wh=power.current_amount,
                     battery_percent=round(pct, 1),
                     charging=power.daily_intake > power.daily_consumption,
-                    source="simulated",
+                    source="from_db",
                 )
 
         return PowerReading(
             timestamp=datetime.now().isoformat(),
-            voltage_v=3.7,
-            current_a=0.5,
-            power_w=1.85,
-            energy_wh=37.0,
-            battery_percent=50.0,
+            voltage_v=0.0,
+            current_a=0.0,
+            power_w=0.0,
+            energy_wh=0.0,
+            battery_percent=0.0,
             charging=False,
-            source="default",
+            source="no_data",
         )
 
     def _update_db(self, reading: PowerReading):
@@ -241,15 +241,6 @@ class PowerMonitor:
     def manual_input(self, energy_wh: float, charging: bool = False,
                      daily_consumption: float = None,
                      daily_intake: float = None) -> dict:
-        reading = PowerReading(
-            timestamp=datetime.now().isoformat(),
-            energy_wh=energy_wh,
-            battery_percent=min(100, max(0, (energy_wh / 37.0) * 100)),
-            charging=charging,
-            source="manual",
-        )
-        self._current_reading = reading
-
         if self.db:
             power = self.db.get_resource(ResourceType.POWER)
             if power:
@@ -260,6 +251,21 @@ class PowerMonitor:
                     power.daily_intake = daily_intake
                 power.estimated_remaining_hours = self._estimate_hours(power)
                 self.db.upsert_resource(power)
+
+        pct = 0.0
+        if self.db:
+            power = self.db.get_resource(ResourceType.POWER)
+            if power and power.estimated_remaining_hours > 0:
+                pct = min(100, max(0, (power.estimated_remaining_hours / 72.0) * 100))
+
+        reading = PowerReading(
+            timestamp=datetime.now().isoformat(),
+            energy_wh=energy_wh,
+            battery_percent=round(pct, 1),
+            charging=charging,
+            source="manual",
+        )
+        self._current_reading = reading
 
         return {"status": "ok", "reading": {
             "energy_wh": reading.energy_wh,

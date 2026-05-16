@@ -97,3 +97,10 @@ PHASE_GOALS = {
     3: ["建立医疗能力", "建立通信手段", "提高生活舒适度", "积累知识储备"],
     4: ["传承教育体系", "发展科学技术", "建立社区治理", "记录文明历史"],
 }
+
+SPARKNET_DISCOVERY_PORT = 7979
+SPARKNET_EXCHANGE_PORT = 7980
+SPARKNET_BEACON_INTERVAL = 30
+SPARKNET_DISCOVERY_TIMEOUT = 10
+SPARKNET_MESSAGE_ENCODING = "utf-8"
+SPARKNET_BUFFER_SIZE = 4096

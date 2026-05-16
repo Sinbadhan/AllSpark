@@ -42,7 +42,7 @@ class GovernanceEngine:
         if not self.db:
             return
         try:
-            rows = self.db.conn.execute("SELECT * FROM community_members").fetchall()
+            rows = self.db.get_community_members()
             for r in rows:
                 member = CommunityMember(
                     id=r["id"],
@@ -62,7 +62,7 @@ class GovernanceEngine:
             pass
 
         try:
-            rows = self.db.conn.execute("SELECT * FROM conflicts").fetchall()
+            rows = self.db.get_conflicts()
             for r in rows:
                 conflict = ConflictRecord(
                     id=r["id"],
@@ -119,8 +119,7 @@ class GovernanceEngine:
                 return False
         del self._members[member_id]
         if self.db:
-            self.db.conn.execute("DELETE FROM community_members WHERE id=?", (member_id,))
-            self.db.conn.commit()
+            self.db.delete_community_member(member_id)
         return True
 
     def assign_role(self, member_id: str, role: str, domains: list = None) -> bool:
@@ -372,28 +371,24 @@ class GovernanceEngine:
     def _save_member(self, member: CommunityMember):
         if not self.db:
             return
-        self.db.conn.execute(
-            "INSERT OR REPLACE INTO community_members VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-            (member.id, member.name, member.role,
-             json.dumps(member.domains, ensure_ascii=False),
-             json.dumps(member.skills, ensure_ascii=False),
-             member.health_status, member.psychological_stability,
-             member.contribution_score, member.joined_at,
-             member.last_active, 1 if member.is_commander else 0)
+        self.db.upsert_community_member(
+            member.id, member.name, member.role,
+            json.dumps(member.domains, ensure_ascii=False),
+            json.dumps(member.skills, ensure_ascii=False),
+            member.health_status, member.psychological_stability,
+            member.contribution_score, member.joined_at,
+            member.last_active, 1 if member.is_commander else 0
         )
-        self.db.conn.commit()
 
     def _save_conflict(self, conflict: ConflictRecord):
         if not self.db:
             return
-        self.db.conn.execute(
-            "INSERT OR REPLACE INTO conflicts VALUES (?,?,?,?,?,?,?,?,?)",
-            (conflict.id, conflict.title, conflict.description,
-             json.dumps(conflict.parties, ensure_ascii=False),
-             conflict.status, conflict.mediator, conflict.resolution,
-             conflict.created_at, conflict.resolved_at)
+        self.db.upsert_conflict(
+            conflict.id, conflict.title, conflict.description,
+            json.dumps(conflict.parties, ensure_ascii=False),
+            conflict.status, conflict.mediator, conflict.resolution,
+            conflict.created_at, conflict.resolved_at
         )
-        self.db.conn.commit()
 
     def get_status(self) -> dict:
         return {

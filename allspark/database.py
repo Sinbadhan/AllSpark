@@ -152,6 +152,95 @@ class Database:
                 created_at TEXT NOT NULL,
                 completed_at TEXT DEFAULT ''
             );
+
+            -- Phase 7: Goal System (PRD §10)
+            CREATE TABLE IF NOT EXISTS goals (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                goal_type TEXT DEFAULT 'auto',
+                category TEXT DEFAULT 'survival',
+                priority TEXT DEFAULT 'medium',
+                status TEXT DEFAULT 'active',
+                source TEXT DEFAULT 'assessment',
+                progress REAL DEFAULT 0.0,
+                deadline TEXT DEFAULT '',
+                triggers TEXT DEFAULT '[]',
+                rationale TEXT DEFAULT '',
+                created_by TEXT DEFAULT '',
+                milestone_count INTEGER DEFAULT 0,
+                milestone_done INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS milestones (
+                id TEXT PRIMARY KEY,
+                goal_id TEXT NOT NULL,
+                description TEXT NOT NULL,
+                done INTEGER DEFAULT 0,
+                order_num INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                completed_at TEXT DEFAULT ''
+            );
+
+            -- Phase 7: Survival Timeline (PRD §4.4)
+            CREATE TABLE IF NOT EXISTS timeline_events (
+                id TEXT PRIMARY KEY,
+                day INTEGER NOT NULL,
+                timestamp TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                emotion TEXT DEFAULT 'neutral',
+                related_goal_id TEXT DEFAULT '',
+                auto_generated INTEGER DEFAULT 1
+            );
+
+            -- Phase 7: Spark Diary (PRD §4.7)
+            CREATE TABLE IF NOT EXISTS diary_entries (
+                id TEXT PRIMARY KEY,
+                date TEXT NOT NULL,
+                content TEXT NOT NULL,
+                emotion TEXT DEFAULT 'neutral',
+                keywords TEXT DEFAULT '[]',
+                related_goal_id TEXT DEFAULT '',
+                related_event TEXT DEFAULT '',
+                is_public INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL
+            );
+
+            -- Phase 7: Reset Log (PRD §4.2.5)
+            CREATE TABLE IF NOT EXISTS reset_log (
+                id TEXT PRIMARY KEY,
+                level INTEGER NOT NULL,
+                reason TEXT DEFAULT '',
+                backup_id TEXT DEFAULT '',
+                performed_by TEXT DEFAULT '',
+                performed_at TEXT NOT NULL
+            );
+
+            -- Phase 7: GPS location for spark itself
+            CREATE TABLE IF NOT EXISTS spark_location (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
+
+            -- Phase 7: Psychological state tracking (PRD §4.6)
+            CREATE TABLE IF NOT EXISTS psych_state (
+                date TEXT PRIMARY KEY,
+                loneliness REAL DEFAULT 0.0,
+                stress REAL DEFAULT 0.0,
+                interaction_count INTEGER DEFAULT 0,
+                sleep_quality TEXT DEFAULT 'unknown',
+                crisis_count INTEGER DEFAULT 0,
+                notes TEXT DEFAULT ''
+            );
+
+            -- FTS for diary search
+            CREATE VIRTUAL TABLE IF NOT EXISTS diary_fts USING fts5(
+                date, content, keywords
+            );
         """)
         self.conn.commit()
         self._migrate()
@@ -163,6 +252,17 @@ class Database:
         except sqlite3.OperationalError:
             cur.execute("ALTER TABLE knowledge ADD COLUMN language TEXT DEFAULT 'zh'")
             self.conn.commit()
+
+        for col, ctype in [
+            ("latitude", "REAL DEFAULT 0"),
+            ("longitude", "REAL DEFAULT 0"),
+            ("altitude", "REAL DEFAULT 0"),
+        ]:
+            try:
+                cur.execute(f"SELECT {col} FROM map_pois LIMIT 1")
+            except sqlite3.OperationalError:
+                cur.execute(f"ALTER TABLE map_pois ADD COLUMN {col} {ctype}")
+                self.conn.commit()
 
     def _now(self) -> str:
         return datetime.now().isoformat()
@@ -210,7 +310,7 @@ class Database:
 
     def save_task(self, t: Task):
         self.conn.execute(
-            "INSERT OR REPLACE INTO tasks VALUES (?,?,?,?,?,?,?)",
+            "INSERT OR REPLACE INTO tasks VALUES (?,?,?,?,?,?,?,?)",
             (t.id, t.phase, t.priority, t.title, t.description,
              t.status, t.created_at, self._now())
         )
@@ -353,9 +453,12 @@ class Database:
 
     def save_poi(self, p: MapPOI):
         self.conn.execute(
-            "INSERT OR REPLACE INTO map_pois VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT OR REPLACE INTO map_pois VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
             (p.id, p.name, p.type, p.description, p.distance_km,
-             p.direction, p.notes, p.discovered_at, 1 if p.verified else 0)
+             p.direction, p.notes, p.discovered_at, 1 if p.verified else 0,
+             getattr(p, 'latitude', 0.0),
+             getattr(p, 'longitude', 0.0),
+             getattr(p, 'altitude', 0.0))
         )
         self.conn.commit()
 
@@ -448,5 +551,427 @@ class Database:
         )
         self.conn.commit()
 
+    def mark_uninitialized(self):
+        self.conn.execute(
+            "DELETE FROM operating_state WHERE key='initialized'"
+        )
+        self.conn.commit()
+
     def close(self):
         self.conn.close()
+
+    # --- Community Members ---
+
+    def get_community_members(self) -> list[dict]:
+        rows = self.conn.execute("SELECT * FROM community_members").fetchall()
+        return [dict(r) for r in rows]
+
+    def upsert_community_member(self, member_id: str, name: str, role: str,
+                                domains: str, skills: str, health_status: str,
+                                psychological_stability: float, contribution_score: float,
+                                joined_at: str, last_active: str, is_commander: int):
+        self.conn.execute(
+            "INSERT OR REPLACE INTO community_members VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (member_id, name, role, domains, skills, health_status,
+             psychological_stability, contribution_score, joined_at,
+             last_active, is_commander)
+        )
+        self.conn.commit()
+
+    def delete_community_member(self, member_id: str):
+        self.conn.execute("DELETE FROM community_members WHERE id=?", (member_id,))
+        self.conn.commit()
+
+    # --- Conflicts ---
+
+    def get_conflicts(self) -> list[dict]:
+        rows = self.conn.execute("SELECT * FROM conflicts").fetchall()
+        return [dict(r) for r in rows]
+
+    def upsert_conflict(self, conflict_id: str, title: str, description: str,
+                        parties: str, status: str, mediator: str, resolution: str,
+                        created_at: str, resolved_at: str):
+        self.conn.execute(
+            "INSERT OR REPLACE INTO conflicts VALUES (?,?,?,?,?,?,?,?,?)",
+            (conflict_id, title, description, parties, status,
+             mediator, resolution, created_at, resolved_at)
+        )
+        self.conn.commit()
+
+    # --- Trade Offers ---
+
+    def get_trade_offers(self) -> list[dict]:
+        rows = self.conn.execute("SELECT * FROM trade_offers").fetchall()
+        return [dict(r) for r in rows]
+
+    def upsert_trade_offer(self, offer_id: str, proposer_id: str,
+                           target_spark_id: str, offer_knowledge_ids: str,
+                           request_knowledge_ids: str, status: str,
+                           created_at: str, completed_at: str):
+        self.conn.execute(
+            "INSERT OR REPLACE INTO trade_offers VALUES (?,?,?,?,?,?,?,?)",
+            (offer_id, proposer_id, target_spark_id,
+             offer_knowledge_ids, request_knowledge_ids,
+             status, created_at, completed_at)
+        )
+        self.conn.commit()
+
+    # --- Knowledge Aggregation ---
+
+    def get_knowledge_categories(self) -> list[dict]:
+        rows = self.conn.execute(
+            "SELECT category, COUNT(*) as cnt FROM knowledge GROUP BY category"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def get_knowledge_count(self) -> int:
+        row = self.conn.execute("SELECT COUNT(*) as cnt FROM knowledge").fetchone()
+        return row["cnt"]
+
+    def get_knowledge_ids(self) -> list[str]:
+        rows = self.conn.execute("SELECT id FROM knowledge").fetchall()
+        return [r["id"] for r in rows]
+
+    def get_distinct_knowledge_categories(self) -> list[str]:
+        rows = self.conn.execute("SELECT DISTINCT category FROM knowledge").fetchall()
+        return [r["category"] for r in rows]
+
+    # --- Integrity Check ---
+
+    def check_integrity(self) -> bool:
+        result = self.conn.execute("PRAGMA integrity_check").fetchone()
+        return result[0] == "ok"
+
+    # --- Goals ---
+
+    def save_goal(self, goal):
+        self.conn.execute(
+            "INSERT OR REPLACE INTO goals VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (goal.id, goal.title, goal.description, goal.goal_type,
+             goal.category, goal.priority, goal.status, goal.source,
+             goal.progress, goal.deadline, goal.triggers, goal.rationale,
+             goal.created_by, goal.milestone_count, goal.milestone_done,
+             goal.created_at, self._now())
+        )
+        self.conn.commit()
+
+    def get_goal(self, goal_id: str):
+        row = self.conn.execute("SELECT * FROM goals WHERE id=?", (goal_id,)).fetchone()
+        if not row:
+            return None
+        from allspark.models import Goal
+        d = dict(row)
+        return Goal(
+            id=d["id"], title=d["title"], description=d["description"],
+            goal_type=d["goal_type"], category=d["category"],
+            priority=d["priority"], status=d["status"], source=d["source"],
+            progress=d["progress"], deadline=d["deadline"],
+            triggers=d["triggers"], rationale=d["rationale"],
+            created_by=d["created_by"],
+            milestone_count=d["milestone_count"], milestone_done=d["milestone_done"],
+            created_at=d["created_at"], updated_at=d["updated_at"],
+        )
+
+    def get_active_goals(self):
+        from allspark.models import Goal
+        rows = self.conn.execute(
+            "SELECT * FROM goals WHERE status='active' ORDER BY priority, created_at"
+        ).fetchall()
+        results = []
+        for d in rows:
+            d = dict(d)
+            results.append(Goal(
+                id=d["id"], title=d["title"], description=d["description"],
+                goal_type=d["goal_type"], category=d["category"],
+                priority=d["priority"], status=d["status"], source=d["source"],
+                progress=d["progress"], deadline=d["deadline"],
+                triggers=d["triggers"], rationale=d["rationale"],
+                created_by=d["created_by"],
+                milestone_count=d["milestone_count"], milestone_done=d["milestone_done"],
+                created_at=d["created_at"], updated_at=d["updated_at"],
+            ))
+        return results
+
+    def get_goals_by_category(self, category: str):
+        from allspark.models import Goal
+        rows = self.conn.execute(
+            "SELECT * FROM goals WHERE category=? ORDER BY priority", (category,)
+        ).fetchall()
+        results = []
+        for d in rows:
+            d = dict(d)
+            results.append(Goal(
+                id=d["id"], title=d["title"], description=d["description"],
+                goal_type=d["goal_type"], category=d["category"],
+                priority=d["priority"], status=d["status"], source=d["source"],
+                progress=d["progress"], deadline=d["deadline"],
+                triggers=d["triggers"], rationale=d["rationale"],
+                created_by=d["created_by"],
+                milestone_count=d["milestone_count"], milestone_done=d["milestone_done"],
+                created_at=d["created_at"], updated_at=d["updated_at"],
+            ))
+        return results
+
+    def update_goal_status(self, goal_id: str, status: str):
+        self.conn.execute(
+            "UPDATE goals SET status=?, updated_at=? WHERE id=?",
+            (status, self._now(), goal_id)
+        )
+        self.conn.commit()
+
+    def update_goal_progress(self, goal_id: str, progress: float,
+                             milestone_done: int = None):
+        if milestone_done is not None:
+            self.conn.execute(
+                "UPDATE goals SET progress=?, milestone_done=?, updated_at=? WHERE id=?",
+                (progress, milestone_done, self._now(), goal_id)
+            )
+        else:
+            self.conn.execute(
+                "UPDATE goals SET progress=?, updated_at=? WHERE id=?",
+                (progress, self._now(), goal_id)
+            )
+        self.conn.commit()
+
+    # --- Milestones ---
+
+    def save_milestone(self, milestone):
+        self.conn.execute(
+            "INSERT OR REPLACE INTO milestones VALUES (?,?,?,?,?,?,?)",
+            (milestone.id, milestone.goal_id, milestone.description,
+             1 if milestone.done else 0, milestone.order,
+             milestone.created_at, milestone.completed_at)
+        )
+        self.conn.commit()
+
+    def get_milestones_by_goal(self, goal_id: str):
+        from allspark.models import Milestone
+        rows = self.conn.execute(
+            "SELECT * FROM milestones WHERE goal_id=? ORDER BY order_num",
+            (goal_id,)
+        ).fetchall()
+        results = []
+        for d in rows:
+            d = dict(d)
+            results.append(Milestone(
+                id=d["id"], goal_id=d["goal_id"],
+                description=d["description"],
+                done=bool(d["done"]), order=d["order_num"],
+                created_at=d["created_at"], completed_at=d["completed_at"],
+            ))
+        return results
+
+    def complete_milestone(self, milestone_id: str):
+        self.conn.execute(
+            "UPDATE milestones SET done=1, completed_at=? WHERE id=?",
+            (self._now(), milestone_id)
+        )
+        self.conn.commit()
+
+    # --- Diary ---
+
+    def save_diary_entry(self, entry):
+        self.conn.execute(
+            "INSERT OR REPLACE INTO diary_entries VALUES (?,?,?,?,?,?,?,?,?)",
+            (entry.id, entry.date, entry.content, entry.emotion,
+             entry.keywords, entry.related_goal_id, entry.related_event,
+             1 if entry.is_public else 0, entry.created_at)
+        )
+        self.conn.commit()
+
+    def get_diary_entry(self, entry_id: str):
+        from allspark.models import DiaryEntry
+        row = self.conn.execute(
+            "SELECT * FROM diary_entries WHERE id=?", (entry_id,)
+        ).fetchone()
+        if not row:
+            return None
+        d = dict(row)
+        return DiaryEntry(
+            id=d["id"], date=d["date"], content=d["content"],
+            emotion=d["emotion"], keywords=d["keywords"],
+            related_goal_id=d["related_goal_id"],
+            related_event=d["related_event"],
+            is_public=bool(d["is_public"]), created_at=d["created_at"],
+        )
+
+    def get_diary_entries_by_date(self, date: str):
+        from allspark.models import DiaryEntry
+        rows = self.conn.execute(
+            "SELECT * FROM diary_entries WHERE date=? ORDER BY created_at", (date,)
+        ).fetchall()
+        results = []
+        for d in rows:
+            d = dict(d)
+            results.append(DiaryEntry(
+                id=d["id"], date=d["date"], content=d["content"],
+                emotion=d["emotion"], keywords=d["keywords"],
+                related_goal_id=d["related_goal_id"],
+                related_event=d["related_event"],
+                is_public=bool(d["is_public"]), created_at=d["created_at"],
+            ))
+        return results
+
+    def get_diary_entries_by_range(self, start_date: str, end_date: str):
+        from allspark.models import DiaryEntry
+        rows = self.conn.execute(
+            "SELECT * FROM diary_entries WHERE date BETWEEN ? AND ? ORDER BY date",
+            (start_date, end_date)
+        ).fetchall()
+        results = []
+        for d in rows:
+            d = dict(d)
+            results.append(DiaryEntry(
+                id=d["id"], date=d["date"], content=d["content"],
+                emotion=d["emotion"], keywords=d["keywords"],
+                related_goal_id=d["related_goal_id"],
+                related_event=d["related_event"],
+                is_public=bool(d["is_public"]), created_at=d["created_at"],
+            ))
+        return results
+
+    def search_diary(self, query: str):
+        from allspark.models import DiaryEntry
+        rows = self.conn.execute(
+            "SELECT * FROM diary_entries WHERE content LIKE ? ORDER BY date DESC",
+            (f'%{query}%',)
+        ).fetchall()
+        results = []
+        for d in rows:
+            d = dict(d)
+            results.append(DiaryEntry(
+                id=d["id"], date=d["date"], content=d["content"],
+                emotion=d["emotion"], keywords=d["keywords"],
+                related_goal_id=d["related_goal_id"],
+                related_event=d["related_event"],
+                is_public=bool(d["is_public"]), created_at=d["created_at"],
+            ))
+        return results
+
+    def delete_diary_entry(self, entry_id: str):
+        self.conn.execute("DELETE FROM diary_entries WHERE id=?", (entry_id,))
+        self.conn.commit()
+
+    # --- Timeline ---
+
+    def save_timeline_event(self, event):
+        self.conn.execute(
+            "INSERT OR REPLACE INTO timeline_events VALUES (?,?,?,?,?,?,?,?)",
+            (event.id, event.day, event.timestamp, event.event_type,
+             event.title, event.description, event.emotion,
+             event.related_goal_id, 1 if event.auto_generated else 0)
+        )
+        self.conn.commit()
+
+    def get_timeline_events(self, day: int = None, limit: int = 50):
+        from allspark.models import TimelineEvent
+        if day is not None:
+            rows = self.conn.execute(
+                "SELECT * FROM timeline_events WHERE day=? ORDER BY timestamp",
+                (day,)
+            ).fetchall()
+        else:
+            rows = self.conn.execute(
+                "SELECT * FROM timeline_events ORDER BY day DESC, timestamp DESC LIMIT ?",
+                (limit,)
+            ).fetchall()
+        results = []
+        for d in rows:
+            d = dict(d)
+            results.append(TimelineEvent(
+                id=d["id"], day=d["day"], timestamp=d["timestamp"],
+                event_type=d["event_type"], title=d["title"],
+                description=d["description"], emotion=d["emotion"],
+                related_goal_id=d["related_goal_id"],
+                auto_generated=bool(d["auto_generated"]),
+            ))
+        return results
+
+    def get_timeline_events_by_type(self, event_type: str, limit: int = 20):
+        from allspark.models import TimelineEvent
+        rows = self.conn.execute(
+            "SELECT * FROM timeline_events WHERE event_type=? ORDER BY day DESC, timestamp DESC LIMIT ?",
+            (event_type, limit)
+        ).fetchall()
+        results = []
+        for d in rows:
+            d = dict(d)
+            results.append(TimelineEvent(
+                id=d["id"], day=d["day"], timestamp=d["timestamp"],
+                event_type=d["event_type"], title=d["title"],
+                description=d["description"], emotion=d["emotion"],
+                related_goal_id=d["related_goal_id"],
+                auto_generated=bool(d["auto_generated"]),
+            ))
+        return results
+
+    def get_max_day(self) -> int:
+        row = self.conn.execute("SELECT MAX(day) as max_day FROM timeline_events").fetchone()
+        return row["max_day"] if row and row["max_day"] else 0
+
+    # --- Reset Log ---
+
+    def save_reset_log(self, reset_id: str, level: int, reason: str = "",
+                       backup_id: str = "", performed_by: str = ""):
+        self.conn.execute(
+            "INSERT INTO reset_log VALUES (?,?,?,?,?)",
+            (reset_id, level, reason, backup_id, performed_by, self._now())
+        )
+        self.conn.commit()
+
+    def get_reset_logs(self, limit: int = 10):
+        rows = self.conn.execute(
+            "SELECT * FROM reset_log ORDER BY performed_at DESC LIMIT ?",
+            (limit,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    # --- Spark Location (GPS) ---
+
+    def save_location(self, key: str, value: str):
+        self.conn.execute(
+            "INSERT OR REPLACE INTO spark_location VALUES (?,?)",
+            (key, value)
+        )
+        self.conn.commit()
+
+    def get_location(self, key: str) -> str:
+        row = self.conn.execute(
+            "SELECT value FROM spark_location WHERE key=?", (key,)
+        ).fetchone()
+        return row["value"] if row else None
+
+    def get_all_location(self) -> dict:
+        rows = self.conn.execute("SELECT * FROM spark_location").fetchall()
+        return {r["key"]: r["value"] for r in rows}
+
+    # --- Psychological State ---
+
+    def save_psych_state(self, date: str, loneliness: float, stress: float,
+                         interaction_count: int, sleep_quality: str = "unknown",
+                         crisis_count: int = 0, notes: str = ""):
+        self.conn.execute(
+            "INSERT OR REPLACE INTO psych_state VALUES (?,?,?,?,?,?,?)",
+            (date, loneliness, stress, interaction_count,
+             sleep_quality, crisis_count, notes)
+        )
+        self.conn.commit()
+
+    def get_psych_state(self, date: str) -> dict:
+        row = self.conn.execute(
+            "SELECT * FROM psych_state WHERE date=?", (date,)
+        ).fetchone()
+        return dict(row) if row else None
+
+    def get_psych_state_range(self, start_date: str, end_date: str) -> list:
+        rows = self.conn.execute(
+            "SELECT * FROM psych_state WHERE date BETWEEN ? AND ? ORDER BY date",
+            (start_date, end_date)
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def get_latest_psych_state(self) -> dict:
+        row = self.conn.execute(
+            "SELECT * FROM psych_state ORDER BY date DESC LIMIT 1"
+        ).fetchone()
+        return dict(row) if row else None

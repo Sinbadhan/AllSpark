@@ -10,6 +10,11 @@ from pathlib import Path
 from typing import Optional, Callable
 
 from allspark.models import KnowledgeEntry
+from allspark.config import (
+    SPARKNET_DISCOVERY_PORT, SPARKNET_EXCHANGE_PORT,
+    SPARKNET_BEACON_INTERVAL, SPARKNET_DISCOVERY_TIMEOUT,
+    SPARKNET_MESSAGE_ENCODING, SPARKNET_BUFFER_SIZE,
+)
 
 
 class ChannelType(Enum):
@@ -81,12 +86,6 @@ class NetworkMessage:
             payload=d.get("payload", {}),
             timestamp=d.get("timestamp", ""),
         )
-
-
-DISCOVERY_PORT = 7979
-EXCHANGE_PORT = 7980
-BEACON_INTERVAL = 30
-DISCOVERY_TIMEOUT = 10
 
 
 class SparkNetwork:
@@ -201,13 +200,10 @@ class SparkNetwork:
             return {"categories": {}, "total": 0}
 
         categories = {}
-        rows = self.db.conn.execute(
-            "SELECT category, COUNT(*) as cnt FROM knowledge GROUP BY category"
-        ).fetchall()
-        for r in rows:
+        for r in self.db.get_knowledge_categories():
             categories[r["category"]] = r["cnt"]
 
-        total = self.db.conn.execute("SELECT COUNT(*) as cnt FROM knowledge").fetchone()["cnt"]
+        total = self.db.get_knowledge_count()
 
         return {
             "spark_id": self.spark_id,
@@ -373,22 +369,22 @@ class SparkNetwork:
                     },
                 )
                 data = beacon.to_json().encode("utf-8")
-                sock.sendto(data, ("<broadcast>", DISCOVERY_PORT))
+                sock.sendto(data, ("<broadcast>", SPARKNET_DISCOVERY_PORT))
             except Exception:
                 pass
-            time.sleep(BEACON_INTERVAL)
+            time.sleep(SPARKNET_BEACON_INTERVAL)
 
         sock.close()
 
     def _listen_for_beacons(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(("", DISCOVERY_PORT))
-        sock.settimeout(DISCOVERY_TIMEOUT)
+        sock.bind(("", SPARKNET_DISCOVERY_PORT))
+        sock.settimeout(SPARKNET_DISCOVERY_TIMEOUT)
 
         while self._running:
             try:
-                data, addr = sock.recvfrom(4096)
+                data, addr = sock.recvfrom(SPARKNET_BUFFER_SIZE)
                 msg = NetworkMessage.from_json(data.decode("utf-8"))
 
                 if msg.msg_type == "spark_beacon" and msg.sender_id != self.spark_id:
@@ -415,7 +411,7 @@ class SparkNetwork:
                 node_id=node_id,
                 spark_id=node_id,
                 address=addr,
-                port=EXCHANGE_PORT,
+                port=SPARKNET_EXCHANGE_PORT,
                 channel=ChannelType.LAN,
                 status=NodeStatus.CONNECTED,
                 knowledge_count=index.get("total", 0),
@@ -438,7 +434,7 @@ class SparkNetwork:
 
             response_data = b""
             while True:
-                chunk = sock.recv(4096)
+                chunk = sock.recv(SPARKNET_BUFFER_SIZE)
                 if not chunk:
                     break
                 response_data += chunk
@@ -451,12 +447,12 @@ class SparkNetwork:
         finally:
             sock.close()
 
-    def start_exchange_server(self, host: str = "0.0.0.0", port: int = EXCHANGE_PORT) -> dict:
+    def start_exchange_server(self, host: str = "0.0.0.0", port: int = SPARKNET_EXCHANGE_PORT) -> dict:
         def _handle_client(conn, addr):
             try:
                 data = b""
                 while True:
-                    chunk = conn.recv(4096)
+                    chunk = conn.recv(SPARKNET_BUFFER_SIZE)
                     if not chunk:
                         break
                     data += chunk

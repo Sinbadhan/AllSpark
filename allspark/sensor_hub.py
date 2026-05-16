@@ -96,7 +96,7 @@ class SensorHub:
             name=name,
             sensor_type=sensor_type,
             interface=interface,
-            available=(interface != "simulated" or True),
+            available=(interface != "simulated"),
             read_interval=read_interval,
         )
         self._devices[name] = device
@@ -246,30 +246,24 @@ class SensorHub:
         return reading
 
     def _read_simulated(self, device: SensorDevice) -> SensorReading:
-        import random
-        defaults = {
-            SensorType.TEMPERATURE.value: (22.0, 2.0, "°C"),
-            SensorType.HUMIDITY.value: (55.0, 5.0, "%"),
-            SensorType.PRESSURE.value: (1013.0, 10.0, "hPa"),
-            SensorType.GPS.value: (39.9, 0.01, "lat"),
-            SensorType.LIGHT.value: (500.0, 200.0, "lux"),
-            SensorType.AIR_QUALITY.value: (50.0, 20.0, "ppm"),
-            SensorType.MOTION.value: (0.0, 0.0, "binary"),
-            SensorType.WATER_LEVEL.value: (15.0, 5.0, "cm"),
+        units = {
+            SensorType.TEMPERATURE.value: "°C",
+            SensorType.HUMIDITY.value: "%",
+            SensorType.PRESSURE.value: "hPa",
+            SensorType.GPS.value: "lat",
+            SensorType.LIGHT.value: "lux",
+            SensorType.AIR_QUALITY.value: "ppm",
+            SensorType.MOTION.value: "binary",
+            SensorType.WATER_LEVEL.value: "cm",
         }
-
-        base, variance, unit = defaults.get(
-            device.sensor_type, (0.0, 0.0, "")
-        )
-        value = base + random.uniform(-variance, variance) if variance > 0 else base
 
         return SensorReading(
             sensor_type=device.sensor_type,
             timestamp=datetime.now().isoformat(),
-            value=round(value, 1),
-            unit=unit,
-            status="simulated",
-            source="simulated",
+            value=None,
+            unit=units.get(device.sensor_type, ""),
+            status="no_data",
+            source="no_data",
         )
 
     def _check_alerts(self, device: SensorDevice, reading: SensorReading):
@@ -405,11 +399,5 @@ class SensorHub:
                 bus.close()
             except Exception:
                 pass
-
-        if self._gpio_available:
-            detected.append({"address": "GPIO17", "name": "Motion Sensor", "type": SensorType.MOTION.value, "interface": "gpio"})
-
-        if not detected:
-            detected.append({"address": "simulated", "name": "Simulated Sensors", "type": "all", "interface": "simulated"})
 
         return detected

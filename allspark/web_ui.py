@@ -49,7 +49,7 @@ MODEL_DOWNLOAD_URLS = {
 
 
 def create_app(db_path: Optional[str] = None) -> FastAPI:
-    app = FastAPI(title="AllSpark 火种", version="0.2.0")
+    app = FastAPI(title="ALLSPARK", version="0.2.0")
 
     db = Database(db_path)
     init_language(db)
@@ -260,7 +260,9 @@ def _register_api_routes(app):
                     "amount": r.current_amount,
                     "unit": r.unit,
                     "daily_consumption": r.daily_consumption,
+                    "daily_intake": r.daily_intake,
                     "remaining_hours": r.estimated_remaining_hours,
+                    "offline": r.current_amount == 0 and r.daily_consumption == 0,
                 }
                 for r in resources
             ],
@@ -281,6 +283,7 @@ def _register_api_routes(app):
                 "daily_consumption": r.daily_consumption,
                 "daily_intake": r.daily_intake,
                 "remaining_hours": r.estimated_remaining_hours,
+                "offline": r.current_amount == 0 and r.daily_consumption == 0,
             }
             for r in resources
         ]
@@ -888,13 +891,237 @@ def _register_api_routes(app):
         return {"snapshots": app.state.preserve.list_snapshots()}
 
 
+
+# ============================================================
+# Phase 7 API Endpoints
+# ============================================================
+
+@app.get("/api/goals")
+async def api_goals():
+    """获取所有活跃目标"""
+    if not hasattr(app.state, 'goal_engine') or app.state.goal_engine is None:
+        return {"error": "Goal engine not loaded", "goals": []}
+    goals = app.state.goal_engine.get_active_goals()
+    return {"goals": [
+        {
+            "id": g.id, "title": g.title, "description": g.description,
+            "priority": g.priority, "status": g.status, "progress": g.progress,
+            "category": g.category, "milestone_done": g.milestone_done,
+            "milestone_count": g.milestone_count, "deadline": g.deadline,
+        } for g in goals
+    ]}
+
+@app.get("/api/goals/{goal_id}")
+async def api_goal_detail(goal_id: str):
+    """获取目标详情"""
+    if not hasattr(app.state, 'goal_engine') or app.state.goal_engine is None:
+        return {"error": "Goal engine not loaded"}
+    goal = app.state.goal_engine.get_goal(goal_id)
+    if not goal:
+        return {"error": "Goal not found"}
+    milestones = app.state.goal_engine.get_milestones(goal_id)
+    return {
+        "goal": {
+            "id": goal.id, "title": goal.title, "description": goal.description,
+            "priority": goal.priority, "status": goal.status, "progress": goal.progress,
+            "category": goal.category, "source": goal.source,
+            "milestone_done": goal.milestone_done, "milestone_count": goal.milestone_count,
+            "deadline": goal.deadline, "rationale": goal.rationale,
+        },
+        "milestones": [
+            {"id": m.id, "description": m.description, "done": m.done, "order": m.order}
+            for m in milestones
+        ],
+    }
+
+@app.post("/api/goals/add")
+async def api_add_goal(request: Request):
+    """手动添加目标"""
+    if not hasattr(app.state, 'goal_engine') or app.state.goal_engine is None:
+        return {"error": "Goal engine not loaded"}
+    data = await request.json()
+    goal = app.state.goal_engine.add_manual_goal(
+        title=data.get("title", ""),
+        description=data.get("description", ""),
+        priority=data.get("priority", "medium"),
+        category=data.get("category", "survival"),
+    )
+    return {"goal": {"id": goal.id, "title": goal.title}}
+
+@app.post("/api/goals/{goal_id}/complete")
+async def api_complete_goal(goal_id: str):
+    """完成目标"""
+    if not hasattr(app.state, 'goal_engine') or app.state.goal_engine is None:
+        return {"error": "Goal engine not loaded"}
+    success = app.state.goal_engine.complete_goal(goal_id)
+    return {"success": success}
+
+@app.post("/api/milestones/{milestone_id}/complete")
+async def api_complete_milestone(milestone_id: str):
+    """完成里程碑"""
+    if not hasattr(app.state, 'goal_engine') or app.state.goal_engine is None:
+        return {"error": "Goal engine not loaded"}
+    success = app.state.goal_engine.complete_milestone(milestone_id)
+    return {"success": success}
+
+@app.get("/api/briefing")
+async def api_briefing():
+    """获取每日简报"""
+    if not hasattr(app.state, 'daily_briefing') or app.state.daily_briefing is None:
+        return {"error": "Briefing module not loaded"}
+    briefing = app.state.daily_briefing.generate()
+    return {"briefing": briefing}
+
+@app.get("/api/briefing/short")
+async def api_briefing_short():
+    """获取简化版简报"""
+    if not hasattr(app.state, 'daily_briefing') or app.state.daily_briefing is None:
+        return {"error": "Briefing module not loaded"}
+    briefing = app.state.daily_briefing.generate_short()
+    return {"briefing": briefing}
+
+@app.get("/api/timeline")
+async def api_timeline(day: int = None, limit: int = 50):
+    """获取时间线"""
+    if not hasattr(app.state, 'timeline') or app.state.timeline is None:
+        return {"error": "Timeline module not loaded"}
+    events = app.state.timeline.get_events(day=day, limit=limit)
+    return {"events": [
+        {
+            "id": e.id, "day": e.day, "timestamp": e.timestamp,
+            "event_type": e.event_type, "title": e.title,
+            "description": e.description, "emotion": e.emotion,
+        } for e in events
+    ]}
+
+@app.get("/api/timeline/recent")
+async def api_timeline_recent(days: int = 7):
+    """获取最近N天的时间线"""
+    if not hasattr(app.state, 'timeline') or app.state.timeline is None:
+        return {"error": "Timeline module not loaded"}
+    text = app.state.timeline.format_recent(days=days)
+    return {"timeline": text}
+
+@app.get("/api/diary")
+async def api_diary(date: str = None):
+    """获取日记"""
+    if not hasattr(app.state, 'diary') or app.state.diary is None:
+        return {"error": "Diary module not loaded"}
+    if date:
+        entries = app.state.diary.get_by_date(date)
+    else:
+        latest = app.state.diary.get_latest()
+        entries = [latest] if latest else []
+    return {"entries": [
+        {
+            "id": e.id, "date": e.date, "content": e.content,
+            "emotion": e.emotion, "keywords": e.keywords,
+        } for e in entries
+    ]}
+
+@app.post("/api/diary/add")
+async def api_add_diary(request: Request):
+    """添加日记"""
+    if not hasattr(app.state, 'diary') or app.state.diary is None:
+        return {"error": "Diary module not loaded"}
+    data = await request.json()
+    entry = app.state.diary.create_entry(
+        content=data.get("content", ""),
+        related_goal_id=data.get("related_goal_id", ""),
+    )
+    return {"entry": {"id": entry.id, "date": entry.date}}
+
+@app.get("/api/diary/review")
+async def api_diary_review(days: int = 7):
+    """日记回顾"""
+    if not hasattr(app.state, 'diary') or app.state.diary is None:
+        return {"error": "Diary module not loaded"}
+    from datetime import datetime, timedelta
+    end_date = datetime.now().strftime("%Y-%m-%d")
+    start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    entries = app.state.diary.get_range(start_date, end_date)
+    text = app.state.diary.format_review(entries, days=days)
+    return {"review": text}
+
+@app.get("/api/gps")
+async def api_gps():
+    """获取 GPS 位置"""
+    if not hasattr(app.state, 'gps_manager') or app.state.gps_manager is None:
+        return {"error": "GPS module not loaded", "location": None}
+    loc = app.state.gps_manager.get_location()
+    return {"location": loc}
+
+@app.post("/api/gps/set")
+async def api_set_gps(request: Request):
+    """设置 GPS 位置"""
+    if not hasattr(app.state, 'gps_manager') or app.state.gps_manager is None:
+        return {"error": "GPS module not loaded"}
+    data = await request.json()
+    lat = data.get("latitude", 0)
+    lon = data.get("longitude", 0)
+    alt = data.get("altitude", 0)
+    app.state.gps_manager.set_location(lat, lon, alt)
+    return {"success": True, "location": app.state.gps_manager.get_location()}
+
+@app.get("/api/gps/nearby")
+async def api_gps_nearby(radius_km: float = 5.0):
+    """获取附近 POI"""
+    if not hasattr(app.state, 'gps_manager') or app.state.gps_manager is None:
+        return {"error": "GPS module not loaded", "nearby": []}
+    nearby = app.state.gps_manager.get_nearby_pois(radius_km=radius_km)
+    return {"nearby": [
+        {
+            "poi": {"id": item["poi"].id, "name": item["poi"].name, "type": item["poi"].type},
+            "distance_km": item["distance_km"],
+        } for item in nearby
+    ]}
+
+@app.post("/api/reset/{level}")
+async def api_reset(level: int, request: Request):
+    """执行系统重置"""
+    if not hasattr(app.state, 'reset_manager') or app.state.reset_manager is None:
+        return {"error": "Reset manager not loaded"}
+    data = await request.json()
+    confirm = data.get("confirm", False)
+    if not confirm:
+        return {"error": "Confirmation required. Send confirm=true"}
+    
+    if level == 1:
+        result = app.state.reset_manager.reset_assessment()
+    elif level == 2:
+        result = app.state.reset_manager.reset_archive()
+    elif level == 3:
+        password = data.get("password", "")
+        result = app.state.reset_manager.reset_factory(password)
+    else:
+        return {"error": "Invalid reset level (1/2/3)"}
+    
+    return {"success": result.get("success", False), "message": result.get("message", "")}
+
+@app.get("/api/psych")
+async def api_psych():
+    """获取心理状态"""
+    if not hasattr(app.state, 'psych_tracker') or app.state.psych_tracker is None:
+        return {"error": "Psych tracker not loaded"}
+    latest = app.state.psych_tracker.get_latest()
+    return {"state": latest}
+
+@app.get("/api/reset/logs")
+async def api_reset_logs(limit: int = 10):
+    """获取重置日志"""
+    if not hasattr(app.state, 'reset_manager') or app.state.reset_manager is None:
+        return {"error": "Reset manager not loaded"}
+    logs = app.state.reset_manager.get_logs(limit=limit)
+    return {"logs": logs}
+
+
 def get_init_html() -> str:
     return '''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>AllSpark 火种 — 初始化</title>
+<title>ALLSPARK — INIT</title>
 <style>
 :root {
   --bg: #0a0a0a; --card: #141414; --border: #2a2a2a;
@@ -913,7 +1140,7 @@ body {
 }
 .init-card {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: 16px; padding: 32px 24px; margin-bottom: 16px;
+  border-radius: 8px; padding: 32px 24px; margin-bottom: 16px;
 }
 .init-card h1 { font-size: 1.5rem; color: var(--accent); margin-bottom: 4px; }
 .init-card .subtitle { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 24px; }
@@ -943,7 +1170,7 @@ h2 { font-size: 1.1rem; color: var(--accent); margin-bottom: 16px; }
 .hw-item .value { font-size: 0.95rem; font-weight: 600; }
 
 .tier-badge {
-  display: inline-block; padding: 6px 16px; border-radius: 20px;
+  display: inline-block; padding: 6px 16px; border-radius: 8px;
   font-weight: 700; font-size: 0.9rem; margin-bottom: 12px;
 }
 .tier-phantom { background: #ff444433; color: #ff6666; }
@@ -984,7 +1211,7 @@ h2 { font-size: 1.1rem; color: var(--accent); margin-bottom: 16px; }
   display: flex; gap: 12px; margin-bottom: 16px;
 }
 .lang-btn {
-  flex: 1; padding: 16px; border: 2px solid var(--border); border-radius: 12px;
+  flex: 1; padding: 16px; border: 2px solid var(--border); border-radius: 8px;
   background: var(--bg); color: var(--text); cursor: pointer; text-align: center;
   transition: all 0.2s;
 }
@@ -1009,8 +1236,8 @@ h2 { font-size: 1.1rem; color: var(--accent); margin-bottom: 16px; }
 <body>
 <div class="init-container">
   <div class="init-card">
-    <h1>🔥 AllSpark 火种</h1>
-    <div class="subtitle">Offline AI Survival System / 离线人工智能生存系统</div>
+    <h1>ALLSPARK</h1>
+    <div class="subtitle">Offline AI Survival System</div>
 
     <div class="step-indicator">
       <div class="step-dot" id="dot-1"></div>
@@ -1227,7 +1454,7 @@ def get_index_html() -> str:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>AllSpark 火种</title>
+<title>ALLSPARK</title>
 <style>
 :root {
   --bg: #0a0a0a;
@@ -1235,17 +1462,18 @@ def get_index_html() -> str:
   --card-hover: #1a1a1a;
   --border: #2a2a2a;
   --text: #e0e0e0;
-  --text-dim: #888;
+  --text-dim: #666;
   --accent: #ff6b35;
   --accent-dim: #cc5529;
   --danger: #ff4444;
   --warning: #ffaa00;
   --success: #44cc44;
   --info: #4488ff;
+  --mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", monospace;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--mono), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -1260,13 +1488,13 @@ header {
   padding: 12px 16px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
   margin-bottom: 12px;
 }
 header h1 { font-size: 1.2rem; color: var(--accent); }
 header .phase-badge {
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 600;
 }
@@ -1310,7 +1538,7 @@ nav button.active {
 .card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 16px;
   margin-bottom: 12px;
 }
@@ -1432,7 +1660,7 @@ nav button.active {
   display: inline-block;
   max-width: 80%;
   padding: 10px 14px;
-  border-radius: 12px;
+  border-radius: 8px;
   font-size: 0.85rem;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -1554,8 +1782,8 @@ nav button.active {
 <body>
 <div class="app">
   <header>
-    <h1>🔥 AllSpark 火种</h1>
-    <span id="phase-badge" class="phase-badge phase-0">Phase 0</span>
+    <h1>ALLSPARK</h1>
+    <span id="phase-badge" class="phase-badge phase-0">PHASE 0</span>
   </header>
 
   <nav id="nav">
@@ -1666,17 +1894,27 @@ async function api(path, opts = {}) {
 async function refreshDashboard() {
   const data = await api("/api/status");
   const badge = document.getElementById("phase-badge");
-  badge.textContent = "Phase " + data.phase;
+  badge.textContent = "PHASE " + data.phase;
   badge.className = "phase-badge phase-" + data.phase;
 
   const grid = document.getElementById("resource-grid");
+  const resourceLabels = {power:"⚡",water:"💧",food:"🍞",fire:"🔥",storage:"💾"};
   grid.innerHTML = data.resources.map(r => {
+    if (r.offline) {
+      return `<div class="resource-item" style="opacity:0.5">
+        <div class="icon">${resourceLabels[r.type] || "📦"}</div>
+        <div class="name">${r.type}</div>
+        <div class="value" style="color:var(--text-dim)">--</div>
+        <div class="remaining">OFFLINE</div>
+        <div class="resource-bar"><div class="resource-bar-fill" style="width:0%;background:var(--border)"></div></div>
+      </div>`;
+    }
     const pct = Math.min(100, Math.max(0, (r.remaining_hours / 168) * 100));
     const color = pct > 50 ? "var(--success)" : pct > 20 ? "var(--warning)" : "var(--danger)";
     return `<div class="resource-item">
-      <div class="icon">${resourceIcons[r.type] || "📦"}</div>
+      <div class="icon">${resourceLabels[r.type] || "📦"}</div>
       <div class="name">${r.type}</div>
-      <div class="value">${r.amount}${r.unit}</div>
+      <div class="value" style="font-family:'JetBrains Mono','Fira Code','SF Mono',monospace">${r.amount}<span style="font-size:0.7em;color:var(--text-dim)">${r.unit}</span></div>
       <div class="remaining">~${Math.round(r.remaining_hours)}h left</div>
       <div class="resource-bar"><div class="resource-bar-fill" style="width:${pct}%;background:${color}"></div></div>
     </div>`;

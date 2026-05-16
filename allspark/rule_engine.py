@@ -98,13 +98,107 @@ class RuleEngine:
             from allspark.data_preservation import DataPreservation
             self.data_preservation = DataPreservation(db=self.db)
             self.registry.register("data_preservation", self.data_preservation)
+            integrity = self.data_preservation.startup_integrity_check()
+            if integrity.get("warnings"):
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"Startup integrity check: {integrity['warnings']}"
+                )
 
         if self.registry.should_load("boot_manager"):
             from allspark.boot_manager import BootManager
             self.boot_manager = BootManager(db=self.db)
             self.registry.register("boot_manager", self.boot_manager)
 
+        if self.registry.should_load("goal_engine"):
+            from allspark.goal_engine import GoalEngine
+            self.goal_engine = GoalEngine(
+                db=self.db, resource_mgr=self.resource_mgr,
+                survival=self.survival,
+            )
+            self.registry.register("goal_engine", self.goal_engine)
+
+        if self.registry.should_load("reset_manager"):
+            from allspark.reset_manager import ResetManager
+            self.reset_manager = ResetManager(
+                db=self.db, data_preservation=self.data_preservation,
+                resource_mgr=self.resource_mgr,
+            )
+            self.registry.register("reset_manager", self.reset_manager)
+
+        if self.registry.should_load("daily_briefing"):
+            from allspark.daily_briefing import DailyBriefing
+            self.daily_briefing = DailyBriefing(
+                db=self.db, resource_mgr=self.resource_mgr,
+                survival=self.survival,
+                goal_engine=getattr(self, 'goal_engine', None),
+                personality=getattr(self, 'personality', None),
+            )
+            self.registry.register("daily_briefing", self.daily_briefing)
+
+        if self.registry.should_load("timeline"):
+            from allspark.timeline import TimelineManager
+            self.timeline = TimelineManager(
+                db=self.db,
+                experience_engine=getattr(self, 'experience', None),
+            )
+            self.registry.register("timeline", self.timeline)
+
+        if self.registry.should_load("diary"):
+            from allspark.diary import DiaryManager
+            self.diary = DiaryManager(
+                db=self.db,
+                timeline=getattr(self, 'timeline', None),
+            )
+            self.registry.register("diary", self.diary)
+
+        if self.registry.should_load("weather"):
+            from allspark.weather import WeatherPredictor
+            self.weather = WeatherPredictor(
+                db=self.db,
+                sensor_hub=getattr(self, 'sensor_hub', None),
+            )
+            self.registry.register("weather", self.weather)
+
+        if self.registry.should_load("psychology"):
+            from allspark.psychology import PsychologyTracker
+            self.psychology = PsychologyTracker(
+                db=self.db,
+                personality=getattr(self, 'personality', None),
+            )
+            self.registry.register("psychology", self.psychology)
+
+        if self.registry.should_load("gps_manager"):
+            from allspark.gps_manager import GPSManager
+            self.gps_manager = GPSManager(
+                db=self.db,
+                sensor_hub=getattr(self, 'sensor_hub', None),
+            )
+            self.registry.register("gps_manager", self.gps_manager)
+
+        if self.registry.should_load("environment"):
+            from allspark.environment import EnvironmentAssessor
+            self.environment = EnvironmentAssessor(
+                db=self.db,
+                weather=getattr(self, 'weather', None),
+                resource_mgr=self.resource_mgr,
+                survival=self.survival,
+            )
+            self.registry.register("environment", self.environment)
+
+        if self.registry.should_load("voice"):
+            from allspark.voice import VoiceManager
+            self.voice = VoiceManager(
+                db=self.db,
+                diary=getattr(self, 'diary', None),
+                llm_engine=getattr(self, 'llm', None),
+            )
+            self.registry.register("voice", self.voice)
+
         self.registry.save_to_db(self.db)
+        self._assessment_cache = None
+        self._assessment_cache_time = 0
+        self._assessment_cache_ttl = 60
 
     def _load_knowledge(self):
         from allspark.knowledge_data import get_tier0_knowledge
@@ -127,16 +221,39 @@ class RuleEngine:
             if existing is None:
                 self.db.save_knowledge(entry)
 
-    def process_input(self, user_input: str) -> str:
+    def _refresh_assessment(self, force: bool = False) -> dict:
+        import time as _time
+        now = _time.time()
+        if not force and self._assessment_cache and (now - self._assessment_cache_time) < self._assessment_cache_ttl:
+            return self._assessment_cache
+
         mode, _ = self.resource_mgr.update_operating_mode()
         warnings = self.resource_mgr.check_warnings()
         assessment = self.survival.assess()
         phase = assessment["phase"]
         resources = assessment["resources"]
 
-        self.personality.determine_mode(mode, warnings, phase)
+        self._assessment_cache = {
+            "mode": mode,
+            "warnings": warnings,
+            "assessment": assessment,
+            "phase": phase,
+            "resources": resources,
+        }
+        self._assessment_cache_time = now
+        return self._assessment_cache
 
+    def process_input(self, user_input: str) -> str:
         intent = self.personality.classify_intent(user_input)
+        needs_fresh = intent in ("status", "resource")
+        cached = self._refresh_assessment(force=needs_fresh)
+        mode = cached["mode"]
+        warnings = cached["warnings"]
+        assessment = cached["assessment"]
+        phase = cached["phase"]
+        resources = cached["resources"]
+
+        self.personality.determine_mode(mode, warnings, phase)
 
         if intent == "status":
             return self._handle_status(assessment, mode, warnings)
@@ -243,6 +360,37 @@ class RuleEngine:
             "  模块 / module               — 查看模块状态",
             "  模块 enable <名>            — 启用模块",
             "  模块 disable <名>           — 禁用模块",
+            "",
+            "── 目标与重置 ──",
+            "  目标 / goals                — 查看目标清单",
+            "  目标 添加 <标题>            — 添加手动目标",
+            "  目标 完成/放弃/暂停/恢复 <ID> — 目标操作",
+            "  目标 里程碑 <ID>            — 查看目标里程碑",
+            "  目标 自动生成               — 根据状态生成目标",
+            "  重置 评估/档案/出厂         — 三级重置",
+            "",
+            "── 生存体验 ──",
+            "  简报 / briefing             — 今日生存简报",
+            "  时间线 / timeline           — 生存时间线",
+            "  时间线 day <N>              — 查看第N天事件",
+            "  日记 写 / diary add         — 写日记",
+            "  日记 查看/删除/情绪         — 日记管理",
+            "  天气 / weather              — 天气预测",
+            "  天气 气压 <hPa>             — 输入气压数据",
+            "  天气 云图                   — 云图识别指南",
+            "  心理 / psychology           — 心理状态",
+            "  心理 评估                   — 心理自评问卷",
+            "",
+            "── 感知与语音 ──",
+            "  定位 / gps                  — 当前位置",
+            "  定位 set <纬度> <经度>      — 手动设置位置",
+            "  定位 轨迹/记录/距离         — 轨迹管理",
+            "  环境 / env                  — 环境评估",
+            "  语音 load [模型]            — 加载语音模型",
+            "  语音 识别 [文件]            — 语音转文字",
+            "  语音 说话 <文本>            — 语音合成",
+            "  语音 日记                   — 语音日记",
+            "",
             f"  {t('help_help')}",
         ]
         return "\n".join(help_lines)

@@ -183,24 +183,24 @@ class ResourceManager:
         advice = []
         if mode == OperatingMode.ECONOMY:
             advice = [
-                "已自动切换至节能模式，LLM 已禁用",
-                "仅规则引擎运行，回答生存相关问题",
-                "建议：检查太阳能板/手摇发电机是否可用",
-                "建议：评估附近是否有可获取电池的废墟",
-                "如果在 12h 内无法补充电力，将进入休眠模式",
+                t("advice_economy_1"),
+                t("advice_economy_2"),
+                t("advice_economy_3"),
+                t("advice_economy_4"),
+                t("advice_economy_5"),
             ]
         elif mode == OperatingMode.HIBERNATION:
             advice = [
-                "🚨 已进入休眠模式！",
-                "仅维持核心数据库运行",
-                "每次唤醒只回答生存相关问题",
-                "请尽快补充电力！",
+                t("advice_hibernation_1"),
+                t("advice_hibernation_2"),
+                t("advice_hibernation_3"),
+                t("advice_hibernation_4"),
             ]
         elif mode == OperatingMode.STANDARD:
             advice = [
-                "已切换至标准模式",
-                "LLM 降载运行",
-                "后台维护任务已暂停",
+                t("advice_standard_1"),
+                t("advice_standard_2"),
+                t("advice_standard_3"),
             ]
         return advice
 
@@ -209,79 +209,100 @@ class ResourceManager:
         state = self.db.get_operating_state()
         mode = OperatingMode(state.mode)
         mode_names = {
-            OperatingMode.PROACTIVE: "主动模式",
-            OperatingMode.STANDARD: "标准模式",
-            OperatingMode.ECONOMY: "节能模式",
-            OperatingMode.HIBERNATION: "休眠模式",
-            OperatingMode.RECOVERY: "恢复模式",
+            OperatingMode.PROACTIVE: t("mode_proactive"),
+            OperatingMode.STANDARD: t("mode_standard"),
+            OperatingMode.ECONOMY: t("mode_economy"),
+            OperatingMode.HIBERNATION: t("mode_hibernation"),
+            OperatingMode.RECOVERY: t("mode_recovery"),
         }
         lines = [
-            f"运行模式：{mode_names.get(mode, mode.value)}",
+            t("operating_mode_label", mode=mode_names.get(mode, mode.value)),
             "",
         ]
+
+        has_data = False
         for r in resources:
+            is_offline = r.current_amount == 0 and r.daily_consumption == 0
+            if is_offline:
+                icon = {
+                    ResourceType.POWER: "⚡", ResourceType.WATER: "💧",
+                    ResourceType.FOOD: "🍞", ResourceType.FIRE: "🔥",
+                    ResourceType.STORAGE: "💾",
+                }.get(r.type, "📦")
+                label = t(f"resource_{r.type.value}")
+                lines.append(f"  {icon} {label}: [dim]{t('resource_offline')}[/]")
+                continue
+
+            has_data = True
             if r.type == ResourceType.POWER:
-                lines.append(f"⚡ 电力：{r.current_amount:.0f}Wh | 预计续航 {r.estimated_remaining_hours:.1f}h | 消耗 {r.daily_consumption:.0f}Wh/天 | 充入 {r.daily_intake:.0f}Wh/天")
+                lines.append(t("res_power_fmt", amount=r.current_amount, hours=r.estimated_remaining_hours, consumption=r.daily_consumption, intake=r.daily_intake))
             elif r.type == ResourceType.WATER:
                 days = r.estimated_remaining_hours / 24.0
-                lines.append(f"💧 饮水：{r.current_amount:.1f}L | 预计 {days:.1f}天 | 消耗 {r.daily_consumption:.1f}L/天")
+                lines.append(t("res_water_fmt", amount=r.current_amount, days=days, consumption=r.daily_consumption))
             elif r.type == ResourceType.FOOD:
                 days = r.estimated_remaining_hours / 24.0
-                lines.append(f"🍞 食物：{r.current_amount:.0f}kcal | 预计 {days:.1f}天 | 消耗 {r.daily_consumption:.0f}kcal/天")
+                lines.append(t("res_food_fmt", amount=r.current_amount, days=days, consumption=r.daily_consumption))
             elif r.type == ResourceType.FIRE:
-                lines.append(f"🔥 火源：{r.current_amount:.0f}次 | 消耗 {r.daily_consumption:.0f}次/天")
+                lines.append(t("res_fire_fmt", amount=r.current_amount, consumption=r.daily_consumption))
             elif r.type == ResourceType.STORAGE:
                 total = r.daily_consumption
                 used = r.daily_intake
                 pct = ((total - used) / total * 100) if total > 0 else 0
-                lines.append(f"💾 存储：{used:.0f}/{total:.0f}GB | 剩余 {pct:.1f}%")
-        lines.append("\n⚠️ 以上数据为估算值，仅供参考。可手动输入校正。")
+                lines.append(t("res_storage_fmt", used=used, total=total, pct=pct))
+
+        if not has_data:
+            lines.append(t("resource_not_configured"))
+            lines.append(t("resource_set_hint"))
+            lines.append(t("resource_types_hint"))
+        else:
+            lines.append("\n" + t("data_disclaimer"))
+
         return "\n".join(lines)
 
 
 _DEFAULT_RESOURCES = {
     ResourceType.POWER: Resource(
         type=ResourceType.POWER,
-        current_amount=37.0,
+        current_amount=0.0,
         unit="Wh",
-        daily_consumption=120.0,
+        daily_consumption=0.0,
         daily_intake=0.0,
-        estimated_remaining_hours=7.4,
+        estimated_remaining_hours=0.0,
         last_updated=""
     ),
     ResourceType.WATER: Resource(
         type=ResourceType.WATER,
-        current_amount=5.0,
+        current_amount=0.0,
         unit="L",
-        daily_consumption=2.0,
+        daily_consumption=0.0,
         daily_intake=0.0,
-        estimated_remaining_hours=60.0,
+        estimated_remaining_hours=0.0,
         last_updated=""
     ),
     ResourceType.FOOD: Resource(
         type=ResourceType.FOOD,
-        current_amount=6000.0,
+        current_amount=0.0,
         unit="kcal",
-        daily_consumption=2000.0,
+        daily_consumption=0.0,
         daily_intake=0.0,
-        estimated_remaining_hours=72.0,
+        estimated_remaining_hours=0.0,
         last_updated=""
     ),
     ResourceType.FIRE: Resource(
         type=ResourceType.FIRE,
-        current_amount=20.0,
+        current_amount=0.0,
         unit="次",
-        daily_consumption=3.0,
+        daily_consumption=0.0,
         daily_intake=0.0,
-        estimated_remaining_hours=160.0,
+        estimated_remaining_hours=0.0,
         last_updated=""
     ),
     ResourceType.STORAGE: Resource(
         type=ResourceType.STORAGE,
         current_amount=0.0,
         unit="GB",
-        daily_consumption=16.0,
-        daily_intake=2.0,
+        daily_consumption=0.0,
+        daily_intake=0.0,
         estimated_remaining_hours=0.0,
         last_updated=""
     ),

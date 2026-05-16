@@ -23,6 +23,25 @@ def _checksum(data: str) -> str:
     return f"sha256:{hashlib.sha256(data.encode('utf-8')).hexdigest()}"
 
 
+def _entry_checksum(k: KnowledgeEntry) -> str:
+    canonical = json.dumps({
+        "id": k.id,
+        "category": k.category,
+        "subcategory": k.subcategory,
+        "priority": k.priority,
+        "title": k.title,
+        "summary": k.summary,
+        "steps": k.steps,
+        "prerequisites": k.prerequisites,
+        "warnings": k.warnings,
+        "verification": k.verification,
+        "source": k.source,
+        "version": k.version,
+        "language": k.language,
+    }, sort_keys=True, ensure_ascii=False)
+    return _checksum(canonical)
+
+
 class SKFPackage:
     def __init__(self):
         self.version = SKF_VERSION
@@ -49,12 +68,9 @@ class SKFPackage:
             if category_filter:
                 rows = db.get_knowledge_by_category(category_filter)
             elif priority_max < 3:
-                rows = db.get_knowledge_by_priority(priority_max)
+                rows = db.get_knowledge_by_priority(max_priority=priority_max)
             else:
-                rows = db.conn.execute(
-                    "SELECT * FROM knowledge ORDER BY priority, category"
-                ).fetchall()
-                rows = [db._row_to_entry(r) for r in rows]
+                rows = db.get_knowledge_by_priority(max_priority=3)
 
             if language:
                 rows = [k for k in rows if k.language == language]
@@ -65,11 +81,20 @@ class SKFPackage:
             pkg.experience_log = db.get_recent_experiences(limit=1000)
 
         if include_local:
-            poi_rows = db.conn.execute("SELECT * FROM map_pois").fetchall()
-            for r in poi_rows:
+            for poi in db.get_all_pois():
                 pkg.local_data.append({
                     "type": "map_poi",
-                    "data": dict(r),
+                    "data": {
+                        "id": poi.id,
+                        "name": poi.name,
+                        "type": poi.type,
+                        "description": poi.description,
+                        "distance_km": poi.distance_km,
+                        "direction": poi.direction,
+                        "notes": poi.notes,
+                        "discovered_at": poi.discovered_at,
+                        "verified": 1 if poi.verified else 0,
+                    },
                 })
 
         return pkg
@@ -93,7 +118,7 @@ class SKFPackage:
                 "source": k.source,
                 "version": k.version,
                 "language": k.language,
-                "checksum": _checksum(k.summary),
+                "checksum": _entry_checksum(k),
             }
             knowledge_data.append(entry_dict)
 
@@ -183,6 +208,34 @@ class SKFPackage:
                     )
                     pkg.knowledge_entries.append(entry)
 
+            pkg._checksum_errors = []
+            if SKF_KNOWLEDGE in names:
+                for item in knowledge_data:
+                    stored_checksum = item.get("checksum", "")
+                    if stored_checksum:
+                        content = item.get("content", {})
+                        check_entry = KnowledgeEntry(
+                            id=item["id"],
+                            category=item.get("category", "uncategorized"),
+                            subcategory=item.get("subcategory", ""),
+                            priority=item.get("priority", 3),
+                            title=item.get("title", ""),
+                            summary=content.get("summary", ""),
+                            steps=content.get("steps", []),
+                            prerequisites=content.get("prerequisites", []),
+                            warnings=content.get("warnings", []),
+                            verification=item.get("verification", "unverified"),
+                            source=item.get("source", "other_spark"),
+                            version=item.get("version", 1),
+                            language=item.get("language", "zh"),
+                        )
+                        computed = _entry_checksum(check_entry)
+                        if stored_checksum != computed:
+                            pkg._checksum_errors.append(
+                                f"Knowledge {item['id']}: checksum mismatch "
+                                f"(stored={stored_checksum}, computed={computed})"
+                            )
+
             if SKF_EXPERIENCE in names:
                 experience_raw = zf.read(SKF_EXPERIENCE).decode('utf-8')
                 experience_data = json.loads(experience_raw)
@@ -210,6 +263,9 @@ class SKFPackage:
 
         if not self.version:
             errors.append("Missing version in manifest")
+
+        for err in getattr(self, '_checksum_errors', []):
+            errors.append(err)
 
         seen_ids = set()
         for k in self.knowledge_entries:

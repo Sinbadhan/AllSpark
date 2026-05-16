@@ -193,9 +193,12 @@ class DataPreservation:
 
     def _verify_integrity(self, db_path: Path) -> bool:
         try:
-            conn = sqlite3.connect(str(db_path))
-            result = conn.execute("PRAGMA integrity_check").fetchone()
-            conn.close()
+            if self.db and Path(str(self.db_path)) == db_path.resolve():
+                result = self.db.conn.execute("PRAGMA integrity_check").fetchone()
+            else:
+                conn = sqlite3.connect(str(db_path))
+                result = conn.execute("PRAGMA integrity_check").fetchone()
+                conn.close()
             return result[0] == "ok"
         except Exception:
             return False
@@ -255,3 +258,49 @@ class DataPreservation:
             "snapshot_count": snapshot_count,
             "db_path": str(self.db_path),
         }
+
+    def startup_integrity_check(self) -> dict:
+        result = {
+            "db_file_exists": self.db_path.exists(),
+            "integrity_ok": False,
+            "table_count": 0,
+            "warnings": [],
+        }
+
+        if not self.db_path.exists():
+            result["warnings"].append("Database file does not exist - will be created on first use")
+            return result
+
+        if self.db:
+            result["integrity_ok"] = self.db.check_integrity()
+        else:
+            result["integrity_ok"] = self._verify_integrity(self.db_path)
+
+        if not result["integrity_ok"]:
+            result["warnings"].append("Database integrity check failed - consider restoring from backup")
+            return result
+
+        try:
+            conn = self.db.conn if self.db else sqlite3.connect(str(self.db_path))
+            tables = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+            ).fetchall()
+            result["table_count"] = len(tables)
+
+            expected_tables = {
+                "resources", "tasks", "knowledge", "knowledge_fts",
+                "experience_log", "map_pois", "operating_state",
+                "survivor_state", "hardware_profile",
+                "community_members", "conflicts", "trade_offers",
+            }
+            existing = {t[0] if isinstance(t, (list, tuple)) else t["name"] for t in tables}
+            missing = expected_tables - existing
+            if missing:
+                result["warnings"].append(f"Missing tables: {', '.join(sorted(missing))}")
+
+            if not self.db:
+                conn.close()
+        except Exception as e:
+            result["warnings"].append(f"Schema check error: {e}")
+
+        return result

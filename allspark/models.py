@@ -81,6 +81,98 @@ class TaskPriority(Enum):
     LOW = 3
 
 
+class GoalPriority(Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class GoalStatus(Enum):
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    ABANDONED = "abandoned"
+    PAUSED = "paused"
+
+
+class GoalType(Enum):
+    AUTO = "auto"
+    MANUAL = "manual"
+
+
+class GoalSource(Enum):
+    ASSESSMENT = "assessment"
+    SURVIVOR = "survivor"
+    TRADE = "trade"
+    EXPERIENCE = "experience"
+
+
+class TimelineEventType(Enum):
+    GOAL_COMPLETED = "goal_completed"
+    RESOURCE_CHANGE = "resource_change"
+    MEMBER_JOINED = "member_joined"
+    KNOWLEDGE_ACQUIRED = "knowledge_acquired"
+    MILESTONE = "milestone"
+    DIARY_ENTRY = "diary_entry"
+    SYSTEM_EVENT = "system_event"
+
+
+class ResetLevel(Enum):
+    ASSESSMENT = 1     # L1: 重置评估
+    ARCHIVE = 2        # L2: 重置档案
+    FACTORY = 3        # L3: 重置出厂
+
+
+class GoalPriority(Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class GoalStatus(Enum):
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    ABANDONED = "abandoned"
+    PAUSED = "paused"
+
+
+class GoalType(Enum):
+    AUTO = "auto"
+    MANUAL = "manual"
+
+
+class GoalSource(Enum):
+    ASSESSMENT = "assessment"
+    SURVIVOR = "survivor"
+    TRADE = "trade"
+    EXPERIENCE = "experience"
+
+
+class GoalCategory(Enum):
+    SURVIVAL = "survival"
+    QUALITY = "quality"
+    EXPLORATION = "exploration"
+    COMMUNITY = "community"
+    CIVILIZATION = "civilization"
+
+
+class TimelineEventType(Enum):
+    GOAL_COMPLETED = "goal_completed"
+    RESOURCE_CHANGE = "resource_change"
+    MEMBER_JOINED = "member_joined"
+    KNOWLEDGE_ACQUIRED = "knowledge_acquired"
+    MILESTONE = "milestone"
+    DIARY_ENTRY = "diary_entry"
+    SYSTEM_EVENT = "system_event"
+
+
+class DiaryEmotion(Enum):
+    POSITIVE = "positive"
+    NEUTRAL = "neutral"
+    NEGATIVE = "negative"
+
+
 @dataclass
 class Resource:
     type: ResourceType
@@ -197,3 +289,68 @@ class TradeOffer:
     status: str = "proposed"
     created_at: str = ""
     completed_at: str = ""
+
+
+@dataclass
+class Goal:
+    """PRD §10.1 目标系统 — 生存者需要达成的方向性成果"""
+    id: str
+    title: str
+    description: str = ""
+    goal_type: str = "auto"          # auto / manual
+    category: str = "survival"        # survival / quality / exploration / community / civilization
+    priority: str = "medium"          # critical / high / medium / low
+    status: str = "active"            # active / completed / abandoned / paused
+    source: str = "assessment"        # assessment / survivor / trade / experience
+    progress: float = 0.0             # 0.0 - 1.0
+    deadline: str = ""                # 可选截止日期
+    created_at: str = ""
+    updated_at: str = ""
+    # 自动生成特有
+    triggers: str = ""                # JSON 数组: 触发条件
+    rationale: str = ""               # 为什么生成
+    # 手动添加特有
+    created_by: str = ""              # 生存者名字
+    # 关联
+    milestone_count: int = 0
+    milestone_done: int = 0
+
+
+@dataclass
+class Milestone:
+    """PRD §10.1 目标里程碑 — 目标的关键节点"""
+    id: str
+    goal_id: str
+    description: str
+    done: bool = False
+    order: int = 0
+    created_at: str = ""
+    completed_at: str = ""
+
+
+@dataclass
+class DiaryEntry:
+    """PRD §4.7 火种日记 — 生存者的个人记录"""
+    id: str
+    date: str                         # YYYY-MM-DD
+    content: str
+    emotion: str = "neutral"          # positive / neutral / negative
+    keywords: str = ""                # JSON 数组
+    related_goal_id: str = ""
+    related_event: str = ""
+    is_public: bool = False           # 多人场景是否公开
+    created_at: str = ""
+
+
+@dataclass
+class TimelineEvent:
+    """PRD §4.4 生存时间线 — 自动记录的关键事件"""
+    id: str
+    day: int                          # Day N
+    timestamp: str
+    event_type: str                   # 见 TimelineEventType
+    title: str
+    description: str = ""
+    emotion: str = "neutral"
+    related_goal_id: str = ""
+    auto_generated: bool = True

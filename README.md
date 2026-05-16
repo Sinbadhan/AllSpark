@@ -1,10 +1,10 @@
 # 🔥 AllSpark — Offline AI Survival System
 
-**v0.2.0** | [中文](README_CN.md)
+**v0.6.0** | [中文](README_CN.md)
 
 > **In extreme conditions, preserve and rebuild human civilization.**
 
-AllSpark (AllSpark: A Survival-centric Offline AI Resource Kit) is an offline-first AI survival assistance system. It runs on hardware ranging from Raspberry Pi to laptops, providing knowledge, decision support, and community governance when civilization's infrastructure collapses.
+AllSpark (AllSpark: A Survival-centric Offline AI Resource Kit) is an offline-first AI survival assistance system. It runs on hardware ranging from Raspberry Pi to laptops, providing knowledge, decision support, goal tracking, and community governance when civilization's infrastructure collapses.
 
 ---
 
@@ -28,6 +28,17 @@ AllSpark (AllSpark: A Survival-centric Offline AI Resource Kit) is an offline-fi
 | Survival Assessment | 5-dimensional resource assessment + phase determination + bottleneck identification |
 | Personality System | Crisis/Stable/Companion/Multiplayer/Renaissance — 5 adaptive modes |
 | Experience Accumulation | Experience recording → pattern recognition → knowledge entry loop |
+| Daily Briefing | Auto-generated survival report: resources + warnings + goals + tasks + knowledge tip |
+| Psychology Tracking | Loneliness/stress index + self-assessment questionnaire + intervention triggers |
+
+### 🎯 Goal & Mission System
+| Feature | Description |
+|---------|-------------|
+| Goal Engine | Auto-generate goals from resource state + 6 templates + manual goals |
+| Milestone Tracking | Milestones auto-calculate progress; all done → goal completed |
+| Goal-Task Linkage | Goals → tasks bi-directional sync; completing tasks advances milestones |
+| Weather-Goal Linkage | Severe weather auto-pauses outdoor goals + creates shelter reinforcement |
+| 3-Level Reset | L1 (assessment) / L2 (archive) / L3 (factory) + safety constraints + cooldown |
 
 ### 📚 Knowledge System
 | Tier | Content | Entries |
@@ -36,11 +47,11 @@ AllSpark (AllSpark: A Survival-centric Offline AI Resource Kit) is an offline-fi
 | Tier 1 | Short-term survival (agriculture/chemistry/mechanics/weather/energy) | 10 |
 | Tier 2 | Mid-term self-sufficiency (composting/paper-making/hydropower/biogas/herbal) | 10 |
 | Tier 3 | Long-term community (governance/forging/power generation/law/civilization archives) | 17 |
+| SKF Pack | ZIP format standardized knowledge import/export with SHA256 checksum |
 
 ### 📡 Connectivity & Communication
 | Feature | Description |
 |---------|-------------|
-| SKF Knowledge Pack | ZIP format standardized knowledge import/export |
 | Knowledge Verification | 5-step verification: format → source → consistency → cross-reference → rating |
 | AllSpark Network | UDP beacon + TCP knowledge exchange, LAN/Bluetooth/WiFi Direct |
 | Knowledge Trading | Propose/accept/reject/evaluate inter-node knowledge exchange protocol |
@@ -55,20 +66,45 @@ AllSpark (AllSpark: A Survival-centric Offline AI Resource Kit) is an offline-fi
 | Survival Value | 5-dimensional assessment (commander-only, advisory only) |
 | Organization Assessment | Auto-evaluate structure rationality, suggest grouping/role additions |
 
+### 🌍 Environment & Navigation
+| Feature | Description |
+|---------|-------------|
+| GPS Manager | Sensor/manual positioning + position persistence + track recording + Haversine distance + bearing |
+| Environment Assessment | 4-dimensional: climate/terrain/threats/opportunities + composite score |
+| Weather Prediction | Barometric pressure → 12h forecast (clear/rain/storm) + cloud guide |
+| Map System | Text-based map + POI management + category view |
+
+### 📝 Journal & Timeline
+| Feature | Description |
+|---------|-------------|
+| Spark Diary | Text/emotion recording + keyword tagging + date index + privacy protection |
+| Survival Timeline | 7 event types + day-by-day view + auto-record goals/milestones/resource changes |
+| Diary-Timeline Link | Diary entries auto-appear in survival timeline |
+
+### 🎙️ Voice Interaction
+| Feature | Description |
+|---------|-------------|
+| Speech-to-Text | Whisper multi-language model, microphone recording + file transcription |
+| Text-to-Speech | pyttsx3 offline voice output |
+| Voice Diary | Speak → transcribe → auto-save to diary system |
+| Graceful Fallback | Friendly install hints when Whisper/pyttsx3 not available |
+
 ### ⚡ Hardware Adaptation
 | Feature | Description |
 |---------|-------------|
 | Power Monitor | RPi GPIO ADC + simulated/manual fallback, power source registration + runtime estimation |
 | Sensor Hub | I2C/GPIO/Serial multi-interface, 8 sensor types auto-detection |
-| Data Preservation | Timed save + emergency save + snapshot/restore + signal handling |
+| Data Preservation | Timed save + emergency save + snapshot/restore + signal handling + integrity check |
 | Boot Optimization | Boot timing + systemd service template + watchdog script |
+| Startup Integrity | DB file + table integrity + missing table detection on startup |
 
 ### 🖥 Interface
 | Interface | Description |
 |-----------|-------------|
-| CLI | Rich-enhanced terminal, bilingual Chinese/English commands |
+| CLI | Rich-enhanced terminal, bilingual Chinese/English commands (30+ commands) |
 | Web UI | FastAPI + responsive frontend, accessible from phone/tablet/desktop |
 | Init Wizard | CLI/Web dual mode, language → hardware check → model → survivor profile |
+| i18n | Full Chinese/English bilingual system with runtime language switching |
 
 ---
 
@@ -88,6 +124,9 @@ pip install llama-cpp-python
 
 # (Optional) RPi hardware support
 pip install RPi.GPIO smbus2 pyserial
+
+# (Optional) Voice interaction
+pip install openai-whisper sounddevice pyttsx3
 ```
 
 ### Launch
@@ -107,15 +146,15 @@ python3 -m allspark -w
 ```
 status                  — View survival status and resources
 resource                — View 5-dimensional resource details
-knowledge <keyword>     — Search knowledge base
-experience log <event> <result>  — Record experience
-map add <name> <type>   — Add map POI
-llm load               — Load LLM model
-skf export <path>      — Export knowledge pack
-community add <name> [role] — Add community member
-power status           — Power monitor status
-preserve snapshot [tag] — Create data snapshot
-help                   — Full help
+goals                   — View and manage survival goals
+briefing                — Generate daily survival briefing
+diary add               — Write a diary entry
+weather                 — Weather prediction
+gps set <lat> <lon>     — Set GPS position
+psychology              — View psychological state
+environment             — Environment assessment
+voice load              — Load Whisper speech model
+help                    — Full help
 ```
 
 ---
@@ -132,22 +171,6 @@ help                   — Full help
 
 > Without LLM, the system still runs normally via the rule engine, only losing open-ended Q&A capability.
 
-### Feature Availability Matrix
-
-| Feature | Phantom | Minimum | Recommended | Comfortable | Flagship |
-|---------|---------|---------|-------------|-------------|----------|
-| Rule Engine | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Local LLM | 1.5B | 3B | 7B | 14B | 72B |
-| Knowledge (FTS+RAG) | FTS | FTS+light RAG | FTS+RAG | FTS+RAG | FTS+full RAG |
-| Image Recognition | ❌ | ⚠️ | ✅ | ✅ | ✅ |
-| Web UI | ❌ | ⚠️ | ✅ | ✅ | ✅ |
-| Governance | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Knowledge Trading | ❌ | ❌ | ⚠️ | ✅ | ✅ |
-| Power Monitor | ❌ | ⚠️ | ✅ | ✅ | ✅ |
-| Sensor Hub | ❌ | ❌ | ⚠️ | ✅ | ✅ |
-| Data Preservation | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Boot Optimization | ❌ | ❌ | ⚠️ | ✅ | ✅ |
-
 ---
 
 ## Project Structure
@@ -155,21 +178,37 @@ help                   — Full help
 ```
 AllSpark/
 ├── pyproject.toml                  # Project configuration
+├── LICENSE                         # Apache 2.0
 ├── README.md                       # This file (English)
 ├── README_CN.md                    # Chinese README
+├── PRD.md                          # Product Requirements Document
+├── PROGRESS.md                     # Development status tracker
 │
-└── allspark/                       # Core code
+├── tests/                          # Automated tests (140 tests)
+│   ├── test_database.py            # Database CRUD + aggregation
+│   ├── test_resource_manager.py    # Resource management
+│   ├── test_governance.py          # Governance + permissions
+│   ├── test_skf_manager.py         # SKF checksum + export/import
+│   ├── test_i18n.py                # Internationalization
+│   ├── test_data_preservation.py   # Data preservation + integrity
+│   ├── test_goal_engine.py         # Goal engine + milestones
+│   ├── test_reset_manager.py       # 3-level reset + cooldown
+│   ├── test_v04_modules.py         # Briefing/timeline/diary/weather/psychology
+│   ├── test_v05_modules.py         # GPS + environment
+│   └── test_v06_voice.py           # Voice interaction
+│
+└── allspark/                       # Core code (48 modules)
     ├── __main__.py                 # Entry point
     ├── __init__.py                 # Version
     ├── cli.py                      # CLI interface
     ├── web_ui.py                   # Web UI (FastAPI)
     │
     ├── models.py                   # Data models
-    ├── database.py                 # SQLite database layer
+    ├── database.py                 # SQLite database layer (FTS5)
     ├── config.py                   # Configuration constants
     ├── i18n.py                     # Internationalization
     │
-    ├── rule_engine.py              # Rule engine
+    ├── rule_engine.py              # Rule engine (core dispatch)
     ├── survival_engine.py          # Survival assessment
     ├── mission_planner.py          # Mission planning
     ├── knowledge_engine.py         # Knowledge engine
@@ -178,53 +217,44 @@ AllSpark/
     ├── personality.py              # Personality system
     ├── map_system.py               # Map system
     ├── experience_engine.py        # Experience accumulation
-    ├── llm_engine.py              # Local LLM
+    ├── llm_engine.py               # Local LLM
     │
-    ├── skf_manager.py             # SKF knowledge pack
-    ├── knowledge_verifier.py      # Knowledge verification
-    ├── spark_network.py           # AllSpark Network
-    ├── vision_engine.py           # Image recognition
+    ├── goal_engine.py              # Goal engine (v0.3)
+    ├── reset_manager.py            # Reset manager (v0.3)
+    ├── skf_manager.py              # SKF knowledge pack
+    ├── knowledge_verifier.py       # Knowledge verification
+    ├── spark_network.py            # AllSpark Network
+    ├── vision_engine.py            # Image recognition
     │
-    ├── governance.py              # Community governance
-    ├── trade_engine.py            # Knowledge trading
+    ├── governance.py               # Community governance
+    ├── trade_engine.py             # Knowledge trading
     │
-    ├── power_monitor.py           # Power monitoring
-    ├── sensor_hub.py              # Sensor hub
-    ├── data_preservation.py       # Data preservation
-    ├── boot_manager.py            # Boot management
+    ├── daily_briefing.py           # Daily briefing (v0.4)
+    ├── timeline.py                 # Survival timeline (v0.4)
+    ├── diary.py                    # Spark diary (v0.4)
+    ├── weather.py                  # Weather prediction (v0.4)
+    ├── psychology.py               # Psychology tracking (v0.4)
     │
-    ├── hardware.py                # Hardware detection
-    ├── module_loader.py           # Module registry
-    ├── init_wizard.py             # Init wizard
-    ├── tokenizer.py               # Chinese tokenizer
+    ├── gps_manager.py              # GPS manager (v0.5)
+    ├── environment.py              # Environment assessor (v0.5)
     │
-    ├── knowledge_data.py          # Tier 0 knowledge (Chinese)
-    ├── knowledge_data_en.py       # Tier 0 knowledge (English)
-    ├── knowledge_data_tier12.py   # Tier 1-2 knowledge
-    └── knowledge_data_tier3.py    # Tier 3 knowledge
+    ├── voice.py                    # Voice interaction (v0.6)
+    │
+    ├── power_monitor.py            # Power monitoring
+    ├── sensor_hub.py               # Sensor hub
+    ├── data_preservation.py        # Data preservation
+    ├── boot_manager.py             # Boot management
+    │
+    ├── hardware.py                 # Hardware detection
+    ├── module_loader.py            # Module registry
+    ├── init_wizard.py              # Init wizard
+    ├── tokenizer.py                # Chinese tokenizer
+    │
+    ├── knowledge_data.py           # Tier 0 knowledge (Chinese)
+    ├── knowledge_data_en.py        # Tier 0 knowledge (English)
+    ├── knowledge_data_tier12.py    # Tier 1-2 knowledge
+    └── knowledge_data_tier3.py     # Tier 3 knowledge
 ```
-
----
-
-## API Endpoints
-
-Web UI provides 70+ RESTful API endpoints:
-
-| Module | Endpoints | Description |
-|--------|-----------|-------------|
-| Core | `/api/status` `/api/resources` `/api/tasks` `/api/chat` | Status/resources/tasks/chat |
-| Knowledge | `/api/knowledge/search` `/api/knowledge/category` `/api/knowledge/detail` | Search/category/detail |
-| LLM | `/api/llm/status` `/api/llm/load` `/api/llm/chat` | Model management/chat |
-| Experience | `/api/experience/log` `/api/experience/patterns` | Record/patterns |
-| SKF | `/api/skf/info` `/api/skf/export` `/api/skf/import` | Knowledge pack management |
-| Verification | `/api/verify/stats` `/api/verify/entry` `/api/verify/batch` | Knowledge verification |
-| Network | `/api/network/status` `/api/network/start` `/api/network/exchange` | AllSpark Network |
-| Vision | `/api/vision/status` `/api/vision/analyze` | Image analysis |
-| Governance | `/api/governance/members` `/api/governance/assess` `/api/governance/conflicts` | Community governance |
-| Trade | `/api/trade/status` `/api/trade/propose` `/api/trade/evaluate` | Knowledge trading |
-| Power | `/api/power/status` `/api/power/monitor/start` `/api/power/runtime` | Power monitoring |
-| Sensor | `/api/sensor/status` `/api/sensor/snapshot` `/api/sensor/detect` | Environmental sensing |
-| Preservation | `/api/preserve/status` `/api/preserve/snapshot` `/api/preserve/emergency` | Data protection |
 
 ---
 
@@ -233,10 +263,23 @@ Web UI provides 70+ RESTful API endpoints:
 | Phase | Content | Status |
 |-------|---------|--------|
 | 1 — MVP | Rule engine + Tier 0 knowledge + CLI + 5D resources + personality + map | ✅ |
-| 2 — Intelligence | jieba tokenizer + local LLM + experience + Web UI + Tier 1-2 | ✅ |
+| 2 — Intelligence | jieba tokenizer + local LLM + experience + Web UI + Tier 1-2 + i18n | ✅ |
 | 3 — Connectivity | SKF pack + knowledge verification + AllSpark Network + image recognition | ✅ |
 | 4 — Multiplayer | Permission system + dynamic roles + conflict mediation + knowledge trading + Tier 3 | ✅ |
 | 5 — Hardware | Power monitor + sensors + data preservation + boot optimization | ✅ |
+| 6 — Goals & Environment | Goal engine + 3-level reset + daily briefing + timeline + diary + weather + psychology + GPS + environment + voice | ✅ |
+
+---
+
+## Testing
+
+```bash
+# Run all 140 tests
+python3 -m pytest tests/ -v
+
+# Run specific module
+python3 -m pytest tests/test_goal_engine.py -v
+```
 
 ---
 

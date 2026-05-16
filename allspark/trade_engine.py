@@ -19,7 +19,7 @@ class TradeEngine:
         if not self.db:
             return
         try:
-            rows = self.db.conn.execute("SELECT * FROM trade_offers").fetchall()
+            rows = self.db.get_trade_offers()
             for r in rows:
                 offer = TradeOffer(
                     id=r["id"],
@@ -196,9 +196,7 @@ class TradeEngine:
             return []
 
         my_categories = set()
-        rows = self.db.conn.execute("SELECT DISTINCT category FROM knowledge").fetchall()
-        for r in rows:
-            my_categories.add(r["category"])
+        my_categories = set(self.db.get_distinct_knowledge_categories())
 
         remote_categories = set(remote_index.get("categories", {}).keys())
         complementary = remote_categories - my_categories
@@ -211,24 +209,19 @@ class TradeEngine:
                 "action": "Request all knowledge in this category",
             })
 
-        my_ids = set()
-        rows = self.db.conn.execute("SELECT id FROM knowledge").fetchall()
-        for r in rows:
-            my_ids.add(r["id"])
+        my_ids = set(self.db.get_knowledge_ids())
 
         return suggestions
 
     def _save_offer(self, offer: TradeOffer):
         if not self.db:
             return
-        self.db.conn.execute(
-            "INSERT OR REPLACE INTO trade_offers VALUES (?,?,?,?,?,?,?,?)",
-            (offer.id, offer.proposer_id, offer.target_spark_id,
-             json.dumps(offer.offer_knowledge_ids, ensure_ascii=False),
-             json.dumps(offer.request_knowledge_ids, ensure_ascii=False),
-             offer.status, offer.created_at, offer.completed_at)
+        self.db.upsert_trade_offer(
+            offer.id, offer.proposer_id, offer.target_spark_id,
+            json.dumps(offer.offer_knowledge_ids, ensure_ascii=False),
+            json.dumps(offer.request_knowledge_ids, ensure_ascii=False),
+            offer.status, offer.created_at, offer.completed_at
         )
-        self.db.conn.commit()
 
     def get_status(self) -> dict:
         return {
