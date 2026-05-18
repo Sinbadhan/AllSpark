@@ -1,6 +1,8 @@
 import socket
 import sys
 
+from allspark.i18n import t, get_language
+
 
 def _port_in_use(port: int, host: str = "0.0.0.0") -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -36,18 +38,18 @@ def main():
                 i += 1
 
         if _port_in_use(port, host):
-            print(f"❌ Port {port} is already in use.")
+            print(t("web_port_in_use", port=port))
             for alt in range(8001, 8020):
                 if not _port_in_use(alt, host):
                     port = alt
-                    print(f"🔄 Switching to port {port}")
+                    print(t("web_switching_port", port=port))
                     break
             else:
-                print("❌ No available port found in 8000-8019 range.")
+                print(t("web_no_port"))
                 sys.exit(1)
 
         app = create_app(db_path)
-        print(f"🔥 AllSpark Web UI starting at http://{host}:{port}")
+        print(t("web_starting", host=host, port=port))
         uvicorn.run(app, host=host, port=port)
     else:
         from allspark.cli import SparkCLI

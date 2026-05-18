@@ -10,13 +10,14 @@ from pydantic import BaseModel
 
 from allspark.database import Database
 from allspark.rule_engine import RuleEngine
+from allspark.bootstrap import ApplicationBootstrap
 from allspark.resource_manager import ResourceManager
 from allspark.knowledge_engine import KnowledgeEngine
 from allspark.experience_engine import ExperienceEngine
 from allspark.llm_engine import LLMEngine
 from allspark.hardware import detect_hardware, compute_feature_flags, FeatureFlags
 from allspark.module_loader import ModuleRegistry
-from allspark.i18n import get_language, set_language, init_language
+from allspark.i18n import get_language, set_language, init_language, t
 from allspark.config import DEFAULT_DB_DIR
 
 
@@ -217,9 +218,10 @@ def _load_engine(app):
         profile = detect_hardware()
         flags = compute_feature_flags(profile.tier, profile.gpu_available)
 
-    engine = RuleEngine(db, flags=flags)
-    engine.initialize()
+    container = ApplicationBootstrap(db, flags=flags).bootstrap()
+    engine = RuleEngine(container)
     app.state.engine = engine
+    app.state.container = container
 
 
 def _require_init(app):
@@ -231,6 +233,14 @@ def _require_init(app):
 
 
 def _get_or_create(app, attr: str, factory):
+    container = getattr(app.state, 'container', None)
+    if container:
+        existing = container.get(attr)
+        if existing:
+            return existing
+        instance = factory()
+        container.register(attr, instance)
+        return instance
     if not hasattr(app.state, attr) or getattr(app.state, attr) is None:
         setattr(app.state, attr, factory())
     return getattr(app.state, attr)
@@ -1822,7 +1832,7 @@ nav button.active {
     <div class="chat-container">
       <div id="chat-messages" class="chat-messages"></div>
       <div class="chat-input">
-        <input id="chat-input" type="text" placeholder="Ask AllSpark..." autocomplete="off">
+        <input id="chat-input" type="text" placeholder="{t('web_chat_placeholder')}" autocomplete="off">
         <button onclick="sendChat()">Send</button>
       </div>
     </div>
@@ -1938,7 +1948,7 @@ async function refreshDashboard() {
       </div>`
     ).join("");
   } else {
-    tlist.innerHTML = '<div style="color:var(--text-dim);font-size:0.85rem;">No active tasks</div>';
+    tlist.innerHTML = '<div style="color:var(--text-dim);font-size:0.85rem;">' + (window._i18n && window._i18n.no_active_tasks || 'No active tasks') + '</div>';
   }
 }
 

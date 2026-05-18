@@ -291,7 +291,7 @@ _DEFAULT_RESOURCES = {
     ResourceType.FIRE: Resource(
         type=ResourceType.FIRE,
         current_amount=0.0,
-        unit="次",
+        unit="uses",
         daily_consumption=0.0,
         daily_intake=0.0,
         estimated_remaining_hours=0.0,

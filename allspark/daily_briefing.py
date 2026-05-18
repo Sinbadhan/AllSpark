@@ -78,9 +78,10 @@ class DailyBriefing:
         for r in resources:
             icon = icons.get(r.type, "📦")
             is_offline = r.current_amount == 0 and r.daily_consumption == 0
+            res_name = t(f"resource_{r.type.value}")
 
             if is_offline:
-                lines.append(f"  {icon} {r.type.value}: [dim]{t('resource_offline')}[/]")
+                lines.append(f"  {icon} {res_name}: [dim]{t('resource_offline')}[/]")
                 continue
 
             remaining = ""
@@ -98,7 +99,7 @@ class DailyBriefing:
                 status = " ⚡"
 
             lines.append(
-                f"  {icon} {r.type.value}: {r.current_amount:.1f}{r.unit}{remaining}{status}"
+                f"  {icon} {res_name}: {r.current_amount:.1f}{r.unit}{remaining}{status}"
             )
 
         return "\n".join(lines)

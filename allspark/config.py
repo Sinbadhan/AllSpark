@@ -32,37 +32,40 @@ RESOURCE_WARNING_THRESHOLDS = {
     "storage": {"warning_percent": 10, "critical_percent": 5},
 }
 
+PERSONALITY_GREETING_KEYS = {
+    "crisis": "greeting_crisis",
+    "stable": "greeting_stable",
+    "companion": "greeting_companion",
+    "multiplayer": "greeting_multiplayer",
+    "renaissance": "greeting_renaissance",
+}
+
 PERSONALITY_TEMPLATES = {
     "crisis": {
-        "greeting": "⚠️ 紧急状态",
         "style": "directive",
         "emoji_prefix": "🚨",
         "verbosity": "minimal",
         "tone": "urgent",
     },
     "stable": {
-        "greeting": "状态正常",
         "style": "informative",
         "emoji_prefix": "✅",
         "verbosity": "normal",
         "tone": "calm",
     },
     "companion": {
-        "greeting": "我在这里",
         "style": "conversational",
         "emoji_prefix": "🔥",
         "verbosity": "detailed",
         "tone": "warm",
     },
     "multiplayer": {
-        "greeting": "多人协作中",
         "style": "neutral",
         "emoji_prefix": "👥",
         "verbosity": "normal",
         "tone": "authoritative",
     },
     "renaissance": {
-        "greeting": "文明在生长",
         "style": "educational",
         "emoji_prefix": "🟣",
         "verbosity": "detailed",
@@ -82,20 +85,20 @@ INTENT_KEYWORDS = {
     "help": ["帮助", "怎么用", "你能做什么", "help"],
 }
 
-PHASE_DESCRIPTIONS = {
-    0: "立即生存 (0-72h)",
-    1: "短期生存 (1-30天)",
-    2: "中期自给 (1-12月)",
-    3: "生活质量 (1-5年)",
-    4: "文明复兴 (5年+)",
+PHASE_DESC_KEYS = {
+    0: "phase_desc_0",
+    1: "phase_desc_1",
+    2: "phase_desc_2",
+    3: "phase_desc_3",
+    4: "phase_desc_4",
 }
 
-PHASE_GOALS = {
-    0: ["止血和急救", "寻找水源", "搭建临时庇护所", "评估环境威胁"],
-    1: ["稳定食物供应", "确保饮用水安全", "建立安全庇护所", "获取火源"],
-    2: ["开始农业种植", "制造基本工具", "建立能源供给", "改善居住条件"],
-    3: ["建立医疗能力", "建立通信手段", "提高生活舒适度", "积累知识储备"],
-    4: ["传承教育体系", "发展科学技术", "建立社区治理", "记录文明历史"],
+PHASE_GOAL_KEYS = {
+    0: ["phase_goal_0_0", "phase_goal_0_1", "phase_goal_0_2", "phase_goal_0_3"],
+    1: ["phase_goal_1_0", "phase_goal_1_1", "phase_goal_1_2", "phase_goal_1_3"],
+    2: ["phase_goal_2_0", "phase_goal_2_1", "phase_goal_2_2", "phase_goal_2_3"],
+    3: ["phase_goal_3_0", "phase_goal_3_1", "phase_goal_3_2", "phase_goal_3_3"],
+    4: ["phase_goal_4_0", "phase_goal_4_1", "phase_goal_4_2", "phase_goal_4_3"],
 }
 
 SPARKNET_DISCOVERY_PORT = 7979

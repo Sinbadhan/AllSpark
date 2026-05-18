@@ -12,10 +12,11 @@ _RESET_COOLDOWN_HOURS = 24
 
 
 class ResetManager:
-    def __init__(self, db, data_preservation=None, resource_mgr=None):
+    def __init__(self, db, data_preservation=None, resource_mgr=None, docker_manager=None):
         self.db = db
         self.data_preservation = data_preservation
         self.resource_mgr = resource_mgr
+        self.docker_manager = docker_manager
         self._last_reset_time = None
 
     def evaluate_reset(self, level: ResetLevel) -> dict:
@@ -123,6 +124,13 @@ class ResetManager:
         self.db.conn.commit()
 
     def _reset_factory(self):
+        if self.docker_manager:
+            try:
+                self.docker_manager.stop_all()
+                self.docker_manager.reset()
+            except Exception:
+                pass
+
         tables = [
             "resources", "tasks", "knowledge", "knowledge_fts",
             "experience_log", "map_pois", "operating_state",

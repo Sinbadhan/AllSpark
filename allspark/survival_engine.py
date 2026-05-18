@@ -5,7 +5,6 @@ from allspark.database import Database
 from allspark.models import (
     Resource, ResourceType, SurvivorState, OperatingMode
 )
-from allspark.config import PHASE_GOALS
 from allspark.i18n import t
 from allspark.resource_manager import ResourceManager
 

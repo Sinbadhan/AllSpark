@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG OLLAMA_VERSION=0.1.26
+RUN wget -q "https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}/ollama-linux-amd64" \
+    -O /usr/bin/ollama && chmod +x /usr/bin/ollama || true
+
+ENV OLLAMA_HOST=0.0.0.0
+ENV MODELS_DIR=/models
+
+VOLUME /models
+
+EXPOSE 11434
+
+CMD ["ollama", "serve"]

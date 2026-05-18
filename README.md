@@ -1,6 +1,6 @@
 # 🔥 AllSpark — Offline AI Survival System
 
-**v0.6.0** | [中文](README_CN.md)
+**v0.7.0** | [中文](README_CN.md)
 
 > **In extreme conditions, preserve and rebuild human civilization.**
 
@@ -88,6 +88,15 @@ AllSpark (AllSpark: A Survival-centric Offline AI Resource Kit) is an offline-fi
 | Text-to-Speech | pyttsx3 offline voice output |
 | Voice Diary | Speak → transcribe → auto-save to diary system |
 | Graceful Fallback | Friendly install hints when Whisper/pyttsx3 not available |
+
+### 🐳 Docker Elastic Deployment
+| Feature | Description |
+|---------|-------------|
+| Deploy Mode | PROCESS / DOCKER / INTEGRATION — auto-selected by hardware tier |
+| Docker Manager | Container lifecycle management (start/stop/migrate/reset) |
+| Docker Compose | Core/LLM/RAG/Web/Kiwix service orchestration |
+| Elastic Fallback | Auto-downgrade to process mode when Docker unavailable |
+| Reset Regression | L3 factory reset clears all containers, returns to process mode |
 
 ### ⚡ Hardware Adaptation
 | Feature | Description |
@@ -182,9 +191,9 @@ AllSpark/
 ├── README.md                       # This file (English)
 ├── README_CN.md                    # Chinese README
 ├── PRD.md                          # Product Requirements Document
-├── PROGRESS.md                     # Development status tracker
+├── ARCHITECTURE.md                 # Architecture design document
 │
-├── tests/                          # Automated tests (140 tests)
+├── tests/                          # Automated tests (331 tests)
 │   ├── test_database.py            # Database CRUD + aggregation
 │   ├── test_resource_manager.py    # Resource management
 │   ├── test_governance.py          # Governance + permissions
@@ -195,18 +204,22 @@ AllSpark/
 │   ├── test_reset_manager.py       # 3-level reset + cooldown
 │   ├── test_v04_modules.py         # Briefing/timeline/diary/weather/psychology
 │   ├── test_v05_modules.py         # GPS + environment
-│   └── test_v06_voice.py           # Voice interaction
+│   ├── test_v06_voice.py           # Voice interaction
+│   ├── test_functional.py          # CLI functional tests
+│   └── test_docker.py              # Docker elastic deployment
 │
-└── allspark/                       # Core code (48 modules)
+└── allspark/                       # Core code (63 modules)
     ├── __main__.py                 # Entry point
     ├── __init__.py                 # Version
-    ├── cli.py                      # CLI interface
+    ├── cli.py                      # CLI interface (CommandDispatcher)
     ├── web_ui.py                   # Web UI (FastAPI)
+    ├── bootstrap.py                # Application bootstrap & initialization
+    ├── container.py                # Service container (dependency injection)
     │
     ├── models.py                   # Data models
     ├── database.py                 # SQLite database layer (FTS5)
     ├── config.py                   # Configuration constants
-    ├── i18n.py                     # Internationalization
+    ├── i18n.py                     # Internationalization (700+ keys)
     │
     ├── rule_engine.py              # Rule engine (core dispatch)
     ├── survival_engine.py          # Survival assessment
@@ -240,15 +253,36 @@ AllSpark/
     │
     ├── voice.py                    # Voice interaction (v0.6)
     │
+    ├── docker_manager.py           # Docker container management (v0.7)
+    ├── hardware.py                 # Hardware detection + DeployMode
+    ├── module_loader.py            # Module registry
+    ├── init_wizard.py              # Init wizard
+    ├── tokenizer.py                # Chinese tokenizer
+    │
+    ├── commands/                   # Command pattern (v0.7)
+    │   ├── base.py                 # BaseCommand abstract class
+    │   ├── dispatcher.py           # CommandDispatcher
+    │   ├── basic.py                # Status/resource/help commands
+    │   ├── survival.py             # Survival/assessment commands
+    │   ├── knowledge.py            # Knowledge/search commands
+    │   ├── ai.py                   # LLM/experience commands
+    │   ├── goals.py                # Goal/task/reset commands
+    │   ├── governance.py           # Community/permission commands
+    │   ├── comms.py                # Network/trade commands
+    │   ├── hardware.py             # Power/sensor/preserve commands
+    │   ├── docker.py               # Docker management commands
+    │   └── help.py                 # Help command
+    │
+    ├── docker/                     # Docker configuration (v0.7)
+    │   ├── Dockerfile.core         # Core service image
+    │   ├── Dockerfile.llm          # LLM service image
+    │   ├── Dockerfile.web          # Web UI service image
+    │   └── docker-compose.yml      # Service orchestration
+    │
     ├── power_monitor.py            # Power monitoring
     ├── sensor_hub.py               # Sensor hub
     ├── data_preservation.py        # Data preservation
     ├── boot_manager.py             # Boot management
-    │
-    ├── hardware.py                 # Hardware detection
-    ├── module_loader.py            # Module registry
-    ├── init_wizard.py              # Init wizard
-    ├── tokenizer.py                # Chinese tokenizer
     │
     ├── knowledge_data.py           # Tier 0 knowledge (Chinese)
     ├── knowledge_data_en.py        # Tier 0 knowledge (English)
@@ -268,13 +302,14 @@ AllSpark/
 | 4 — Multiplayer | Permission system + dynamic roles + conflict mediation + knowledge trading + Tier 3 | ✅ |
 | 5 — Hardware | Power monitor + sensors + data preservation + boot optimization | ✅ |
 | 6 — Goals & Environment | Goal engine + 3-level reset + daily briefing + timeline + diary + weather + psychology + GPS + environment + voice | ✅ |
+| 7 — Architecture & Docker | ServiceContainer DI + Command pattern + Bootstrap + i18n purification + Docker elastic deployment | ✅ |
 
 ---
 
 ## Testing
 
 ```bash
-# Run all 140 tests
+# Run all 331 tests
 python3 -m pytest tests/ -v
 
 # Run specific module

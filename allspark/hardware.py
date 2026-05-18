@@ -14,6 +14,21 @@ class HardwareTier(Enum):
     FLAGSHIP = "flagship"
 
 
+class DeployMode(Enum):
+    PROCESS = "process"
+    DOCKER = "docker"
+    INTEGRATION = "integration"
+
+
+DEPLOY_MODE_MAP = {
+    HardwareTier.PHANTOM: DeployMode.PROCESS,
+    HardwareTier.MINIMUM: DeployMode.PROCESS,
+    HardwareTier.RECOMMENDED: DeployMode.DOCKER,
+    HardwareTier.COMFORTABLE: DeployMode.DOCKER,
+    HardwareTier.FLAGSHIP: DeployMode.INTEGRATION,
+}
+
+
 @dataclass
 class HardwareProfile:
     cpu_arch: str = ""
@@ -29,6 +44,7 @@ class HardwareProfile:
     os_version: str = ""
     hostname: str = ""
     tier: HardwareTier = HardwareTier.MINIMUM
+    deploy_mode: DeployMode = DeployMode.PROCESS
 
 
 @dataclass
@@ -56,6 +72,9 @@ class FeatureFlags:
     sensor_hub: bool = False
     data_preservation: bool = False
     boot_manager: bool = False
+    deploy_mode: str = "process"
+    docker_enabled: bool = False
+    docker_services: list = field(default_factory=list)
 
 
 TIER_THRESHOLDS = {
@@ -88,6 +107,7 @@ def detect_hardware() -> HardwareProfile:
     _detect_storage(profile)
     _detect_gpu(profile)
     profile.tier = _classify_tier(profile)
+    profile.deploy_mode = DEPLOY_MODE_MAP.get(profile.tier, DeployMode.PROCESS)
 
     return profile
 
@@ -272,6 +292,19 @@ def compute_feature_flags(tier: HardwareTier, gpu_available: bool = False) -> Fe
         flags.data_preservation = True
         flags.boot_manager = True
 
+    deploy_mode = DEPLOY_MODE_MAP.get(tier, DeployMode.PROCESS)
+    flags.deploy_mode = deploy_mode.value
+    if deploy_mode in (DeployMode.DOCKER, DeployMode.INTEGRATION):
+        flags.docker_enabled = True
+        docker_svcs = ["web"]
+        if flags.llm:
+            docker_svcs.append("llm")
+        if flags.vector_rag:
+            docker_svcs.append("rag")
+        if flags.kiwix:
+            docker_svcs.append("kiwix")
+        flags.docker_services = docker_svcs
+
     return flags
 
 
@@ -365,7 +398,32 @@ def format_hardware_report(profile: HardwareProfile, flags: FeatureFlags, lang: 
 
     for attr, label in feature_labels.items():
         val = getattr(flags, attr)
-        icon = "✅" if val else "❌"
-        lines.append(f"  {icon} {label}")
+        if isinstance(val, bool):
+            icon = "✅" if val else "❌"
+            lines.append(f"  {icon} {label}")
+
+    deploy_mode = flags.deploy_mode
+    if lang == "en":
+        deploy_names = {
+            "process": "Process Mode",
+            "docker": "Docker Mode",
+            "integration": "Integration Mode (Docker + NOMAD)",
+        }
+        lines.append("")
+        lines.append("═══ Deployment Mode ═══")
+        lines.append(f"  Mode: {deploy_names.get(deploy_mode, deploy_mode)}")
+        if flags.docker_enabled:
+            lines.append(f"  Container Services: {', '.join(flags.docker_services)}")
+    else:
+        deploy_names = {
+            "process": "进程模式",
+            "docker": "Docker 模式",
+            "integration": "集成模式（Docker + NOMAD）",
+        }
+        lines.append("")
+        lines.append("═══ 部署模式 ═══")
+        lines.append(f"  模式：{deploy_names.get(deploy_mode, deploy_mode)}")
+        if flags.docker_enabled:
+            lines.append(f"  容器化服务：{'、'.join(flags.docker_services)}")
 
     return "\n".join(lines)

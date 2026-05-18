@@ -1,6 +1,6 @@
 # 🔥 火种 AllSpark — 离线人工智能生存系统
 
-**v0.2.0** | [English](README.md)
+**v0.7.0** | [English](README.md)
 
 > **在极端条件下，保存并重建人类文明。**
 
@@ -28,6 +28,17 @@
 | 生存评估 | 5维资源评估 + 阶段判定 + 瓶颈识别 |
 | 人格系统 | 危机/稳定/伴侣/多人/复兴 — 5种自适应模式 |
 | 经验积累 | 经验记录 → 模式识别 → 知识条目循环 |
+| 每日简报 | 自动生成生存日报：资源 + 警告 + 目标 + 任务 + 知识提示 |
+| 心理追踪 | 孤独/压力指数 + 自评问卷 + 干预触发 |
+
+### 🎯 目标与任务系统
+| 功能 | 描述 |
+|------|------|
+| 目标引擎 | 资源状态自动生成目标 + 6模板 + 手动目标 |
+| 里程碑追踪 | 里程碑自动计算进度；全部完成 → 目标完成 |
+| 目标-任务联动 | 目标 → 任务双向同步；完成任务推进里程碑 |
+| 天气-目标联动 | 恶劣天气自动暂停户外目标 + 创建庇护所加固 |
+| 三级重置 | L1（评估）/ L2（档案）/ L3（出厂）+ 安全约束 + 冷却期 |
 
 ### 📚 知识体系
 | 层级 | 内容 | 条目数 |
@@ -36,11 +47,11 @@
 | Tier 1 | 短期生存（农业/化学/力学/天气/能源） | 10 |
 | Tier 2 | 中期自足（堆肥/造纸/水电/沼气/草药） | 10 |
 | Tier 3 | 长期社区（治理/锻造/发电/法律/文明档案） | 17 |
+| SKF 知识包 | ZIP 格式标准化知识导入/导出，SHA256 校验 |
 
 ### 📡 连接与通信
 | 功能 | 描述 |
 |------|------|
-| SKF 知识包 | ZIP 格式标准化知识导入/导出 |
 | 知识验证 | 5步验证：格式 → 来源 → 一致性 → 交叉引用 → 评级 |
 | 火种网络 | UDP 信标 + TCP 知识交换，局域网/蓝牙/WiFi Direct |
 | 知识交易 | 提议/接受/拒绝/评估 节点间知识交换协议 |
@@ -55,6 +66,38 @@
 | 生存价值 | 5维评估（仅指挥官，仅供参考） |
 | 组织评估 | 自动评估结构合理性，建议分组/角色补充 |
 
+### 🌍 环境与导航
+| 功能 | 描述 |
+|------|------|
+| GPS 管理器 | 传感器/手动定位 + 位置持久化 + 轨迹记录 + Haversine 距离 + 方位角 |
+| 环境评估 | 4维：气候/地形/威胁/机会 + 综合评分 |
+| 天气预测 | 气压 → 12h 预报（晴/雨/暴风）+ 云图指南 |
+| 地图系统 | 文本地图 + POI 管理 + 分类视图 |
+
+### 📝 日记与时间线
+| 功能 | 描述 |
+|------|------|
+| 火种日记 | 文字/情感记录 + 关键词标签 + 日期索引 + 隐私保护 |
+| 生存时间线 | 7种事件类型 + 逐日视图 + 自动记录目标/里程碑/资源变化 |
+| 日记-时间线联动 | 日记条目自动出现在生存时间线 |
+
+### 🎙️ 语音交互
+| 功能 | 描述 |
+|------|------|
+| 语音转文字 | Whisper 多语言模型，麦克风录音 + 文件转录 |
+| 文字转语音 | pyttsx3 离线语音输出 |
+| 语音日记 | 语音 → 转录 → 自动保存到日记系统 |
+| 优雅降级 | Whisper/pyttsx3 不可用时提供友好安装提示 |
+
+### 🐳 Docker 弹性部署
+| 功能 | 描述 |
+|------|------|
+| 部署模式 | PROCESS / DOCKER / INTEGRATION — 按硬件等级自动选择 |
+| Docker 管理器 | 容器生命周期管理（启动/停止/迁移/重置） |
+| Docker Compose | Core/LLM/RAG/Web/Kiwix 服务编排 |
+| 弹性降级 | Docker 不可用时自动降级为进程模式 |
+| 重置回归 | L3 出厂重置清除所有容器，回归进程模式 |
+
 ### ⚡ 硬件适配
 | 功能 | 描述 |
 |------|------|
@@ -62,13 +105,15 @@
 | 传感器中枢 | I2C/GPIO/串口多接口，8种传感器自动检测 |
 | 数据保存 | 定时保存 + 紧急保存 + 快照/恢复 + 信号处理 |
 | 启动优化 | 启动计时 + systemd 服务模板 + 看门狗脚本 |
+| 启动完整性 | DB 文件 + 表完整性 + 启动时缺失表检测 |
 
 ### 🖥 界面
 | 界面 | 描述 |
 |------|------|
-| CLI | Rich 增强终端，中英双语命令 |
+| CLI | Rich 增强终端，中英双语命令（30+ 命令） |
 | Web UI | FastAPI + 响应式前端，手机/平板/桌面均可访问 |
 | 初始化向导 | CLI/Web 双模式，语言 → 硬件检测 → 模型 → 幸存者档案 |
+| i18n | 完整中英双语系统，运行时语言切换（700+ key） |
 
 ---
 
@@ -88,6 +133,9 @@ pip install llama-cpp-python
 
 # （可选）树莓派硬件支持
 pip install RPi.GPIO smbus2 pyserial
+
+# （可选）语音交互
+pip install openai-whisper sounddevice pyttsx3
 ```
 
 ### 启动
@@ -107,46 +155,31 @@ python3 -m allspark -w
 ```
 status                  — 查看生存状态和资源
 resource                — 查看5维资源详情
-knowledge <关键词>      — 搜索知识库
-experience log <事件> <结果>  — 记录经验
-map add <名称> <类型>   — 添加地图地点
-llm load               — 加载 LLM 模型
-skf export <路径>      — 导出知识包
-community add <名字> [角色] — 添加社区成员
-power status           — 电源监控状态
-preserve snapshot [标签] — 创建数据快照
-help                   — 完整帮助
+goals                   — 查看和管理生存目标
+briefing                — 生成每日生存简报
+diary add               — 写日记
+weather                 — 天气预测
+gps set <lat> <lon>     — 设置 GPS 位置
+psychology              — 查看心理状态
+environment             — 环境评估
+voice load              — 加载 Whisper 语音模型
+docker status           — Docker 部署状态
+help                    — 完整帮助
 ```
 
 ---
 
 ## 硬件要求
 
-| 等级 | 内存 | 存储 | 设备 | LLM 模型 |
-|------|------|------|------|----------|
-| 残影 | 2 GB | 16 GB | 树莓派 4 | Qwen2.5-1.5B-Q4 |
-| 最低 | 4 GB | 32 GB | 树莓派 5 | Qwen2.5-3B-Q4 |
-| 推荐 | 8 GB | 64 GB | 迷你主机 | Qwen2.5-7B-Q4 |
-| 舒适 | 16 GB | 128 GB | 笔记本 | Qwen2.5-14B-Q4 |
-| 旗舰 | 32 GB+ | 256 GB+ | 工作站 | Qwen2.5-72B-Q4 |
+| 等级 | 内存 | 存储 | 设备 | LLM 模型 | 部署模式 |
+|------|------|------|------|----------|----------|
+| 残影 | 2 GB | 16 GB | 树莓派 4 | Qwen2.5-1.5B-Q4 | 进程模式 |
+| 最低 | 4 GB | 32 GB | 树莓派 5 | Qwen2.5-3B-Q4 | 进程模式 |
+| 推荐 | 8 GB | 64 GB | 迷你主机 | Qwen2.5-7B-Q4 | Docker 模式 |
+| 舒适 | 16 GB | 128 GB | 笔记本 | Qwen2.5-14B-Q4 | Docker 模式 |
+| 旗舰 | 32 GB+ | 256 GB+ | 工作站 | Qwen2.5-72B-Q4 | 集成模式 |
 
 > 没有 LLM，系统仍可通过规则引擎正常运行，仅失去开放式问答能力。
-
-### 功能可用性矩阵
-
-| 功能 | 残影 | 最低 | 推荐 | 舒适 | 旗舰 |
-|------|------|------|------|------|------|
-| 规则引擎 | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 本地 LLM | 1.5B | 3B | 7B | 14B | 72B |
-| 知识库 (FTS+RAG) | FTS | FTS+轻量RAG | FTS+RAG | FTS+RAG | FTS+完整RAG |
-| 图像识别 | ❌ | ⚠️ | ✅ | ✅ | ✅ |
-| Web UI | ❌ | ⚠️ | ✅ | ✅ | ✅ |
-| 社区治理 | ❌ | ❌ | ✅ | ✅ | ✅ |
-| 知识交易 | ❌ | ❌ | ⚠️ | ✅ | ✅ |
-| 电源监控 | ❌ | ⚠️ | ✅ | ✅ | ✅ |
-| 传感器中枢 | ❌ | ❌ | ⚠️ | ✅ | ✅ |
-| 数据保存 | ❌ | ✅ | ✅ | ✅ | ✅ |
-| 启动优化 | ❌ | ❌ | ⚠️ | ✅ | ✅ |
 
 ---
 
@@ -157,17 +190,36 @@ AllSpark/
 ├── pyproject.toml                  # 项目配置
 ├── README.md                       # 英文 README
 ├── README_CN.md                    # 本文件（中文）
+├── PRD.md                          # 产品需求文档
+├── ARCHITECTURE.md                 # 架构设计文档
 │
-└── allspark/                       # 核心代码
+├── tests/                          # 自动化测试（331 项）
+│   ├── test_database.py            # 数据库 CRUD + 聚合
+│   ├── test_resource_manager.py    # 资源管理
+│   ├── test_governance.py          # 治理 + 权限
+│   ├── test_skf_manager.py         # SKF 校验 + 导入导出
+│   ├── test_i18n.py                # 国际化
+│   ├── test_data_preservation.py   # 数据保存 + 完整性
+│   ├── test_goal_engine.py         # 目标引擎 + 里程碑
+│   ├── test_reset_manager.py       # 三级重置 + 冷却期
+│   ├── test_v04_modules.py         # 简报/时间线/日记/天气/心理
+│   ├── test_v05_modules.py         # GPS + 环境
+│   ├── test_v06_voice.py           # 语音交互
+│   ├── test_functional.py          # CLI 功能测试
+│   └── test_docker.py              # Docker 弹性部署
+│
+└── allspark/                       # 核心代码（63 模块）
     ├── __main__.py                 # 入口
     ├── __init__.py                 # 版本
-    ├── cli.py                      # CLI 界面
+    ├── cli.py                      # CLI 界面（CommandDispatcher）
     ├── web_ui.py                   # Web UI (FastAPI)
+    ├── bootstrap.py                # 应用引导与初始化
+    ├── container.py                # 服务容器（依赖注入）
     │
     ├── models.py                   # 数据模型
-    ├── database.py                 # SQLite 数据库层
+    ├── database.py                 # SQLite 数据库层 (FTS5)
     ├── config.py                   # 配置常量
-    ├── i18n.py                     # 国际化
+    ├── i18n.py                     # 国际化（700+ key）
     │
     ├── rule_engine.py              # 规则引擎
     ├── survival_engine.py          # 生存评估
@@ -180,6 +232,8 @@ AllSpark/
     ├── experience_engine.py        # 经验积累
     ├── llm_engine.py              # 本地 LLM
     │
+    ├── goal_engine.py              # 目标引擎 (v0.3)
+    ├── reset_manager.py            # 重置管理 (v0.3)
     ├── skf_manager.py             # SKF 知识包
     ├── knowledge_verifier.py      # 知识验证
     ├── spark_network.py           # 火种网络
@@ -188,15 +242,47 @@ AllSpark/
     ├── governance.py              # 社区治理
     ├── trade_engine.py            # 知识交易
     │
+    ├── daily_briefing.py           # 每日简报 (v0.4)
+    ├── timeline.py                 # 生存时间线 (v0.4)
+    ├── diary.py                    # 火种日记 (v0.4)
+    ├── weather.py                  # 天气预测 (v0.4)
+    ├── psychology.py               # 心理追踪 (v0.4)
+    │
+    ├── gps_manager.py              # GPS 管理器 (v0.5)
+    ├── environment.py              # 环境评估 (v0.5)
+    │
+    ├── voice.py                    # 语音交互 (v0.6)
+    │
+    ├── docker_manager.py           # Docker 容器管理 (v0.7)
+    ├── hardware.py                 # 硬件检测 + DeployMode
+    ├── module_loader.py            # 模块注册
+    ├── init_wizard.py              # 初始化向导
+    ├── tokenizer.py                # 中文分词
+    │
+    ├── commands/                   # 命令模式 (v0.7)
+    │   ├── base.py                 # BaseCommand 抽象类
+    │   ├── dispatcher.py           # CommandDispatcher
+    │   ├── basic.py                # 状态/资源/帮助命令
+    │   ├── survival.py             # 生存/评估命令
+    │   ├── knowledge.py            # 知识/搜索命令
+    │   ├── ai.py                   # LLM/经验命令
+    │   ├── goals.py                # 目标/任务/重置命令
+    │   ├── governance.py           # 社区/权限命令
+    │   ├── comms.py                # 网络/交易命令
+    │   ├── hardware.py             # 电源/传感器/保存命令
+    │   ├── docker.py               # Docker 管理命令
+    │   └── help.py                 # 帮助命令
+    │
+    ├── docker/                     # Docker 配置 (v0.7)
+    │   ├── Dockerfile.core         # 核心服务镜像
+    │   ├── Dockerfile.llm          # LLM 服务镜像
+    │   ├── Dockerfile.web          # Web UI 服务镜像
+    │   └── docker-compose.yml      # 服务编排
+    │
     ├── power_monitor.py           # 电源监控
     ├── sensor_hub.py              # 传感器中枢
     ├── data_preservation.py       # 数据保存
     ├── boot_manager.py            # 启动管理
-    │
-    ├── hardware.py                # 硬件检测
-    ├── module_loader.py           # 模块注册
-    ├── init_wizard.py             # 初始化向导
-    ├── tokenizer.py               # 中文分词
     │
     ├── knowledge_data.py          # Tier 0 知识（中文）
     ├── knowledge_data_en.py       # Tier 0 知识（英文）
@@ -206,37 +292,29 @@ AllSpark/
 
 ---
 
-## API 端点
-
-Web UI 提供 70+ RESTful API 端点：
-
-| 模块 | 端点 | 描述 |
-|------|------|------|
-| 核心 | `/api/status` `/api/resources` `/api/tasks` `/api/chat` | 状态/资源/任务/对话 |
-| 知识 | `/api/knowledge/search` `/api/knowledge/category` `/api/knowledge/detail` | 搜索/分类/详情 |
-| LLM | `/api/llm/status` `/api/llm/load` `/api/llm/chat` | 模型管理/对话 |
-| 经验 | `/api/experience/log` `/api/experience/patterns` | 记录/模式 |
-| SKF | `/api/skf/info` `/api/skf/export` `/api/skf/import` | 知识包管理 |
-| 验证 | `/api/verify/stats` `/api/verify/entry` `/api/verify/batch` | 知识验证 |
-| 网络 | `/api/network/status` `/api/network/start` `/api/network/exchange` | 火种网络 |
-| 视觉 | `/api/vision/status` `/api/vision/analyze` | 图像分析 |
-| 治理 | `/api/governance/members` `/api/governance/assess` `/api/governance/conflicts` | 社区治理 |
-| 交易 | `/api/trade/status` `/api/trade/propose` `/api/trade/evaluate` | 知识交易 |
-| 电源 | `/api/power/status` `/api/power/monitor/start` `/api/power/runtime` | 电源监控 |
-| 传感器 | `/api/sensor/status` `/api/sensor/snapshot` `/api/sensor/detect` | 环境感知 |
-| 保存 | `/api/preserve/status` `/api/preserve/snapshot` `/api/preserve/emergency` | 数据保护 |
-
----
-
 ## 开发阶段
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | 1 — MVP | 规则引擎 + Tier 0 知识 + CLI + 5维资源 + 人格 + 地图 | ✅ |
-| 2 — 智能 | jieba 分词 + 本地 LLM + 经验 + Web UI + Tier 1-2 | ✅ |
+| 2 — 智能 | jieba 分词 + 本地 LLM + 经验 + Web UI + Tier 1-2 + i18n | ✅ |
 | 3 — 连接 | SKF 包 + 知识验证 + 火种网络 + 图像识别 | ✅ |
 | 4 — 多人 | 权限系统 + 动态角色 + 冲突调解 + 知识交易 + Tier 3 | ✅ |
 | 5 — 硬件 | 电源监控 + 传感器 + 数据保存 + 启动优化 | ✅ |
+| 6 — 目标与环境 | 目标引擎 + 三级重置 + 每日简报 + 时间线 + 日记 + 天气 + 心理 + GPS + 环境 + 语音 | ✅ |
+| 7 — 架构与Docker | ServiceContainer 依赖注入 + Command 命令模式 + Bootstrap + i18n 纯净化 + Docker 弹性部署 | ✅ |
+
+---
+
+## 测试
+
+```bash
+# 运行全部 331 项测试
+python3 -m pytest tests/ -v
+
+# 运行特定模块
+python3 -m pytest tests/test_goal_engine.py -v
+```
 
 ---
 

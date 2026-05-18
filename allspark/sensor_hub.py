@@ -270,16 +270,17 @@ class SensorHub:
         if not self._on_alert:
             return
 
+        from allspark.i18n import t
         alerts = []
         if device.sensor_type == SensorType.TEMPERATURE.value:
             if reading.value < 0 or reading.value > 45:
-                alerts.append(f"Temperature alert: {reading.value}{reading.unit}")
+                alerts.append(f"{t('sensor_temp_alert')}: {reading.value}{reading.unit}")
         elif device.sensor_type == SensorType.AIR_QUALITY.value:
             if reading.value > 200:
-                alerts.append(f"Air quality alert: {reading.value}{reading.unit}")
+                alerts.append(f"{t('sensor_air_alert')}: {reading.value}{reading.unit}")
         elif device.sensor_type == SensorType.WATER_LEVEL.value:
             if reading.value > 50:
-                alerts.append(f"Water level alert: {reading.value}{reading.unit}")
+                alerts.append(f"{t('sensor_water_alert')}: {reading.value}{reading.unit}")
 
         for alert in alerts:
             try:

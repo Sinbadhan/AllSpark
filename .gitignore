@@ -1,6 +1,10 @@
 # Internal documents (not for public repo)
 PRD.md
 PROGRESS.md
+ARCHITECTURE.md
+
+# Tests (not for public repo)
+tests/
 
 # Python
 __pycache__/

@@ -136,39 +136,31 @@ class ModuleRegistry:
     def format_status(self, lang: str = "zh") -> str:
         from rich.console import Console
         from rich.table import Table
+        from allspark.i18n import t
 
         console = Console()
-        if lang == "zh":
-            title = "🔧 模块加载状态"
-            table = Table(title=title, show_header=True, header_style="bold")
-            table.add_column("模块", style="cyan")
-            table.add_column("说明")
-            table.add_column("核心", justify="center")
-            table.add_column("硬件支持", justify="center")
-            table.add_column("状态", justify="center")
-        else:
-            title = "🔧 Module Status"
-            table = Table(title=title, show_header=True, header_style="bold")
-            table.add_column("Module", style="cyan")
-            table.add_column("Description")
-            table.add_column("Core", justify="center")
-            table.add_column("HW Support", justify="center")
-            table.add_column("Status", justify="center")
+        title = t("title_module_status")
+        table = Table(title=title, show_header=True, header_style="bold")
+        table.add_column(t("field_module"), style="cyan")
+        table.add_column(t("field_description"))
+        table.add_column(t("field_core"), justify="center")
+        table.add_column(t("field_hardware"), justify="center")
+        table.add_column(t("field_status_col"), justify="center")
 
         for name, mod in self._modules.items():
             desc = mod.description_zh if lang == "zh" else mod.description_en
             is_core = "⭐" if mod.is_core else ""
             flag_on = bool(getattr(self.flags, mod.feature_flag, False))
-            hw_icon = "✅" if flag_on else "❌"
+            hw_icon = t("hw_ok") if flag_on else t("hw_insufficient")
 
             if name in self._disabled:
-                status = "⛔ 手动禁用"
+                status = t("module_manual_disabled")
             elif name in self._loaded:
-                status = "🟢 已加载"
+                status = t("module_loaded")
             elif not flag_on:
-                status = "🔴 硬件不足"
+                status = t("hw_insufficient")
             else:
-                status = "🟡 待加载"
+                status = t("module_pending")
 
             table.add_row(name, desc, is_core, hw_icon, status)
 

@@ -1,4 +1,4 @@
-from allspark.config import PERSONALITY_TEMPLATES, INTENT_KEYWORDS
+from allspark.config import PERSONALITY_TEMPLATES, PERSONALITY_GREETING_KEYS, INTENT_KEYWORDS
 from allspark.models import PersonalityMode, OperatingMode
 from allspark.i18n import t
 
@@ -33,17 +33,19 @@ class PersonalitySystem:
     def get_template(self) -> dict:
         return PERSONALITY_TEMPLATES.get(self.current_mode.value, PERSONALITY_TEMPLATES["stable"])
 
+    def _get_greeting(self) -> str:
+        key = PERSONALITY_GREETING_KEYS.get(self.current_mode.value, "greeting_stable")
+        return t(key)
+
     def greet(self) -> str:
-        i18n_key = f"personality_{self.current_mode.value}_greeting"
-        greeting_text = t(i18n_key)
         tmpl = self.get_template()
-        return f"{tmpl['emoji_prefix']} {greeting_text}"
+        return f"{tmpl['emoji_prefix']} {self._get_greeting()}"
 
     def format_response(self, content: str, add_greeting: bool = False) -> str:
         tmpl = self.get_template()
         parts = []
         if add_greeting:
-            parts.append(f"{tmpl['emoji_prefix']} {tmpl['greeting']}")
+            parts.append(f"{tmpl['emoji_prefix']} {self._get_greeting()}")
         parts.append(content)
         if self.current_mode == PersonalityMode.CRISIS:
             parts.append(f"\n{t('crisis_mode_notice')}")
