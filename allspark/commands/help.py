@@ -1,7 +1,5 @@
 
 from allspark.commands.base import BaseCommand
-from allspark.i18n import t
-
 
 
 class HelpCommand(BaseCommand):
@@ -9,6 +7,6 @@ class HelpCommand(BaseCommand):
     ALIASES = ("帮助", "h", "?")
 
     def execute(self, args: list[str]) -> None:
-        from allspark.rule_engine import RuleEngine
-        engine = RuleEngine(self.container)
-        self.console.print(engine._handle_help())
+        engine = self.container.get("rule_engine")
+        if engine:
+            self.console.print(engine._handle_help())

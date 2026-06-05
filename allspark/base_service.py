@@ -1,4 +1,4 @@
-from allspark.database import Database
+from allspark.core.database import Database
 
 
 class BaseService:

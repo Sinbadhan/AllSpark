@@ -1,0 +1,225 @@
+{% set nav_active = "repository" %}
+{% extends "base.html" %}
+
+{% block head %}
+<title>ALLSPARK - Repository</title>
+<style>
+  .border-grid { border: 1px solid #2a2a2a; }
+  .border-grid-b { border-bottom: 1px solid #2a2a2a; }
+  .bg-raised { background-color: #141414; }
+  .hover-border-spark:hover { border-color: #ff6b35; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="mb-4 border-b border-surface-container-high pb-2">
+  <h1 class="text-2xl font-bold text-primary-container uppercase tracking-tighter flex items-center gap-2">
+    <span class="material-symbols-outlined">folder_open</span>
+    Repository
+  </h1>
+  <p class="text-sm text-secondary mt-1">Knowledge base and data management</p>
+</div>
+
+<div class="flex flex-col md:flex-row gap-3 min-h-[calc(100vh-14rem)]">
+  <!-- Left: File Browser -->
+  <aside class="w-full md:w-64 border border-surface-container-high bg-[#141414] flex flex-col flex-shrink-0 rounded">
+    <div class="p-3 border-grid-b bg-raised sticky top-0 z-10 flex justify-between items-center">
+      <h3 class="text-sm font-semibold text-on-surface flex items-center gap-1">
+        <span class="material-symbols-outlined text-primary text-sm">snippet_folder</span> FILES
+      </h3>
+    </div>
+    <ul class="text-sm p-1 flex-1 overflow-y-auto" id="file-tree">
+      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors" onclick="showSection('knowledge')">
+        <span class="material-symbols-outlined text-sm">folder</span> /knowledge
+      </li>
+      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors pl-8" onclick="showSection('knowledge')">
+        <span class="material-symbols-outlined text-sm">description</span> entries.skf
+      </li>
+      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors" onclick="showSection('experience')">
+        <span class="material-symbols-outlined text-sm">folder</span> /experience
+      </li>
+      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors pl-8" onclick="showSection('experience')">
+        <span class="material-symbols-outlined text-sm">description</span> log.json
+      </li>
+      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors" onclick="showSection('models')">
+        <span class="material-symbols-outlined text-sm">folder</span> /models
+      </li>
+      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors pl-8" onclick="showSection('models')">
+        <span class="material-symbols-outlined text-sm">description</span> gguf_models.json
+      </li>
+      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors" onclick="showSection('skf')">
+        <span class="material-symbols-outlined text-sm">folder</span> /skf_packages
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main: Content Area -->
+  <section class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- Action Header -->
+    <div class="flex justify-between items-center mb-3 pb-2 border-b border-surface-container-high gap-2 flex-wrap">
+      <h2 class="text-sm font-semibold text-on-surface flex items-center gap-1" id="section-title">
+        <span class="material-symbols-outlined text-primary-container">history</span> KNOWLEDGE ENTRIES
+      </h2>
+      <div class="flex items-center gap-2">
+        <button onclick="exportData()" class="h-9 px-4 border-grid bg-background text-on-surface text-sm font-semibold hover-border-spark transition-colors flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">download</span> EXPORT
+        </button>
+        <button onclick="importData()" class="h-9 px-4 bg-primary-container text-on-primary-container text-sm font-semibold hover:bg-primary transition-colors flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">upload</span> IMPORT
+        </button>
+      </div>
+    </div>
+
+    <!-- Content Table -->
+    <div class="flex-1 overflow-auto border border-surface-container-high bg-raised rounded" id="repo-content">
+      <div class="text-secondary text-sm p-4 text-center">Select a section from the file browser.</div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentSection = "knowledge";
+
+async function showSection(section) {
+  currentSection = section;
+  const titleEl = document.getElementById("section-title");
+  const contentEl = document.getElementById("repo-content");
+
+  switch(section) {
+    case "knowledge":
+      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">history</span> KNOWLEDGE ENTRIES';
+      await loadKnowledgeTable(contentEl);
+      break;
+    case "experience":
+      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">psychology</span> EXPERIENCE LOG';
+      await loadExperienceTable(contentEl);
+      break;
+    case "models":
+      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">smart_toy</span> LLM MODELS';
+      await loadModelsTable(contentEl);
+      break;
+    case "skf":
+      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">inventory_2</span> SKF PACKAGES';
+      contentEl.innerHTML = '<div class="text-secondary text-sm p-4 text-center">SKF package management - use API endpoints for import/export</div>';
+      break;
+  }
+}
+
+async function loadKnowledgeTable(el) {
+  const cats = await api("/api/knowledge/categories");
+  if (!cats.length) {
+    el.innerHTML = '<div class="text-secondary text-sm p-4 text-center">No knowledge entries found</div>';
+    return;
+  }
+
+  let allEntries = [];
+  for (const cat of cats) {
+    const entries = await api(`/api/knowledge/category/${cat.category}`);
+    allEntries = allEntries.concat(entries);
+  }
+
+  el.innerHTML = `<table class="w-full text-left border-collapse min-w-[600px]">
+    <thead class="sticky top-0 bg-surface-container-high border-b border-surface-container-high z-10">
+      <tr>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">ID</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">TITLE</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">CATEGORY</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">TIER</th>
+      </tr>
+    </thead>
+    <tbody class="text-sm">${allEntries.map(e => `
+      <tr class="hover:bg-surface-variant transition-colors border-b border-surface-container-high">
+        <td class="p-3"><span class="text-primary hover:underline font-mono text-xs">${e.id.substring(0, 8)}</span></td>
+        <td class="p-3 text-on-surface">${escHtml(e.title)}</td>
+        <td class="p-3 text-secondary">${e.category}</td>
+        <td class="p-3 text-secondary text-right">${e.priority}</td>
+      </tr>
+    `).join("")}</tbody></table>`;
+}
+
+async function loadExperienceTable(el) {
+  const data = await api("/api/experience?limit=50");
+  if (!data.length) {
+    el.innerHTML = '<div class="text-secondary text-sm p-4 text-center">No experience records found</div>';
+    return;
+  }
+
+  el.innerHTML = `<table class="w-full text-left border-collapse min-w-[600px]">
+    <thead class="sticky top-0 bg-surface-container-high border-b border-surface-container-high z-10">
+      <tr>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">TIMESTAMP</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">EVENT</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">OUTCOME</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">STATUS</th>
+      </tr>
+    </thead>
+    <tbody class="text-sm">${data.map(e => `
+      <tr class="hover:bg-surface-variant transition-colors border-b border-surface-container-high">
+        <td class="p-3 text-secondary text-xs">${e.timestamp || '--'}</td>
+        <td class="p-3 text-on-surface">${escHtml(e.event)}</td>
+        <td class="p-3 text-on-surface-variant">${escHtml(e.outcome)}</td>
+        <td class="p-3 text-right"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${e.promoted ? 'bg-success-dim text-success' : 'bg-surface-container text-secondary'}">${e.promoted ? "PROMOTED" : "RAW"}</span></td>
+      </tr>
+    `).join("")}</tbody></table>`;
+}
+
+async function loadModelsTable(el) {
+  const data = await api("/api/init/models");
+  const existing = data.existing || [];
+  const downloadable = data.downloadable || [];
+
+  el.innerHTML = `<table class="w-full text-left border-collapse min-w-[600px]">
+    <thead class="sticky top-0 bg-surface-container-high border-b border-surface-container-high z-10">
+      <tr>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">MODEL</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">SIZE</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">STATUS</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary text-right">ACTION</th>
+      </tr>
+    </thead>
+    <tbody class="text-sm">
+    ${existing.map(m => `
+      <tr class="hover:bg-surface-variant transition-colors border-b border-surface-container-high">
+        <td class="p-3 text-primary">${escHtml(m.name)}</td>
+        <td class="p-3 text-secondary">${m.size_mb}MB</td>
+        <td class="p-3"><span class="text-success flex items-center gap-1"><span class="text-[10px]">●</span> DOWNLOADED</span></td>
+        <td class="p-3 text-right">--</td>
+      </tr>
+    `).join("")}
+    ${downloadable.filter(d => !d.downloaded).map(d => `
+      <tr class="hover:bg-surface-variant transition-colors border-b border-surface-container-high opacity-60 hover:opacity-100">
+        <td class="p-3 text-on-surface">${escHtml(d.name)}</td>
+        <td class="p-3 text-secondary">--</td>
+        <td class="p-3"><span class="text-secondary flex items-center gap-1"><span class="text-[10px]">○</span> AVAILABLE</span></td>
+        <td class="p-3 text-right"><button onclick="downloadModel('${d.name}')" class="text-primary hover:underline text-xs">DOWNLOAD</button></td>
+      </tr>
+    `).join("")}
+    </tbody></table>`;
+}
+
+async function downloadModel(name) {
+  await api(`/api/init/download?model_name=${encodeURIComponent(name)}`, {method: "POST"});
+  showSection("models");
+}
+
+function exportData() {
+  alert("Export: Use /api/skf/export endpoint with a file path parameter.");
+}
+
+function importData() {
+  alert("Import: Use /api/skf/import endpoint with a file path parameter.");
+}
+
+function escHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// Load default section
+showSection("knowledge");
+</script>
+{% endblock %}

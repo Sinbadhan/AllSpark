@@ -1,9 +1,8 @@
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 from allspark.commands.base import BaseCommand
-from allspark.i18n import t, get_language
-
+from allspark.core.i18n import get_language, t
 
 
 class LLMCommand(BaseCommand):
@@ -104,7 +103,7 @@ class SKFCommand(BaseCommand):
     ALIASES = ("知识包",)
 
     def execute(self, args: list[str]) -> None:
-        from allspark.skf_manager import export_skf, import_skf, SKFPackage
+        from allspark.services.skf_manager import SKFPackage, export_skf, import_skf
 
         if not args:
             self.console.print(f"[bold]{t('skf_title')}[/]")
@@ -192,7 +191,7 @@ class VerifyCommand(BaseCommand):
     ALIASES = ("验证",)
 
     def execute(self, args: list[str]) -> None:
-        from allspark.knowledge_verifier import KnowledgeVerifier, VerificationLevel
+        from allspark.services.knowledge_verifier import KnowledgeVerifier
 
         verifier = KnowledgeVerifier(self.db, self.container.get("llm"))
 

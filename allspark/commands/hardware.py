@@ -1,9 +1,7 @@
 from rich.table import Table
-from rich.panel import Panel
 
 from allspark.commands.base import BaseCommand
-from allspark.i18n import t, get_language
-
+from allspark.core.i18n import t
 
 
 class PowerCommand(BaseCommand):
@@ -13,7 +11,7 @@ class PowerCommand(BaseCommand):
     def _get_pm(self):
         pm = self.container.get("power_monitor")
         if not pm:
-            from allspark.power_monitor import PowerMonitor
+            from allspark.services.power_monitor import PowerMonitor
             pm = PowerMonitor(db=self.db)
             self.container.register("power_monitor", pm)
         return pm
@@ -94,7 +92,7 @@ class SensorCommand(BaseCommand):
     def _get_hub(self):
         hub = self.container.get("sensor_hub")
         if not hub:
-            from allspark.sensor_hub import SensorHub
+            from allspark.services.sensor_hub import SensorHub
             hub = SensorHub(db=self.db)
             self.container.register("sensor_hub", hub)
         return hub
@@ -197,7 +195,7 @@ class PreserveCommand(BaseCommand):
     def _get_dp(self):
         dp = self.container.get("data_preservation")
         if not dp:
-            from allspark.data_preservation import DataPreservation
+            from allspark.infrastructure.data_preservation import DataPreservation
             dp = DataPreservation(db=self.db)
             self.container.register("data_preservation", dp)
         return dp

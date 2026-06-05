@@ -1,0 +1,92 @@
+# Structured questionnaire data for init wizard (PRD §4.2.2)
+# Each option has a key (stored in DB) and i18n key for display label.
+
+location_types:
+  - key: urban
+    label_key: q_loc_urban
+  - key: suburban
+    label_key: q_loc_suburban
+  - key: rural
+    label_key: q_loc_rural
+  - key: wilderness
+    label_key: q_loc_wilderness
+  - key: coastal
+    label_key: q_loc_coastal
+  - key: mountain
+    label_key: q_loc_mountain
+  - key: underground
+    label_key: q_loc_underground
+
+shelter_statuses:
+  - key: permanent_building
+    label_key: q_shelter_permanent
+  - key: temporary_shelter
+    label_key: q_shelter_temporary
+  - key: vehicle
+    label_key: q_shelter_vehicle
+  - key: open_air
+    label_key: q_shelter_open_air
+  - key: underground
+    label_key: q_shelter_underground
+  - key: none
+    label_key: q_shelter_none
+
+threat_types:
+  - key: extreme_weather
+    label_key: q_threat_weather
+  - key: wildlife
+    label_key: q_threat_wildlife
+  - key: contamination
+    label_key: q_threat_contamination
+  - key: structural_collapse
+    label_key: q_threat_collapse
+  - key: flooding
+    label_key: q_threat_flooding
+  - key: fire_risk
+    label_key: q_threat_fire
+  - key: human_threat
+    label_key: q_threat_human
+  - key: disease
+    label_key: q_threat_disease
+
+skill_categories:
+  - key: medical
+    label_key: q_skill_medical
+  - key: engineering
+    label_key: q_skill_engineering
+  - key: agriculture
+    label_key: q_skill_agriculture
+  - key: navigation
+    label_key: q_skill_navigation
+  - key: cooking
+    label_key: q_skill_cooking
+  - key: construction
+    label_key: q_skill_construction
+  - key: electronics
+    label_key: q_skill_electronics
+  - key: communication
+    label_key: q_skill_communication
+  - key: defense
+    label_key: q_skill_defense
+
+urgency_levels:
+  - key: immediate_danger
+    label_key: q_urgency_immediate
+  - key: stable_but_urgent
+    label_key: q_urgency_urgent
+  - key: stable
+    label_key: q_urgency_stable
+  - key: comfortable
+    label_key: q_urgency_comfortable
+
+health_statuses:
+  - key: healthy
+    label_key: q_health_healthy
+  - key: minor_injury
+    label_key: q_health_minor
+  - key: serious_injury
+    label_key: q_health_serious
+  - key: chronic_condition
+    label_key: q_health_chronic
+  - key: critical
+    label_key: q_health_critical

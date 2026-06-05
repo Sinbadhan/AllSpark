@@ -1,9 +1,7 @@
 from rich.table import Table
-from rich.panel import Panel
 
 from allspark.commands.base import BaseCommand
-from allspark.i18n import t, get_language
-
+from allspark.core.i18n import t
 
 
 class GoalCommand(BaseCommand):
@@ -109,7 +107,7 @@ class GoalCommand(BaseCommand):
                 status_icon = "✅" if ms.done else "⬜"
                 self.console.print(f"  {status_icon} {ms.order}. {ms.description}")
             progress_pct = int(goal.progress * 100)
-            self.console.print(f"\n  进度：{progress_pct}% ({goal.milestone_done}/{goal.milestone_count})")
+            self.console.print(f"\n  {t('goal_progress', pct=progress_pct, done=goal.milestone_done, total=goal.milestone_count)}")
 
         elif sub in ("自动生成", "auto", "generate"):
             generated = ge.auto_generate_goals()
@@ -157,7 +155,7 @@ class ResetCommand(BaseCommand):
             self.console.print(table)
 
         elif sub in ("评估", "assessment", "l1"):
-            from allspark.models import ResetLevel
+            from allspark.core.models import ResetLevel
             evaluation = rm.evaluate_reset(ResetLevel.ASSESSMENT)
             self._print_reset_evaluation(evaluation)
             if evaluation["allowed"]:
@@ -170,7 +168,7 @@ class ResetCommand(BaseCommand):
                         self.console.print(t("reset_rejected", reason=result.get("reason", "")))
 
         elif sub in ("档案", "archive", "l2"):
-            from allspark.models import ResetLevel
+            from allspark.core.models import ResetLevel
             evaluation = rm.evaluate_reset(ResetLevel.ARCHIVE)
             self._print_reset_evaluation(evaluation)
             if evaluation["allowed"]:
@@ -183,7 +181,7 @@ class ResetCommand(BaseCommand):
                         self.console.print(t("reset_rejected", reason=result.get("reason", "")))
 
         elif sub in ("出厂", "factory", "l3"):
-            from allspark.models import ResetLevel
+            from allspark.core.models import ResetLevel
             evaluation = rm.evaluate_reset(ResetLevel.FACTORY)
             self._print_reset_evaluation(evaluation)
             if evaluation["allowed"]:

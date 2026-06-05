@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "allspark"
-version = "0.2.0"
+version = "0.7.0"
 description = "火种 AllSpark — 离线人工智能生存系统"
 requires-python = ">=3.10"
 dependencies = [
@@ -14,13 +14,71 @@ dependencies = [
     "jieba>=0.42",
     "fastapi>=0.100",
     "uvicorn>=0.20",
+    "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.4",
+    "mypy>=1.8",
+]
+rag = [
+    "sentence-transformers>=2.7",
+    "qdrant-client>=1.9",
+    "sqlite-vss>=0.1.2",
+]
+vision = [
+    "onnxruntime>=1.17",
+    "Pillow>=10.0",
+]
+voice = [
+    "openai-whisper>=20231117",
+    "sounddevice>=0.4",
+    "pyttsx3>=2.90",
+    "webrtcvad>=2.0",
+    "openwakeword>=0.6",
 ]
 
 [project.scripts]
 allspark = "allspark.__main__:main"
 
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_configs = true
+ignore_missing_imports = true
+no_implicit_optional = false
+warn_return_any = false
+check_untyped_defs = false
+# Historical typing debt is tracked separately; CI still runs mypy and fails on
+# syntax/import/config regressions while these categories are paid down.
+disable_error_code = [
+    "arg-type",
+    "assignment",
+    "attr-defined",
+    "call-overload",
+    "index",
+    "list-item",
+    "operator",
+    "return-value",
+    "union-attr",
+    "var-annotated",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
 [tool.setuptools.packages.find]
 include = ["allspark*"]
 
 [tool.setuptools.package-data]
-allspark = ["data/*.yaml"]
+allspark = ["py.typed", "data/*.yaml", "data/knowledge/*.yaml", "locales/*.yaml", "templates/*.html"]

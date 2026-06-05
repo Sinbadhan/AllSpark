@@ -1,0 +1,147 @@
+{% set nav_active = "executions" %}
+{% extends "base.html" %}
+
+{% block head %}
+<title>ALLSPARK - Executions</title>
+{% endblock %}
+
+{% block content %}
+<!-- Header & Controls -->
+<div class="mb-4 flex flex-col md:flex-row md:items-end justify-between gap-3 border-b border-surface-container-high pb-3">
+  <div>
+    <h1 class="text-2xl font-bold text-primary-container uppercase tracking-tighter flex items-center gap-2">
+      <span class="material-symbols-outlined">terminal</span>
+      Execution Logs
+    </h1>
+    <p class="text-sm text-secondary mt-1">Real-time telemetry and historical task outputs.</p>
+  </div>
+  <div class="flex items-center gap-2 w-full md:w-auto">
+    <div class="relative flex-1 md:w-64">
+      <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+      <input id="exec-search" class="w-full bg-surface-dim border border-surface-container-high py-1.5 pl-8 pr-2 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors" placeholder="Search task ID or command..." type="text" autocomplete="off"/>
+    </div>
+    <button onclick="refreshExecutions()" class="bg-surface-container border border-surface-container-high px-3 py-1.5 text-on-surface hover:border-primary transition-colors flex items-center gap-1 text-sm font-semibold">
+      <span class="material-symbols-outlined text-lg">refresh</span> Refresh
+    </button>
+  </div>
+</div>
+
+<!-- Execution Stats -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+  <div class="bg-[#141414] border border-surface-container-high rounded p-3 text-center hover:border-primary transition-colors">
+    <div class="text-xl font-bold text-on-surface" id="stat-total">0</div>
+    <div class="text-[11px] font-semibold tracking-wider text-secondary">TOTAL TASKS</div>
+  </div>
+  <div class="bg-[#141414] border border-surface-container-high rounded p-3 text-center hover:border-primary transition-colors">
+    <div class="text-xl font-bold text-success" id="stat-success">0</div>
+    <div class="text-[11px] font-semibold tracking-wider text-secondary">COMPLETED</div>
+  </div>
+  <div class="bg-[#141414] border border-surface-container-high rounded p-3 text-center hover:border-primary transition-colors">
+    <div class="text-xl font-bold text-critical" id="stat-failed">0</div>
+    <div class="text-[11px] font-semibold tracking-wider text-secondary">FAILED</div>
+  </div>
+  <div class="bg-[#141414] border border-surface-container-high rounded p-3 text-center hover:border-primary transition-colors">
+    <div class="text-xl font-bold text-info" id="stat-pending">0</div>
+    <div class="text-[11px] font-semibold tracking-wider text-secondary">PENDING</div>
+  </div>
+</div>
+
+<!-- Executions List -->
+<div id="exec-list" class="flex flex-col gap-2">
+  <div class="text-secondary text-sm p-4 text-center">Loading...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function refreshExecutions() {
+  try {
+    const tasks = await api("/api/tasks");
+    const experiences = await api("/api/experience?limit=20");
+    const container = document.getElementById("exec-list");
+
+    // Stats
+    const completed = tasks.filter(t => t.status === "completed" || t.status === "done").length;
+    const failed = tasks.filter(t => t.status === "failed").length;
+    const pending = tasks.filter(t => t.status === "pending").length;
+    document.getElementById("stat-total").textContent = tasks.length;
+    document.getElementById("stat-success").textContent = completed;
+    document.getElementById("stat-failed").textContent = failed;
+    document.getElementById("stat-pending").textContent = pending;
+
+    if (!tasks.length && !experiences.length) {
+      container.innerHTML = '<div class="text-secondary text-sm p-4 text-center">No execution records found</div>';
+      return;
+    }
+
+    // Render tasks as execution items
+    container.innerHTML = tasks.map(t => {
+      const isActive = t.status === "running" || t.status === "in_progress";
+      const isFailed = t.status === "failed";
+      const isSuccess = t.status === "completed" || t.status === "done";
+      const borderColor = isActive ? "border-l-primary" : isFailed ? "border-l-error" : isSuccess ? "border-l-secondary" : "border-l-surface-container-high";
+      const icon = isActive ? "sync" : isFailed ? "error" : isSuccess ? "check_circle" : "schedule";
+      const iconClass = isActive ? "text-primary animate-spin" : isFailed ? "text-error" : isSuccess ? "text-secondary" : "text-on-surface-variant";
+      const iconFill = isActive || isFailed || isSuccess ? "'FILL' 1" : "'FILL' 0";
+
+      return `<div class="bg-surface-container border border-surface-container-high flex flex-col border-l-[3px] ${borderColor}">
+        <div class="grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center p-2 cursor-pointer hover:bg-surface-container-highest transition-colors" onclick="toggleExecDetail(this)">
+          <span class="material-symbols-outlined ${iconClass}" style="font-variation-settings: ${iconFill}">${icon}</span>
+          <div>
+            <div class="font-semibold text-on-surface text-sm">${escHtml(t.title)}</div>
+            <div class="text-on-surface-variant text-xs mt-0.5">Phase ${t.phase} · Priority ${t.priority}</div>
+          </div>
+          <div class="text-on-surface-variant text-right hidden md:block">
+            <div class="text-[11px] font-semibold tracking-wider">STATUS</div>
+            <div class="text-sm ${isFailed ? 'text-critical' : isSuccess ? 'text-success' : isActive ? 'text-primary' : 'text-secondary'}">${t.status.toUpperCase()}</div>
+          </div>
+          <span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+        </div>
+        <div class="bg-surface-dim border-t border-surface-container-high p-3 hidden">
+          <pre class="text-xs leading-relaxed text-on-surface-variant"><span class="text-primary">[SYS]</span> Task: ${escHtml(t.title)}
+<span class="text-primary">[SYS]</span> Phase: ${t.phase} | Priority: ${t.priority}
+<span class="text-primary">[SYS]</span> Description: ${escHtml(t.description || 'No description')}
+<span class="${isSuccess ? 'text-success' : isFailed ? 'text-critical' : 'text-primary'}">[${isSuccess ? 'OK' : isFailed ? 'FAIL' : 'INFO'}]</span> Status: ${t.status.toUpperCase()}</pre>
+        </div>
+      </div>`;
+    }).join("");
+
+    // Also show recent experiences as execution logs
+    if (experiences.length) {
+      container.innerHTML += experiences.slice(0, 5).map(e => {
+        return `<div class="bg-surface-container border border-surface-container-high flex flex-col border-l-[3px] border-l-tertiary opacity-70 hover:opacity-100 transition-opacity">
+          <div class="grid grid-cols-[auto_1fr_auto] gap-3 items-center p-2">
+            <span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1">psychology</span>
+            <div>
+              <div class="font-semibold text-on-surface text-sm">${escHtml(e.event)}</div>
+              <div class="text-on-surface-variant text-xs mt-0.5">${escHtml(e.outcome)}</div>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${e.promoted ? 'bg-success-dim text-success' : 'bg-surface-container text-secondary'}">${e.promoted ? "PROMOTED" : "RAW"}</span>
+          </div>
+        </div>`;
+      }).join("");
+    }
+  } catch(e) {
+    console.error("Executions refresh error:", e);
+  }
+}
+
+function toggleExecDetail(el) {
+  const detail = el.nextElementSibling;
+  const icon = el.querySelector('span:last-child');
+  if (detail) {
+    detail.classList.toggle("hidden");
+    icon.textContent = detail.classList.contains("hidden") ? "expand_more" : "expand_less";
+  }
+}
+
+function escHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+refreshExecutions();
+setInterval(refreshExecutions, 15000);
+</script>
+{% endblock %}

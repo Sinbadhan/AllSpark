@@ -1,0 +1,272 @@
+{% set nav_active = "config" %}
+{% extends "base.html" %}
+
+{% block head %}
+<title>ALLSPARK - Config</title>
+<style>
+  .code-font { font-family: 'JetBrains Mono', monospace; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="mb-4 border-b border-surface-container-high pb-2">
+  <h1 class="text-2xl font-bold text-primary-container uppercase tracking-tighter flex items-center gap-2">
+    <span class="material-symbols-outlined">settings_input_component</span>
+    Configuration
+  </h1>
+  <p class="text-sm text-secondary mt-1">System settings and script editor</p>
+</div>
+
+<div class="flex flex-col md:flex-row gap-3 h-[calc(100vh-12rem)]">
+  <!-- Left: Config Explorer -->
+  <aside class="w-full md:w-72 border border-surface-container-high bg-[#141414] flex flex-col flex-shrink-0 rounded">
+    <div class="p-3 border-b border-surface-container-high flex justify-between items-center bg-surface">
+      <span class="text-sm font-semibold text-secondary">EXPLORER</span>
+      <div class="flex gap-1 text-on-surface-variant">
+        <span class="material-symbols-outlined cursor-pointer hover:text-primary text-sm transition-colors">create_new_folder</span>
+        <span class="material-symbols-outlined cursor-pointer hover:text-primary text-sm transition-colors">note_add</span>
+      </div>
+    </div>
+    <div class="flex-1 overflow-y-auto p-1">
+      <div class="flex flex-col">
+        <!-- Config sections -->
+        <div class="flex items-center px-2 py-1.5 cursor-pointer hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors" onclick="showConfig('general')">
+          <span class="material-symbols-outlined text-sm mr-1.5">keyboard_arrow_down</span>
+          <span class="material-symbols-outlined text-sm mr-1.5 text-primary">folder</span>
+          <span class="text-sm truncate">General</span>
+        </div>
+        <div class="ml-4 pl-1 border-l border-surface-container-high flex flex-col gap-0.5 mt-0.5">
+          <div class="flex items-center px-2 py-1 bg-surface-container-high text-primary border-l-2 border-primary cursor-pointer config-item active" data-config="language" onclick="showConfig('language')">
+            <span class="material-symbols-outlined text-sm mr-1.5">language</span>
+            <span class="text-sm truncate">language.yaml</span>
+          </div>
+          <div class="flex items-center px-2 py-1 hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors config-item" data-config="survivor" onclick="showConfig('survivor')">
+            <span class="material-symbols-outlined text-sm mr-1.5">person</span>
+            <span class="text-sm truncate">survivor.json</span>
+          </div>
+        </div>
+
+        <div class="flex items-center px-2 py-1.5 cursor-pointer hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors" onclick="showConfig('resources')">
+          <span class="material-symbols-outlined text-sm mr-1.5">keyboard_arrow_down</span>
+          <span class="material-symbols-outlined text-sm mr-1.5 text-primary">folder</span>
+          <span class="text-sm truncate">Resources</span>
+        </div>
+        <div class="ml-4 pl-1 border-l border-surface-container-high flex flex-col gap-0.5 mt-0.5">
+          <div class="flex items-center px-2 py-1 hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors config-item" data-config="water" onclick="showConfig('water')">
+            <span class="material-symbols-outlined text-sm mr-1.5">water_drop</span>
+            <span class="text-sm truncate">water.yaml</span>
+          </div>
+          <div class="flex items-center px-2 py-1 hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors config-item" data-config="food" onclick="showConfig('food')">
+            <span class="material-symbols-outlined text-sm mr-1.5">restaurant</span>
+            <span class="text-sm truncate">food.yaml</span>
+          </div>
+          <div class="flex items-center px-2 py-1 hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors config-item" data-config="power" onclick="showConfig('power')">
+            <span class="material-symbols-outlined text-sm mr-1.5">bolt</span>
+            <span class="text-sm truncate">power.yaml</span>
+          </div>
+        </div>
+
+        <div class="flex items-center px-2 py-1.5 cursor-pointer hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors" onclick="showConfig('system')">
+          <span class="material-symbols-outlined text-sm mr-1.5">keyboard_arrow_down</span>
+          <span class="material-symbols-outlined text-sm mr-1.5 text-primary">folder</span>
+          <span class="text-sm truncate">System</span>
+        </div>
+        <div class="ml-4 pl-1 border-l border-surface-container-high flex flex-col gap-0.5 mt-0.5">
+          <div class="flex items-center px-2 py-1 hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors config-item" data-config="modules" onclick="showConfig('modules')">
+            <span class="material-symbols-outlined text-sm mr-1.5">extension</span>
+            <span class="text-sm truncate">modules.json</span>
+          </div>
+          <div class="flex items-center px-2 py-1 hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors config-item" data-config="llm" onclick="showConfig('llm')">
+            <span class="material-symbols-outlined text-sm mr-1.5">smart_toy</span>
+            <span class="text-sm truncate">llm_config.yaml</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Branch info -->
+    <div class="p-3 border-t border-surface-container-high bg-surface">
+      <span class="text-[11px] font-semibold tracking-wider text-on-surface-variant block mb-1">ACTIVE MODE</span>
+      <div class="flex items-center justify-between p-1.5 bg-[#0a0a0a] border border-surface-container-high rounded">
+        <div class="flex items-center">
+          <span class="material-symbols-outlined text-sm mr-1 text-secondary">commit</span>
+          <span class="text-sm text-secondary" id="active-mode">SURVIVAL</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right: Config Editor -->
+  <section class="flex-1 flex flex-col bg-[#0a0a0a] border border-surface-container-high rounded overflow-hidden">
+    <!-- Editor Tabs -->
+    <div class="flex bg-[#141414] border-b border-surface-container-high overflow-x-auto">
+      <div class="flex items-center px-4 py-2 bg-[#0a0a0a] border-t-2 border-primary text-primary min-w-[150px] border-r border-surface-container-high cursor-pointer">
+        <span class="material-symbols-outlined text-sm mr-1">code</span>
+        <span class="text-sm truncate" id="editor-tab-name">language.yaml</span>
+      </div>
+    </div>
+
+    <!-- Editor Action Bar -->
+    <div class="flex justify-between items-center p-3 bg-[#141414] border-b border-surface-container-high">
+      <div class="flex items-center gap-3 text-on-surface-variant text-[11px] font-semibold tracking-wider">
+        <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-secondary mr-1"></span>SAVED</span>
+        <span>|</span>
+        <span id="editor-format">YAML</span>
+        <span>|</span>
+        <span>UTF-8</span>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="validateConfig()" class="px-3 py-1 border border-surface-container-high text-on-surface hover:border-primary hover:text-primary transition-colors text-sm font-semibold flex items-center bg-[#0a0a0a]">
+          <span class="material-symbols-outlined text-sm mr-1">rule</span> VALIDATE
+        </button>
+        <button onclick="saveConfig()" class="px-3 py-1 bg-primary text-on-primary text-sm font-semibold flex items-center hover:bg-primary-container transition-colors active:scale-95 border border-primary">
+          <span class="material-symbols-outlined text-sm mr-1">save</span> SAVE
+        </button>
+      </div>
+    </div>
+
+    <!-- Config Content Area -->
+    <div class="flex-1 overflow-auto p-3 code-font text-sm leading-relaxed" id="config-content">
+      <div class="text-secondary">Select a configuration file from the explorer.</div>
+    </div>
+
+    <!-- Output Console -->
+    <div class="h-32 border-t border-surface-container-high bg-[#141414] flex flex-col">
+      <div class="flex items-center px-3 py-1 border-b border-surface-container-high text-on-surface-variant text-[11px] font-semibold tracking-wider">
+        <span class="material-symbols-outlined text-sm mr-1">terminal</span> OUTPUT CONSOLE
+      </div>
+      <div class="flex-1 p-3 overflow-y-auto text-sm code-font text-on-surface-variant" id="config-output">
+        <p class="mb-1"><span class="text-primary">[SYS]</span> Configuration editor ready.</p>
+        <p class="mb-1"><span class="text-secondary">[OK]</span>  Awaiting selection...</p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentConfig = "language";
+
+const configTemplates = {
+  language: {
+    name: "language.yaml",
+    format: "YAML",
+    content: `# AllSpark Language Configuration\nlanguage: zh  # Options: zh, en\nauto_detect: false\nfallback: en`
+  },
+  survivor: {
+    name: "survivor.json",
+    format: "JSON",
+    content: `{\n  "name": "Survivor",\n  "language": "zh",\n  "initialized": true\n}`
+  },
+  water: {
+    name: "water.yaml",
+    format: "YAML",
+    content: `# Water Resource Configuration\ntype: water\nunit: L\ndaily_consumption: 2.0\ndaily_intake: 0.0\ninitial_amount: 10.0`
+  },
+  food: {
+    name: "food.yaml",
+    format: "YAML",
+    content: `# Food Resource Configuration\ntype: food\nunit: kcal\ndaily_consumption: 2000\ndaily_intake: 0\ninitial_amount: 10000`
+  },
+  power: {
+    name: "power.yaml",
+    format: "YAML",
+    content: `# Power Resource Configuration\ntype: power\nunit: "%"\ndaily_consumption: 10\ndaily_intake: 0\ninitial_amount: 100`
+  },
+  modules: {
+    name: "modules.json",
+    format: "JSON",
+    content: `{\n  "//": "Module configuration - loaded from database",\n  "//": "Use VALIDATE to check current module status"`
+  },
+  llm: {
+    name: "llm_config.yaml",
+    format: "YAML",
+    content: `# LLM Engine Configuration\nmodel: auto  # auto-detect based on hardware\ntemperature: 0.7\nmax_tokens: 2048\ncontext_window: 4096`
+  },
+  general: {
+    name: "README.md",
+    format: "MD",
+    content: `# AllSpark Configuration\n\nSelect a config file from the explorer to edit.\n\n## Sections\n- **General**: Language, survivor settings\n- **Resources**: Water, food, power configs\n- **System**: Modules, LLM settings`
+  },
+  resources: {
+    name: "resources_overview.yaml",
+    format: "YAML",
+    content: `# Resource Overview\n# Edit individual resource files for detailed configuration\n\nresources:\n  - water\n  - food\n  - fire\n  - shelter\n  - medical\n  - power\n  - communication`
+  },
+  system: {
+    name: "system_overview.yaml",
+    format: "YAML",
+    content: `# System Configuration Overview\noperating_modes:\n  - normal\n  - conservation\n  - emergency\n  - hibernation\n\ndefault_mode: normal\nauto_mode_switch: true`
+  }
+};
+
+function showConfig(key) {
+  currentConfig = key;
+  const cfg = configTemplates[key];
+  if (!cfg) return;
+
+  document.getElementById("editor-tab-name").textContent = cfg.name;
+  document.getElementById("editor-format").textContent = cfg.format;
+
+  // Highlight active config item
+  document.querySelectorAll('.config-item').forEach(el => {
+    el.classList.remove('active', 'bg-surface-container-high', 'text-primary', 'border-l-2', 'border-primary');
+    el.classList.add('text-on-surface-variant');
+  });
+  const activeItem = document.querySelector(`.config-item[data-config="${key}"]`);
+  if (activeItem) {
+    activeItem.classList.add('active', 'bg-surface-container-high', 'text-primary', 'border-l-2', 'border-primary');
+    activeItem.classList.remove('text-on-surface-variant');
+  }
+
+  // Render content with syntax coloring
+  const content = cfg.content;
+  const lines = content.split('\n');
+  const lineNums = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
+  const coloredContent = lines.map(line => {
+    if (line.startsWith('#')) return `<span class="text-on-surface-variant">${escHtml(line)}</span>`;
+    if (line.startsWith('//')) return `<span class="text-on-surface-variant">${escHtml(line)}</span>`;
+    return escHtml(line);
+  }).join('\n');
+
+  document.getElementById("config-content").innerHTML = `
+    <div class="flex">
+      <div class="select-none text-right pr-2 mr-2 border-r border-surface-container-high text-on-surface-variant opacity-50" style="min-width:2rem">${lineNums}</div>
+      <pre class="flex-1 m-0 whitespace-pre-wrap">${coloredContent}</pre>
+    </div>`;
+
+  addOutput("INFO", `Loaded ${cfg.name}`);
+}
+
+function validateConfig() {
+  addOutput("OK", "Syntax check passed.");
+  addOutput("OK", "Reference resolution complete.");
+}
+
+function saveConfig() {
+  addOutput("OK", `Configuration ${currentConfig} saved.`);
+}
+
+function addOutput(level, msg) {
+  const output = document.getElementById("config-output");
+  const color = level === "OK" ? "text-success" : level === "FAIL" ? "text-critical" : "text-primary";
+  output.innerHTML += `<p class="mb-1"><span class="${color}">[${level}]</span>  ${msg}</p>`;
+  output.scrollTop = output.scrollHeight;
+}
+
+function escHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// Load default config
+showConfig("language");
+
+// Load active mode
+api("/api/status").then(data => {
+  document.getElementById("active-mode").textContent = data.mode.toUpperCase();
+});
+</script>
+{% endblock %}

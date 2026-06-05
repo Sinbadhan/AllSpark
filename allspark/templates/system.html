@@ -1,0 +1,282 @@
+{% set nav_active = "system" %}
+{% extends "base.html" %}
+
+{% block head %}
+<title>ALLSPARK - System Monitor</title>
+<style>
+.scanline-overlay { position: relative; }
+.scanline-overlay::before {
+  content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.15) 50%), linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+  z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
+}
+.sys-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+@media (min-width: 768px) { .sys-header { flex-direction: row; justify-content: space-between; align-items: flex-end; } }
+.sys-header h1 { font-size: 28px; font-weight: 700; color: var(--primary-container); text-transform: uppercase; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+.sys-header p { font-size: 13px; color: var(--secondary); margin-top: 4px; }
+.sys-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 768px) { .sys-grid { grid-template-columns: repeat(12, 1fr); } }
+.sys-grid .span-4 { grid-column: span 4; }
+.sys-grid .span-6 { grid-column: span 6; }
+.sys-grid .span-8 { grid-column: span 8; }
+.sys-grid .span-12 { grid-column: span 12; }
+@media (max-width: 767px) { .sys-grid .span-4, .sys-grid .span-6, .sys-grid .span-8, .sys-grid .span-12 { grid-column: span 1; } }
+.integrity-card {
+  background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; position: relative; overflow: hidden; transition: border-color 0.3s;
+}
+.integrity-card:hover { border-color: var(--primary-container); }
+.integrity-card .shield-icon { position: absolute; top: 8px; right: 8px; opacity: 0.5; }
+.integrity-card .integrity-value { font-size: 56px; font-weight: 700; color: var(--primary-container); line-height: 1; margin-bottom: 8px; text-align: center; }
+.integrity-card .integrity-status { font-size: 13px; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 4px; justify-content: center; }
+.integrity-card .integrity-footer { margin-top: auto; border-top: 1px solid var(--border); padding-top: 8px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); }
+.resource-bar-card {
+  background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px; transition: border-color 0.3s;
+}
+.resource-bar-card:hover { border-color: var(--primary-container); }
+.resource-bar-card .bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.resource-bar-card .bar-label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); display: flex; align-items: center; gap: 4px; }
+.resource-bar-card .bar-value { font-size: 13px; font-weight: 600; color: var(--primary-container); }
+.resource-bar-card .bar-scale { font-size: 10px; color: var(--on-surface-variant); margin-top: 4px; display: flex; justify-content: space-between; }
+.module-card {
+  background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; transition: border-color 0.3s;
+}
+.module-card:hover { border-color: var(--primary-container); }
+.module-card .module-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.module-card .module-title { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); }
+.module-card .sync-btn {
+  background: var(--surface); border: 1px solid var(--border); padding: 4px 12px;
+  border-radius: var(--radius); color: var(--primary-container); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; transition: border-color 0.15s;
+}
+.module-card .sync-btn:hover { border-color: var(--primary-container); }
+.info-card {
+  background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; transition: border-color 0.3s;
+}
+.info-card:hover { border-color: var(--primary-container); }
+.info-card .info-title { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); margin-bottom: 12px; display: flex; align-items: center; gap: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="sys-header">
+  <div>
+    <h1><span class="material-symbols-outlined">memory</span> SYSTEM_MONITOR<span class="cursor-blink">_</span></h1>
+    <p>Real-time telemetry and node status</p>
+  </div>
+  <div style="font-size:24px;font-weight:700;color:var(--primary);text-align:right;" id="uptime-clock">T-MINUS 00:00:00</div>
+</div>
+
+<!-- Dashboard Grid -->
+<div class="sys-grid scanline-overlay">
+
+  <!-- System Integrity Gauge -->
+  <div class="integrity-card span-4">
+    <div class="shield-icon"><span class="material-symbols-outlined text-secondary">shield</span></div>
+    <h3 style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--secondary);margin-bottom:12px;">SYSTEM INTEGRITY</h3>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 0;">
+      <div class="integrity-value" id="integrity-value">--</div>
+      <div class="integrity-status" id="integrity-status">
+        <span class="material-symbols-outlined" style="font-size:16px;">help</span> LOADING
+      </div>
+    </div>
+    <div class="integrity-footer">
+      <span id="error-count">ERRORS: --</span>
+      <span id="warning-count">WARNINGS: --</span>
+    </div>
+  </div>
+
+  <!-- Resource Graphs -->
+  <div class="span-8" style="display:grid;grid-template-columns:1fr;gap:12px;">
+    <!-- CPU -->
+    <div class="resource-bar-card">
+      <div class="bar-header">
+        <h3 class="bar-label"><span class="material-symbols-outlined" style="font-size:16px;">developer_board</span> CPU_UTILIZATION</h3>
+        <span class="bar-value" id="cpu-value">--</span>
+      </div>
+      <div class="ascii-progress text-sm tracking-tighter" id="cpu-bar">[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] --</div>
+      <div class="bar-scale"><span>0%</span><span>50%</span><span>100%</span></div>
+    </div>
+    <!-- RAM -->
+    <div class="resource-bar-card">
+      <div class="bar-header">
+        <h3 class="bar-label"><span class="material-symbols-outlined" style="font-size:16px;">memory_alt</span> RAM_ALLOCATION</h3>
+        <span class="bar-value" style="color:var(--primary);" id="ram-value">--</span>
+      </div>
+      <div class="ascii-progress text-sm tracking-tighter" id="ram-bar">[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] --</div>
+      <div class="bar-scale"><span>0GB</span><span>16GB</span><span>32GB</span></div>
+    </div>
+    <!-- Disk -->
+    <div class="resource-bar-card">
+      <div class="bar-header">
+        <h3 class="bar-label"><span class="material-symbols-outlined" style="font-size:16px;">save</span> DISK_IO</h3>
+        <span class="bar-value" style="color:var(--primary);" id="disk-value">--</span>
+      </div>
+      <div class="ascii-progress text-sm tracking-tighter" id="disk-bar">[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] --</div>
+      <div class="bar-scale"><span>0MB/s</span><span>500MB/s</span><span>1000MB/s</span></div>
+    </div>
+  </div>
+
+  <!-- Worker Nodes / Module Status -->
+  <div class="module-card span-12">
+    <div class="module-header">
+      <h3 class="module-title">ACTIVE_MODULES [WORKER_NODES]</h3>
+      <button onclick="refreshSystem()" class="sync-btn">
+        <span class="material-symbols-outlined" style="font-size:14px;">refresh</span> SYNC
+      </button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>MODULE_ID</th><th>STATUS</th><th>LOAD</th><th>UPTIME</th><th style="text-align:right;">ACTION</th>
+          </tr>
+        </thead>
+        <tbody id="module-table">
+          <tr><td colspan="5" class="text-secondary" style="padding:12px;">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- LLM Engine Status -->
+  <div class="info-card span-6">
+    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">smart_toy</span> LLM_ENGINE</h3>
+    <div id="llm-detail" class="text-sm text-on-surface-variant">Loading...</div>
+    <button onclick="loadLLM()" class="btn-primary mt-3">Load Model</button>
+  </div>
+
+  <!-- Hardware Profile -->
+  <div class="info-card span-6">
+    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">computer</span> HARDWARE_PROFILE</h3>
+    <div id="hw-detail" class="text-sm text-on-surface-variant">Loading...</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function makeBar(pct) {
+  const blocks = Math.floor((pct / 100) * 40);
+  const empty = 40 - blocks;
+  return '[' + '\u2588'.repeat(blocks) + '\u2591'.repeat(empty) + ']';
+}
+
+function escHtml(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
+
+async function refreshSystem() {
+  try {
+    const data = await api("/api/status");
+    const modules = await api("/api/modules");
+    const llm = await api("/api/llm/status");
+    const hw = await api("/api/init/hardware");
+
+    // Integrity
+    const warningCount = (data.warnings || []).length;
+    const errorCount = (data.warnings || []).filter(w => w.level === "critical").length;
+    const integrity = Math.max(0, 100 - errorCount * 10 - warningCount * 2);
+    document.getElementById("integrity-value").textContent = integrity.toFixed(1) + "%";
+    const intStatus = document.getElementById("integrity-status");
+    if (integrity > 90) {
+      intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">check_circle</span> STABLE';
+      intStatus.style.color = "var(--success)";
+    } else if (integrity > 60) {
+      intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">warning</span> DEGRADED';
+      intStatus.style.color = "var(--warning)";
+    } else {
+      intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> CRITICAL';
+      intStatus.style.color = "var(--critical)";
+    }
+    document.getElementById("error-count").textContent = "ERRORS: " + errorCount;
+    document.getElementById("warning-count").textContent = "WARNINGS: " + warningCount;
+
+    // Resource bars
+    const resources = data.resources || [];
+    const cpuRes = resources.find(r => r.type === "power");
+    const ramRes = resources.find(r => r.type === "water");
+    const diskRes = resources.find(r => r.type === "food");
+
+    if (cpuRes && !cpuRes.offline) {
+      const cpuPct = Math.min(100, Math.max(0, (cpuRes.remaining_hours / 168) * 100));
+      document.getElementById("cpu-value").textContent = cpuPct.toFixed(0) + "%";
+      const cpuBar = document.getElementById("cpu-bar");
+      cpuBar.textContent = makeBar(cpuPct) + " " + cpuPct.toFixed(0) + "% " + (cpuPct > 70 ? "OK" : cpuPct > 30 ? "WARN" : "CRIT");
+      cpuBar.className = "ascii-progress text-sm tracking-tighter" + (cpuPct > 70 ? "" : cpuPct > 30 ? " warning" : " critical");
+    }
+
+    if (ramRes && !ramRes.offline) {
+      const ramPct = Math.min(100, Math.max(0, (ramRes.remaining_hours / 168) * 100));
+      document.getElementById("ram-value").textContent = ramPct.toFixed(0) + "%";
+      const ramBar = document.getElementById("ram-bar");
+      ramBar.textContent = makeBar(ramPct) + " " + ramPct.toFixed(0) + "% " + (ramPct > 70 ? "OK" : ramPct > 30 ? "WARN" : "CRIT");
+      ramBar.className = "ascii-progress text-sm tracking-tighter" + (ramPct > 70 ? "" : ramPct > 30 ? " warning" : " critical");
+    }
+
+    if (diskRes && !diskRes.offline) {
+      const diskPct = Math.min(100, Math.max(0, (diskRes.remaining_hours / 168) * 100));
+      document.getElementById("disk-value").textContent = diskPct.toFixed(0) + "%";
+      const diskBar = document.getElementById("disk-bar");
+      diskBar.textContent = makeBar(diskPct) + " " + diskPct.toFixed(0) + "% " + (diskPct > 70 ? "OK" : diskPct > 30 ? "WARN" : "CRIT");
+      diskBar.className = "ascii-progress text-sm tracking-tighter" + (diskPct > 70 ? "" : diskPct > 30 ? " warning" : " critical");
+    }
+
+    // Modules table
+    const modTable = document.getElementById("module-table");
+    if (modules && modules.length) {
+      modTable.innerHTML = modules.map(m => {
+        const statusColor = m.status === "active" || m.status === "loaded" ? "var(--success)" : "var(--warning)";
+        return '<tr><td style="color:var(--primary-container);font-weight:600;">' + escHtml(m.name) + '</td>' +
+          '<td style="color:' + statusColor + '">' + (m.status || "active") + '</td>' +
+          '<td>' + (m.load || "--") + '</td>' +
+          '<td>' + (m.uptime || "--") + '</td>' +
+          '<td style="text-align:right;"><button class="btn-outline" style="padding:2px 8px;font-size:11px;">RESTART</button></td></tr>';
+      }).join("");
+    } else {
+      modTable.innerHTML = '<tr><td colspan="5" class="text-secondary" style="padding:12px;">No modules loaded</td></tr>';
+    }
+
+    // LLM
+    const llmDetail = document.getElementById("llm-detail");
+    if (llm) {
+      llmDetail.innerHTML = '<div style="margin-bottom:8px;"><strong>Status:</strong> <span class="' + (llm.loaded ? 'text-success' : 'text-secondary') + '">' + (llm.loaded ? "LOADED" : "NOT LOADED") + '</span></div>' +
+        (llm.model ? '<div><strong>Model:</strong> ' + escHtml(llm.model) + '</div>' : '') +
+        (llm.speed ? '<div><strong>Speed:</strong> ' + llm.speed + ' tok/s</div>' : '');
+    }
+
+    // Hardware
+    const hwDetail = document.getElementById("hw-detail");
+    if (hw) {
+      hwDetail.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+        [['CPU', hw.cpu_model || hw.cpu_arch], ['Cores', hw.cpu_cores], ['RAM', hw.ram_total_gb + ' GB'], ['Storage', hw.storage_available_gb + ' / ' + hw.storage_total_gb + ' GB'], ['GPU', hw.gpu_info || 'None'], ['OS', hw.os_name]].map(([l, v]) =>
+          '<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:8px;text-align:center;"><div style="font-size:11px;color:var(--secondary);margin-bottom:2px;">' + l + '</div><div style="font-size:13px;font-weight:600;">' + v + '</div></div>'
+        ).join("") + '</div>';
+    }
+  } catch(e) { console.error("System refresh error:", e); }
+}
+
+async function loadLLM() {
+  try {
+    const data = await api("/api/llm/load", {method: "POST"});
+    document.getElementById("llm-detail").innerHTML = '<span class="text-success">Model loaded: ' + escHtml(data.model || "unknown") + '</span>';
+  } catch(e) { document.getElementById("llm-detail").innerHTML = '<span class="text-critical">Error: ' + escHtml(e.message) + '</span>'; }
+}
+
+// Uptime clock
+let uptimeStart = Date.now();
+function updateClock() {
+  const diff = Date.now() - uptimeStart;
+  const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+  const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+  const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+  document.getElementById("uptime-clock").textContent = "T-MINUS " + h + ":" + m + ":" + s;
+}
+setInterval(updateClock, 1000);
+
+refreshSystem();
+setInterval(refreshSystem, 15000);
+</script>
+{% endblock %}

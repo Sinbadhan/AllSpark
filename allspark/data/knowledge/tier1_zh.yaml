@@ -1,0 +1,240 @@
+- id: agriculture/soil/preparation
+  category: agriculture
+  subcategory: soil
+  priority: 1
+  title: 土壤准备与改良
+  summary: 短期生存后需要建立稳定食物来源。土壤准备是农业的基础：清除杂草、翻松土壤、添加有机质、调节酸碱度。
+  steps:
+  - 选择向阳、排水良好的地块，面积以2m×3m起步
+  - 清除杂草和石块，深翻20-30厘米
+  - 加入腐叶土、草木灰或堆肥改善土壤结构
+  - 用简易pH试纸测试酸碱度（6.0-7.0最佳）
+  - 过酸加草木灰，过碱加松针/腐叶
+  - 整平地面，做畦（高畦排水，低畦保水）
+  prerequisites:
+  - 土地
+  - 工具（锄/铲）
+  - 有机质来源
+  warnings:
+  - 不要在工业区或道路旁种植——土壤可能含重金属
+  - 新鲜粪便必须堆肥6个月以上才能使用
+  - 连续种植同一作物会导致土壤贫瘠，需轮作
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: agriculture/crops/fast_growing
+  category: agriculture
+  subcategory: crops
+  priority: 1
+  title: 快速生长作物种植
+  summary: 灾后最需要的是快速产出食物。推荐速生作物：萝卜（30天）、小白菜（25天）、生菜（30天）、豆芽（5-7天）。
+  steps:
+  - 豆芽：绿豆/黄豆浸泡8小时，每天冲洗2次，5-7天收获，不需要阳光
+  - 小白菜：撒播种子，覆土0.5cm，保持湿润，25天可采
+  - 萝卜：点播，间距10cm，30-40天收获根茎
+  - 生菜：撒播或育苗移栽，30天开始采外叶
+  - 红薯：扦插藤蔓，60-90天可收块根，叶也可食用
+  prerequisites:
+  - 种子或种苗
+  - 土壤
+  - 水源
+  warnings:
+  - 豆芽生产需注意通风，密闭潮湿易滋生细菌
+  - 不要食用发霉或变色的豆芽
+  - 野生种子可能不适应当地气候，优先使用本地品种
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: agriculture/preservation/drying
+  category: agriculture
+  subcategory: preservation
+  priority: 1
+  title: 食物干燥保存法
+  summary: 干燥是最古老的食物保存方法。去除水分使微生物无法生长，可保存数月至数年。
+  steps:
+  - 选择新鲜无损的食材，清洗擦干
+  - 切薄片（3-5mm），越薄干燥越快
+  - 日晒法：铺在干净网架上，阳光直射，每天翻面，2-5天
+  - 烟熏法：在火堆上方搭建熏架，低温慢熏6-12小时
+  - 判断干燥程度：对折不断裂、不渗水即为充分干燥
+  - 密封保存：用布袋或密封容器，加入干燥剂（生石灰/稻壳灰）
+  prerequisites:
+  - 食材
+  - 干燥环境或热源
+  warnings:
+  - 潮湿天气不适合日晒干燥
+  - 干燥不彻底会导致霉变，宁可过干不可欠干
+  - 烟熏温度不要超过60°C，否则会烤熟而非干燥
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: chemistry/soap/making
+  category: chemistry
+  subcategory: soap
+  priority: 1
+  title: 手工皂制作
+  summary: 卫生是生存的关键。用油脂和碱（草木灰提取）制作肥皂，用于清洁身体和物品，预防疾病。
+  steps:
+  - 收集草木灰（硬木灰最佳），装入带孔容器
+  - 用热水缓慢淋过草木灰，收集滤出液（碱液）
+  - 将碱液蒸发浓缩至原体积1/3（可用鸡蛋测试浮力）
+  - 加热油脂至温热（动物油或植物油均可）
+  - 缓慢将碱液倒入油脂中，持续搅拌至浓稠（trace状态）
+  - 倒入模具，保温24-48小时，脱模后晾置4-6周
+  prerequisites:
+  - 油脂
+  - 草木灰
+  - 容器
+  - 搅拌工具
+  warnings:
+  - 碱液具有强腐蚀性，避免接触皮肤和眼睛
+  - 制作时保持通风，佩戴防护
+  - 未充分皂化的肥皂可能灼伤皮肤，需充分晾置
+  - 如皮肤接触碱液，立即用大量清水冲洗
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: chemistry/charcoal/production
+  category: chemistry
+  subcategory: charcoal
+  priority: 1
+  title: 木炭烧制
+  summary: 木炭是重要的燃料和材料。燃烧温度比木柴高、烟少，可用于冶炼、过滤、医药。
+  steps:
+  - 选择硬木（橡木、枣木等），截成相似长度
+  - 在地上挖圆坑或堆成土窑，底部留通风口
+  - 将木材竖直紧密排列，中间留点火通道
+  - 覆盖湿土/泥巴，仅留顶部一个出烟口
+  - 从底部点火，控制通风量使木材不完全燃烧
+  - 持续8-24小时（视木材量），烟色由白变蓝再变清时封窑
+  - 完全密封冷却24小时以上再开窑取炭
+  prerequisites:
+  - 硬木
+  - 空地
+  - 泥土
+  warnings:
+  - 烧炭过程产生一氧化碳，必须在室外进行
+  - 不要在密闭空间或帐篷内烧炭——一氧化碳中毒致命
+  - 封窑前确认不再有明火，否则开窑会复燃
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: mechanical/tools/blacksmithing_basic
+  category: mechanical
+  subcategory: tools
+  priority: 1
+  title: 基础锻造与工具修复
+  summary: 金属工具是文明延续的关键。掌握基础锻造可以修复和制作刀、锄、钉等基本工具。
+  steps:
+  - 搭建简易锻造炉：用泥巴/砖砌成炉膛，底部留进风口
+  - 燃料使用木炭（温度可达1000°C以上）
+  - 用风箱或电扇鼓风提升温度
+  - 将铁件放入炉中加热至樱桃红色（约800°C）
+  - 在砧铁上用锤锻打成型——先粗打再精修
+  - 淬火：将热工件浸入水或油中快速冷却以增加硬度
+  - 回火：重新加热至200-300°C后缓冷，消除脆性
+  prerequisites:
+  - 铁料
+  - 木炭
+  - 砧铁/替代品
+  - 锤子
+  - 火炉
+  warnings:
+  - 锻造温度极高，注意烫伤和火灾
+  - 淬火时会产生蒸汽飞溅，保持距离
+  - 回火温度过高会失去硬度，过低则仍有脆性
+  - 废铁回收时注意区分铁和钢——钢能淬硬，铁不能
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: mechanical/rope_knots/essential
+  category: mechanical
+  subcategory: rope_knots
+  priority: 1
+  title: 生存必备绳结
+  summary: 绳结是生存的基本技能。掌握6个核心绳结可以应对大部分场景：搭建、固定、救援、捆绑。
+  steps:
+  - 称人结（Bowline）：制作固定环，不会滑动，救援用
+  - 双套结（Clove Hitch）：将绳固定在柱/杆上，可调节
+  - 八字结（Figure-8）：防滑止结，攀爬和安全用
+  - 方回结（Square Lashing）：交叉杆固定，搭建框架用
+  - 渔人结（Fisherman's Bend）：连接两根绳子
+  - 营钉结（Taut-line Hitch）：可调节松紧的固定结，帐篷用
+  prerequisites:
+  - 绳索
+  warnings:
+  - 绳结在潮湿时可能滑动，关键部位使用双重结
+  - 定期检查绳结是否松动
+  - 救援时绳索承重不超过破断力的1/5
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: weather/observation/basics
+  category: weather
+  subcategory: observation
+  priority: 1
+  title: 天气观测基础
+  summary: 无天气预报时，通过自然现象预测天气变化，对生存决策至关重要。
+  steps:
+  - 看云：积雨云（高耸如花椰菜）→雷暴将至；卷云（丝状高空）→天气变化1-2天
+  - 看风：风向突变通常伴随天气变化；山谷中白天风上山、夜间风下山为正常
+  - 看动物：燕子低飞→即将下雨；蚂蚁搬家→大雨将至；蜜蜂归巢→天气转坏
+  - 看天空：红霞朝出→风雨将至；红霞晚出→天气晴好
+  - 感受：关节疼痛、湿度骤增→可能下雨；空气闷热无风→雷暴前兆
+  - 记录：每天记录天气，一周后可发现本地规律
+  prerequisites:
+  - 观察力
+  - 记录工具
+  warnings:
+  - 山区天气变化极快，不要只看当前天气做远行决定
+  - 雷暴时远离高地、孤立大树和水面
+  - 洪涝风险区域注意上游天气
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: energy/fire/charcoal_gasifier
+  category: energy
+  subcategory: fire
+  priority: 1
+  title: 简易木炭气化炉
+  summary: 木炭气化炉可以将木柴不完全燃烧产生可燃气，用于烹饪和供暖，效率比直接燃烧高2-3倍。
+  steps:
+  - 准备两个金属桶（大桶套小桶）
+  - 小桶底部和侧面打孔（直径1cm，间隔5cm）
+  - 小桶内放入木柴/木炭，从顶部点火
+  - 大桶底部开进风口，顶部接烟管
+  - 燃烧产生的气体从烟管导出可二次燃烧
+  - 调节进风口大小控制火力
+  prerequisites:
+  - 两个金属桶
+  - 工具
+  - 木柴/木炭
+  warnings:
+  - 气化炉产生一氧化碳，必须在通风处使用
+  - 炉体温度极高，周围不得有易燃物
+  - 定期清理灰烬保持气流畅通
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: energy/solar/thermal_basic
+  category: energy
+  subcategory: solar
+  priority: 1
+  title: 太阳能热利用基础
+  summary: 太阳能是最可靠的能源。不需要复杂设备即可利用太阳能加热水、干燥食物、烹饪。
+  steps:
+  - 太阳能热水器：黑色容器（涂黑的水桶/管道）放在阳光直射处，可加热水至60°C
+  - 太阳灶：用铝箔/镜面制作抛物面反射器，焦点温度可达200°C
+  - 太阳能干燥：透明塑料棚+通风，加速食物干燥
+  - 太阳能蒸馏：塑料膜覆盖盐水容器，冷凝水滴入收集槽
+  - 最佳使用时间：上午10点至下午3点
+  prerequisites:
+  - 黑色容器/反射材料
+  - 阳光
+  warnings:
+  - 太阳灶焦点温度极高，注意烫伤和火灾
+  - 阴天和冬季太阳能效率大幅降低
+  - 太阳能蒸馏产水量有限，仅作补充水源
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
