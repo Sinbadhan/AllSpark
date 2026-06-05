@@ -1,9 +1,7 @@
 from rich.table import Table
-from rich.panel import Panel
 
 from allspark.commands.base import BaseCommand
-from allspark.i18n import t, get_language
-
+from allspark.core.i18n import t
 
 
 class GovernanceCommand(BaseCommand):
@@ -13,7 +11,7 @@ class GovernanceCommand(BaseCommand):
     def _get_gov(self):
         gov = self.container.get("governance")
         if not gov:
-            from allspark.governance import GovernanceEngine
+            from allspark.services.governance import GovernanceEngine
             llm = self.container.get("llm")
             gov = GovernanceEngine(db=self.db, llm_engine=llm)
             self.container.register("governance", gov)
@@ -156,7 +154,7 @@ class TradeCommand(BaseCommand):
     def _get_trade(self):
         trade = self.container.get("trade_engine")
         if not trade:
-            from allspark.trade_engine import TradeEngine
+            from allspark.services.trade_engine import TradeEngine
             trade = TradeEngine(db=self.db)
             self.container.register("trade_engine", trade)
         return trade

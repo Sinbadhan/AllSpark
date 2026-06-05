@@ -163,6 +163,7 @@ gps set <lat> <lon>     — Set GPS position
 psychology              — View psychological state
 environment             — Environment assessment
 voice load              — Load Whisper speech model
+docker status           — Docker deployment status
 help                    — Full help
 ```
 
@@ -170,13 +171,13 @@ help                    — Full help
 
 ## Hardware Requirements
 
-| Tier | RAM | Storage | Device | LLM Model |
-|------|-----|---------|--------|-----------|
-| Phantom | 2 GB | 16 GB | Raspberry Pi 4 | Qwen2.5-1.5B-Q4 |
-| Minimum | 4 GB | 32 GB | Raspberry Pi 5 | Qwen2.5-3B-Q4 |
-| Recommended | 8 GB | 64 GB | Mini PC | Qwen2.5-7B-Q4 |
-| Comfortable | 16 GB | 128 GB | Laptop | Qwen2.5-14B-Q4 |
-| Flagship | 32 GB+ | 256 GB+ | Workstation | Qwen2.5-72B-Q4 |
+| Tier | RAM | Storage | Device | LLM Model | Deploy Mode |
+|------|-----|---------|--------|-----------|-------------|
+| Phantom | 2 GB | 16 GB | Raspberry Pi 4 | Qwen2.5-1.5B-Q4 | Process |
+| Minimum | 4 GB | 32 GB | Raspberry Pi 5 | Qwen2.5-3B-Q4 | Process |
+| Recommended | 8 GB | 64 GB | Mini PC | Qwen2.5-7B-Q4 | Docker |
+| Comfortable | 16 GB | 128 GB | Laptop | Qwen2.5-14B-Q4 | Docker |
+| Flagship | 32 GB+ | 256 GB+ | Workstation | Qwen2.5-72B-Q4 | Integration |
 
 > Without LLM, the system still runs normally via the rule engine, only losing open-ended Q&A capability.
 
@@ -190,104 +191,71 @@ AllSpark/
 ├── LICENSE                         # Apache 2.0
 ├── README.md                       # This file (English)
 ├── README_CN.md                    # Chinese README
-├── PRD.md                          # Product Requirements Document
-├── ARCHITECTURE.md                 # Architecture design document
 │
-├── tests/                          # Automated tests (331 tests)
-│   ├── test_database.py            # Database CRUD + aggregation
-│   ├── test_resource_manager.py    # Resource management
-│   ├── test_governance.py          # Governance + permissions
-│   ├── test_skf_manager.py         # SKF checksum + export/import
-│   ├── test_i18n.py                # Internationalization
-│   ├── test_data_preservation.py   # Data preservation + integrity
-│   ├── test_goal_engine.py         # Goal engine + milestones
-│   ├── test_reset_manager.py       # 3-level reset + cooldown
-│   ├── test_v04_modules.py         # Briefing/timeline/diary/weather/psychology
-│   ├── test_v05_modules.py         # GPS + environment
-│   ├── test_v06_voice.py           # Voice interaction
-│   ├── test_functional.py          # CLI functional tests
-│   └── test_docker.py              # Docker elastic deployment
+├── allspark/                       # Source code
+│   ├── __main__.py                 # Entry point (CLI/Web mode switch)
+│   ├── __init__.py                 # Version
+│   ├── bootstrap.py                # Application bootstrap & initialization
+│   ├── container.py                # ServiceContainer dependency injection
+│   ├── base_service.py             # Shared service lifecycle base class
+│   ├── docker_manager.py           # Docker container lifecycle management
+│   ├── py.typed                    # PEP 561 typing marker
+│   │
+│   ├── adapters/                   # Presentation layer
+│   │   ├── cli.py                  # Rich terminal REPL
+│   │   ├── web_ui.py               # FastAPI app + init routes
+│   │   ├── init_wizard.py          # CLI initialization wizard
+│   │   └── routes/                 # Web API route modules
+│   │
+│   ├── commands/                   # Command pattern layer
+│   │   ├── base.py                 # BaseCommand abstract class
+│   │   ├── dispatcher.py           # Auto-discovery CommandDispatcher
+│   │   ├── basic.py                # Status/resource/help commands
+│   │   ├── survival.py             # Survival/assessment commands
+│   │   ├── knowledge.py            # Knowledge/search commands
+│   │   ├── ai.py                   # LLM/experience commands
+│   │   ├── goals.py                # Goal/task/reset commands
+│   │   ├── governance.py           # Community/permission commands
+│   │   ├── comms.py                # Network/trade commands
+│   │   ├── hardware.py             # Power/sensor/preservation commands
+│   │   ├── docker.py               # Docker management commands
+│   │   └── help.py                 # Help command
+│   │
+│   ├── core/                       # Core data/config layer
+│   │   ├── config.py               # Configuration constants
+│   │   ├── database.py             # SQLite database layer (FTS5)
+│   │   ├── i18n.py                 # Internationalization loader
+│   │   ├── models.py               # Data models
+│   │   └── tokenizer.py            # Chinese tokenizer
+│   │
+│   ├── services/                   # Business service layer (~25 services)
+│   │   ├── rule_engine.py          # Core decision engine
+│   │   ├── resource_manager.py     # Resource management
+│   │   ├── survival_engine.py      # Survival assessment
+│   │   ├── mission_planner.py      # Mission planning
+│   │   ├── knowledge_engine.py     # Knowledge retrieval
+│   │   ├── knowledge_loader.py     # YAML knowledge loader
+│   │   ├── goal_engine.py          # Goals + milestones
+│   │   ├── priority_calculator.py  # Multi-dimensional priority scoring
+│   │   ├── warning_protocol.py     # Resource warning closed loop
+│   │   ├── vector_engine.py        # Hybrid FTS/vector retrieval
+│   │   ├── external_kb.py          # Kiwix/Kolibri/ProtoMaps integration
+│   │   ├── voice.py                # Voice session routing
+│   │   └── ...                     # Governance, diary, weather, GPS, etc.
+│   │
+│   ├── infrastructure/             # Hardware/platform layer
+│   │   ├── hardware.py             # Hardware detection + FeatureFlags
+│   │   ├── module_loader.py        # Module registry
+│   │   ├── data_preservation.py    # Snapshot/restore/integrity
+│   │   └── boot_manager.py         # systemd/watchdog boot support
+│   │
+│   ├── data/                       # YAML survival knowledge data
+│   │   └── knowledge/              # Tier 0-3 knowledge entries
+│   ├── locales/                    # zh/en i18n YAML files
+│   ├── templates/                  # Web UI HTML templates
+│   └── docker/                     # Dockerfiles + docker-compose.yml
 │
-└── allspark/                       # Core code (63 modules)
-    ├── __main__.py                 # Entry point
-    ├── __init__.py                 # Version
-    ├── cli.py                      # CLI interface (CommandDispatcher)
-    ├── web_ui.py                   # Web UI (FastAPI)
-    ├── bootstrap.py                # Application bootstrap & initialization
-    ├── container.py                # Service container (dependency injection)
-    │
-    ├── models.py                   # Data models
-    ├── database.py                 # SQLite database layer (FTS5)
-    ├── config.py                   # Configuration constants
-    ├── i18n.py                     # Internationalization (700+ keys)
-    │
-    ├── rule_engine.py              # Rule engine (core dispatch)
-    ├── survival_engine.py          # Survival assessment
-    ├── mission_planner.py          # Mission planning
-    ├── knowledge_engine.py         # Knowledge engine
-    ├── knowledge_loader.py         # Unified knowledge loading
-    ├── resource_manager.py         # Resource management
-    ├── personality.py              # Personality system
-    ├── map_system.py               # Map system
-    ├── experience_engine.py        # Experience accumulation
-    ├── llm_engine.py               # Local LLM
-    │
-    ├── goal_engine.py              # Goal engine (v0.3)
-    ├── reset_manager.py            # Reset manager (v0.3)
-    ├── skf_manager.py              # SKF knowledge pack
-    ├── knowledge_verifier.py       # Knowledge verification
-    ├── spark_network.py            # AllSpark Network
-    ├── vision_engine.py            # Image recognition
-    │
-    ├── governance.py               # Community governance
-    ├── trade_engine.py             # Knowledge trading
-    │
-    ├── daily_briefing.py           # Daily briefing (v0.4)
-    ├── timeline.py                 # Survival timeline (v0.4)
-    ├── diary.py                    # Spark diary (v0.4)
-    ├── weather.py                  # Weather prediction (v0.4)
-    ├── psychology.py               # Psychology tracking (v0.4)
-    │
-    ├── gps_manager.py              # GPS manager (v0.5)
-    ├── environment.py              # Environment assessor (v0.5)
-    │
-    ├── voice.py                    # Voice interaction (v0.6)
-    │
-    ├── docker_manager.py           # Docker container management (v0.7)
-    ├── hardware.py                 # Hardware detection + DeployMode
-    ├── module_loader.py            # Module registry
-    ├── init_wizard.py              # Init wizard
-    ├── tokenizer.py                # Chinese tokenizer
-    │
-    ├── commands/                   # Command pattern (v0.7)
-    │   ├── base.py                 # BaseCommand abstract class
-    │   ├── dispatcher.py           # CommandDispatcher
-    │   ├── basic.py                # Status/resource/help commands
-    │   ├── survival.py             # Survival/assessment commands
-    │   ├── knowledge.py            # Knowledge/search commands
-    │   ├── ai.py                   # LLM/experience commands
-    │   ├── goals.py                # Goal/task/reset commands
-    │   ├── governance.py           # Community/permission commands
-    │   ├── comms.py                # Network/trade commands
-    │   ├── hardware.py             # Power/sensor/preserve commands
-    │   ├── docker.py               # Docker management commands
-    │   └── help.py                 # Help command
-    │
-    ├── docker/                     # Docker configuration (v0.7)
-    │   ├── Dockerfile.core         # Core service image
-    │   ├── Dockerfile.llm          # LLM service image
-    │   ├── Dockerfile.web          # Web UI service image
-    │   └── docker-compose.yml      # Service orchestration
-    │
-    ├── power_monitor.py            # Power monitoring
-    ├── sensor_hub.py               # Sensor hub
-    ├── data_preservation.py        # Data preservation
-    ├── boot_manager.py             # Boot management
-    │
-    ├── knowledge_data.py           # Tier 0 knowledge (Chinese)
-    ├── knowledge_data_en.py        # Tier 0 knowledge (English)
-    ├── knowledge_data_tier12.py    # Tier 1-2 knowledge
-    └── knowledge_data_tier3.py     # Tier 3 knowledge
+└── tests/                          # 505 automated tests (kept internal in public release)
 ```
 
 ---
@@ -306,11 +274,23 @@ AllSpark/
 
 ---
 
+## Quality Status
+
+| Check | Status |
+|-------|--------|
+| Automated tests | ✅ 505 passed |
+| Ruff lint | ✅ 0 errors |
+| mypy | ✅ CI-enforced, with historical typing debt isolated by error-code allowlist |
+| Packaging types | ✅ `py.typed` included |
+| Public repo hygiene | ✅ Internal docs, tests, runtime data, local models, and secrets ignored |
+
+---
+
 ## Testing
 
 ```bash
-# Run all 331 tests
-python3 -m pytest tests/ -v
+# Run all 505 tests
+python3 -m pytest tests/ -v --tb=short
 
 # Run specific module
 python3 -m pytest tests/test_goal_engine.py -v

@@ -1,9 +1,8 @@
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 from allspark.commands.base import BaseCommand
-from allspark.i18n import t, get_language
-
+from allspark.core.i18n import t
 
 
 class MapCommand(BaseCommand):

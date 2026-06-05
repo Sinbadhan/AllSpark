@@ -1,0 +1,444 @@
+{% set nav_active = "dashboard" %}
+{% extends "base.html" %}
+
+{% block head %}
+<title>ALLSPARK - Dashboard</title>
+<style>
+.dash-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+@media (min-width: 768px) { .dash-header { flex-direction: row; justify-content: space-between; align-items: flex-end; } }
+.dash-header h1 { font-size: 28px; font-weight: 700; color: var(--primary-container); text-transform: uppercase; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+.dash-header p { font-size: 13px; color: var(--secondary); margin-top: 4px; }
+.dash-badges { display: flex; gap: 8px; }
+.bento-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 768px) { .bento-grid { grid-template-columns: repeat(12, 1fr); } }
+.bento-grid .span-4 { grid-column: span 4; }
+.bento-grid .span-8 { grid-column: span 8; }
+.bento-grid .span-12 { grid-column: span 12; }
+@media (max-width: 767px) { .bento-grid .span-4, .bento-grid .span-8, .bento-grid .span-12 { grid-column: span 1; } }
+.resource-grid { display: contents; }
+.resource-card {
+  background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.15s;
+}
+.resource-card:hover { border-color: var(--primary-container); }
+.resource-card.offline { opacity: 0.5; }
+.resource-card .card-header { display: flex; justify-content: space-between; align-items: center; color: var(--on-surface-variant); }
+.resource-card .card-label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; }
+.resource-card .card-value { font-size: 13px; }
+.resource-card .card-status { font-size: 24px; font-weight: 700; color: var(--on-surface); margin-top: auto; }
+.resource-card .card-remaining { font-size: 11px; color: var(--secondary); }
+.task-card {
+  background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.15s;
+}
+.task-card:hover { border-color: var(--primary-container); }
+.task-card .card-title { font-size: 18px; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+.task-card .task-list { flex: 1; overflow-y: auto; max-height: 200px; }
+.quick-actions {
+  background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px; display: flex; flex-direction: column; gap: 8px;
+}
+.quick-actions h2 { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); text-transform: uppercase; margin-bottom: 4px; }
+.quick-actions .action-btn {
+  width: 100%; padding: 8px 12px; border-radius: var(--radius); font-weight: 600; font-size: 13px;
+  display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s;
+}
+.quick-actions .action-primary { background: var(--primary-container); color: var(--on-primary-container); }
+.quick-actions .action-primary:active { transform: scale(0.95); }
+.quick-actions .action-outline { background: transparent; border: 1px solid var(--border); color: var(--on-surface); }
+.quick-actions .action-outline:hover { border-color: var(--primary-container); }
+.live-panel {
+  background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius);
+  display: flex; flex-direction: column; transition: border-color 0.15s;
+}
+.live-panel:hover { border-color: var(--primary-container); }
+.subtab-bar { padding: 12px; border-bottom: 1px solid var(--border); display: flex; gap: 4px; }
+.subtab-content { padding: 12px; }
+.subtab-content.hidden { display: none; }
+.kb-search { display: flex; gap: 8px; margin-bottom: 12px; }
+.kb-search .search-wrap { flex: 1; position: relative; }
+.kb-search .search-wrap .material-symbols-outlined { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--on-surface-variant); font-size: 18px; }
+.kb-search .search-wrap input { width: 100%; padding: 6px 8px 6px 32px; background: var(--surface-dim); border: 1px solid var(--border); color: var(--on-surface); font-size: 13px; outline: none; border-radius: var(--radius); transition: border-color 0.15s; }
+.kb-search .search-wrap input:focus { border-color: var(--primary-container); }
+.kb-entry { background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+.kb-entry:hover { border-color: var(--primary-container); }
+.kb-entry .entry-title { font-size: 13px; font-weight: 600; }
+.kb-entry .entry-meta { font-size: 11px; color: var(--secondary); margin-top: 2px; }
+.kb-entry .entry-summary { font-size: 12px; color: var(--on-surface-variant); margin-top: 4px; }
+.chat-container { display: flex; flex-direction: column; height: 350px; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 12px; background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius); margin: 12px; margin-bottom: 8px; }
+.chat-input-bar { display: flex; gap: 8px; padding: 0 12px 12px; }
+.chat-input-bar input { flex: 1; padding: 8px 12px; background: var(--surface-dim); border: 1px solid var(--border); color: var(--on-surface); font-size: 13px; outline: none; border-radius: var(--radius); transition: border-color 0.15s; }
+.chat-input-bar input:focus { border-color: var(--primary-container); }
+.chat-msg { margin-bottom: 12px; }
+.chat-msg.user { text-align: right; }
+.chat-msg .bubble { display: inline-block; max-width: 80%; padding: 8px 12px; border-radius: var(--radius); font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.chat-msg.user .bubble { background: var(--primary-container); color: var(--on-primary-container); }
+.chat-msg.system .bubble { background: var(--surface-mid); border: 1px solid var(--border); color: var(--on-surface); }
+.exp-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+@media (max-width: 767px) { .exp-stats { grid-template-columns: 1fr; } }
+.exp-stat { background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; text-align: center; }
+.exp-stat .stat-value { font-size: 24px; font-weight: 700; }
+.exp-stat .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); }
+.exp-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.exp-form input { padding: 6px 12px; background: var(--surface-dim); border: 1px solid var(--border); color: var(--on-surface); font-size: 13px; outline: none; border-radius: var(--radius); transition: border-color 0.15s; }
+.exp-form input:focus { border-color: var(--primary-container); }
+.exp-item { display: flex; justify-content: space-between; align-items: center; background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; margin-bottom: 6px; }
+.exp-item .exp-text { flex: 1; min-width: 0; }
+.exp-item .exp-title { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.exp-item .exp-sub { font-size: 12px; color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.exp-item .exp-badge { margin-left: 8px; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 600; }
+.exp-badge.promoted { background: #44cc4433; color: var(--success); }
+.exp-badge.raw { background: var(--surface-mid); color: var(--secondary); }
+.alert-card { padding: 12px; display: flex; flex-direction: column; gap: 4px; border-radius: var(--radius); }
+.alert-critical { background: #ff444422; border-left: 3px solid var(--critical); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.alert-warning { background: #ffaa0022; border-left: 3px solid var(--warning); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.alert-card .alert-header { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+.alert-card .alert-msg { font-size: 13px; color: var(--on-surface); }
+.module-section { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; }
+.module-section h3 { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); text-transform: uppercase; margin-bottom: 8px; }
+.kb-detail { background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+.kb-detail h3 { color: var(--primary); font-weight: 600; margin-bottom: 8px; }
+.kb-detail .kb-meta { font-size: 11px; color: var(--secondary); margin-top: 8px; }
+.kb-detail .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); text-transform: uppercase; margin-bottom: 4px; }
+.kb-detail .section-label.warn { color: var(--warning); }
+.back-btn { font-size: 12px; color: var(--secondary); cursor: pointer; display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+.back-btn:hover { color: var(--primary-container); }
+.mini-table { width: 100%; border-collapse: collapse; }
+.mini-table th { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); padding: 8px; text-align: left; border-bottom: 1px solid var(--border); background: var(--surface-lowest); }
+.mini-table td { padding: 8px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.mini-table tr:hover { background: var(--surface-mid); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Dashboard Title -->
+<div class="dash-header">
+  <div>
+    <h1><span class="material-symbols-outlined">dashboard</span> System Health Matrix</h1>
+    <p>Live telemetry and resource monitoring.</p>
+  </div>
+  <div class="dash-badges">
+    <span id="phase-badge" class="badge bg-success-dim text-success border-success">
+      <span class="material-symbols-outlined" style="font-size:14px;">check_circle</span> PHASE 0
+    </span>
+    <span id="mode-badge" class="badge bg-surface-mid text-secondary" style="border:1px solid var(--border);">
+      MODE: --
+    </span>
+  </div>
+</div>
+
+<!-- Bento Grid Layout -->
+<div class="bento-grid">
+
+  <!-- Resource Cards (dynamically populated) -->
+  <div id="resource-cards" class="resource-grid">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- Warnings / Alerts -->
+  <div id="alert-section" class="span-12 hidden">
+    <!-- Populated by JS when warnings exist -->
+  </div>
+
+  <!-- Execution Summary -->
+  <div class="task-card span-8">
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:8px;">
+      <h2 class="card-title"><span class="material-symbols-outlined">trending_up</span> Active Tasks</h2>
+    </div>
+    <div id="task-list" class="task-list">
+      <div class="text-secondary text-sm">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions span-4">
+    <h2>Quick Actions</h2>
+    <button onclick="switchTab('chat')" class="action-btn action-primary">
+      <span class="material-symbols-outlined" style="font-size:16px;">chat</span> Chat with AllSpark
+    </button>
+    <button onclick="switchTab('knowledge')" class="action-btn action-outline">
+      <span class="material-symbols-outlined" style="font-size:16px;">search</span> Search Knowledge
+    </button>
+    <button onclick="switchTab('experience')" class="action-btn action-outline">
+      <span class="material-symbols-outlined" style="font-size:16px;">psychology</span> Log Experience
+    </button>
+  </div>
+
+  <!-- Live Activity / Sub-tabs -->
+  <div class="live-panel span-12">
+    <div class="subtab-bar">
+      <button class="sub-tab active" data-subtab="knowledge">KNOWLEDGE</button>
+      <button class="sub-tab" data-subtab="chat">CHAT</button>
+      <button class="sub-tab" data-subtab="experience">EXPERIENCE</button>
+      <button class="sub-tab" data-subtab="modules">MODULES</button>
+    </div>
+
+    <!-- Knowledge Sub-tab -->
+    <div id="subtab-knowledge" class="subtab-content">
+      <div class="kb-search">
+        <div class="search-wrap">
+          <span class="material-symbols-outlined">search</span>
+          <input id="knowledge-search" placeholder="Search knowledge base..." type="text" autocomplete="off"/>
+        </div>
+        <button onclick="searchKnowledge()" class="btn-outline" style="padding:6px 12px;">Search</button>
+      </div>
+      <div id="knowledge-results" style="overflow-y:auto;max-height:300px;"></div>
+      <div id="knowledge-detail" style="display:none"></div>
+    </div>
+
+    <!-- Chat Sub-tab -->
+    <div id="subtab-chat" class="subtab-content hidden">
+      <div class="chat-container">
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input-bar">
+          <input id="chat-input" placeholder="Ask AllSpark..." type="text" autocomplete="off"/>
+          <button onclick="sendChat()" class="btn-primary" style="padding:8px 16px;">SEND</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Experience Sub-tab -->
+    <div id="subtab-experience" class="subtab-content hidden">
+      <div class="exp-stats">
+        <div class="exp-stat"><div class="stat-value text-primary" id="exp-total">0</div><div class="stat-label">EXPERIENCES</div></div>
+        <div class="exp-stat"><div class="stat-value text-info" id="exp-patterns">0</div><div class="stat-label">PATTERNS</div></div>
+        <div class="exp-stat"><div class="stat-value text-success" id="exp-promoted">0</div><div class="stat-label">PROMOTED</div></div>
+      </div>
+      <div class="exp-form">
+        <input id="exp-event" placeholder="Event (e.g. found water source)"/>
+        <input id="exp-outcome" placeholder="Outcome (e.g. clean spring, 2L/hour)"/>
+        <input id="exp-lesson" placeholder="Lesson (optional)"/>
+        <button onclick="logExperience()" class="btn-primary" style="align-self:flex-start;">LOG EXPERIENCE</button>
+      </div>
+      <div id="exp-list" style="overflow-y:auto;max-height:200px;"></div>
+    </div>
+
+    <!-- Modules Sub-tab -->
+    <div id="subtab-modules" class="subtab-content hidden">
+      <div id="module-list" style="overflow-y:auto;max-height:300px;"></div>
+      <div class="module-section">
+        <h3>LLM Engine</h3>
+        <div id="llm-status" class="text-sm text-on-surface-variant mb-2">Loading...</div>
+        <button onclick="loadLLM()" class="btn-primary">Load Model</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const resourceIcons = {
+  water: "water_drop", food: "restaurant", fire: "local_fire_department",
+  shelter: "home", medical: "medical_services", power: "bolt",
+  communication: "cell_tower", storage: "save"
+};
+const resourceLabels = {
+  water: "WATER", food: "FOOD", fire: "FIRE", shelter: "SHELTER",
+  medical: "MEDICAL", power: "POWER", communication: "COMMS", storage: "STORAGE"
+};
+
+function escHtml(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
+
+function switchTab(tab) {
+  document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector('.sub-tab[data-subtab="' + tab + '"]');
+  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.subtab-content').forEach(el => el.classList.add('hidden'));
+  const target = document.getElementById('subtab-' + tab);
+  if (target) target.classList.remove('hidden');
+  if (tab === 'experience') refreshExperience();
+  if (tab === 'modules') refreshModules();
+}
+
+document.querySelectorAll('.sub-tab').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.subtab));
+});
+
+async function refreshDashboard() {
+  const data = await api("/api/status");
+
+  // Phase badge
+  const badge = document.getElementById("phase-badge");
+  badge.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;">check_circle</span> PHASE ' + data.phase;
+  if (data.phase <= 1) {
+    badge.className = "badge bg-critical-dim text-critical"; badge.style.border = "1px solid var(--critical)";
+  } else if (data.phase <= 2) {
+    badge.className = "badge bg-warn-dim text-warn"; badge.style.border = "1px solid var(--warning)";
+  } else {
+    badge.className = "badge bg-success-dim text-success"; badge.style.border = "1px solid var(--success)";
+  }
+
+  // Mode badge
+  document.getElementById("mode-badge").textContent = "MODE: " + (data.mode || "--").toUpperCase();
+
+  // Resource cards
+  const container = document.getElementById("resource-cards");
+  container.innerHTML = data.resources.map(r => {
+    const icon = resourceIcons[r.type] || "inventory_2";
+    const label = resourceLabels[r.type] || r.type.toUpperCase();
+    if (r.offline) {
+      return '<div class="resource-card offline span-4">' +
+        '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value text-secondary">OFFLINE</span></div>' +
+        '<div style="font-size:24px;font-weight:700;color:var(--secondary);">--</div></div>';
+    }
+    const pct = Math.min(100, Math.max(0, (r.remaining_hours / 168) * 100));
+    const statusColor = pct > 70 ? "#44cc44" : pct > 30 ? "#ffaa00" : "#ff4444";
+    const statusText = pct > 70 ? "OK" : pct > 30 ? "LOW" : "CRITICAL";
+    return '<div class="resource-card span-4">' +
+      '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + r.amount + r.unit + '</span></div>' +
+      '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + statusColor + '"></div></div>' +
+      '<div class="card-status">' + statusText + '</div>' +
+      '<div class="card-remaining">~' + Math.round(r.remaining_hours) + 'h remaining</div></div>';
+  }).join("");
+
+  // Warnings
+  const alertSection = document.getElementById("alert-section");
+  if (data.warnings && data.warnings.length) {
+    alertSection.classList.remove("hidden");
+    alertSection.innerHTML = data.warnings.map(w => {
+      const isCritical = w.level === "critical";
+      return '<div class="alert-card ' + (isCritical ? 'alert-critical' : 'alert-warning') + '">' +
+        '<div class="alert-header ' + (isCritical ? 'text-critical' : 'text-warn') + '"><span class="material-symbols-outlined">' + (isCritical ? 'warning' : 'error_outline') + '</span> ' + w.level.toUpperCase() + '</div>' +
+        '<p class="alert-msg">' + escHtml(w.message) + '</p></div>';
+    }).join("");
+  } else {
+    alertSection.classList.add("hidden");
+  }
+
+  // Tasks
+  const tasks = await api("/api/tasks");
+  const tlist = document.getElementById("task-list");
+  if (tasks.length) {
+    tlist.innerHTML = '<table class="mini-table"><thead><tr>' +
+      '<th>PHASE</th><th>TASK</th><th>STATUS</th></tr></thead><tbody>' +
+      tasks.slice(0, 8).map(t => '<tr><td class="text-primary font-semibold">P' + t.phase + '</td><td>' + escHtml(t.title) + '</td><td class="text-success">' + t.status + '</td></tr>').join("") +
+      '</tbody></table>';
+  } else {
+    tlist.innerHTML = '<div class="text-secondary text-sm p-3">No active tasks</div>';
+  }
+}
+
+// Knowledge
+async function searchKnowledge() {
+  const q = document.getElementById("knowledge-search").value.trim();
+  if (!q) return;
+  const results = await api("/api/knowledge/search?q=" + encodeURIComponent(q));
+  const container = document.getElementById("knowledge-results");
+  document.getElementById("knowledge-detail").style.display = "none";
+  if (!results.length) { container.innerHTML = '<div class="text-secondary text-sm p-4 text-center">No results found</div>'; return; }
+  container.innerHTML = results.map(e =>
+    '<div class="kb-entry" onclick="showKnowledge(\'' + e.id + '\')">' +
+    '<div class="entry-title">' + escHtml(e.title) + '</div>' +
+    '<div class="entry-meta">Tier ' + e.priority + ' · ' + e.category + '/' + e.subcategory + '</div>' +
+    '<div class="entry-summary">' + escHtml((e.summary || "").substring(0, 100)) + '...</div></div>'
+  ).join("");
+}
+
+async function showKnowledge(id) {
+  const entry = await api("/api/knowledge/" + id);
+  const container = document.getElementById("knowledge-detail");
+  document.getElementById("knowledge-results").style.display = "none";
+  container.style.display = "block";
+  let html = '<div class="back-btn" onclick="backToResults()"><span class="material-symbols-outlined" style="font-size:14px;">arrow_back</span> Back</div>';
+  html += '<div class="kb-detail"><h3>' + escHtml(entry.title) + '</h3>';
+  html += '<p class="text-sm mb-3">' + escHtml(entry.summary) + '</p>';
+  if (entry.steps && entry.steps.length) {
+    html += '<div class="section-label">Steps</div><ol style="list-style:decimal inside;font-size:13px;">' + entry.steps.map(s => '<li>' + escHtml(s) + '</li>').join("") + '</ol>';
+  }
+  if (entry.warnings && entry.warnings.length) {
+    html += '<div class="section-label warn">Warnings</div>' + entry.warnings.map(w => '<div class="text-warn text-sm">· ' + escHtml(w) + '</div>').join("");
+  }
+  html += '<div class="kb-meta">Tier ' + entry.priority + ' · ' + entry.category + '/' + entry.subcategory + ' · ' + entry.verification + ' · ' + entry.source + '</div></div>';
+  container.innerHTML = html;
+}
+
+function backToResults() {
+  document.getElementById("knowledge-detail").style.display = "none";
+  document.getElementById("knowledge-results").style.display = "block";
+}
+
+document.getElementById("knowledge-search").addEventListener("keydown", e => { if (e.key === "Enter") searchKnowledge(); });
+
+// Chat
+async function sendChat() {
+  const input = document.getElementById("chat-input");
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = "";
+  addChatMsg("user", msg);
+  addChatMsg("system", "...");
+  try {
+    const data = await api("/api/chat", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({message: msg}) });
+    document.querySelector("#chat-messages .chat-msg.system:last-child .bubble").textContent = data.response;
+  } catch(e) {
+    document.querySelector("#chat-messages .chat-msg.system:last-child .bubble").textContent = "Error: " + e.message;
+  }
+  const c = document.getElementById("chat-messages"); c.scrollTop = c.scrollHeight;
+}
+
+function addChatMsg(role, text) {
+  const c = document.getElementById("chat-messages");
+  const isUser = role === "user";
+  c.innerHTML += '<div class="chat-msg ' + role + '"><div class="bubble">' + escHtml(text) + '</div></div>';
+  c.scrollTop = c.scrollHeight;
+}
+
+document.getElementById("chat-input").addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
+
+// Experience
+async function refreshExperience() {
+  const data = await api("/api/experience");
+  const list = document.getElementById("exp-list");
+  if (!data.length) { list.innerHTML = '<div class="text-secondary text-sm">No experiences yet</div>'; return; }
+  list.innerHTML = data.map(e =>
+    '<div class="exp-item"><div class="exp-text"><div class="exp-title">' + escHtml(e.event) + '</div><div class="exp-sub">' + escHtml(e.outcome) + '</div></div>' +
+    '<span class="exp-badge ' + (e.promoted ? 'promoted' : 'raw') + '">' + (e.promoted ? "PROMOTED" : "RAW") + '</span></div>'
+  ).join("");
+  try {
+    const stats = await api("/api/status");
+    if (stats.experience) {
+      document.getElementById("exp-total").textContent = stats.experience.total_experiences || 0;
+      document.getElementById("exp-patterns").textContent = stats.experience.patterns_detected || 0;
+      document.getElementById("exp-promoted").textContent = stats.experience.promoted_to_knowledge || 0;
+    }
+  } catch(e) {}
+}
+
+async function logExperience() {
+  const event = document.getElementById("exp-event").value.trim();
+  const outcome = document.getElementById("exp-outcome").value.trim();
+  const lesson = document.getElementById("exp-lesson").value.trim();
+  if (!event || !outcome) return;
+  await api("/api/experience", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({event, outcome, lesson}) });
+  document.getElementById("exp-event").value = "";
+  document.getElementById("exp-outcome").value = "";
+  document.getElementById("exp-lesson").value = "";
+  refreshExperience();
+}
+
+// Modules
+async function refreshModules() {
+  const data = await api("/api/modules");
+  const list = document.getElementById("module-list");
+  if (!data || !data.length) { list.innerHTML = '<div class="text-secondary text-sm">No modules loaded</div>'; return; }
+  list.innerHTML = '<table class="mini-table"><thead><tr><th>MODULE</th><th>STATUS</th><th>VERSION</th></tr></thead><tbody>' +
+    data.map(m => '<tr><td class="text-primary font-semibold">' + escHtml(m.name) + '</td><td class="text-success">' + (m.status || "active") + '</td><td>' + (m.version || "--") + '</td></tr>').join("") +
+    '</tbody></table>';
+}
+
+async function loadLLM() {
+  const statusEl = document.getElementById("llm-status");
+  statusEl.textContent = "Loading model...";
+  try {
+    const data = await api("/api/llm/load", {method: "POST"});
+    statusEl.innerHTML = '<span class="text-success">Model loaded: ' + escHtml(data.model || "unknown") + '</span>';
+  } catch(e) { statusEl.innerHTML = '<span class="text-critical">Error: ' + escHtml(e.message) + '</span>'; }
+}
+
+// Init
+refreshDashboard();
+setInterval(refreshDashboard, 15000);
+</script>
+{% endblock %}

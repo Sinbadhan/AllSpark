@@ -1,9 +1,7 @@
 from rich.table import Table
-from rich.panel import Panel
 
 from allspark.commands.base import BaseCommand
-from allspark.i18n import t, get_language
-
+from allspark.core.i18n import t
 
 
 class NetworkCommand(BaseCommand):
@@ -13,7 +11,7 @@ class NetworkCommand(BaseCommand):
     def _get_net(self):
         net = self.container.get("spark_network")
         if not net:
-            from allspark.spark_network import SparkNetwork
+            from allspark.services.spark_network import SparkNetwork
             llm = self.container.get("llm")
             net = SparkNetwork(db=self.db, llm_engine=llm)
             self.container.register("spark_network", net)
@@ -113,14 +111,15 @@ class VisionCommand(BaseCommand):
     def _get_vision(self):
         vision = self.container.get("vision")
         if not vision:
-            from allspark.vision_engine import VisionEngine
+            from allspark.services.vision_engine import VisionEngine
             llm = self.container.get("llm")
-            vision = VisionEngine(llm_engine=llm, db=self.db)
+            local_vision = self.container.get("local_vision")
+            vision = VisionEngine(llm_engine=llm, db=self.db, local_vision=local_vision)
             self.container.register("vision", vision)
         return vision
 
     def execute(self, args: list[str]) -> None:
-        from allspark.vision_engine import VisionTask
+        from allspark.services.vision_engine import VisionTask
 
         vision = self._get_vision()
 

@@ -188,106 +188,74 @@ help                    — 完整帮助
 ```
 AllSpark/
 ├── pyproject.toml                  # 项目配置
+├── LICENSE                         # Apache 2.0
 ├── README.md                       # 英文 README
 ├── README_CN.md                    # 本文件（中文）
-├── PRD.md                          # 产品需求文档
-├── ARCHITECTURE.md                 # 架构设计文档
 │
-├── tests/                          # 自动化测试（331 项）
-│   ├── test_database.py            # 数据库 CRUD + 聚合
-│   ├── test_resource_manager.py    # 资源管理
-│   ├── test_governance.py          # 治理 + 权限
-│   ├── test_skf_manager.py         # SKF 校验 + 导入导出
-│   ├── test_i18n.py                # 国际化
-│   ├── test_data_preservation.py   # 数据保存 + 完整性
-│   ├── test_goal_engine.py         # 目标引擎 + 里程碑
-│   ├── test_reset_manager.py       # 三级重置 + 冷却期
-│   ├── test_v04_modules.py         # 简报/时间线/日记/天气/心理
-│   ├── test_v05_modules.py         # GPS + 环境
-│   ├── test_v06_voice.py           # 语音交互
-│   ├── test_functional.py          # CLI 功能测试
-│   └── test_docker.py              # Docker 弹性部署
+├── allspark/                       # 源代码
+│   ├── __main__.py                 # 入口（CLI/Web 模式切换）
+│   ├── __init__.py                 # 版本
+│   ├── bootstrap.py                # 应用引导与初始化
+│   ├── container.py                # ServiceContainer 依赖注入容器
+│   ├── base_service.py             # 服务生命周期基类
+│   ├── docker_manager.py           # Docker 容器生命周期管理
+│   ├── py.typed                    # PEP 561 类型标记
+│   │
+│   ├── adapters/                   # 表现层
+│   │   ├── cli.py                  # Rich 终端 REPL
+│   │   ├── web_ui.py               # FastAPI 应用 + 初始化路由
+│   │   ├── init_wizard.py          # CLI 初始化向导
+│   │   └── routes/                 # Web API 路由模块
+│   │
+│   ├── commands/                   # 命令模式层
+│   │   ├── base.py                 # BaseCommand 抽象类
+│   │   ├── dispatcher.py           # 自动发现 CommandDispatcher
+│   │   ├── basic.py                # 状态/资源/帮助命令
+│   │   ├── survival.py             # 生存/评估命令
+│   │   ├── knowledge.py            # 知识/搜索命令
+│   │   ├── ai.py                   # LLM/经验命令
+│   │   ├── goals.py                # 目标/任务/重置命令
+│   │   ├── governance.py           # 社区/权限命令
+│   │   ├── comms.py                # 网络/交易命令
+│   │   ├── hardware.py             # 电源/传感器/保存命令
+│   │   ├── docker.py               # Docker 管理命令
+│   │   └── help.py                 # 帮助命令
+│   │
+│   ├── core/                       # 核心数据/配置层
+│   │   ├── config.py               # 配置常量
+│   │   ├── database.py             # SQLite 数据库层 (FTS5)
+│   │   ├── i18n.py                 # 国际化加载器
+│   │   ├── models.py               # 数据模型
+│   │   └── tokenizer.py            # 中文分词
+│   │
+│   ├── services/                   # 业务服务层（约 25 个服务）
+│   │   ├── rule_engine.py          # 核心决策引擎
+│   │   ├── resource_manager.py     # 资源管理
+│   │   ├── survival_engine.py      # 生存评估
+│   │   ├── mission_planner.py      # 任务规划
+│   │   ├── knowledge_engine.py     # 知识检索
+│   │   ├── knowledge_loader.py     # YAML 知识加载
+│   │   ├── goal_engine.py          # 目标与里程碑
+│   │   ├── priority_calculator.py  # 多维度优先级评分
+│   │   ├── warning_protocol.py     # 资源预警闭环
+│   │   ├── vector_engine.py        # FTS/向量混合检索
+│   │   ├── external_kb.py          # Kiwix/Kolibri/ProtoMaps 集成
+│   │   ├── voice.py                # 语音会话路由
+│   │   └── ...                     # 治理、日记、天气、GPS 等
+│   │
+│   ├── infrastructure/             # 硬件/平台层
+│   │   ├── hardware.py             # 硬件检测 + FeatureFlags
+│   │   ├── module_loader.py        # 模块注册表
+│   │   ├── data_preservation.py    # 快照/恢复/完整性检查
+│   │   └── boot_manager.py         # systemd/watchdog 启动支持
+│   │
+│   ├── data/                       # YAML 生存知识数据
+│   │   └── knowledge/              # Tier 0-3 知识条目
+│   ├── locales/                    # zh/en i18n YAML 文件
+│   ├── templates/                  # Web UI HTML 模板
+│   └── docker/                     # Dockerfile + docker-compose.yml
 │
-└── allspark/                       # 核心代码（63 模块）
-    ├── __main__.py                 # 入口
-    ├── __init__.py                 # 版本
-    ├── cli.py                      # CLI 界面（CommandDispatcher）
-    ├── web_ui.py                   # Web UI (FastAPI)
-    ├── bootstrap.py                # 应用引导与初始化
-    ├── container.py                # 服务容器（依赖注入）
-    │
-    ├── models.py                   # 数据模型
-    ├── database.py                 # SQLite 数据库层 (FTS5)
-    ├── config.py                   # 配置常量
-    ├── i18n.py                     # 国际化（700+ key）
-    │
-    ├── rule_engine.py              # 规则引擎
-    ├── survival_engine.py          # 生存评估
-    ├── mission_planner.py          # 任务规划
-    ├── knowledge_engine.py         # 知识引擎
-    ├── knowledge_loader.py         # 统一知识加载
-    ├── resource_manager.py         # 资源管理
-    ├── personality.py              # 人格系统
-    ├── map_system.py               # 地图系统
-    ├── experience_engine.py        # 经验积累
-    ├── llm_engine.py              # 本地 LLM
-    │
-    ├── goal_engine.py              # 目标引擎 (v0.3)
-    ├── reset_manager.py            # 重置管理 (v0.3)
-    ├── skf_manager.py             # SKF 知识包
-    ├── knowledge_verifier.py      # 知识验证
-    ├── spark_network.py           # 火种网络
-    ├── vision_engine.py           # 图像识别
-    │
-    ├── governance.py              # 社区治理
-    ├── trade_engine.py            # 知识交易
-    │
-    ├── daily_briefing.py           # 每日简报 (v0.4)
-    ├── timeline.py                 # 生存时间线 (v0.4)
-    ├── diary.py                    # 火种日记 (v0.4)
-    ├── weather.py                  # 天气预测 (v0.4)
-    ├── psychology.py               # 心理追踪 (v0.4)
-    │
-    ├── gps_manager.py              # GPS 管理器 (v0.5)
-    ├── environment.py              # 环境评估 (v0.5)
-    │
-    ├── voice.py                    # 语音交互 (v0.6)
-    │
-    ├── docker_manager.py           # Docker 容器管理 (v0.7)
-    ├── hardware.py                 # 硬件检测 + DeployMode
-    ├── module_loader.py            # 模块注册
-    ├── init_wizard.py              # 初始化向导
-    ├── tokenizer.py                # 中文分词
-    │
-    ├── commands/                   # 命令模式 (v0.7)
-    │   ├── base.py                 # BaseCommand 抽象类
-    │   ├── dispatcher.py           # CommandDispatcher
-    │   ├── basic.py                # 状态/资源/帮助命令
-    │   ├── survival.py             # 生存/评估命令
-    │   ├── knowledge.py            # 知识/搜索命令
-    │   ├── ai.py                   # LLM/经验命令
-    │   ├── goals.py                # 目标/任务/重置命令
-    │   ├── governance.py           # 社区/权限命令
-    │   ├── comms.py                # 网络/交易命令
-    │   ├── hardware.py             # 电源/传感器/保存命令
-    │   ├── docker.py               # Docker 管理命令
-    │   └── help.py                 # 帮助命令
-    │
-    ├── docker/                     # Docker 配置 (v0.7)
-    │   ├── Dockerfile.core         # 核心服务镜像
-    │   ├── Dockerfile.llm          # LLM 服务镜像
-    │   ├── Dockerfile.web          # Web UI 服务镜像
-    │   └── docker-compose.yml      # 服务编排
-    │
-    ├── power_monitor.py           # 电源监控
-    ├── sensor_hub.py              # 传感器中枢
-    ├── data_preservation.py       # 数据保存
-    ├── boot_manager.py            # 启动管理
-    │
-    ├── knowledge_data.py          # Tier 0 知识（中文）
-    ├── knowledge_data_en.py       # Tier 0 知识（英文）
-    ├── knowledge_data_tier12.py   # Tier 1-2 知识
-    └── knowledge_data_tier3.py    # Tier 3 知识
+└── tests/                          # 505 项自动化测试（公开发布时保持内部隐藏）
 ```
 
 ---
@@ -306,11 +274,23 @@ AllSpark/
 
 ---
 
+## 质量状态
+
+| 检查项 | 状态 |
+|--------|------|
+| 自动化测试 | ✅ 505 passed |
+| Ruff lint | ✅ 0 errors |
+| mypy | ✅ CI 强制执行，历史类型债通过 error-code 白名单隔离 |
+| 类型发布标记 | ✅ 已包含 `py.typed` |
+| 公开仓库卫生 | ✅ 内部文档、测试、运行时数据、本地模型、敏感信息已忽略 |
+
+---
+
 ## 测试
 
 ```bash
-# 运行全部 331 项测试
-python3 -m pytest tests/ -v
+# 运行全部 505 项测试
+python3 -m pytest tests/ -v --tb=short
 
 # 运行特定模块
 python3 -m pytest tests/test_goal_engine.py -v

@@ -1,11 +1,9 @@
 from rich.table import Table
-from rich.panel import Panel
 
 from allspark.commands.base import BaseCommand
 from allspark.container import ServiceContainer
-from allspark.models import ResourceType, OperatingMode
-from allspark.i18n import t
-
+from allspark.core.i18n import t
+from allspark.core.models import OperatingMode, ResourceType
 
 
 class StatusCommand(BaseCommand):
@@ -141,7 +139,7 @@ class LangCommand(BaseCommand):
     ALIASES = ("语言", "language")
 
     def execute(self, args: list[str]) -> None:
-        from allspark.i18n import set_language, get_language
+        from allspark.core.i18n import get_language, set_language
 
         if not args:
             self.console.print(f"[dim]{t('lang_current', lang=get_language())}[/dim]")
@@ -216,7 +214,7 @@ class ExitCommand(BaseCommand):
     COMMAND_NAME = "exit"
     ALIASES = ("退出", "quit", "q")
 
-    def __init__(self, container: ServiceContainer, cli_instance):
+    def __init__(self, container: ServiceContainer, cli_instance=None):
         super().__init__(container)
         self.cli = cli_instance
 

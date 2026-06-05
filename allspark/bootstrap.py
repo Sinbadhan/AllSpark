@@ -1,18 +1,27 @@
 import logging
+from datetime import datetime
 
 from allspark.container import ServiceContainer
-from allspark.database import Database
-from allspark.hardware import detect_hardware, compute_feature_flags, FeatureFlags, DeployMode, DEPLOY_MODE_MAP
-from allspark.module_loader import ModuleRegistry
-from allspark.resource_manager import ResourceManager
-from allspark.knowledge_engine import KnowledgeEngine
-from allspark.survival_engine import SurvivalAssessmentEngine
-from allspark.mission_planner import MissionPlanner
-from allspark.personality import PersonalitySystem
-from allspark.map_system import MapSystem
-from allspark.llm_engine import LLMEngine
-from allspark.experience_engine import ExperienceEngine
-from allspark.i18n import t
+from allspark.core.database import Database
+from allspark.core.i18n import t
+from allspark.core.models import OperatingMode
+from allspark.infrastructure.hardware import (
+    DeployMode,
+    FeatureFlags,
+    compute_feature_flags,
+    detect_hardware,
+)
+from allspark.infrastructure.module_loader import ModuleRegistry
+from allspark.services.experience_engine import ExperienceEngine
+from allspark.services.knowledge_engine import KnowledgeEngine
+from allspark.services.llm_engine import LLMEngine
+from allspark.services.map_system import MapSystem
+from allspark.services.mission_planner import MissionPlanner
+from allspark.services.personality import PersonalitySystem
+from allspark.services.resource_manager import ResourceManager
+from allspark.services.rule_engine import RuleEngine
+from allspark.services.scheduler import create_default_scheduler
+from allspark.services.survival_engine import SurvivalAssessmentEngine
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +49,99 @@ class ApplicationBootstrap:
         self._init_resources()
         self._load_knowledge()
         self._register_conditional_services()
+        self._register_scheduler()
         self._init_docker()
         self.registry.save_to_db(self.db)
         return self.container
+
+    def shutdown(self):
+        """Gracefully shut down all managed services."""
+        scheduler = self.container.get("scheduler")
+        if scheduler:
+            scheduler.stop()
+            logger.info("Scheduler stopped")
+
+    def recover(self) -> ServiceContainer:
+        """Recovery mode: data integrity check → sync data → re-evaluate.
+
+        Called when resuming from hibernation or after unexpected shutdown.
+        """
+        logger.info(t("recovery_start") if hasattr(t, '__call__') else "Recovery: starting recovery sequence")
+
+        container = self.bootstrap()
+
+        # Step 1: Data integrity check
+        self._check_data_integrity()
+
+        # Step 2: Sync hibernation-period data
+        self._sync_hibernation_data()
+
+        # Step 3: Re-evaluate survival state
+        self._re_evaluate_state(container)
+
+        # Set operating mode to recovery
+        current_state = self.db.get_operating_state()
+        current_state.mode = OperatingMode.RECOVERY.value
+        self.db.save_operating_state(current_state)
+
+        logger.info("Recovery: sequence complete")
+        return container
+
+    def _check_data_integrity(self) -> dict:
+        """Verify database integrity after unexpected shutdown."""
+        result = {"ok": True, "issues": []}
+
+        try:
+            check = self.db.conn.execute("PRAGMA integrity_check").fetchone()
+            if check[0] != "ok":
+                result["ok"] = False
+                result["issues"].append(f"Database integrity: {check[0]}")
+                logger.warning(f"Database integrity check failed: {check[0]}")
+        except Exception as e:
+            result["ok"] = False
+            result["issues"].append(f"Integrity check error: {e}")
+
+        # Verify critical tables exist
+        critical_tables = ["operating_state", "resources", "knowledge", "survivor_state"]
+        for table in critical_tables:
+            try:
+                self.db.conn.execute(f"SELECT COUNT(*) FROM {table} LIMIT 1")
+            except Exception:
+                result["issues"].append(f"Missing or corrupt table: {table}")
+
+        if result["issues"]:
+            result["ok"] = False
+
+        return result
+
+    def _sync_hibernation_data(self):
+        """Synchronize data that may have changed during hibernation."""
+        # Update heartbeat
+        try:
+            self.db.conn.execute(
+                "INSERT OR REPLACE INTO operating_state VALUES (?, ?)",
+                ("last_heartbeat", datetime.now().isoformat())
+            )
+            self.db.conn.execute(
+                "INSERT OR REPLACE INTO operating_state VALUES (?, ?)",
+                ("last_recovery", datetime.now().isoformat())
+            )
+            self.db.conn.commit()
+        except Exception as e:
+            logger.warning(f"Failed to sync hibernation data: {e}")
+
+    def _re_evaluate_state(self, container: ServiceContainer):
+        """Re-evaluate survival state after recovery."""
+        try:
+            survival = container.get("survival_engine")
+            if survival:
+                survival.assess()
+
+            resource_mgr = container.get("resource_manager")
+            if resource_mgr:
+                resource_mgr.check_warnings()
+        except Exception as e:
+            logger.warning(f"Re-evaluation failed: {e}")
 
     def _register_core_services(self):
         self.container.register("flags", self.flags)
@@ -60,8 +159,21 @@ class ApplicationBootstrap:
         llm = LLMEngine(self.flags)
         self.container.register("llm", llm)
 
+        # LocalVisionEngine is optional; startup degrades if ONNX/model missing.
+        from allspark.services.local_vision import LocalVisionEngine
+        local_vision = LocalVisionEngine(self.db)
+        local_vision.startup()
+        self.container.register("local_vision", local_vision)
+
         experience = ExperienceEngine(self.db, llm=llm)
         self.container.register("experience", experience)
+
+        # RuleEngine — core decision engine, registered via factory to keep
+        # _register_core_services free of cross-service wiring.
+        self.container.register_factory(
+            "rule_engine",
+            lambda: RuleEngine(self.container),
+        )
 
     def _init_resources(self):
         resource_mgr = self.container.require("resource_manager")
@@ -78,26 +190,40 @@ class ApplicationBootstrap:
         if not registry.should_load("knowledge_fts"):
             return
 
-        knowledge = KnowledgeEngine(self.db)
+        vector_engine = None
+        if getattr(self.flags, "vector_rag", False):
+            from allspark.services.vector_engine import VectorEngine
+            vector_engine = VectorEngine(self.db, flags=self.flags)
+            vector_engine.startup()
+            self.container.register("vector_engine", vector_engine)
+
+        external_kb = None
+        if getattr(self.flags, "kiwix", False):
+            from allspark.services.external_kb import ExternalKBService
+            external_kb = ExternalKBService(self.db)
+            self.container.register("external_kb", external_kb)
+
+        knowledge = KnowledgeEngine(self.db, vector_engine=vector_engine, external_kb=external_kb)
         self.container.register("knowledge", knowledge)
         registry.register("knowledge_fts", knowledge)
 
-        from allspark.knowledge_data import get_tier0_knowledge
-        from allspark.knowledge_data_en import get_tier0_knowledge_en
-        from allspark.knowledge_data_tier12 import get_tier1_knowledge, get_tier2_knowledge
+        from allspark.services.knowledge_loader import load_knowledge
 
-        for entry in get_tier0_knowledge():
+        for entry in load_knowledge(tier=0, language="zh"):
             if self.db.get_knowledge(entry.id) is None:
                 self.db.save_knowledge(entry)
-        for entry in get_tier0_knowledge_en():
+        for entry in load_knowledge(tier=0, language="en"):
             if self.db.get_knowledge(entry.id) is None:
                 self.db.save_knowledge(entry)
-        for entry in get_tier1_knowledge():
+        for entry in load_knowledge(tier=1):
             if self.db.get_knowledge(entry.id) is None:
                 self.db.save_knowledge(entry)
-        for entry in get_tier2_knowledge():
+        for entry in load_knowledge(tier=2):
             if self.db.get_knowledge(entry.id) is None:
                 self.db.save_knowledge(entry)
+
+        if vector_engine and vector_engine.is_available():
+            vector_engine.reindex_all()
 
     def _register_conditional_services(self):
         registry = self.registry
@@ -119,13 +245,13 @@ class ApplicationBootstrap:
             registry.register("self_learning", container.get("experience"))
 
         if registry.should_load("governance"):
-            from allspark.governance import GovernanceEngine
+            from allspark.services.governance import GovernanceEngine
             gov = GovernanceEngine(db=self.db, llm_engine=llm)
             container.register("governance", gov)
             registry.register("governance", gov)
 
         if registry.should_load("trade_engine"):
-            from allspark.trade_engine import TradeEngine
+            from allspark.services.trade_engine import TradeEngine
             network = registry.get("spark_network")
             verifier = registry.get("knowledge_verifier")
             trade = TradeEngine(db=self.db, network=network, verifier=verifier)
@@ -133,20 +259,20 @@ class ApplicationBootstrap:
             registry.register("trade_engine", trade)
 
         if registry.should_load("power_monitor"):
-            from allspark.power_monitor import PowerMonitor
+            from allspark.services.power_monitor import PowerMonitor
             pm = PowerMonitor(db=self.db)
             container.register("power_monitor", pm)
             registry.register("power_monitor", pm)
 
         if registry.should_load("sensor_hub"):
-            from allspark.sensor_hub import SensorHub
+            from allspark.services.sensor_hub import SensorHub
             hub = SensorHub(db=self.db)
             container.register("sensor_hub", hub)
             registry.register("sensor_hub", hub)
 
         data_preservation = None
         if registry.should_load("data_preservation"):
-            from allspark.data_preservation import DataPreservation
+            from allspark.infrastructure.data_preservation import DataPreservation
             data_preservation = DataPreservation(db=self.db)
             container.register("data_preservation", data_preservation)
             registry.register("data_preservation", data_preservation)
@@ -155,7 +281,7 @@ class ApplicationBootstrap:
                 logger.warning(f"Startup integrity check: {integrity['warnings']}")
 
         if registry.should_load("boot_manager"):
-            from allspark.boot_manager import BootManager
+            from allspark.infrastructure.boot_manager import BootManager
             bm = BootManager(db=self.db)
             container.register("boot_manager", bm)
             registry.register("boot_manager", bm)
@@ -165,13 +291,23 @@ class ApplicationBootstrap:
         personality = container.get("personality")
 
         if registry.should_load("goal_engine"):
-            from allspark.goal_engine import GoalEngine
+            from allspark.services.goal_engine import GoalEngine
             ge = GoalEngine(db=self.db, resource_mgr=resource_mgr, survival=survival)
             container.register("goal_engine", ge)
             registry.register("goal_engine", ge)
 
+        # PriorityCalculator (PRD §10.4) — used by GoalEngine and WarningProtocol
+        from allspark.services.priority_calculator import PriorityCalculator
+        pc = PriorityCalculator(self.db, resource_mgr=resource_mgr)
+        container.register("priority_calculator", pc)
+
+        # WarningProtocol (PRD §3.1.3) — resource warning closed-loop
+        from allspark.services.warning_protocol import WarningProtocol
+        wp = WarningProtocol(self.db, container=container)
+        container.register("warning_protocol", wp)
+
         if registry.should_load("reset_manager"):
-            from allspark.reset_manager import ResetManager
+            from allspark.services.reset_manager import ResetManager
             rm = ResetManager(
                 db=self.db,
                 data_preservation=data_preservation,
@@ -184,7 +320,7 @@ class ApplicationBootstrap:
         goal_engine = container.get("goal_engine")
 
         if registry.should_load("daily_briefing"):
-            from allspark.daily_briefing import DailyBriefing
+            from allspark.services.daily_briefing import DailyBriefing
             db_svc = DailyBriefing(
                 db=self.db, resource_mgr=resource_mgr,
                 survival=survival,
@@ -195,7 +331,7 @@ class ApplicationBootstrap:
             registry.register("daily_briefing", db_svc)
 
         if registry.should_load("timeline"):
-            from allspark.timeline import TimelineManager
+            from allspark.services.timeline import TimelineManager
             tl = TimelineManager(
                 db=self.db,
                 experience_engine=container.get("experience"),
@@ -204,7 +340,7 @@ class ApplicationBootstrap:
             registry.register("timeline", tl)
 
         if registry.should_load("diary"):
-            from allspark.diary import DiaryManager
+            from allspark.services.diary import DiaryManager
             diary = DiaryManager(
                 db=self.db,
                 timeline=container.get("timeline"),
@@ -215,7 +351,7 @@ class ApplicationBootstrap:
         sensor_hub = container.get("sensor_hub")
 
         if registry.should_load("weather"):
-            from allspark.weather import WeatherPredictor
+            from allspark.services.weather import WeatherPredictor
             weather = WeatherPredictor(
                 db=self.db,
                 sensor_hub=sensor_hub,
@@ -224,7 +360,7 @@ class ApplicationBootstrap:
             registry.register("weather", weather)
 
         if registry.should_load("psychology"):
-            from allspark.psychology import PsychologyTracker
+            from allspark.services.psychology import PsychologyTracker
             psych = PsychologyTracker(
                 db=self.db,
                 personality=personality,
@@ -233,7 +369,7 @@ class ApplicationBootstrap:
             registry.register("psychology", psych)
 
         if registry.should_load("gps_manager"):
-            from allspark.gps_manager import GPSManager
+            from allspark.services.gps_manager import GPSManager
             gps = GPSManager(
                 db=self.db,
                 sensor_hub=sensor_hub,
@@ -244,7 +380,7 @@ class ApplicationBootstrap:
         weather = container.get("weather")
 
         if registry.should_load("environment"):
-            from allspark.environment import EnvironmentAssessor
+            from allspark.services.environment import EnvironmentAssessor
             env = EnvironmentAssessor(
                 db=self.db,
                 weather=weather,
@@ -257,7 +393,7 @@ class ApplicationBootstrap:
         diary = container.get("diary")
 
         if registry.should_load("voice"):
-            from allspark.voice import VoiceManager
+            from allspark.services.voice import VoiceManager
             voice = VoiceManager(
                 db=self.db,
                 diary=diary,
@@ -265,6 +401,13 @@ class ApplicationBootstrap:
             )
             container.register("voice", voice)
             registry.register("voice", voice)
+
+    def _register_scheduler(self):
+        """Register the TaskScheduler via factory so it's lazily created."""
+        self.container.register_factory(
+            "scheduler",
+            lambda: create_default_scheduler(self.container),
+        )
 
     def _init_docker(self):
         if not self.flags.docker_enabled:

@@ -1,12 +1,10 @@
-import json
 import logging
 import subprocess
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from allspark.hardware import DeployMode, FeatureFlags
-from allspark.i18n import t
+from allspark.core.i18n import t
+from allspark.infrastructure.hardware import DeployMode, FeatureFlags
 
 logger = logging.getLogger(__name__)
 
@@ -235,8 +233,6 @@ class DockerManager:
             logger.warning(f"Failed to save deploy mode: {e}")
 
     def format_status_text(self) -> str:
-        from allspark.i18n import get_language
-        lang = get_language()
         status = self.get_status()
 
         if not status["docker_available"]:

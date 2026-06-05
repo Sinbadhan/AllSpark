@@ -1,9 +1,8 @@
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 from allspark.commands.base import BaseCommand
-from allspark.i18n import t, get_language
-
+from allspark.core.i18n import t
 
 
 class BriefingCommand(BaseCommand):
@@ -222,7 +221,7 @@ class GPSCommand(BaseCommand):
                 lat = float(args[1])
                 lon = float(args[2])
                 alt = float(args[3]) if len(args) > 3 else 0.0
-                pos = gm.set_manual_position(lat, lon, alt)
+                gm.set_manual_position(lat, lon, alt)
                 self.console.print(f"[green]{t('gps_position_set', lat=lat, lon=lon)}[/]")
             except ValueError:
                 self.console.print(f"[yellow]{t('gps_invalid_coords')}[/]")

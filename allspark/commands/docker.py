@@ -1,8 +1,8 @@
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 from allspark.commands.base import BaseCommand
-from allspark.i18n import t
+from allspark.core.i18n import t
 
 
 class DockerCommand(BaseCommand):

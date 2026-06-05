@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ALLSPARK — INIT</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0a0a0a; --surface: #131313; --surface-dim: #131313; --surface-bright: #393939;
+  --surface-lowest: #0e0e0e; --surface-low: #1b1c1c; --surface-mid: #1f2020;
+  --surface-high: #2a2a2a; --surface-highest: #353535;
+  --primary: #ffb59d; --primary-container: #ff6b35;
+  --on-primary: #5d1900; --on-primary-container: #5f1900;
+  --secondary: #c5c5c5; --on-surface: #e0e0e0; --on-surface-variant: #c4c4c4;
+  --on-background: #e0e0e0; --border: #2a2a2a; --success: #44cc44;
+  --warning: #ffaa00; --critical: #ff4444; --info: #4488ff;
+  --radius: 4px; --radius-lg: 8px;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-mono); background: var(--bg); color: var(--on-background);
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input { font-family: inherit; }
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-size: 20px; vertical-align: middle; line-height: 1;
+}
+.hidden { display: none !important; }
+.init-container { max-width: 560px; width: 100%; padding: 16px; }
+.init-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 32px; margin-bottom: 16px;
+}
+.init-header { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.brand-icon {
+  width: 32px; height: 32px; border-radius: var(--radius); background: var(--primary-container);
+  display: flex; align-items: center; justify-content: center; color: var(--on-primary-container);
+  font-weight: 700; font-size: 13px;
+}
+.init-header h1 { font-size: 28px; font-weight: 700; color: var(--primary-container); letter-spacing: -0.02em; }
+.init-subtitle { font-size: 13px; color: var(--secondary); margin-bottom: 24px; margin-left: 44px; }
+.cursor-blink { animation: blink 1s step-end infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* Step dots */
+.step-dots { display: flex; gap: 8px; margin-bottom: 24px; }
+.step-dot { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-high); transition: background 0.3s; }
+.step-dot.active { background: var(--primary-container); }
+.step-dot.done { background: var(--success); }
+
+/* Step content */
+.step h2 { font-size: 18px; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.step h2 .material-symbols-outlined { font-size: 20px; }
+
+/* Buttons */
+.btn-primary {
+  background: var(--primary-container); color: var(--on-primary-container);
+  padding: 8px 24px; border-radius: var(--radius); font-weight: 600; font-size: 13px;
+  display: inline-flex; align-items: center; gap: 8px; transition: all 0.15s;
+}
+.btn-primary:hover { background: var(--primary); }
+.btn-primary:active { transform: scale(0.95); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-outline {
+  background: var(--surface); border: 1px solid var(--border); color: var(--on-surface);
+  padding: 8px 16px; border-radius: var(--radius); font-weight: 600; font-size: 13px;
+  display: inline-flex; align-items: center; gap: 8px; transition: all 0.15s;
+}
+.btn-outline:hover { border-color: var(--primary-container); }
+
+/* Tier badges */
+.tier-phantom { background: #ff444433; color: #ff6666; }
+.tier-minimum { background: #ffaa0033; color: #ffcc44; }
+.tier-recommended { background: #44cc4433; color: #66ee66; }
+.tier-comfortable { background: #4488ff33; color: #66aaff; }
+.tier-flagship { background: #aa44ff33; color: #cc66ff; }
+
+/* HW grid */
+.hw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.hw-item {
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px; text-align: center;
+}
+.hw-item .label { font-size: 11px; color: var(--secondary); margin-bottom: 2px; }
+.hw-item .value { font-size: 13px; font-weight: 600; }
+
+/* Tier badge */
+.tier-badge {
+  display: inline-block; padding: 6px 16px; border-radius: var(--radius-lg);
+  font-weight: 700; font-size: 13px; margin-bottom: 12px;
+}
+
+/* Language buttons */
+.lang-grid { display: flex; gap: 12px; margin-bottom: 16px; }
+.lang-btn {
+  flex: 1; padding: 16px; border: 2px solid var(--border); border-radius: var(--radius-lg);
+  background: var(--bg); color: var(--on-surface); cursor: pointer; text-align: center;
+  transition: all 0.15s;
+}
+.lang-btn:hover { border-color: var(--primary-container); }
+.lang-btn.selected { border-color: var(--primary-container); background: rgba(255,107,53,0.1); }
+.lang-btn .lang-name { font-size: 18px; font-weight: 600; }
+.lang-btn .lang-sub { font-size: 11px; color: var(--secondary); margin-top: 4px; }
+
+/* Input */
+.init-input {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); color: var(--on-surface); font-size: 13px; outline: none;
+  transition: border-color 0.15s; margin-bottom: 16px;
+}
+.init-input:focus { border-color: var(--primary-container); }
+
+/* Model card */
+.model-card {
+  background: var(--bg); border: 1px solid var(--primary-container); border-radius: var(--radius);
+  padding: 12px; margin-bottom: 12px;
+}
+.model-card .model-name { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.model-card .model-meta { font-size: 11px; color: var(--secondary); margin-top: 4px; }
+.model-card .model-status { font-size: 11px; margin-top: 8px; display: flex; align-items: center; gap: 4px; }
+
+/* Progress bar */
+.progress-bar { height: 6px; background: var(--surface-high); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--primary-container); border-radius: 3px; transition: width 0.5s; }
+
+/* Step footer */
+.step-footer { display: flex; justify-content: space-between; margin-top: 24px; }
+.step-footer-right { margin-left: auto; }
+.step-skip { font-size: 11px; color: var(--secondary); cursor: pointer; margin-top: 12px; display: inline-block; }
+.step-skip:hover { color: var(--on-surface); }
+
+/* Status text */
+.text-success { color: var(--success); }
+.text-warn { color: var(--warning); }
+.text-critical { color: var(--critical); }
+.text-secondary { color: var(--secondary); }
+.text-primary { color: var(--primary); }
+.text-primary-container { color: var(--primary-container); }
+
+/* Loading */
+.loading-text { text-align: center; padding: 24px; color: var(--secondary); }
+
+/* Download section */
+.download-section { margin-top: 12px; }
+.download-progress { margin-top: 8px; }
+.download-status { font-size: 11px; color: var(--secondary); margin-top: 4px; }
+
+/* No LLM warning */
+.no-llm-warning { margin-top: 8px; font-size: 11px; color: var(--secondary); display: flex; align-items: center; gap: 4px; }
+
+/* Spin animation */
+.animate-spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="init-container">
+  <div class="init-card">
+    <div class="init-header">
+      <div class="brand-icon">A</div>
+      <h1>ALLSPARK</h1>
+    </div>
+    <p class="init-subtitle">Offline AI Survival System<span class="cursor-blink">_</span></p>
+
+    <div class="step-dots">
+      <div class="step-dot" id="dot-1"></div>
+      <div class="step-dot" id="dot-2"></div>
+      <div class="step-dot" id="dot-3"></div>
+      <div class="step-dot" id="dot-4"></div>
+    </div>
+
+    <!-- Step 1: Hardware -->
+    <div class="step hidden" id="step-1">
+      <h2><span class="material-symbols-outlined">bolt</span> <span data-i18n="web_init_hw_detect">Hardware Detection</span></h2>
+      <div id="hw-loading" class="loading-text" data-i18n="web_init_detecting">Detecting hardware...</div>
+      <div id="hw-info" class="hidden">
+        <div id="hw-tier-badge" class="tier-badge"></div>
+        <div class="hw-grid" id="hw-grid"></div>
+      </div>
+      <div class="step-footer">
+        <div></div>
+        <button onclick="goStep(2)" id="btn-step1-next" disabled class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
+      </div>
+    </div>
+
+    <!-- Step 2: Language -->
+    <div class="step hidden" id="step-2">
+      <h2><span class="material-symbols-outlined">language</span> <span data-i18n="web_init_lang_select">Language</span></h2>
+      <div class="lang-grid">
+        <div class="lang-btn" onclick="selectLang('zh', this)" id="lang-zh">
+          <div class="lang-name">中文</div>
+          <div class="lang-sub">Chinese</div>
+        </div>
+        <div class="lang-btn" onclick="selectLang('en', this)" id="lang-en">
+          <div class="lang-name">English</div>
+          <div class="lang-sub">English</div>
+        </div>
+      </div>
+      <div class="step-footer">
+        <button onclick="goStep(1)" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
+        <button onclick="goStep(3)" id="btn-step2-next" disabled class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
+      </div>
+    </div>
+
+    <!-- Step 3: AI Model -->
+    <div class="step hidden" id="step-3">
+      <h2><span class="material-symbols-outlined">smart_toy</span> <span data-i18n="web_init_model_setup">AI Model Setup</span></h2>
+      <div id="model-info"></div>
+      <div id="model-actions"></div>
+      <div class="step-footer">
+        <button onclick="goStep(2)" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
+        <button onclick="goStep(4)" class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
+      </div>
+      <span class="step-skip" onclick="goStep(4)" data-i18n="web_init_btn_skip">Skip model setup →</span>
+    </div>
+
+    <!-- Step 4: Survivor -->
+    <div class="step hidden" id="step-4">
+      <h2><span class="material-symbols-outlined">person</span> <span data-i18n="web_init_survivor_profile">Survivor Profile</span></h2>
+      <input class="init-input" id="survivor-name" type="text" data-placeholder-zh="你的名字" data-placeholder-en="Your name" placeholder="Your name" value="Survivor">
+      <div class="step-footer">
+        <button onclick="goStep(3)" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
+        <button onclick="completeInit()" id="btn-complete" class="btn-primary">
+          <span class="material-symbols-outlined" style="font-size:16px;">local_fire_department</span> <span data-i18n="web_init_btn_init">Initialize AllSpark</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentStep = 0;
+let selectedLang = "";
+let hwData = null;
+
+const I18N = {
+  zh: {
+    web_init_hw_detect: "硬件检测",
+    web_init_detecting: "正在检测硬件...",
+    web_init_lang_select: "语言",
+    web_init_model_setup: "AI 模型设置",
+    web_init_survivor_profile: "生存者档案",
+    web_init_btn_next: "下一步 →",
+    web_init_btn_back: "← 上一步",
+    web_init_btn_skip: "跳过模型设置 →",
+    web_init_btn_init: "初始化火种",
+    web_init_name_placeholder: "你的名字",
+    web_init_download: "下载 {model}（约 {size}GB）",
+    web_init_downloading: "下载中...",
+    web_init_dl_starting: "开始下载...",
+    web_init_dl_done: "下载完成！",
+    web_init_dl_downloaded: "已下载：{mb} MB",
+    web_init_dl_error: "下载失败，已尝试备用源",
+    web_init_dl_manual_hint: "手动下载：访问 hf-mirror.com 搜索模型，下载 .gguf 文件放到 ~/.allspark/models/",
+    web_init_model_ready: "模型就绪",
+    web_init_model_found: "模型文件已找到",
+    web_init_model_not_downloaded: "尚未下载",
+    web_init_model_recommended: "推荐",
+    web_init_no_llm: "硬件不支持 LLM，将使用规则引擎提供生存建议。",
+    web_init_initializing: "初始化中...",
+    hw_label_cpu: "CPU",
+    hw_label_cores: "核心",
+    hw_label_ram: "内存",
+    hw_label_storage: "存储",
+    hw_label_gpu: "GPU",
+    hw_label_os: "系统",
+    model_size_speed: "大小：约 {size}GB | 速度：{speed} tokens/s",
+  },
+  en: {
+    web_init_hw_detect: "Hardware Detection",
+    web_init_detecting: "Detecting hardware...",
+    web_init_lang_select: "Language",
+    web_init_model_setup: "AI Model Setup",
+    web_init_survivor_profile: "Survivor Profile",
+    web_init_btn_next: "Next →",
+    web_init_btn_back: "← Back",
+    web_init_btn_skip: "Skip model setup →",
+    web_init_btn_init: "Initialize AllSpark",
+    web_init_name_placeholder: "Your name",
+    web_init_download: "Download {model} (~{size}GB)",
+    web_init_downloading: "Downloading...",
+    web_init_dl_starting: "Starting...",
+    web_init_dl_done: "Download complete!",
+    web_init_dl_downloaded: "Downloaded: {mb} MB",
+    web_init_dl_error: "Download failed, tried alternative source",
+    web_init_dl_manual_hint: "Manual: visit huggingface.co, search model, download .gguf to ~/.allspark/models/",
+    web_init_model_ready: "Model Ready",
+    web_init_model_found: "Model file found",
+    web_init_model_not_downloaded: "Not downloaded yet",
+    web_init_model_recommended: "Recommended",
+    web_init_no_llm: "Hardware does not support LLM. Rule engine will provide survival advice.",
+    web_init_initializing: "Initializing...",
+    hw_label_cpu: "CPU",
+    hw_label_cores: "Cores",
+    hw_label_ram: "RAM",
+    hw_label_storage: "Storage",
+    hw_label_gpu: "GPU",
+    hw_label_os: "OS",
+    model_size_speed: "Size: ~{size}GB | Speed: {speed} tokens/s",
+  }
+};
+
+function i18n(key, params) {
+  const lang = selectedLang || "en";
+  let text = (I18N[lang] && I18N[lang][key]) || (I18N.en[key]) || key;
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      text = text.replace(new RegExp("\\{" + k + "\\}", "g"), v);
+    }
+  }
+  return text;
+}
+
+function applyI18n() {
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    el.textContent = i18n(key);
+  });
+  const nameInput = document.getElementById("survivor-name");
+  if (nameInput) {
+    nameInput.placeholder = i18n("web_init_name_placeholder");
+  }
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, opts);
+  return res.json();
+}
+
+function goStep(n) {
+  currentStep = n;
+  document.querySelectorAll(".step").forEach(el => el.classList.add("hidden"));
+  document.getElementById("step-" + n).classList.remove("hidden");
+  document.querySelectorAll(".step-dot").forEach((dot, i) => {
+    dot.classList.remove("active", "done");
+    if (i + 1 < n) dot.classList.add("done");
+    if (i + 1 === n) dot.classList.add("active");
+  });
+  if (n === 1) loadHardware();
+  if (n === 3) loadModels();
+  applyI18n();
+}
+
+async function loadHardware() {
+  const data = await api("/api/init/hardware");
+  hwData = data;
+  document.getElementById("hw-loading").classList.add("hidden");
+  document.getElementById("hw-info").classList.remove("hidden");
+
+  const tierMap = {
+    phantom: ["Phantom (2GB)", "tier-phantom"],
+    minimum: ["Minimum (4GB)", "tier-minimum"],
+    recommended: ["Recommended (8GB)", "tier-recommended"],
+    comfortable: ["Comfortable (16GB)", "tier-comfortable"],
+    flagship: ["Flagship (32GB+)", "tier-flagship"],
+  };
+  const [tierName, tierClass] = tierMap[data.tier] || ["Unknown", "tier-minimum"];
+  const badge = document.getElementById("hw-tier-badge");
+  badge.textContent = tierName;
+  badge.className = "tier-badge " + tierClass;
+
+  document.getElementById("hw-grid").innerHTML = [
+    [i18n("hw_label_cpu"), data.cpu_model || data.cpu_arch],
+    [i18n("hw_label_cores"), data.cpu_cores],
+    [i18n("hw_label_ram"), data.ram_total_gb + " GB"],
+    [i18n("hw_label_storage"), data.storage_available_gb + " / " + data.storage_total_gb + " GB"],
+    [i18n("hw_label_gpu"), data.gpu_info || "None"],
+    [i18n("hw_label_os"), data.os_name],
+  ].map(([l, v]) => '<div class="hw-item"><div class="label">' + l + '</div><div class="value">' + v + '</div></div>').join("");
+
+  document.getElementById("btn-step1-next").disabled = false;
+}
+
+function selectLang(lang, el) {
+  selectedLang = lang;
+  document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("selected"));
+  el.classList.add("selected");
+  document.getElementById("btn-step2-next").disabled = false;
+  applyI18n();
+}
+
+async function loadModels() {
+  const container = document.getElementById("model-info");
+  const actions = document.getElementById("model-actions");
+  if (!hwData) return;
+
+  const model = hwData.recommended_model;
+  const size = hwData.model_size_gb;
+  const speed = hwData.model_speed_tps;
+  const downloaded = hwData.model_downloaded;
+
+  let html = '<div class="model-card">';
+  html += '<div class="model-name"><span class="material-symbols-outlined text-primary-container" style="font-size:16px;">star</span> ' + model + ' (' + i18n("web_init_model_recommended") + ')</div>';
+  html += '<div class="model-meta">' + i18n("model_size_speed", {size: size, speed: speed}) + '</div>';
+
+  if (downloaded) {
+    html += '<div class="model-status text-success"><span class="material-symbols-outlined" style="font-size:14px;font-variation-settings:\'FILL\' 1">check_circle</span> ' + i18n("web_init_model_found") + '</div>';
+  } else {
+    html += '<div class="model-status text-warn"><span class="material-symbols-outlined" style="font-size:14px;">download</span> ' + i18n("web_init_model_not_downloaded") + '</div>';
+  }
+  html += '</div>';
+
+  if (!downloaded && hwData.llm_enabled) {
+    html += '<div class="download-section">';
+    html += '<button onclick="downloadModel(\'' + model + '\')" id="btn-download" class="btn-primary">';
+    html += '<span class="material-symbols-outlined" style="font-size:16px;">download</span> ' + i18n("web_init_download", {model: model, size: size}) + '</button>';
+    html += '<div id="download-progress" class="download-progress hidden">';
+    html += '<div class="progress-bar"><div class="progress-fill" id="dl-fill" style="width:0%"></div></div>';
+    html += '<div class="download-status" id="dl-status">' + i18n("web_init_dl_starting") + '</div></div></div>';
+  } else if (!hwData.llm_enabled) {
+    html += '<div class="no-llm-warning"><span class="material-symbols-outlined" style="font-size:14px;">warning</span> ' + i18n("web_init_no_llm") + '</div>';
+  }
+
+  container.innerHTML = html;
+  actions.innerHTML = "";
+}
+
+async function downloadModel(modelName) {
+  const btn = document.getElementById("btn-download");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:16px;">sync</span> ' + i18n("web_init_downloading");
+  document.getElementById("download-progress").classList.remove("hidden");
+
+  try {
+    const result = await api("/api/init/download?model_name=" + encodeURIComponent(modelName), {method: "POST"});
+    if (result.status === "error") {
+      document.getElementById("dl-status").textContent = "Error: " + (result.message || "Download failed");
+      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> Failed';
+      btn.disabled = false;
+      return;
+    }
+  } catch(e) {
+    document.getElementById("dl-status").textContent = "Error: " + e.message;
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> Failed';
+    btn.disabled = false;
+    return;
+  }
+
+  const sizeBytes = (hwData.model_size_gb || 2) * 1024 * 1024 * 1024;
+  const checkInterval = setInterval(async () => {
+    try {
+      const prog = await api("/api/init/download_progress?model_name=" + encodeURIComponent(modelName));
+      if (prog.status === "done") {
+        clearInterval(checkInterval);
+        document.getElementById("dl-fill").style.width = "100%";
+        document.getElementById("dl-status").textContent = i18n("web_init_dl_done");
+        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">check_circle</span> ' + i18n("web_init_model_ready");
+        hwData.model_downloaded = true;
+      } else if (prog.status === "error") {
+        clearInterval(checkInterval);
+        document.getElementById("dl-status").innerHTML = i18n("web_init_dl_error") + '<br><span style="font-size:10px;">' + i18n("web_init_dl_manual_hint") + '</span>';
+        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> Failed';
+        btn.disabled = false;
+      } else if (prog.status === "downloading") {
+        const pct = Math.min(95, (prog.current_bytes / sizeBytes) * 100);
+        document.getElementById("dl-fill").style.width = pct + "%";
+        const mb = (prog.current_bytes / (1024*1024)).toFixed(0);
+        document.getElementById("dl-status").textContent = i18n("web_init_dl_downloaded", {mb: mb});
+      }
+    } catch(e) {
+      clearInterval(checkInterval);
+      document.getElementById("dl-status").textContent = "Error checking progress";
+    }
+  }, 2000);
+}
+
+async function completeInit() {
+  const btn = document.getElementById("btn-complete");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:16px;">sync</span> ' + i18n("web_init_initializing");
+
+  const name = document.getElementById("survivor-name").value.trim() || "Survivor";
+  const lang = selectedLang || "zh";
+
+  try {
+    await api("/api/init/complete?language=" + lang + "&survivor_name=" + encodeURIComponent(name), {method: "POST"});
+    window.location.reload();
+  } catch(e) {
+    btn.textContent = "Error: " + e.message;
+    btn.disabled = false;
+  }
+}
+
+goStep(1);
+</script>
+</body>
+</html>

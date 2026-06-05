@@ -1,8 +1,8 @@
 from rich.console import Console
 
 from allspark.container import ServiceContainer
-from allspark.database import Database
-from allspark.i18n import get_language
+from allspark.core.database import Database
+from allspark.core.i18n import get_language
 
 
 class BaseCommand:

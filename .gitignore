@@ -2,6 +2,12 @@
 PRD.md
 PROGRESS.md
 ARCHITECTURE.md
+REVIEW-PLAN.md
+TECH-DECISIONS.md
+CLAUDE.md
+*.bak
+*.backup
+*.orig
 
 # Tests (not for public repo)
 tests/
@@ -56,6 +62,25 @@ snapshots/
 # Environment / secrets
 .env
 .env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets.*
+credentials.*
+config.local.*
+*.local
+
+# Local runtime / generated files
+*.sqlite
+*.sqlite3
+*.pid
+*.tmp
+*.temp
+*.error
+models/
+data/runtime/
 
 # Test / coverage
 .pytest_cache/
