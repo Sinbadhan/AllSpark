@@ -6,10 +6,12 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse
 from jinja2 import Environment, FileSystemLoader
 
+from allspark import __version__
+from allspark.adapters.routes.helpers import http_exception_handler
 from allspark.bootstrap import ApplicationBootstrap
 from allspark.core.config import DEFAULT_DB_DIR
 from allspark.core.database import Database
-from allspark.core.i18n import init_language, set_language
+from allspark.core.i18n import get_language, init_language, set_language, t
 from allspark.infrastructure.hardware import compute_feature_flags, detect_hardware
 from allspark.infrastructure.module_loader import ModuleRegistry
 
@@ -32,6 +34,9 @@ _jinja_env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)), autoescape
 
 def _render_template(name: str, **context) -> str:
     template = _jinja_env.get_template(name)
+    context.setdefault("t", t)
+    context.setdefault("lang", get_language())
+    context.setdefault("version", __version__)
     return template.render(**context)
 
 
@@ -47,6 +52,7 @@ MODEL_DOWNLOAD_URLS = {
 
 def create_app(db_path: Optional[str] = None) -> FastAPI:
     app = FastAPI(title="ALLSPARK", version="0.7.0")
+    app.add_exception_handler(HTTPException, http_exception_handler)
 
     db = Database(db_path)
     init_language(db)

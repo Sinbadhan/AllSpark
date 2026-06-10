@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>ALLSPARK - Dashboard</title>
+<title>{{ t('web_app_title') }} - {{ t('web_nav_dashboard') }}</title>
 <style>
 .dash-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
 @media (min-width: 768px) { .dash-header { flex-direction: row; justify-content: space-between; align-items: flex-end; } }
@@ -115,8 +115,8 @@
 <!-- Dashboard Title -->
 <div class="dash-header">
   <div>
-    <h1><span class="material-symbols-outlined">dashboard</span> System Health Matrix</h1>
-    <p>Live telemetry and resource monitoring.</p>
+    <h1><span class="material-symbols-outlined">dashboard</span> {{ t('web_dashboard_title') }}</h1>
+    <p>{{ t('web_dashboard_subtitle') }}</p>
   </div>
   <div class="dash-badges">
     <span id="phase-badge" class="badge bg-success-dim text-success border-success">
@@ -144,34 +144,34 @@
   <!-- Execution Summary -->
   <div class="task-card span-8">
     <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:8px;">
-      <h2 class="card-title"><span class="material-symbols-outlined">trending_up</span> Active Tasks</h2>
+      <h2 class="card-title"><span class="material-symbols-outlined">trending_up</span> {{ t('web_active_tasks') }}</h2>
     </div>
     <div id="task-list" class="task-list">
-      <div class="text-secondary text-sm">Loading...</div>
+      <div class="text-secondary text-sm">{{ t('web_loading') }}</div>
     </div>
   </div>
 
   <!-- Quick Actions -->
   <div class="quick-actions span-4">
-    <h2>Quick Actions</h2>
+    <h2>{{ t('web_quick_actions') }}</h2>
     <button onclick="switchTab('chat')" class="action-btn action-primary">
-      <span class="material-symbols-outlined" style="font-size:16px;">chat</span> Chat with AllSpark
+      <span class="material-symbols-outlined" style="font-size:16px;">chat</span> {{ t('web_action_chat') }}
     </button>
     <button onclick="switchTab('knowledge')" class="action-btn action-outline">
-      <span class="material-symbols-outlined" style="font-size:16px;">search</span> Search Knowledge
+      <span class="material-symbols-outlined" style="font-size:16px;">search</span> {{ t('web_action_search_knowledge') }}
     </button>
     <button onclick="switchTab('experience')" class="action-btn action-outline">
-      <span class="material-symbols-outlined" style="font-size:16px;">psychology</span> Log Experience
+      <span class="material-symbols-outlined" style="font-size:16px;">psychology</span> {{ t('web_action_log_experience') }}
     </button>
   </div>
 
   <!-- Live Activity / Sub-tabs -->
   <div class="live-panel span-12">
     <div class="subtab-bar">
-      <button class="sub-tab active" data-subtab="knowledge">KNOWLEDGE</button>
-      <button class="sub-tab" data-subtab="chat">CHAT</button>
-      <button class="sub-tab" data-subtab="experience">EXPERIENCE</button>
-      <button class="sub-tab" data-subtab="modules">MODULES</button>
+      <button class="sub-tab active" data-subtab="knowledge">{{ t('web_tab_knowledge') }}</button>
+      <button class="sub-tab" data-subtab="chat">{{ t('web_tab_chat') }}</button>
+      <button class="sub-tab" data-subtab="experience">{{ t('web_tab_experience') }}</button>
+      <button class="sub-tab" data-subtab="modules">{{ t('web_tab_modules') }}</button>
     </div>
 
     <!-- Knowledge Sub-tab -->
@@ -179,9 +179,9 @@
       <div class="kb-search">
         <div class="search-wrap">
           <span class="material-symbols-outlined">search</span>
-          <input id="knowledge-search" placeholder="Search knowledge base..." type="text" autocomplete="off"/>
+          <input id="knowledge-search" placeholder="{{ t('web_knowledge_search_placeholder') }}" type="text" autocomplete="off"/>
         </div>
-        <button onclick="searchKnowledge()" class="btn-outline" style="padding:6px 12px;">Search</button>
+        <button onclick="searchKnowledge()" class="btn-outline" style="padding:6px 12px;">{{ t('web_search') }}</button>
       </div>
       <div id="knowledge-results" style="overflow-y:auto;max-height:300px;"></div>
       <div id="knowledge-detail" style="display:none"></div>
@@ -192,8 +192,8 @@
       <div class="chat-container">
         <div id="chat-messages" class="chat-messages"></div>
         <div class="chat-input-bar">
-          <input id="chat-input" placeholder="Ask AllSpark..." type="text" autocomplete="off"/>
-          <button onclick="sendChat()" class="btn-primary" style="padding:8px 16px;">SEND</button>
+          <input id="chat-input" placeholder="{{ t('web_chat_placeholder') }}" type="text" autocomplete="off"/>
+          <button onclick="sendChat()" class="btn-primary" style="padding:8px 16px;">{{ t('web_send') }}</button>
         </div>
       </div>
     </div>
@@ -201,15 +201,15 @@
     <!-- Experience Sub-tab -->
     <div id="subtab-experience" class="subtab-content hidden">
       <div class="exp-stats">
-        <div class="exp-stat"><div class="stat-value text-primary" id="exp-total">0</div><div class="stat-label">EXPERIENCES</div></div>
-        <div class="exp-stat"><div class="stat-value text-info" id="exp-patterns">0</div><div class="stat-label">PATTERNS</div></div>
-        <div class="exp-stat"><div class="stat-value text-success" id="exp-promoted">0</div><div class="stat-label">PROMOTED</div></div>
+        <div class="exp-stat"><div class="stat-value text-primary" id="exp-total">0</div><div class="stat-label">{{ t('web_exp_total') }}</div></div>
+        <div class="exp-stat"><div class="stat-value text-info" id="exp-patterns">0</div><div class="stat-label">{{ t('web_exp_patterns') }}</div></div>
+        <div class="exp-stat"><div class="stat-value text-success" id="exp-promoted">0</div><div class="stat-label">{{ t('web_exp_promoted') }}</div></div>
       </div>
       <div class="exp-form">
-        <input id="exp-event" placeholder="Event (e.g. found water source)"/>
-        <input id="exp-outcome" placeholder="Outcome (e.g. clean spring, 2L/hour)"/>
-        <input id="exp-lesson" placeholder="Lesson (optional)"/>
-        <button onclick="logExperience()" class="btn-primary" style="align-self:flex-start;">LOG EXPERIENCE</button>
+        <input id="exp-event" placeholder="{{ t('web_exp_event_placeholder') }}"/>
+        <input id="exp-outcome" placeholder="{{ t('web_exp_outcome_placeholder') }}"/>
+        <input id="exp-lesson" placeholder="{{ t('web_exp_lesson_placeholder') }}"/>
+        <button onclick="logExperience()" class="btn-primary" style="align-self:flex-start;">{{ t('web_log_experience') }}</button>
       </div>
       <div id="exp-list" style="overflow-y:auto;max-height:200px;"></div>
     </div>
@@ -218,9 +218,9 @@
     <div id="subtab-modules" class="subtab-content hidden">
       <div id="module-list" style="overflow-y:auto;max-height:300px;"></div>
       <div class="module-section">
-        <h3>LLM Engine</h3>
-        <div id="llm-status" class="text-sm text-on-surface-variant mb-2">Loading...</div>
-        <button onclick="loadLLM()" class="btn-primary">Load Model</button>
+        <h3>{{ t('web_llm_engine') }}</h3>
+        <div id="llm-status" class="text-sm text-on-surface-variant mb-2">{{ t('web_loading') }}</div>
+        <button onclick="loadLLM()" class="btn-primary">{{ t('web_load_model') }}</button>
       </div>
     </div>
   </div>
@@ -229,6 +229,13 @@
 
 {% block scripts %}
 <script>
+const I18N = {
+  empty_tasks: "{{ t('web_no_active_tasks') }}",
+  no_results: "{{ t('web_no_results') }}",
+  unconfigured: "{{ t('web_unconfigured') }}",
+  set_amount_hint: "{{ t('web_set_amount_hint') }}",
+  remaining_unknown: "{{ t('web_remaining_unknown') }}",
+};
 const resourceIcons = {
   water: "water_drop", food: "restaurant", fire: "local_fire_department",
   shelter: "home", medical: "medical_services", power: "bolt",
@@ -278,19 +285,22 @@ async function refreshDashboard() {
   container.innerHTML = data.resources.map(r => {
     const icon = resourceIcons[r.type] || "inventory_2";
     const label = resourceLabels[r.type] || r.type.toUpperCase();
-    if (r.offline) {
+    if (!r.configured) {
       return '<div class="resource-card offline span-4">' +
-        '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value text-secondary">OFFLINE</span></div>' +
-        '<div style="font-size:24px;font-weight:700;color:var(--secondary);">--</div></div>';
+        '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value text-secondary">' + I18N.unconfigured + '</span></div>' +
+        '<div style="font-size:24px;font-weight:700;color:var(--secondary);">--</div>' +
+        '<div class="card-remaining">' + I18N.set_amount_hint + '</div></div>';
     }
-    const pct = Math.min(100, Math.max(0, (r.remaining_hours / 168) * 100));
-    const statusColor = pct > 70 ? "#44cc44" : pct > 30 ? "#ffaa00" : "#ff4444";
-    const statusText = pct > 70 ? "OK" : pct > 30 ? "LOW" : "CRITICAL";
+    const hasEstimate = r.remaining_hours !== null && r.remaining_hours !== undefined;
+    const pct = hasEstimate ? Math.min(100, Math.max(0, (r.remaining_hours / 168) * 100)) : 0;
+    const statusColor = !hasEstimate ? "#888" : pct > 70 ? "#44cc44" : pct > 30 ? "#ffaa00" : "#ff4444";
+    const statusText = !hasEstimate ? "UNKNOWN" : pct > 70 ? "OK" : pct > 30 ? "LOW" : "CRITICAL";
+    const remainingText = hasEstimate ? ('~' + Math.round(r.remaining_hours) + 'h remaining') : I18N.remaining_unknown;
     return '<div class="resource-card span-4">' +
       '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + r.amount + r.unit + '</span></div>' +
       '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + statusColor + '"></div></div>' +
       '<div class="card-status">' + statusText + '</div>' +
-      '<div class="card-remaining">~' + Math.round(r.remaining_hours) + 'h remaining</div></div>';
+      '<div class="card-remaining">' + remainingText + '</div></div>';
   }).join("");
 
   // Warnings
@@ -316,7 +326,7 @@ async function refreshDashboard() {
       tasks.slice(0, 8).map(t => '<tr><td class="text-primary font-semibold">P' + t.phase + '</td><td>' + escHtml(t.title) + '</td><td class="text-success">' + t.status + '</td></tr>').join("") +
       '</tbody></table>';
   } else {
-    tlist.innerHTML = '<div class="text-secondary text-sm p-3">No active tasks</div>';
+    tlist.innerHTML = '<div class="text-secondary text-sm p-3">' + I18N.empty_tasks + '</div>';
   }
 }
 

@@ -1,10 +1,8 @@
 """Survival API routes: goals, briefing, timeline, diary, gps, reset, psych."""
 
-from datetime import datetime, timedelta
-
 from fastapi import Request
 
-from allspark.adapters.routes.helpers import _get_service
+from allspark.adapters.routes.helpers import _get_service, error_response, service_unavailable
 
 
 def register_survival_routes(app, check):
@@ -13,7 +11,7 @@ def register_survival_routes(app, check):
         """Get all active goals"""
         goal_engine_svc = _get_service(app, 'goal_engine')
         if goal_engine_svc is None:
-            return {"error": "Goal engine not loaded", "goals": []}
+            return {**service_unavailable("goal_engine", app=app), "goals": []}
         goals = goal_engine_svc.get_active_goals()
         return {"goals": [
             {
@@ -29,11 +27,11 @@ def register_survival_routes(app, check):
         """Get goal details"""
         goal_engine_svc = _get_service(app, 'goal_engine')
         if goal_engine_svc is None:
-            return {"error": "Goal engine not loaded"}
-        goal = goal_engine_svc.get_goal(goal_id)
+            return service_unavailable("goal_engine", app=app)
+        goal = goal_engine_svc.db.get_goal(goal_id)
         if not goal:
-            return {"error": "Goal not found"}
-        milestones = goal_engine_svc.get_milestones(goal_id)
+            return error_response("Goal not found", detail=f"No goal with id '{goal_id}'.")
+        milestones = goal_engine_svc.db.get_milestones_by_goal(goal_id)
         return {
             "goal": {
                 "id": goal.id, "title": goal.title, "description": goal.description,
@@ -53,7 +51,7 @@ def register_survival_routes(app, check):
         """Manually add a goal"""
         goal_engine_svc = _get_service(app, 'goal_engine')
         if goal_engine_svc is None:
-            return {"error": "Goal engine not loaded"}
+            return service_unavailable("goal_engine", app=app)
         data = await request.json()
         goal = goal_engine_svc.add_manual_goal(
             title=data.get("title", ""),
@@ -68,7 +66,7 @@ def register_survival_routes(app, check):
         """Complete a goal"""
         goal_engine_svc = _get_service(app, 'goal_engine')
         if goal_engine_svc is None:
-            return {"error": "Goal engine not loaded"}
+            return service_unavailable("goal_engine", app=app)
         success = goal_engine_svc.complete_goal(goal_id)
         return {"success": success}
 
@@ -77,7 +75,7 @@ def register_survival_routes(app, check):
         """Complete a milestone"""
         goal_engine_svc = _get_service(app, 'goal_engine')
         if goal_engine_svc is None:
-            return {"error": "Goal engine not loaded"}
+            return service_unavailable("goal_engine", app=app)
         success = goal_engine_svc.complete_milestone(milestone_id)
         return {"success": success}
 
@@ -86,7 +84,7 @@ def register_survival_routes(app, check):
         """Get daily briefing"""
         daily_briefing_svc = _get_service(app, 'daily_briefing')
         if daily_briefing_svc is None:
-            return {"error": "Briefing module not loaded"}
+            return service_unavailable("daily_briefing", app=app)
         briefing = daily_briefing_svc.generate()
         return {"briefing": briefing}
 
@@ -95,7 +93,7 @@ def register_survival_routes(app, check):
         """Get short briefing"""
         daily_briefing_svc = _get_service(app, 'daily_briefing')
         if daily_briefing_svc is None:
-            return {"error": "Briefing module not loaded"}
+            return service_unavailable("daily_briefing", app=app)
         briefing = daily_briefing_svc.generate_short()
         return {"briefing": briefing}
 
@@ -104,13 +102,13 @@ def register_survival_routes(app, check):
         """Get timeline"""
         timeline_svc = _get_service(app, 'timeline')
         if timeline_svc is None:
-            return {"error": "Timeline module not loaded"}
-        events = timeline_svc.get_events(day=day, limit=limit)
+            return service_unavailable("timeline", app=app)
+        events = timeline_svc.get_timeline(day=day, limit=limit)
         return {"events": [
             {
-                "id": e.id, "day": e.day, "timestamp": e.timestamp,
-                "event_type": e.event_type, "title": e.title,
-                "description": e.description, "emotion": e.emotion,
+                "id": e["id"], "day": e["day"], "timestamp": e["timestamp"],
+                "event_type": e["event_type"], "title": e["title"],
+                "description": e["description"], "emotion": e["emotion"],
             } for e in events
         ]}
 
@@ -119,8 +117,9 @@ def register_survival_routes(app, check):
         """Get recent timeline"""
         timeline_svc = _get_service(app, 'timeline')
         if timeline_svc is None:
-            return {"error": "Timeline module not loaded"}
-        text = timeline_svc.format_recent(days=days)
+            return service_unavailable("timeline", app=app)
+        events = timeline_svc.get_timeline(limit=max(days * 10, 20))
+        text = timeline_svc.format_timeline(events)
         return {"timeline": text}
 
     @app.get("/api/diary")
@@ -128,16 +127,12 @@ def register_survival_routes(app, check):
         """Get diary entries"""
         diary_svc = _get_service(app, 'diary')
         if diary_svc is None:
-            return {"error": "Diary module not loaded"}
-        if date:
-            entries = diary_svc.get_by_date(date)
-        else:
-            latest = diary_svc.get_latest()
-            entries = [latest] if latest else []
+            return service_unavailable("diary", app=app)
+        entries = diary_svc.get_entries(date=date, limit=20)
         return {"entries": [
             {
-                "id": e.id, "date": e.date, "content": e.content,
-                "emotion": e.emotion, "keywords": e.keywords,
+                "id": e["id"], "date": e["date"], "content": e["content"],
+                "emotion": e["emotion"], "keywords": e["keywords"],
             } for e in entries
         ]}
 
@@ -146,24 +141,23 @@ def register_survival_routes(app, check):
         """Add diary entry"""
         diary_svc = _get_service(app, 'diary')
         if diary_svc is None:
-            return {"error": "Diary module not loaded"}
+            return service_unavailable("diary", app=app)
         data = await request.json()
-        entry = diary_svc.create_entry(
+        entry = diary_svc.add_entry(
             content=data.get("content", ""),
+            emotion=data.get("emotion", "neutral"),
             related_goal_id=data.get("related_goal_id", ""),
         )
-        return {"entry": {"id": entry.id, "date": entry.date}}
+        return {"entry": {"id": entry["id"], "date": entry["date"]}}
 
     @app.get("/api/diary/review")
     async def api_diary_review(days: int = 7):
         """Diary review"""
         diary_svc = _get_service(app, 'diary')
         if diary_svc is None:
-            return {"error": "Diary module not loaded"}
-        end_date = datetime.now().strftime("%Y-%m-%d")
-        start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-        entries = diary_svc.get_range(start_date, end_date)
-        text = diary_svc.format_review(entries, days=days)
+            return service_unavailable("diary", app=app)
+        entries = diary_svc.get_entries(limit=max(days * 3, 10))
+        text = diary_svc.format_entries(entries, limit=len(entries))
         return {"review": text}
 
     @app.get("/api/gps")
@@ -171,8 +165,8 @@ def register_survival_routes(app, check):
         """Get GPS location"""
         gps_manager_svc = _get_service(app, 'gps_manager')
         if gps_manager_svc is None:
-            return {"error": "GPS module not loaded", "location": None}
-        loc = gps_manager_svc.get_location()
+            return {**service_unavailable("gps_manager", app=app), "location": None}
+        loc = gps_manager_svc.get_position()
         return {"location": loc}
 
     @app.post("/api/gps/set")
@@ -180,65 +174,63 @@ def register_survival_routes(app, check):
         """Set GPS location"""
         gps_manager_svc = _get_service(app, 'gps_manager')
         if gps_manager_svc is None:
-            return {"error": "GPS module not loaded"}
+            return service_unavailable("gps_manager", app=app)
         data = await request.json()
         lat = data.get("latitude", 0)
         lon = data.get("longitude", 0)
         alt = data.get("altitude", 0)
-        gps_manager_svc.set_location(lat, lon, alt)
-        return {"success": True, "location": gps_manager_svc.get_location()}
+        location = gps_manager_svc.set_manual_position(lat, lon, alt)
+        return {"success": True, "location": location}
 
     @app.get("/api/gps/nearby")
     async def api_gps_nearby(radius_km: float = 5.0):
         """Get nearby POIs"""
         gps_manager_svc = _get_service(app, 'gps_manager')
         if gps_manager_svc is None:
-            return {"error": "GPS module not loaded", "nearby": []}
-        nearby = gps_manager_svc.get_nearby_pois(radius_km=radius_km)
-        return {"nearby": [
-            {
-                "poi": {"id": item["poi"].id, "name": item["poi"].name, "type": item["poi"].type},
-                "distance_km": item["distance_km"],
-            } for item in nearby
-        ]}
+            return {**service_unavailable("gps_manager", app=app), "nearby": []}
+        nearby = [p for p in gps_manager_svc.annotate_pois_with_distance() if p.get("distance_km", 0) <= radius_km]
+        return {"nearby": nearby}
 
     @app.post("/api/reset/{level}")
     async def api_reset(level: int, request: Request):
         """Perform system reset"""
         reset_manager_svc = _get_service(app, 'reset_manager')
         if reset_manager_svc is None:
-            return {"error": "Reset manager not loaded"}
+            return service_unavailable("reset_manager", app=app)
         data = await request.json()
         confirm = data.get("confirm", False)
         if not confirm:
-            return {"error": "Confirmation required. Send confirm=true"}
+            return error_response(
+                "Confirmation required",
+                detail="Reset requires explicit confirmation to prevent accidental data loss.",
+                next_action="Send confirm=true in the request body.",
+            )
 
-        if level == 1:
-            result = reset_manager_svc.reset_assessment()
-        elif level == 2:
-            result = reset_manager_svc.reset_archive()
-        elif level == 3:
-            password = data.get("password", "")
-            result = reset_manager_svc.reset_factory(password)
-        else:
-            return {"error": "Invalid reset level (1/2/3)"}
+        from allspark.core.models import ResetLevel
+        level_map = {1: ResetLevel.ASSESSMENT, 2: ResetLevel.ARCHIVE, 3: ResetLevel.FACTORY}
+        reset_level = level_map.get(level)
+        if reset_level is None:
+            return error_response(
+                "Invalid reset level",
+                detail=f"Level {level} is not valid.",
+                next_action="Use level 1 (assessment), 2 (archive), or 3 (factory reset).",
+            )
+        result = reset_manager_svc.execute_reset(reset_level, force=bool(data.get("force", False)))
 
-        return {"success": result.get("success", False), "message": result.get("message", "")}
+        return {"success": result.get("status") == "ok", "message": result.get("status", "")}
 
     @app.get("/api/psych")
     async def api_psych():
         """Get psychological state"""
         psych_tracker_svc = _get_service(app, 'psychology')
         if psych_tracker_svc is None:
-            return {"error": "Psych tracker not loaded"}
-        latest = psych_tracker_svc.get_latest()
-        return {"state": latest}
+            return service_unavailable("psychology", app=app)
+        return {"state": psych_tracker_svc.assess_state()}
 
     @app.get("/api/reset/logs")
     async def api_reset_logs(limit: int = 10):
         """Get reset logs"""
         reset_manager_svc = _get_service(app, 'reset_manager')
         if reset_manager_svc is None:
-            return {"error": "Reset manager not loaded"}
-        logs = reset_manager_svc.get_logs(limit=limit)
-        return {"logs": logs}
+            return service_unavailable("reset_manager", app=app)
+        return {"logs": reset_manager_svc.db.get_reset_logs(limit)}

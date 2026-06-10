@@ -173,11 +173,39 @@ class TimelineManager:
         return "\n".join(lines)
 
     def _get_current_day(self) -> int:
-        state = self.db.get_operating_state()
-        if state.last_mode_change:
+        if not self.db:
+            return 1
+        try:
+            row = self.db.conn.execute(
+                "SELECT value FROM operating_state WHERE key='timeline_start_at'"
+            ).fetchone()
+        except Exception:
+            row = None
+
+        anchor = None
+        if row and row["value"]:
             try:
-                first = datetime.fromisoformat(state.last_mode_change)
-                return max(1, (datetime.now() - first).days + 1)
+                anchor = datetime.fromisoformat(row["value"])
             except (ValueError, TypeError):
+                anchor = None
+
+        if anchor is None:
+            state = self.db.get_operating_state()
+            if state.last_mode_change:
+                try:
+                    anchor = datetime.fromisoformat(state.last_mode_change)
+                except (ValueError, TypeError):
+                    anchor = None
+
+        if anchor is None:
+            anchor = datetime.now()
+            try:
+                self.db.conn.execute(
+                    "INSERT OR REPLACE INTO operating_state VALUES (?,?)",
+                    ("timeline_start_at", anchor.isoformat()),
+                )
+                self.db.conn.commit()
+            except Exception:
                 pass
-        return 1
+
+        return max(1, (datetime.now() - anchor).days + 1)

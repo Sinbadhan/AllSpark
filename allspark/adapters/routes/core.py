@@ -2,10 +2,10 @@
 
 import json
 
-from fastapi import HTTPException, Query
+from fastapi import HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from allspark.adapters.routes.helpers import _get_service
+from allspark.adapters.routes.helpers import _get_service, error_response
 from allspark.core.i18n import set_language
 
 
@@ -28,14 +28,31 @@ class ResourceUpdateRequest:
         self.amount = amount
 
 
+def _resource_payload(resource_mgr, r):
+    configured = resource_mgr.is_configured(r)
+    has_estimate = resource_mgr.has_remaining_estimate(r)
+    return {
+        "type": r.type.value,
+        "amount": r.current_amount,
+        "unit": r.unit,
+        "daily_consumption": r.daily_consumption,
+        "daily_intake": r.daily_intake,
+        "remaining_hours": r.estimated_remaining_hours if has_estimate else None,
+        "configured": configured,
+        "offline": not configured,
+        "status": "configured" if configured else "unconfigured",
+    }
+
+
 def register_core_routes(app, check):
     @app.get("/api/status")
     async def get_status():
         container, db = check()
         assessment = container.get("survival_engine").assess()
-        mode, _ = container.get("resource_manager").update_operating_mode()
-        warnings = container.get("resource_manager").check_warnings()
-        resources = container.get("resource_manager").get_all_resources()
+        resource_mgr = container.get("resource_manager")
+        mode, _ = resource_mgr.update_operating_mode()
+        warnings = resource_mgr.check_warnings()
+        resources = resource_mgr.get_all_resources()
         exp_stats = container.get("experience").get_stats()
         llm_status = container.get("llm").get_status()
 
@@ -44,18 +61,7 @@ def register_core_routes(app, check):
             "phase_name": assessment.get("phase_name", ""),
             "mode": mode.value if hasattr(mode, "value") else str(mode),
             "warnings": warnings,
-            "resources": [
-                {
-                    "type": r.type.value,
-                    "amount": r.current_amount,
-                    "unit": r.unit,
-                    "daily_consumption": r.daily_consumption,
-                    "daily_intake": r.daily_intake,
-                    "remaining_hours": r.estimated_remaining_hours,
-                    "offline": r.current_amount == 0 and r.daily_consumption == 0,
-                }
-                for r in resources
-            ],
+            "resources": [_resource_payload(resource_mgr, r) for r in resources],
             "experience": exp_stats,
             "llm": llm_status,
             "modules": container.get("registry").format_status_dict(),
@@ -64,29 +70,23 @@ def register_core_routes(app, check):
     @app.get("/api/resources")
     async def get_resources():
         container, db = check()
-        resources = container.get("resource_manager").get_all_resources()
-        return [
-            {
-                "type": r.type.value,
-                "amount": r.current_amount,
-                "unit": r.unit,
-                "daily_consumption": r.daily_consumption,
-                "daily_intake": r.daily_intake,
-                "remaining_hours": r.estimated_remaining_hours,
-                "offline": r.current_amount == 0 and r.daily_consumption == 0,
-            }
-            for r in resources
-        ]
+        resource_mgr = container.get("resource_manager")
+        resources = resource_mgr.get_all_resources()
+        return [_resource_payload(resource_mgr, r) for r in resources]
 
     @app.post("/api/resources")
-    async def update_resource(type: str = Query(...), amount: float = Query(...)):
+    async def update_resource(request: Request, type: str = Query(None), amount: float = Query(None)):
         container, db = check()
+        if type is None or amount is None:
+            data = await request.json()
+            type = data.get("type", type)
+            amount = data.get("amount", amount)
         from allspark.core.models import ResourceType
         try:
             rtype = ResourceType(type)
         except ValueError:
             raise HTTPException(400, f"Invalid resource type: {type}")
-        container.get("resource_manager").update_resource(rtype, amount)
+        container.get("resource_manager").update_resource(rtype, float(amount))
         return {"status": "ok"}
 
     @app.get("/api/knowledge/search")
@@ -161,16 +161,24 @@ def register_core_routes(app, check):
         }
 
     @app.post("/api/chat")
-    async def chat(message: str = Query(...), language: str = None):
+    async def chat(request: Request, message: str = Query(None), language: str = None):
         container, db = check()
+        if message is None:
+            data = await request.json()
+            message = data.get("message", "")
+            language = data.get("language", language)
         if language:
             set_language(language)
         response = container.get("rule_engine").process_input(message)
         return {"response": response}
 
     @app.post("/api/chat/stream")
-    async def chat_stream(message: str = Query(...), language: str = None):
+    async def chat_stream(request: Request, message: str = Query(None), language: str = None):
         container, db = check()
+        if message is None:
+            data = await request.json()
+            message = data.get("message", "")
+            language = data.get("language", language)
         if language:
             set_language(language)
 
@@ -215,8 +223,18 @@ def register_core_routes(app, check):
         ]
 
     @app.post("/api/experience")
-    async def log_experience(event: str = Query(...), outcome: str = Query(...), lesson: str = Query("")):
+    async def log_experience(
+        request: Request,
+        event: str = Query(None),
+        outcome: str = Query(None),
+        lesson: str = Query(""),
+    ):
         container, db = check()
+        if event is None or outcome is None:
+            data = await request.json()
+            event = data.get("event", event)
+            outcome = data.get("outcome", outcome)
+            lesson = data.get("lesson", lesson)
         entry = container.get("experience").log(event=event, outcome=outcome, lesson=lesson)
         return {"id": entry.id, "status": "ok"}
 
@@ -238,7 +256,7 @@ def register_core_routes(app, check):
             container.get("registry").register("llm", container.get("llm"))
             container.get("registry").save_to_db(db)
             return {"status": "ok", "model": container.get("llm").model_name}
-        return {"status": "error", "error": container.get("llm").error}
+        return error_response("LLM load failed", detail=container.get("llm").error or "")
 
     @app.get("/api/tasks")
     async def get_tasks():

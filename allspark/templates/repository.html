@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>ALLSPARK - Repository</title>
+<title>{{ t('web_app_title') }} - {{ t('web_repository_title') }}</title>
 <style>
   .border-grid { border: 1px solid #2a2a2a; }
   .border-grid-b { border-bottom: 1px solid #2a2a2a; }
@@ -16,9 +16,9 @@
 <div class="mb-4 border-b border-surface-container-high pb-2">
   <h1 class="text-2xl font-bold text-primary-container uppercase tracking-tighter flex items-center gap-2">
     <span class="material-symbols-outlined">folder_open</span>
-    Repository
+    {{ t('web_repository_title') }}
   </h1>
-  <p class="text-sm text-secondary mt-1">Knowledge base and data management</p>
+  <p class="text-sm text-secondary mt-1">{{ t('web_repository_subtitle') }}</p>
 </div>
 
 <div class="flex flex-col md:flex-row gap-3 min-h-[calc(100vh-14rem)]">
@@ -26,7 +26,7 @@
   <aside class="w-full md:w-64 border border-surface-container-high bg-[#141414] flex flex-col flex-shrink-0 rounded">
     <div class="p-3 border-grid-b bg-raised sticky top-0 z-10 flex justify-between items-center">
       <h3 class="text-sm font-semibold text-on-surface flex items-center gap-1">
-        <span class="material-symbols-outlined text-primary text-sm">snippet_folder</span> FILES
+        <span class="material-symbols-outlined text-primary text-sm">snippet_folder</span> {{ t('web_repository_files') }}
       </h3>
     </div>
     <ul class="text-sm p-1 flex-1 overflow-y-auto" id="file-tree">
@@ -59,21 +59,21 @@
     <!-- Action Header -->
     <div class="flex justify-between items-center mb-3 pb-2 border-b border-surface-container-high gap-2 flex-wrap">
       <h2 class="text-sm font-semibold text-on-surface flex items-center gap-1" id="section-title">
-        <span class="material-symbols-outlined text-primary-container">history</span> KNOWLEDGE ENTRIES
+        <span class="material-symbols-outlined text-primary-container">history</span> {{ t('web_repository_knowledge_entries') }}
       </h2>
       <div class="flex items-center gap-2">
-        <button onclick="exportData()" class="h-9 px-4 border-grid bg-background text-on-surface text-sm font-semibold hover-border-spark transition-colors flex items-center gap-1">
-          <span class="material-symbols-outlined text-sm">download</span> EXPORT
+        <button disabled class="h-9 px-4 border-grid bg-background text-on-surface-variant text-sm font-semibold opacity-50 cursor-not-allowed flex items-center gap-1" title="{{ t('web_repository_export_disabled') }}">
+          <span class="material-symbols-outlined text-sm">download</span> {{ t('web_repository_export') }}
         </button>
-        <button onclick="importData()" class="h-9 px-4 bg-primary-container text-on-primary-container text-sm font-semibold hover:bg-primary transition-colors flex items-center gap-1">
-          <span class="material-symbols-outlined text-sm">upload</span> IMPORT
+        <button disabled class="h-9 px-4 bg-primary-container/40 text-on-primary-container/50 text-sm font-semibold cursor-not-allowed flex items-center gap-1" title="{{ t('web_repository_import_disabled') }}">
+          <span class="material-symbols-outlined text-sm">upload</span> {{ t('web_repository_import') }}
         </button>
       </div>
     </div>
 
     <!-- Content Table -->
     <div class="flex-1 overflow-auto border border-surface-container-high bg-raised rounded" id="repo-content">
-      <div class="text-secondary text-sm p-4 text-center">Select a section from the file browser.</div>
+      <div class="text-secondary text-sm p-4 text-center">{{ t('web_repository_select_section') }}</div>
     </div>
   </section>
 </div>
@@ -81,6 +81,14 @@
 
 {% block scripts %}
 <script>
+const REPO_I18N = {
+  export_disabled: "{{ t('web_repository_export_disabled') }}",
+  import_disabled: "{{ t('web_repository_import_disabled') }}",
+  no_knowledge: "{{ t('web_repository_no_knowledge') }}",
+  no_experience: "{{ t('web_repository_no_experience') }}",
+  skf_note: "{{ t('web_repository_skf_note') }}",
+};
+
 let currentSection = "knowledge";
 
 async function showSection(section) {
@@ -103,7 +111,7 @@ async function showSection(section) {
       break;
     case "skf":
       titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">inventory_2</span> SKF PACKAGES';
-      contentEl.innerHTML = '<div class="text-secondary text-sm p-4 text-center">SKF package management - use API endpoints for import/export</div>';
+      contentEl.innerHTML = '<div class="text-secondary text-sm p-4 text-center">' + REPO_I18N.skf_note + '</div>';
       break;
   }
 }
@@ -111,7 +119,7 @@ async function showSection(section) {
 async function loadKnowledgeTable(el) {
   const cats = await api("/api/knowledge/categories");
   if (!cats.length) {
-    el.innerHTML = '<div class="text-secondary text-sm p-4 text-center">No knowledge entries found</div>';
+    el.innerHTML = '<div class="text-secondary text-sm p-4 text-center">' + REPO_I18N.no_knowledge + '</div>';
     return;
   }
 
@@ -143,7 +151,7 @@ async function loadKnowledgeTable(el) {
 async function loadExperienceTable(el) {
   const data = await api("/api/experience?limit=50");
   if (!data.length) {
-    el.innerHTML = '<div class="text-secondary text-sm p-4 text-center">No experience records found</div>';
+    el.innerHTML = '<div class="text-secondary text-sm p-4 text-center">' + REPO_I18N.no_experience + '</div>';
     return;
   }
 
@@ -203,14 +211,6 @@ async function loadModelsTable(el) {
 async function downloadModel(name) {
   await api(`/api/init/download?model_name=${encodeURIComponent(name)}`, {method: "POST"});
   showSection("models");
-}
-
-function exportData() {
-  alert("Export: Use /api/skf/export endpoint with a file path parameter.");
-}
-
-function importData() {
-  alert("Import: Use /api/skf/import endpoint with a file path parameter.");
 }
 
 function escHtml(s) {

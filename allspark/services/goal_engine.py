@@ -236,22 +236,12 @@ class GoalEngine:
         return goal
 
     def complete_milestone(self, milestone_id: str) -> Optional[Goal]:
-        ms_list = self.db.get_milestones_by_goal("")
-        self.db.complete_milestone(milestone_id)
-
-        for ms in ms_list:
-            if ms.id == milestone_id:
-                goal = self.db.get_goal(ms.goal_id)
-                if goal:
-                    self._recalculate_progress(goal.id)
-                    return self.db.get_goal(ms.goal_id)
-                break
-
         all_goals = self.db.get_active_goals()
         for g in all_goals:
             milestones = self.db.get_milestones_by_goal(g.id)
             for ms in milestones:
                 if ms.id == milestone_id:
+                    self.db.complete_milestone(milestone_id)
                     self._recalculate_progress(g.id)
                     return self.db.get_goal(g.id)
         return None

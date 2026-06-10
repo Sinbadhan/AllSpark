@@ -300,12 +300,14 @@ python3 -m pytest tests/test_goal_engine.py -v
 
 ## 参与贡献
 
-欢迎贡献！你可以：
+欢迎贡献。请先阅读以下项目文档：
 
-- 提交 Issue 报告 Bug 或建议功能
-- 提交 Pull Request 改进代码
-- 扩充知识库内容（Tier 0-3 条目）
-- 将知识库翻译为更多语言
+- [贡献指南](CONTRIBUTING.md) — 开发环境、检查命令、PR 规范、编码约定
+- [安全策略](SECURITY.md) — 私下漏洞报告与敏感数据边界
+- [行为准则](CODE_OF_CONDUCT.md) — 社区协作行为预期
+- [变更日志](CHANGELOG.md) — 版本历史
+- [配置指南](docs/CONFIGURATION.md) — 本地数据、可选功能、Docker 模式、SKF/网络边界
+- [发布清单](docs/RELEASE_CHECKLIST.md) — 版本号、QA、打包与发布步骤
 
 ---
 

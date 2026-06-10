@@ -33,11 +33,10 @@ class KnowledgeEngine:
 
     def search_by_language(self, query: str, limit: int = 10) -> list:
         lang = get_language()
-        all_results = self.db.search_knowledge(query, limit * 2)
-        lang_results = [e for e in all_results if e.language == lang]
-        if not lang_results:
-            return all_results[:limit]
-        return lang_results[:limit]
+        lang_results = self.db.search_knowledge(query, limit, language=lang)
+        if lang_results:
+            return lang_results[:limit]
+        return self.db.search_knowledge(query, limit)
 
     def get_by_category(self, category: str, subcategory: str = "") -> list:
         return self.db.get_knowledge_by_category(category, subcategory)

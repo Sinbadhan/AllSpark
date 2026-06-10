@@ -178,20 +178,15 @@ class WarningProtocol(BaseService):
         # Record timeline event if executing
         if status == "executing" and self._container:
             timeline = self._container.get("timeline")
-            if timeline:
-                from allspark.core.models import TimelineEvent
-                event = TimelineEvent(
-                    id=f"ev-plan-{uuid.uuid4().hex[:6]}",
-                    day=0,
-                    timestamp=datetime.now().isoformat(),
-                    event_type="system_event",
-                    title=t("wp_plan_executing", title=plan.title),
-                    description=result,
-                    auto_generated=True,
-                )
-                # Timeline may not have add_event; silently skip if not available
-                if hasattr(timeline, "add_event"):
-                    timeline.add_event(event)
+            if timeline and hasattr(timeline, "add_event"):
+                try:
+                    timeline.add_event(
+                        event_type="system_event",
+                        title=t("wp_plan_executing", title=plan.title),
+                        description=result,
+                    )
+                except Exception as e:
+                    logger.warning("Failed to record warning timeline event: %s", e)
 
         return True
 

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>ALLSPARK - {{ page_title }}</title>
+<title>{{ t('web_app_title') }} - {{ page_title }}</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
@@ -365,11 +365,11 @@ table { border-collapse: collapse; width: 100%; }
     </button>
   </div>
   <nav>
-    <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined">dashboard</span> Dashboard</a>
-    <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined">terminal</span> System</a>
-    <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"><span class="material-symbols-outlined">play_arrow</span> Executions</a>
-    <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined">settings_input_component</span> Config</a>
-    <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined">folder_open</span> Repository</a>
+    <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined">dashboard</span> {{ t('web_nav_dashboard') }}</a>
+    <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined">terminal</span> {{ t('web_nav_system') }}</a>
+    <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"><span class="material-symbols-outlined">play_arrow</span> {{ t('web_nav_executions') }}</a>
+    <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined">settings_input_component</span> {{ t('web_nav_config') }}</a>
+    <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined">folder_open</span> {{ t('web_nav_repository') }}</a>
   </nav>
 </div>
 
@@ -379,22 +379,22 @@ table { border-collapse: collapse; width: 100%; }
     <div class="brand-icon">A</div>
     <div>
       <h1>ALLSPARK</h1>
-      <p>KERNEL v0.7.0</p>
+      <p>{{ t('web_kernel_version', version=version) }}</p>
     </div>
   </div>
   <button class="exec-btn" onclick="location.href='/'">
-    <span class="material-symbols-outlined" style="font-size:16px;">play_arrow</span> EXECUTE TASK
+    <span class="material-symbols-outlined" style="font-size:16px;">play_arrow</span> {{ t('web_execute_task') }}
   </button>
   <nav>
-    <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined">dashboard</span> Dashboard</a>
-    <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined">terminal</span> System</a>
-    <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"><span class="material-symbols-outlined">play_arrow</span> Executions</a>
-    <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined">settings_input_component</span> Config</a>
-    <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined">folder_open</span> Repository</a>
+    <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined">dashboard</span> {{ t('web_nav_dashboard') }}</a>
+    <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined">terminal</span> {{ t('web_nav_system') }}</a>
+    <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"><span class="material-symbols-outlined">play_arrow</span> {{ t('web_nav_executions') }}</a>
+    <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined">settings_input_component</span> {{ t('web_nav_config') }}</a>
+    <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined">folder_open</span> {{ t('web_nav_repository') }}</a>
   </nav>
   <div class="sidebar-footer">
     <a href="#" style="display:flex;align-items:center;gap:12px;padding:8px 12px;color:var(--secondary);border-radius:var(--radius);transition:all 0.15s;">
-      <span class="material-symbols-outlined">help</span> Docs
+      <span class="material-symbols-outlined">help</span> {{ t('web_nav_docs') }}
     </a>
   </div>
 </div>
@@ -410,7 +410,7 @@ table { border-collapse: collapse; width: 100%; }
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="search-box">
-        <input placeholder="Search..." type="text" id="global-search"/>
+        <input placeholder="{{ t('web_search_placeholder') }}" type="text" id="global-search"/>
         <span class="material-symbols-outlined" style="color:var(--on-surface-variant);font-size:18px;">search</span>
       </div>
       <button class="icon-btn"><span class="material-symbols-outlined">notifications</span></button>
@@ -436,6 +436,14 @@ table { border-collapse: collapse; width: 100%; }
 
 <script>
 const API = "";
+const FOOTER_I18N = {
+  resources: "{{ t('web_footer_resources') }}",
+  phase: "{{ t('web_footer_phase') }}",
+  mode: "{{ t('web_footer_mode') }}",
+  status_label: "{{ t('web_footer_status_label') }}",
+  status_alert: "{{ t('web_footer_status_alert') }}",
+  status_nominal: "{{ t('web_footer_status_nominal') }}",
+};
 async function api(path, opts = {}) {
   const res = await fetch(API + path, opts);
   return res.json();
@@ -445,9 +453,9 @@ async function updateFooter() {
     const data = await api("/api/status");
     const res = data.resources || [];
     document.getElementById("footer-resources").textContent =
-      "RESOURCES: " + res.length + " active | PHASE " + data.phase + " | MODE: " + data.mode;
+      FOOTER_I18N.resources + ": " + res.length + " | " + FOOTER_I18N.phase + " " + data.phase + " | " + FOOTER_I18N.mode + ": " + data.mode;
     document.getElementById("footer-status").textContent =
-      "status: " + (data.warnings && data.warnings.length > 0 ? "ALERT" : "nominal");
+      FOOTER_I18N.status_label + ": " + (data.warnings && data.warnings.length > 0 ? FOOTER_I18N.status_alert : FOOTER_I18N.status_nominal);
   } catch(e) {}
 }
 updateFooter();

@@ -104,10 +104,9 @@ class KnowledgeCommand(BaseCommand):
             self.console.print(f"\n[dim]{t('knowledge_usage')}[/]")
             return
 
-        if len(args) >= 2:
+        entries = knowledge.search_by_language(" ".join(args), limit=10)
+        if not entries and len(args) >= 2:
             entries = knowledge.get_by_category(args[0], args[1])
-        else:
-            entries = knowledge.search(" ".join(args), limit=10)
 
         if not entries:
             self.console.print(f"[dim]{t('no_knowledge', topic=' '.join(args))}[/]")

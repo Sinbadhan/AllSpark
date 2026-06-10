@@ -35,8 +35,13 @@ class SurvivalAssessmentEngine:
         food = next((r for r in resources if r.type == ResourceType.FOOD), None)
         fire = next((r for r in resources if r.type == ResourceType.FIRE), None)
 
-        water_days = (water.estimated_remaining_hours / 24.0) if water else 0
-        food_days = (food.estimated_remaining_hours / 24.0) if food else 0
+        water_configured = water and self.resource_mgr.is_configured(water)
+        food_configured = food and self.resource_mgr.is_configured(food)
+        if not water_configured and not food_configured:
+            return 1
+
+        water_days = (water.estimated_remaining_hours / 24.0) if water_configured else float("inf")
+        food_days = (food.estimated_remaining_hours / 24.0) if food_configured else float("inf")
 
         if water_days < 3 or food_days < 2:
             return 0
@@ -51,6 +56,8 @@ class SurvivalAssessmentEngine:
     def _identify_bottleneck(self, resources: list[Resource]) -> Optional[dict]:
         bottlenecks = []
         for r in resources:
+            if not self.resource_mgr.is_configured(r):
+                continue
             if r.type == ResourceType.WATER:
                 days = r.estimated_remaining_hours / 24.0
                 if days < 3:

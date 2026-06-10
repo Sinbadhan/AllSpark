@@ -8,6 +8,30 @@ logger = logging.getLogger(__name__)
 
 _RESET_COOLDOWN_HOURS = 24
 
+# Operating-state keys that must survive an L1 (assessment) or L2 (archive)
+# reset so the next launch does not look like a fresh install.
+_PROTECTED_OPERATING_STATE_KEYS = {
+    "initialized",
+    "language",
+    "deploy_mode",
+    "timeline_start_at",
+    "last_mode_change",
+}
+
+# Survivor-state keys that survive L1 so language / name persist.
+_PROTECTED_SURVIVOR_STATE_KEYS = {
+    "language",
+    "name",
+}
+
+# Hardware-profile keys that survive L1 so detected hardware tier and the
+# GPS track history are not wiped by an "assessment" reset.
+_PROTECTED_HARDWARE_PROFILE_PREFIXES = (
+    "track-",
+    "last_gps_position",
+    "manual_pressure",
+)
+
 
 class ResetManager:
     def __init__(self, db, data_preservation=None, resource_mgr=None, docker_manager=None):
@@ -106,10 +130,22 @@ class ResetManager:
         }
 
     def _reset_assessment(self):
+        protected_op = self._snapshot_protected(
+            "operating_state", _PROTECTED_OPERATING_STATE_KEYS
+        )
+        protected_sv = self._snapshot_protected(
+            "survivor_state", _PROTECTED_SURVIVOR_STATE_KEYS
+        )
+        protected_hw = self._snapshot_hardware_protected()
+
         self.db.conn.execute("DELETE FROM operating_state WHERE 1")
         self.db.conn.execute("DELETE FROM survivor_state WHERE 1")
         self.db.conn.execute("DELETE FROM hardware_profile WHERE 1")
         self.db.conn.commit()
+
+        self._restore_kv("operating_state", protected_op)
+        self._restore_kv("survivor_state", protected_sv)
+        self._restore_kv("hardware_profile", protected_hw)
 
     def _reset_archive(self):
         self._reset_assessment()
@@ -158,3 +194,26 @@ class ResetManager:
             return True
         elapsed = datetime.now() - self._last_reset_time
         return elapsed >= timedelta(hours=_RESET_COOLDOWN_HOURS)
+
+    # ─── Protected state helpers ────────────────────────────────────────
+
+    def _snapshot_protected(self, table: str, keys) -> dict:
+        rows = self.db.conn.execute(f"SELECT key, value FROM {table}").fetchall()
+        return {row["key"]: row["value"] for row in rows if row["key"] in keys}
+
+    def _snapshot_hardware_protected(self) -> dict:
+        rows = self.db.conn.execute("SELECT key, value FROM hardware_profile").fetchall()
+        result = {}
+        for row in rows:
+            key = row["key"]
+            if any(key.startswith(prefix) for prefix in _PROTECTED_HARDWARE_PROFILE_PREFIXES):
+                result[key] = row["value"]
+        return result
+
+    def _restore_kv(self, table: str, data: dict):
+        for key, value in data.items():
+            self.db.conn.execute(
+                f"INSERT OR REPLACE INTO {table} VALUES (?,?)", (key, value)
+            )
+        if data:
+            self.db.conn.commit()

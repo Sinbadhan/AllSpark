@@ -1,7 +1,7 @@
 app_name: AllSpark
 app_name_full: AllSpark
 app_subtitle: Offline AI Survival System
-app_version: v0.2.0
+app_version: v0.7.0
 app_mission: In extreme conditions, preserve and rebuild human civilization.
 greeting: I'm here
 mode_proactive: Proactive
@@ -269,6 +269,7 @@ reset_usage: "Usage:\n  reset assessment   — L1 Reset assessment data\n  reset
 resource_offline: ◇ OFFLINE
 resource_offline_hint: ◇ Resource data not connected, use 'set <type> <value>' to
   input
+resource_remaining_unknown: Remaining time unknown; set daily consumption/intake to calculate it
 operating_mode_fmt: 'Mode: {emoji} {mode}'
 mode_proactive_zh: Proactive
 mode_standard_zh: Standard
@@ -1275,3 +1276,119 @@ voice_no_speech: No speech detected
 voice_wake_word_required: Please say the wake word first (e.g. hey spark)
 voice_command_executed: Command executed
 voice_no_llm_response: LLM is not loaded; open voice conversation is unavailable
+
+# ─── Web UI Shell ───────────────────────────────────────────────────────
+web_app_title: AllSpark
+web_kernel_version: KERNEL {version}
+web_nav_dashboard: Dashboard
+web_nav_system: System
+web_nav_executions: Executions
+web_nav_config: Config
+web_nav_repository: Repository
+web_nav_docs: Docs
+web_execute_task: Execute Task
+web_search_placeholder: Search...
+web_dashboard_title: System Health Matrix
+web_dashboard_subtitle: Live telemetry and resource monitoring.
+web_active_tasks: Active Tasks
+web_loading: Loading...
+web_quick_actions: Quick Actions
+web_action_chat: Chat with AllSpark
+web_action_search_knowledge: Search Knowledge
+web_action_log_experience: Log Experience
+web_tab_knowledge: KNOWLEDGE
+web_tab_chat: CHAT
+web_tab_experience: EXPERIENCE
+web_tab_modules: MODULES
+web_knowledge_search_placeholder: Search knowledge base...
+web_search: Search
+web_send: SEND
+web_chat_placeholder: Ask AllSpark...
+web_exp_total: EXPERIENCES
+web_exp_patterns: PATTERNS
+web_exp_promoted: PROMOTED
+web_exp_event_placeholder: Event (e.g. found water source)
+web_exp_outcome_placeholder: Outcome (e.g. clean spring, 2L/hour)
+web_exp_lesson_placeholder: Lesson (optional)
+web_log_experience: LOG EXPERIENCE
+web_llm_engine: LLM Engine
+web_load_model: Load Model
+web_no_active_tasks: No active tasks
+web_no_results: No results found
+web_unconfigured: UNCONFIGURED
+web_set_amount_hint: Set amount and daily use to calculate remaining time
+web_remaining_unknown: Remaining time unknown
+
+# ─── Web System / Executions / Config / Repository ───────────────────────
+web_system_title: System Monitor
+web_system_subtitle: Real-time hardware and service status
+web_system_integrity: System Integrity
+web_system_loading: LOADING
+web_system_errors: ERRORS
+web_system_warnings: WARNINGS
+web_system_modules_title: Active Modules
+web_system_sync: SYNC
+web_system_no_modules: No modules loaded
+web_system_llm_engine: LLM Engine
+web_system_hw_profile: Hardware Profile
+web_system_hw_cpu: CPU
+web_system_hw_cores: Cores
+web_system_hw_ram: RAM
+web_system_hw_storage: Storage
+web_system_hw_gpu: GPU
+web_system_hw_os: OS
+web_system_llm_loaded: LOADED
+web_system_llm_unloaded: NOT LOADED
+web_system_load_model: Load Model
+web_system_status: Status
+web_system_load_table: Load
+web_system_uptime: Uptime
+web_system_action: Action
+web_system_restart: Restart
+web_system_module_id: Module ID
+web_system_hardware_profile_loading: Loading hardware profile...
+web_executions_title: Execution Logs
+web_executions_subtitle: Current tasks and recent experience records
+web_executions_search_placeholder: Search task ID or command...
+web_executions_refresh: Refresh
+web_executions_total: Total tasks
+web_executions_completed: Completed
+web_executions_failed: Failed
+web_executions_pending: Pending
+web_executions_empty: No execution records yet
+web_executions_promoted: PROMOTED
+web_executions_raw: RAW
+web_config_title: Config
+web_config_subtitle: Read-only configuration viewer
+web_config_section_general: General
+web_config_section_resources: Resources
+web_config_section_system: System
+web_config_explorer: Files
+web_config_active_mode: Active Mode
+web_config_validate: Validate
+web_config_save: Save
+web_config_output_console: Output Console
+web_config_ready: Configuration viewer ready.
+web_config_awaiting: Select a configuration to view.
+web_config_disabled_note: This view is read-only; validate and save are disabled.
+web_repository_title: Repository
+web_repository_subtitle: Knowledge, experience, models and SKF packages
+web_repository_files: Files
+web_repository_knowledge_entries: Knowledge entries
+web_repository_experience_log: Experience log
+web_repository_models: LLM models
+web_repository_skf_packages: SKF packages
+web_repository_export: Export
+web_repository_import: Import
+web_repository_select_section: Select a section on the left
+web_repository_no_knowledge: No knowledge entries
+web_repository_no_experience: No experience records
+web_repository_skf_note: SKF package import/export is not yet available in the Web UI; use the CLI.
+web_repository_export_disabled: SKF export is not available in the Web UI; use the CLI.
+web_repository_import_disabled: SKF import is not available in the Web UI; use the CLI.
+web_footer_resources: Resources
+web_footer_phase: Phase
+web_footer_mode: Mode
+web_footer_status_label: Status
+web_footer_status_alert: ALERT
+web_footer_status_nominal: nominal

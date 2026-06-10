@@ -38,7 +38,7 @@ class Database:
         db_path = Path(db_path)
         db_path.parent.mkdir(parents=True, exist_ok=True)
         self.db_path = db_path
-        self.conn = sqlite3.connect(str(db_path))
+        self.conn = sqlite3.connect(str(db_path), check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self._init_schema()
 
@@ -394,19 +394,28 @@ class Database:
             return None
         return self._row_to_entry(row)
 
-    def search_knowledge(self, query: str, limit: int = 10) -> list[KnowledgeEntry]:
+    def search_knowledge(self, query: str, limit: int = 10, language: str = None) -> list[KnowledgeEntry]:
         results = []
         seen_ids = set()
+        lang_clause = " AND k.language=?" if language else ""
+        lang_params = [language] if language else []
         try:
             fts_query = tokenize_query(query)
             if fts_query:
                 rows = self.conn.execute(
-                    """SELECT k.* FROM knowledge k
+                    f"""SELECT k.* FROM knowledge k
                        WHERE k.id IN (
                            SELECT id FROM knowledge_fts WHERE knowledge_fts MATCH ?
-                       )
-                       ORDER BY k.priority LIMIT ?""",
-                    (fts_query, limit)
+                       ){lang_clause}
+                       ORDER BY
+                           CASE
+                               WHEN k.title LIKE ? THEN 0
+                               WHEN k.summary LIKE ? THEN 1
+                               ELSE 2
+                           END,
+                           k.priority
+                       LIMIT ?""",
+                    [fts_query, *lang_params, f"%{query}%", f"%{query}%", limit]
                 ).fetchall()
                 for r in rows:
                     if r["id"] not in seen_ids:
@@ -416,15 +425,27 @@ class Database:
             pass
 
         if len(results) < limit:
-            keywords = query.split()
+            keywords = query.split() or [query]
             for kw in keywords:
+                if not kw:
+                    continue
+                like_lang_clause = " AND language=?" if language else ""
+                like_params = [language] if language else []
                 like_rows = self.conn.execute(
-                    """SELECT * FROM knowledge
-                       WHERE title LIKE ? OR summary LIKE ? OR steps LIKE ?
-                       OR category LIKE ? OR subcategory LIKE ?
-                       ORDER BY priority LIMIT ?""",
-                    (f"%{kw}%", f"%{kw}%", f"%{kw}%",
-                     f"%{kw}%", f"%{kw}%", limit)
+                    f"""SELECT * FROM knowledge
+                       WHERE (title LIKE ? OR summary LIKE ? OR steps LIKE ?
+                       OR category LIKE ? OR subcategory LIKE ?){like_lang_clause}
+                       ORDER BY
+                           CASE
+                               WHEN title LIKE ? THEN 0
+                               WHEN summary LIKE ? THEN 1
+                               ELSE 2
+                           END,
+                           priority
+                       LIMIT ?""",
+                    [f"%{kw}%", f"%{kw}%", f"%{kw}%",
+                     f"%{kw}%", f"%{kw}%", *like_params,
+                     f"%{query}%", f"%{query}%", limit]
                 ).fetchall()
                 for r in like_rows:
                     if r["id"] not in seen_ids:
@@ -432,7 +453,7 @@ class Database:
                         results.append(r)
 
         entries = []
-        for r in results:
+        for r in results[:limit]:
             entries.append(self._row_to_entry(r))
         return entries
 

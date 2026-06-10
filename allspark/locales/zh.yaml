@@ -1,7 +1,7 @@
 app_name: 火种
 app_name_full: 火种 AllSpark
 app_subtitle: 离线人工智能生存系统
-app_version: v0.2.0
+app_version: v0.7.0
 app_mission: 在极端情况下，保存并重建人类文明。
 greeting: 我在这里
 mode_proactive: 主动模式
@@ -234,6 +234,7 @@ reset_usage: "用法:\n  重置 评估          — L1 重置评估数据\n  重
   \ 出厂          — L3 重置出厂（危险）\n  重置 状态          — 查看重置状态"
 resource_offline: ◇ 未接入
 resource_offline_hint: ◇ 资源数据尚未接入，使用 '设置 <类型> <值>' 录入
+resource_remaining_unknown: 剩余时间未知，请设置每日消耗/补给后再计算
 operating_mode_fmt: 运行模式：{emoji} {mode}
 mode_proactive_zh: 主动
 mode_standard_zh: 标准
@@ -1212,3 +1213,119 @@ voice_no_speech: 未检测到语音
 voice_wake_word_required: 请先说唤醒词（例如：火种）
 voice_command_executed: 命令已执行
 voice_no_llm_response: 当前未加载 LLM，无法进行开放式语音对话
+
+# ─── Web UI Shell ───────────────────────────────────────────────────────
+web_app_title: 火种 AllSpark
+web_kernel_version: 内核 {version}
+web_nav_dashboard: 仪表盘
+web_nav_system: 系统
+web_nav_executions: 任务执行
+web_nav_config: 配置
+web_nav_repository: 资料库
+web_nav_docs: 文档
+web_execute_task: 启动操作
+web_search_placeholder: 搜索...
+web_dashboard_title: 系统健康总览
+web_dashboard_subtitle: 实时遥测与资源监控。
+web_active_tasks: 活跃任务
+web_loading: 加载中...
+web_quick_actions: 快捷操作
+web_action_chat: 与火种对话
+web_action_search_knowledge: 搜索知识库
+web_action_log_experience: 记录经验
+web_tab_knowledge: 知识
+web_tab_chat: 对话
+web_tab_experience: 经验
+web_tab_modules: 模块
+web_knowledge_search_placeholder: 搜索知识库...
+web_search: 搜索
+web_send: 发送
+web_chat_placeholder: 向火种提问...
+web_exp_total: 经验总数
+web_exp_patterns: 模式
+web_exp_promoted: 已沉淀
+web_exp_event_placeholder: 事件 (例如：找到水源)
+web_exp_outcome_placeholder: 结果 (例如：清泉，2L/小时)
+web_exp_lesson_placeholder: 教训 (可选)
+web_log_experience: 记录经验
+web_llm_engine: LLM 引擎
+web_load_model: 加载模型
+web_no_active_tasks: 暂无活跃任务
+web_no_results: 没有匹配结果
+web_unconfigured: 未配置
+web_set_amount_hint: 设置数量与每日消耗后即可计算剩余时间
+web_remaining_unknown: 剩余时间未知
+
+# ─── Web System / Executions / Config / Repository ───────────────────────
+web_system_title: 系统监控
+web_system_subtitle: 实时硬件与服务状态
+web_system_integrity: 系统完整性
+web_system_loading: 加载中
+web_system_errors: 错误
+web_system_warnings: 警告
+web_system_modules_title: 已加载模块
+web_system_sync: 同步
+web_system_no_modules: 当前没有加载的模块
+web_system_llm_engine: LLM 引擎
+web_system_hw_profile: 硬件信息
+web_system_hw_cpu: CPU
+web_system_hw_cores: 核心数
+web_system_hw_ram: 内存
+web_system_hw_storage: 存储
+web_system_hw_gpu: GPU
+web_system_hw_os: 操作系统
+web_system_llm_loaded: 已加载
+web_system_llm_unloaded: 未加载
+web_system_load_model: 加载模型
+web_system_status: 状态
+web_system_load_table: 负载
+web_system_uptime: 运行时长
+web_system_action: 操作
+web_system_restart: 重启
+web_system_module_id: 模块 ID
+web_system_hardware_profile_loading: 正在读取硬件信息...
+web_executions_title: 任务执行日志
+web_executions_subtitle: 当前任务与近期经验记录
+web_executions_search_placeholder: 搜索任务 ID 或命令...
+web_executions_refresh: 刷新
+web_executions_total: 总任务
+web_executions_completed: 已完成
+web_executions_failed: 失败
+web_executions_pending: 待执行
+web_executions_empty: 当前没有任务记录
+web_executions_promoted: 已沉淀
+web_executions_raw: 原始
+web_config_title: 配置
+web_config_subtitle: 系统配置查看（只读）
+web_config_section_general: 通用
+web_config_section_resources: 资源
+web_config_section_system: 系统
+web_config_explorer: 文件列表
+web_config_active_mode: 当前模式
+web_config_validate: 校验
+web_config_save: 保存
+web_config_output_console: 输出窗口
+web_config_ready: 配置查看器已就绪。
+web_config_awaiting: 请选择需要查看的配置项。
+web_config_disabled_note: 当前为只读视图，保存与校验已禁用。
+web_repository_title: 资料库
+web_repository_subtitle: 知识、经验、模型与 SKF 包概览
+web_repository_files: 文件
+web_repository_knowledge_entries: 知识条目
+web_repository_experience_log: 经验日志
+web_repository_models: LLM 模型
+web_repository_skf_packages: SKF 知识包
+web_repository_export: 导出
+web_repository_import: 导入
+web_repository_select_section: 请从左侧选择一项
+web_repository_no_knowledge: 没有知识条目
+web_repository_no_experience: 没有经验记录
+web_repository_skf_note: SKF 知识包导入/导出在 Web UI 中暂未开放，请使用 CLI。
+web_repository_export_disabled: SKF 导出尚未在 Web UI 中提供，请使用 CLI。
+web_repository_import_disabled: SKF 导入尚未在 Web UI 中提供，请使用 CLI。
+web_footer_resources: 资源
+web_footer_phase: 阶段
+web_footer_mode: 模式
+web_footer_status_label: 状态
+web_footer_status_alert: 告警
+web_footer_status_nominal: 正常

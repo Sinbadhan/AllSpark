@@ -300,12 +300,14 @@ python3 -m pytest tests/test_goal_engine.py -v
 
 ## Contributing
 
-Contributions are welcome! You can:
+Contributions are welcome. Start with these project documents:
 
-- Submit Issues to report bugs or suggest features
-- Submit Pull Requests to improve code
-- Expand knowledge base content (Tier 0-3 entries)
-- Translate knowledge base to more languages
+- [Contributing Guide](CONTRIBUTING.md) — development setup, checks, PR expectations, coding conventions
+- [Security Policy](SECURITY.md) — private vulnerability reporting and sensitive data boundaries
+- [Code of Conduct](CODE_OF_CONDUCT.md) — community behavior expectations
+- [Changelog](CHANGELOG.md) — release history
+- [Configuration Guide](docs/CONFIGURATION.md) — local data, optional features, Docker modes, SKF/network boundaries
+- [Release Checklist](docs/RELEASE_CHECKLIST.md) — version, QA, packaging, and release steps
 
 ---
 

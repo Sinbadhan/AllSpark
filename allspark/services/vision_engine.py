@@ -195,6 +195,21 @@ class VisionEngine:
         return self.local_vision.detect_survival_objects(str(image_path))
 
     def _analyze_text_only(self, image_path: Path, prompt: str, task: VisionTask) -> VisionResult:
+        high_risk_tasks = {
+            VisionTask.PLANT_IDENTIFY,
+            VisionTask.WOUND_ASSESS,
+            VisionTask.HAZARD_DETECT,
+            VisionTask.WATER_SOURCE,
+        }
+        if task in high_risk_tasks:
+            return VisionResult(
+                task=task,
+                description="Vision model unavailable for safety-critical image analysis.",
+                confidence="none",
+                warnings=["Do not rely on metadata-only analysis for plants, wounds, hazards, or water safety."],
+                recommendations=["Use a real multimodal/local vision model or seek expert verification."],
+            )
+
         file_info = self._get_image_metadata(image_path)
 
         text_prompt = (

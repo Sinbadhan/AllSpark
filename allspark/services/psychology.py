@@ -98,9 +98,9 @@ class PsychologyTracker:
             stress += 0.3
 
         try:
-            power = self.db.get_resource(
-                __import__("allspark.models", fromlist=["ResourceType"]).ResourceType.POWER
-            )
+            from allspark.core.models import ResourceType
+
+            power = self.db.get_resource(ResourceType.POWER)
             if power and power.estimated_remaining_hours > 0:
                 if power.estimated_remaining_hours < 6:
                     stress += 0.4

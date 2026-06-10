@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>ALLSPARK - Config</title>
+<title>{{ t('web_app_title') }} - {{ t('web_config_title') }}</title>
 <style>
   .code-font { font-family: 'JetBrains Mono', monospace; }
 </style>
@@ -13,16 +13,16 @@
 <div class="mb-4 border-b border-surface-container-high pb-2">
   <h1 class="text-2xl font-bold text-primary-container uppercase tracking-tighter flex items-center gap-2">
     <span class="material-symbols-outlined">settings_input_component</span>
-    Configuration
+    {{ t('web_config_title') }}
   </h1>
-  <p class="text-sm text-secondary mt-1">System settings and script editor</p>
+  <p class="text-sm text-secondary mt-1">{{ t('web_config_subtitle') }}</p>
 </div>
 
 <div class="flex flex-col md:flex-row gap-3 h-[calc(100vh-12rem)]">
   <!-- Left: Config Explorer -->
   <aside class="w-full md:w-72 border border-surface-container-high bg-[#141414] flex flex-col flex-shrink-0 rounded">
     <div class="p-3 border-b border-surface-container-high flex justify-between items-center bg-surface">
-      <span class="text-sm font-semibold text-secondary">EXPLORER</span>
+      <span class="text-sm font-semibold text-secondary">{{ t('web_config_explorer') }}</span>
       <div class="flex gap-1 text-on-surface-variant">
         <span class="material-symbols-outlined cursor-pointer hover:text-primary text-sm transition-colors">create_new_folder</span>
         <span class="material-symbols-outlined cursor-pointer hover:text-primary text-sm transition-colors">note_add</span>
@@ -34,7 +34,7 @@
         <div class="flex items-center px-2 py-1.5 cursor-pointer hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors" onclick="showConfig('general')">
           <span class="material-symbols-outlined text-sm mr-1.5">keyboard_arrow_down</span>
           <span class="material-symbols-outlined text-sm mr-1.5 text-primary">folder</span>
-          <span class="text-sm truncate">General</span>
+          <span class="text-sm truncate">{{ t('web_config_section_general') }}</span>
         </div>
         <div class="ml-4 pl-1 border-l border-surface-container-high flex flex-col gap-0.5 mt-0.5">
           <div class="flex items-center px-2 py-1 bg-surface-container-high text-primary border-l-2 border-primary cursor-pointer config-item active" data-config="language" onclick="showConfig('language')">
@@ -50,7 +50,7 @@
         <div class="flex items-center px-2 py-1.5 cursor-pointer hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors" onclick="showConfig('resources')">
           <span class="material-symbols-outlined text-sm mr-1.5">keyboard_arrow_down</span>
           <span class="material-symbols-outlined text-sm mr-1.5 text-primary">folder</span>
-          <span class="text-sm truncate">Resources</span>
+          <span class="text-sm truncate">{{ t('web_config_section_resources') }}</span>
         </div>
         <div class="ml-4 pl-1 border-l border-surface-container-high flex flex-col gap-0.5 mt-0.5">
           <div class="flex items-center px-2 py-1 hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors config-item" data-config="water" onclick="showConfig('water')">
@@ -70,7 +70,7 @@
         <div class="flex items-center px-2 py-1.5 cursor-pointer hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors" onclick="showConfig('system')">
           <span class="material-symbols-outlined text-sm mr-1.5">keyboard_arrow_down</span>
           <span class="material-symbols-outlined text-sm mr-1.5 text-primary">folder</span>
-          <span class="text-sm truncate">System</span>
+          <span class="text-sm truncate">{{ t('web_config_section_system') }}</span>
         </div>
         <div class="ml-4 pl-1 border-l border-surface-container-high flex flex-col gap-0.5 mt-0.5">
           <div class="flex items-center px-2 py-1 hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors config-item" data-config="modules" onclick="showConfig('modules')">
@@ -86,7 +86,7 @@
     </div>
     <!-- Branch info -->
     <div class="p-3 border-t border-surface-container-high bg-surface">
-      <span class="text-[11px] font-semibold tracking-wider text-on-surface-variant block mb-1">ACTIVE MODE</span>
+      <span class="text-[11px] font-semibold tracking-wider text-on-surface-variant block mb-1">{{ t('web_config_active_mode') }}</span>
       <div class="flex items-center justify-between p-1.5 bg-[#0a0a0a] border border-surface-container-high rounded">
         <div class="flex items-center">
           <span class="material-symbols-outlined text-sm mr-1 text-secondary">commit</span>
@@ -116,28 +116,28 @@
         <span>UTF-8</span>
       </div>
       <div class="flex gap-2">
-        <button onclick="validateConfig()" class="px-3 py-1 border border-surface-container-high text-on-surface hover:border-primary hover:text-primary transition-colors text-sm font-semibold flex items-center bg-[#0a0a0a]">
-          <span class="material-symbols-outlined text-sm mr-1">rule</span> VALIDATE
+        <button disabled class="px-3 py-1 border border-surface-container-high text-on-surface-variant opacity-50 cursor-not-allowed text-sm font-semibold flex items-center bg-[#0a0a0a]" title="{{ t('web_config_disabled_note') }}">
+          <span class="material-symbols-outlined text-sm mr-1">rule</span> {{ t('web_config_validate') }}
         </button>
-        <button onclick="saveConfig()" class="px-3 py-1 bg-primary text-on-primary text-sm font-semibold flex items-center hover:bg-primary-container transition-colors active:scale-95 border border-primary">
-          <span class="material-symbols-outlined text-sm mr-1">save</span> SAVE
+        <button disabled class="px-3 py-1 bg-primary/30 text-on-primary/50 text-sm font-semibold flex items-center cursor-not-allowed border border-primary/30" title="{{ t('web_config_disabled_note') }}">
+          <span class="material-symbols-outlined text-sm mr-1">save</span> {{ t('web_config_save') }}
         </button>
       </div>
     </div>
 
     <!-- Config Content Area -->
     <div class="flex-1 overflow-auto p-3 code-font text-sm leading-relaxed" id="config-content">
-      <div class="text-secondary">Select a configuration file from the explorer.</div>
+      <div class="text-secondary">{{ t('web_config_awaiting') }}</div>
     </div>
 
     <!-- Output Console -->
     <div class="h-32 border-t border-surface-container-high bg-[#141414] flex flex-col">
       <div class="flex items-center px-3 py-1 border-b border-surface-container-high text-on-surface-variant text-[11px] font-semibold tracking-wider">
-        <span class="material-symbols-outlined text-sm mr-1">terminal</span> OUTPUT CONSOLE
+        <span class="material-symbols-outlined text-sm mr-1">terminal</span> {{ t('web_config_output_console') }}
       </div>
       <div class="flex-1 p-3 overflow-y-auto text-sm code-font text-on-surface-variant" id="config-output">
-        <p class="mb-1"><span class="text-primary">[SYS]</span> Configuration editor ready.</p>
-        <p class="mb-1"><span class="text-secondary">[OK]</span>  Awaiting selection...</p>
+        <p class="mb-1"><span class="text-primary">[SYS]</span> {{ t('web_config_ready') }}</p>
+        <p class="mb-1"><span class="text-secondary">[INFO]</span> {{ t('web_config_disabled_note') }}</p>
       </div>
     </div>
   </section>
@@ -237,15 +237,6 @@ function showConfig(key) {
     </div>`;
 
   addOutput("INFO", `Loaded ${cfg.name}`);
-}
-
-function validateConfig() {
-  addOutput("OK", "Syntax check passed.");
-  addOutput("OK", "Reference resolution complete.");
-}
-
-function saveConfig() {
-  addOutput("OK", `Configuration ${currentConfig} saved.`);
 }
 
 function addOutput(level, msg) {

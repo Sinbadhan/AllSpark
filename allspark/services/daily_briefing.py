@@ -255,6 +255,52 @@ class DailyBriefing:
             f"{t('briefing_footer', mode=mode_label)}"
         )
 
+    def generate_short(self) -> str:
+        """Condensed briefing: resource status + critical warnings only."""
+        now = datetime.now()
+        sections = []
+
+        # Header (single line)
+        day_num = self._calculate_day_number()
+        sections.append(f"{t('briefing_title', date=now.strftime('%Y-%m-%d %H:%M'))} | {t('briefing_day', day=day_num)}")
+
+        # Resources — compact single-line per resource
+        resources = self.db.get_all_resources()
+        if resources:
+            icons = {
+                ResourceType.POWER: "⚡", ResourceType.WATER: "💧",
+                ResourceType.FOOD: "🍞", ResourceType.FIRE: "🔥",
+                ResourceType.STORAGE: "💾",
+            }
+            parts = []
+            for r in resources:
+                icon = icons.get(r.type, "📦")
+                is_offline = r.current_amount == 0 and r.daily_consumption == 0
+                if is_offline:
+                    continue
+                res_name = t(f"resource_{r.type.value}")
+                remaining = ""
+                if r.estimated_remaining_hours > 0:
+                    hours = r.estimated_remaining_hours
+                    remaining = f"({hours / 24:.1f}d)" if hours >= 24 else f"({hours:.0f}h)"
+                parts.append(f"{icon}{res_name}:{r.current_amount:.0f}{r.unit}{remaining}")
+            if parts:
+                sections.append(" ".join(parts))
+            else:
+                sections.append(t("briefing_not_configured"))
+
+        # Critical warnings only
+        if self.resource_mgr:
+            warnings = self.resource_mgr.check_warnings()
+            critical = [w for w in warnings if w.get("level") == "critical"]
+            if critical:
+                lines = [t("warning_critical")]
+                for w in critical[:3]:
+                    lines.append(f"  🚨 {w['message']}")
+                sections.append("\n".join(lines))
+
+        return "\n".join(s for s in sections if s)
+
     def save_briefing_to_timeline(self):
         now = datetime.now()
         day = self._calculate_day_number()

@@ -14,6 +14,7 @@ from allspark.infrastructure.hardware import (
 from allspark.infrastructure.module_loader import ModuleRegistry
 from allspark.services.experience_engine import ExperienceEngine
 from allspark.services.knowledge_engine import KnowledgeEngine
+from allspark.services.knowledge_verifier import KnowledgeVerifier
 from allspark.services.llm_engine import LLMEngine
 from allspark.services.map_system import MapSystem
 from allspark.services.mission_planner import MissionPlanner
@@ -175,6 +176,13 @@ class ApplicationBootstrap:
             lambda: RuleEngine(self.container),
         )
 
+        # KnowledgeVerifier — used by CLI/Web verification flows; keep construction
+        # centralized so routes don't manually instantiate services.
+        self.container.register_factory(
+            "knowledge_verifier",
+            lambda: KnowledgeVerifier(self.db, self.container.get("llm")),
+        )
+
     def _init_resources(self):
         resource_mgr = self.container.require("resource_manager")
         resource_mgr.init_defaults()
@@ -209,18 +217,8 @@ class ApplicationBootstrap:
 
         from allspark.services.knowledge_loader import load_knowledge
 
-        for entry in load_knowledge(tier=0, language="zh"):
-            if self.db.get_knowledge(entry.id) is None:
-                self.db.save_knowledge(entry)
-        for entry in load_knowledge(tier=0, language="en"):
-            if self.db.get_knowledge(entry.id) is None:
-                self.db.save_knowledge(entry)
-        for entry in load_knowledge(tier=1):
-            if self.db.get_knowledge(entry.id) is None:
-                self.db.save_knowledge(entry)
-        for entry in load_knowledge(tier=2):
-            if self.db.get_knowledge(entry.id) is None:
-                self.db.save_knowledge(entry)
+        for entry in load_knowledge(tier=-1):
+            self.db.save_knowledge(entry)
 
         if vector_engine and vector_engine.is_available():
             vector_engine.reindex_all()

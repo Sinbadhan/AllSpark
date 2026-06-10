@@ -126,9 +126,10 @@ class WeatherPredictor:
 
     def set_manual_pressure(self, pressure_hpa: float):
         if self.db:
-            self.db.save_hardware_profile(
-                "manual_pressure", str(pressure_hpa)
-            )
+            from datetime import datetime
+            ts_key = f"manual_pressure_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            self.db.save_hardware_profile(ts_key, str(pressure_hpa))
+            self.db.save_hardware_profile("manual_pressure", str(pressure_hpa))
 
     def _get_manual_pressure(self) -> Optional[float]:
         if not self.db:
@@ -142,7 +143,24 @@ class WeatherPredictor:
             return None
 
     def _calculate_trend(self) -> str:
-        return "stable"
+        if not self.db:
+            return "stable"
+        try:
+            rows = self.db.conn.execute(
+                "SELECT value FROM hardware_profile WHERE key LIKE 'manual_pressure_%' ORDER BY key DESC LIMIT 2"
+            ).fetchall()
+            if len(rows) < 2:
+                return "stable"
+            prev = float(rows[1][0])
+            cur = float(rows[0][0])
+            diff = cur - prev
+            if diff > 2.0:
+                return "rising"
+            elif diff < -2.0:
+                return "falling"
+            return "stable"
+        except (ValueError, TypeError, IndexError):
+            return "stable"
 
     def format_prediction(self, conditions: dict = None) -> str:
         conditions = conditions or self.get_current_conditions()

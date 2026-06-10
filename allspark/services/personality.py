@@ -93,6 +93,24 @@ class PersonalitySystem:
     def get_template(self) -> dict:
         return PERSONALITY_TEMPLATES.get(self.current_mode.value, PERSONALITY_TEMPLATES["stable"])
 
+    def set_mode(self, mode):
+        """Force the personality into a specific mode (e.g. after crisis escalation).
+
+        Accepts either a PersonalityMode enum or its string value.
+        """
+        if isinstance(mode, PersonalityMode):
+            target = mode
+        else:
+            try:
+                target = PersonalityMode(str(mode))
+            except ValueError:
+                logger.warning("PersonalitySystem.set_mode: unknown mode '%s'", mode)
+                return self.current_mode
+        if target != self.current_mode:
+            self._record_transition(self.current_mode, target, OperatingMode.STANDARD, 0)
+            self.current_mode = target
+        return self.current_mode
+
     def _get_greeting(self) -> str:
         key = PERSONALITY_GREETING_KEYS.get(self.current_mode.value, "greeting_stable")
         return t(key)

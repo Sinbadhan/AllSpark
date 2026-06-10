@@ -41,7 +41,7 @@ class MissionPlanner:
 
     def generate_tasks_for_phase(self, phase: int) -> list[Task]:
         existing = self.db.get_tasks_by_phase(phase)
-        existing_titles = {t.title for t in existing}
+        existing_titles = {task.title for task in existing}
         goal_keys = PHASE_GOAL_KEYS.get(phase, [])
         desc_key = PHASE_DESC_KEYS.get(phase, "")
         tasks = []
@@ -72,7 +72,7 @@ class MissionPlanner:
             return []
 
         existing = self.db.get_tasks_by_phase(phase)
-        existing_titles = {t.title for t in existing}
+        existing_titles = {task.title for task in existing}
         tasks = []
         now = datetime.now().isoformat()
 
@@ -99,12 +99,12 @@ class MissionPlanner:
     def get_side_missions(self) -> list[Task]:
         """Get all active side missions."""
         active = self.db.get_active_tasks()
-        return [t for t in active if t.task_type == TaskType.SIDE.value]
+        return [task for task in active if task.task_type == TaskType.SIDE.value]
 
     def get_main_missions(self) -> list[Task]:
         """Get all active main missions."""
         active = self.db.get_active_tasks()
-        return [t for t in active if t.task_type != TaskType.SIDE.value]
+        return [task for task in active if task.task_type != TaskType.SIDE.value]
 
     def suggest_tasks(self, resources: list = None) -> list[Task]:
         active = self.db.get_active_tasks()
@@ -254,8 +254,8 @@ class MissionPlanner:
     def format_tasks(self, tasks: list[Task]) -> str:
         if not tasks:
             return t("no_active_tasks")
-        main = [t for t in tasks if t.task_type != TaskType.SIDE.value]
-        side = [t for t in tasks if t.task_type == TaskType.SIDE.value]
+        main = [task for task in tasks if task.task_type != TaskType.SIDE.value]
+        side = [task for task in tasks if task.task_type == TaskType.SIDE.value]
         lines = []
         if main:
             lines.append(t("current_tasks_label"))
@@ -266,7 +266,7 @@ class MissionPlanner:
                     lines.append(f"     {task.description}")
         if side:
             lines.append(f"\n{'─' * 20}")
-            lines.append(t("side_missions_label") if hasattr(t, '__call__') else "Side Missions")
+            lines.append(t("side_missions_label"))
             for task in side:
                 status_icon = {"pending": "◇", "in_progress": "▶", "completed": "✓", "failed": "✗"}.get(task.status, "?")
                 lines.append(f"  {status_icon} [{task.id}] {task.title}")
