@@ -16,6 +16,15 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 - Synchronized project status documents around the current v0.7.0 codebase.
 - Clarified that mypy is CI-enforced but still uses historical typing-debt allowlists.
 
+### Security
+
+- Hardened SKF Web API path handling: `/api/skf/{info,export,import}` now confine
+  the `path` query parameter to `~/.allspark/skf/` and reject attempts to escape
+  the directory (previously these endpoints accepted arbitrary filesystem paths).
+- Verification endpoints `/api/verify/{entry,batch}` now obtain
+  `KnowledgeVerifier` through the ServiceContainer instead of constructing it
+  inline, matching the project's dependency-injection policy.
+
 ## [0.7.0] - 2026-05-20
 
 ### Added

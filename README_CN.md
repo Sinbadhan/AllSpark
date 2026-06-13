@@ -255,7 +255,7 @@ AllSpark/
 │   ├── templates/                  # Web UI HTML 模板
 │   └── docker/                     # Dockerfile + docker-compose.yml
 │
-└── tests/                          # 505 项自动化测试（公开发布时保持内部隐藏）
+└── tests/                          # 537 项自动化测试（公开发布时保持内部隐藏）
 ```
 
 ---
@@ -278,7 +278,7 @@ AllSpark/
 
 | 检查项 | 状态 |
 |--------|------|
-| 自动化测试 | ✅ 505 passed |
+| 自动化测试 | ✅ 537 passed |
 | Ruff lint | ✅ 0 errors |
 | mypy | ✅ CI 强制执行，历史类型债通过 error-code 白名单隔离 |
 | 类型发布标记 | ✅ 已包含 `py.typed` |
@@ -289,7 +289,7 @@ AllSpark/
 ## 测试
 
 ```bash
-# 运行全部 505 项测试
+# 运行全部 537 项测试
 python3 -m pytest tests/ -v --tb=short
 
 # 运行特定模块
