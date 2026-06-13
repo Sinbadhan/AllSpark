@@ -100,6 +100,35 @@
     <button onclick="loadLLM()" class="btn-primary mt-3">{{ t('web_system_load_model') }}</button>
   </div>
 
+  <!-- Mode control -->
+  <div class="info-card span-12">
+    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">tune</span> {{ t('web_mode_card_title') }}</h3>
+    <div class="text-secondary text-sm" style="margin-bottom:12px;">{{ t('web_mode_card_subtitle') }}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <label class="text-xs text-secondary">{{ t('web_mode_personality_label') }}</label>
+        <select id="mode-personality" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;margin-top:4px;">
+          <option value="crisis">{{ t('web_mode_personality_crisis') }}</option>
+          <option value="stable" selected>{{ t('web_mode_personality_stable') }}</option>
+          <option value="companion">{{ t('web_mode_personality_companion') }}</option>
+          <option value="multiplayer">{{ t('web_mode_personality_multiplayer') }}</option>
+          <option value="renaissance">{{ t('web_mode_personality_renaissance') }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-secondary">{{ t('web_mode_operating_label') }}</label>
+        <select id="mode-operating" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;margin-top:4px;">
+          <option value="proactive">{{ t('web_mode_operating_proactive') }}</option>
+          <option value="standard" selected>{{ t('web_mode_operating_standard') }}</option>
+          <option value="economy">{{ t('web_mode_operating_economy') }}</option>
+          <option value="hibernation">{{ t('web_mode_operating_hibernation') }}</option>
+          <option value="recovery">{{ t('web_mode_operating_recovery') }}</option>
+        </select>
+      </div>
+    </div>
+    <button class="action-btn action-primary" style="margin-top:12px;" onclick="applyModes()">{{ t('web_mode_save') }}</button>
+  </div>
+
   <!-- Backups card -->
   <div class="info-card span-12">
     <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">save</span> {{ t('web_backup_title') }}</h3>
@@ -320,6 +349,27 @@ async function confirmReset(level) {
     if (data.success) { alert(RESET_I18N.done); window.location.reload(); }
     else { alert(RESET_I18N.failed + ': ' + (data.message || data.error || '?')); }
   } catch(e) { alert(RESET_I18N.failed + ': ' + e); }
+}
+/* === Mode control === */
+const MODE_I18N = { done: "{{ t('web_mode_done') }}" };
+async function applyModes() {
+  const p = document.getElementById("mode-personality").value;
+  const o = document.getElementById("mode-operating").value;
+  try {
+    const r1 = await fetch("/api/system/personality", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({mode: p}),
+    });
+    const r2 = await fetch("/api/system/operating-mode", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({mode: o}),
+    });
+    const d1 = await r1.json(), d2 = await r2.json();
+    if (d1.status === "ok" && d2.status === "ok") alert(MODE_I18N.done);
+    else alert(JSON.stringify({personality: d1, operating: d2}));
+  } catch(e) { alert(e); }
 }
 </script>
 {% endblock %}

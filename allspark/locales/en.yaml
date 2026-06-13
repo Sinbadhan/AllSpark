@@ -1448,3 +1448,48 @@ web_skf_verify_required: Validate during import
 web_skf_done_export: SKF exported to
 web_skf_done_import: SKF imported
 web_skf_error: Operation failed
+
+# === Web UI v1.1 — Stage 2: Survival core ===
+web_briefing_title: Today's briefing
+web_briefing_collapsed: Show briefing
+web_briefing_loading: Generating briefing…
+web_briefing_short_label: One-line summary
+web_briefing_full_label: Full briefing
+web_resource_edit_label: Adjust resource
+web_resource_edit_amount: Current amount
+web_resource_edit_consumption: Daily consumption
+web_resource_edit_intake: Daily intake
+web_resource_edit_save: Save
+web_resource_edit_cancel: Cancel
+web_resource_edit_done: Updated
+web_task_action_start: Start
+web_task_action_complete: Complete
+web_task_action_fail: Mark failed
+web_task_action_done: Task updated
+web_task_action_failed: Operation failed
+web_goals_tab: Goals
+web_goals_title: Survival goals
+web_goals_no_goals: No goals yet
+web_goals_add_title: Add goal
+web_goals_add_desc_placeholder: Goal description
+web_goals_add_btn: Add
+web_goals_btn_complete: Complete
+web_goals_btn_view: View
+web_goals_milestones: Milestones
+web_goals_milestone_complete: Complete milestone
+web_mode_card_title: Mode control
+web_mode_card_subtitle: Switch operating mode and personality
+web_mode_personality_label: Personality mode
+web_mode_operating_label: Operating mode
+web_mode_save: Apply
+web_mode_done: Mode updated
+web_mode_personality_crisis: Crisis
+web_mode_personality_stable: Stable
+web_mode_personality_companion: Companion
+web_mode_personality_multiplayer: Multiplayer
+web_mode_personality_renaissance: Renaissance
+web_mode_operating_proactive: Proactive
+web_mode_operating_standard: Standard
+web_mode_operating_economy: Economy
+web_mode_operating_hibernation: Hibernation
+web_mode_operating_recovery: Recovery

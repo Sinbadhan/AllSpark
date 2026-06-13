@@ -44,8 +44,30 @@
   </div>
 </div>
 
+<!-- Tab bar: Tasks | Goals | Timeline -->
+<div class="subtab-bar" style="margin-bottom:12px;">
+  <button class="sub-tab active" data-exectab="tasks" onclick="switchExecTab('tasks')">{{ t('web_active_tasks') }}</button>
+  <button class="sub-tab" data-exectab="goals" onclick="switchExecTab('goals')">{{ t('web_goals_tab') }}</button>
+  <button class="sub-tab" data-exectab="timeline" onclick="switchExecTab('timeline')">Timeline</button>
+</div>
+
+<div id="exectab-tasks" class="exec-tab-content">
 <div id="exec-list" class="flex flex-col gap-2">
   <div class="text-secondary text-sm p-4 text-center">{{ t('web_loading') }}</div>
+</div>
+</div>
+
+<div id="exectab-goals" class="exec-tab-content" style="display:none;">
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    <input id="goal-add-desc" placeholder="{{ t('web_goals_add_desc_placeholder') }}" style="flex:1;min-width:240px;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
+    <button class="action-btn action-primary" onclick="addGoal()">{{ t('web_goals_add_btn') }}</button>
+    <button class="action-btn action-outline" onclick="refreshGoals()">{{ t('web_btn_refresh') }}</button>
+  </div>
+  <div id="goal-list" class="text-sm text-on-surface-variant">{{ t('web_loading') }}</div>
+</div>
+
+<div id="exectab-timeline" class="exec-tab-content" style="display:none;">
+  <div id="timeline-list" class="text-sm text-on-surface-variant">{{ t('web_loading') }}</div>
 </div>
 {% endblock %}
 
@@ -55,6 +77,20 @@ const I18N = {
   empty: "{{ t('web_executions_empty') }}",
   promoted: "{{ t('web_executions_promoted') }}",
   raw: "{{ t('web_executions_raw') }}",
+};
+const TASK_I18N = {
+  start: "{{ t('web_task_action_start') }}",
+  complete: "{{ t('web_task_action_complete') }}",
+  fail: "{{ t('web_task_action_fail') }}",
+  done: "{{ t('web_task_action_done') }}",
+  failed_action: "{{ t('web_task_action_failed') }}",
+};
+const GOAL_I18N = {
+  empty: "{{ t('web_goals_no_goals') }}",
+  complete: "{{ t('web_goals_btn_complete') }}",
+  view: "{{ t('web_goals_btn_view') }}",
+  milestones: "{{ t('web_goals_milestones') }}",
+  ms_complete: "{{ t('web_goals_milestone_complete') }}",
 };
 
 async function refreshExecutions() {
@@ -83,9 +119,21 @@ async function refreshExecutions() {
       const borderColor = isActive ? "border-l-primary" : isFailed ? "border-l-error" : isSuccess ? "border-l-secondary" : "border-l-surface-container-high";
       const icon = isActive ? "sync" : isFailed ? "error" : isSuccess ? "check_circle" : "schedule";
       const iconClass = isActive ? "text-primary animate-spin" : isFailed ? "text-error" : isSuccess ? "text-secondary" : "text-on-surface-variant";
+      const taskId = (t.id || "").replace(/'/g, "&apos;");
+
+      // Action buttons depend on current status; click handlers stop propagation
+      // so they don't toggle the detail panel.
+      let actions = "";
+      if (!isSuccess && !isFailed) {
+        if (!isActive) {
+          actions += `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" title="${TASK_I18N.start}" onclick="event.stopPropagation();taskAction('${taskId}','start')">▶</button>`;
+        }
+        actions += `<button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" title="${TASK_I18N.complete}" onclick="event.stopPropagation();taskAction('${taskId}','complete')">✓</button>`;
+        actions += `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;color:var(--critical, #ff4444);" title="${TASK_I18N.fail}" onclick="event.stopPropagation();taskAction('${taskId}','fail')">✗</button>`;
+      }
 
       return `<div class="bg-surface-container border border-surface-container-high flex flex-col border-l-[3px] ${borderColor}">
-        <div class="grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center p-2 cursor-pointer hover:bg-surface-container-highest transition-colors" onclick="toggleExecDetail(this)">
+        <div class="grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 items-center p-2 cursor-pointer hover:bg-surface-container-highest transition-colors" onclick="toggleExecDetail(this)">
           <span class="material-symbols-outlined ${iconClass}">${icon}</span>
           <div>
             <div class="font-semibold text-on-surface text-sm">${escHtml(t.title)}</div>
@@ -94,6 +142,7 @@ async function refreshExecutions() {
           <div class="text-on-surface-variant text-right hidden md:block">
             <div class="text-sm ${isFailed ? 'text-critical' : isSuccess ? 'text-success' : isActive ? 'text-primary' : 'text-secondary'}">${t.status}</div>
           </div>
+          <div style="display:flex;gap:4px;">${actions}</div>
           <span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
         </div>
         <div class="bg-surface-dim border-t border-surface-container-high p-3 hidden">
@@ -138,5 +187,86 @@ function escHtml(s) {
 
 refreshExecutions();
 setInterval(refreshExecutions, 15000);
+
+/* === Tab switching === */
+function switchExecTab(tab) {
+  document.querySelectorAll('.sub-tab[data-exectab]').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector('.sub-tab[data-exectab="' + tab + '"]');
+  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.exec-tab-content').forEach(el => el.style.display = 'none');
+  const target = document.getElementById('exectab-' + tab);
+  if (target) target.style.display = '';
+  if (tab === 'goals') refreshGoals();
+  if (tab === 'timeline') refreshTimeline();
+}
+
+/* === Task actions === */
+async function taskAction(taskId, action) {
+  try {
+    const r = await fetch("/api/tasks/" + encodeURIComponent(taskId) + "/" + action, {method: "POST"});
+    const data = await r.json();
+    if (data.status === "ok") refreshExecutions();
+    else alert(TASK_I18N.failed_action + ": " + (data.error || JSON.stringify(data)));
+  } catch(e) { alert(TASK_I18N.failed_action + ": " + e); }
+}
+
+/* === Goals === */
+async function refreshGoals() {
+  const el = document.getElementById("goal-list");
+  try {
+    const goals = await api("/api/goals");
+    if (!goals.length) { el.textContent = GOAL_I18N.empty; return; }
+    el.innerHTML = goals.map(g => `
+      <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:10px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div>
+            <div style="font-weight:600;color:var(--on-surface);">${escHtml(g.description || g.title || g.id)}</div>
+            <div class="text-xs text-secondary">Phase ${g.phase || '-'} · ${g.status || '-'} · ${g.progress || 0}%</div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" onclick="completeGoal('${g.id}')">${GOAL_I18N.complete}</button>
+          </div>
+        </div>
+      </div>`).join("");
+  } catch(e) { el.textContent = String(e); }
+}
+async function addGoal() {
+  const desc = document.getElementById("goal-add-desc").value.trim();
+  if (!desc) return;
+  try {
+    await fetch("/api/goals/add", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({description: desc, title: desc}),
+    });
+    document.getElementById("goal-add-desc").value = "";
+    refreshGoals();
+  } catch(e) { alert(e); }
+}
+async function completeGoal(id) {
+  try {
+    await fetch("/api/goals/" + encodeURIComponent(id) + "/complete", {method: "POST"});
+    refreshGoals();
+  } catch(e) { alert(e); }
+}
+
+/* === Timeline === */
+async function refreshTimeline() {
+  const el = document.getElementById("timeline-list");
+  try {
+    const data = await api("/api/timeline/recent");
+    const events = data.events || data.timeline || data || [];
+    if (!Array.isArray(events) || !events.length) {
+      el.textContent = "—";
+      return;
+    }
+    el.innerHTML = events.map(e =>
+      `<div style="padding:6px 10px;border-left:2px solid var(--primary);margin-bottom:6px;background:var(--surface-low);">
+         <div class="text-xs text-secondary">${escHtml(e.timestamp || e.date || '')}</div>
+         <div>${escHtml(e.description || e.event || JSON.stringify(e))}</div>
+       </div>`
+    ).join("");
+  } catch(e) { el.textContent = String(e); }
+}
 </script>
 {% endblock %}

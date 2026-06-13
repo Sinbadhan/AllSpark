@@ -1385,3 +1385,48 @@ web_skf_verify_required: 启用导入前完整性校验
 web_skf_done_export: SKF 已导出至
 web_skf_done_import: SKF 已导入
 web_skf_error: 操作失败
+
+# === Web UI v1.1 — Stage 2: Survival core ===
+web_briefing_title: 今日简报
+web_briefing_collapsed: 展开简报
+web_briefing_loading: 简报生成中…
+web_briefing_short_label: 一句话摘要
+web_briefing_full_label: 完整简报
+web_resource_edit_label: 矫正资源
+web_resource_edit_amount: 当前余量
+web_resource_edit_consumption: 日消耗
+web_resource_edit_intake: 日补充
+web_resource_edit_save: 保存
+web_resource_edit_cancel: 取消
+web_resource_edit_done: 已更新
+web_task_action_start: 开始
+web_task_action_complete: 完成
+web_task_action_fail: 标记失败
+web_task_action_done: 任务已更新
+web_task_action_failed: 操作失败
+web_goals_tab: 目标
+web_goals_title: 生存目标
+web_goals_no_goals: 暂无目标
+web_goals_add_title: 新增目标
+web_goals_add_desc_placeholder: 目标描述
+web_goals_add_btn: 新增
+web_goals_btn_complete: 完成
+web_goals_btn_view: 查看
+web_goals_milestones: 里程碑
+web_goals_milestone_complete: 完成里程碑
+web_mode_card_title: 模式控制
+web_mode_card_subtitle: 切换运行模式与人格模式
+web_mode_personality_label: 人格模式
+web_mode_operating_label: 运行模式
+web_mode_save: 应用
+web_mode_done: 模式已切换
+web_mode_personality_crisis: 危机
+web_mode_personality_stable: 稳定
+web_mode_personality_companion: 陪伴
+web_mode_personality_multiplayer: 多人
+web_mode_personality_renaissance: 复兴
+web_mode_operating_proactive: 主动
+web_mode_operating_standard: 标准
+web_mode_operating_economy: 节能
+web_mode_operating_hibernation: 休眠
+web_mode_operating_recovery: 恢复

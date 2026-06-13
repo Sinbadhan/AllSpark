@@ -77,16 +77,25 @@ def register_core_routes(app, check):
     @app.post("/api/resources")
     async def update_resource(request: Request, type: str = Query(None), amount: float = Query(None)):
         container, db = check()
+        consumption = None
+        intake = None
         if type is None or amount is None:
             data = await request.json()
             type = data.get("type", type)
             amount = data.get("amount", amount)
+            consumption = data.get("daily_consumption", None)
+            intake = data.get("daily_intake", None)
         from allspark.core.models import ResourceType
         try:
             rtype = ResourceType(type)
         except ValueError:
             raise HTTPException(400, f"Invalid resource type: {type}")
-        container.get("resource_manager").update_resource(rtype, float(amount))
+        kwargs = {}
+        if consumption is not None:
+            kwargs["consumption"] = float(consumption)
+        if intake is not None:
+            kwargs["intake"] = float(intake)
+        container.get("resource_manager").update_resource(rtype, float(amount), **kwargs)
         return {"status": "ok"}
 
     @app.get("/api/knowledge/search")
