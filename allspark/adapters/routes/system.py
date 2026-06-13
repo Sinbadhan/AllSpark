@@ -101,8 +101,13 @@ def register_system_routes(app, check):
         state = db.get_operating_state()
         state.mode = target.value
         state.last_mode_change = _dt.now().isoformat()
+        # Pin the mode so update_operating_mode() does not auto-revert it
+        # on the next /api/status tick. Sending the same endpoint with a
+        # body of {"mode": "...", "manual": false} clears the pin.
+        manual = body.get("manual", True)
+        state.mode_manual_override = bool(manual)
         db.save_operating_state(state)
-        return {"status": "ok", "mode": target.value}
+        return {"status": "ok", "mode": target.value, "manual_override": state.mode_manual_override}
 
     # ---------------- Modules enable/disable ----------------
 

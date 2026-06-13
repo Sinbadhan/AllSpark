@@ -94,8 +94,11 @@ class ResourceManager:
         return OperatingMode.HIBERNATION
 
     def update_operating_mode(self) -> tuple[OperatingMode, bool]:
-        new_mode = self.determine_operating_mode()
         state = self.db.get_operating_state()
+        if state.mode_manual_override:
+            # Operator pinned the mode; do not auto-adapt.
+            return OperatingMode(state.mode), False
+        new_mode = self.determine_operating_mode()
         old_mode = OperatingMode(state.mode)
         changed = new_mode != old_mode
         if changed:

@@ -552,6 +552,10 @@ class Database:
             "INSERT OR REPLACE INTO operating_state VALUES (?,?)",
             ("last_mode_change", state.last_mode_change or self._now())
         )
+        self.conn.execute(
+            "INSERT OR REPLACE INTO operating_state VALUES (?,?)",
+            ("mode_manual_override", "1" if state.mode_manual_override else "0")
+        )
         self.conn.commit()
 
     def get_operating_state(self) -> OperatingState:
@@ -562,7 +566,8 @@ class Database:
         return OperatingState(
             mode=data.get("mode", "standard"),
             power_remaining_hours=float(data.get("power_remaining_hours", 48.0)),
-            last_mode_change=data.get("last_mode_change", "")
+            last_mode_change=data.get("last_mode_change", ""),
+            mode_manual_override=data.get("mode_manual_override", "0") == "1",
         )
 
     # --- Survivor State ---

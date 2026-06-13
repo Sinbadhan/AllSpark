@@ -218,6 +218,10 @@ class OperatingState:
     mode: str = "standard"
     power_remaining_hours: float = 48.0
     last_mode_change: str = ""
+    # When True, automatic mode adaptation (based on power telemetry)
+    # is suspended and the operator's explicit choice is honoured.
+    # Set by /api/system/operating-mode and the equivalent CLI command.
+    mode_manual_override: bool = False
 
 
 @dataclass

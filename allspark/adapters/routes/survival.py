@@ -217,6 +217,15 @@ def register_survival_routes(app, check):
             )
         result = reset_manager_svc.execute_reset(reset_level, force=bool(data.get("force", False)))
 
+        # FACTORY reset wipes the operating_state row that marks the system as
+        # initialized, but the FastAPI app keeps `app.state.initialized=True`
+        # in process memory. Without this re-sync, the user lands on the
+        # dashboard instead of the init wizard after L3.
+        if reset_level == ResetLevel.FACTORY and result.get("status") == "ok":
+            container, db = check()
+            app.state.initialized = db.is_initialized()
+            app.state.engine = None
+
         return {"success": result.get("status") == "ok", "message": result.get("status", "")}
 
     @app.get("/api/psych")
