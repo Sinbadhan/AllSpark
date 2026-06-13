@@ -1493,3 +1493,68 @@ web_mode_operating_standard: Standard
 web_mode_operating_economy: Economy
 web_mode_operating_hibernation: Hibernation
 web_mode_operating_recovery: Recovery
+
+# === Web UI v1.1 — Stage 3: Full feature surface ===
+web_modules_action_enable: Enable
+web_modules_action_disable: Disable
+web_modules_done_enable: Module enabled
+web_modules_done_disable: Module disabled
+web_modules_action_failed: Operation failed
+web_tab_mind: Mind
+web_tab_diary: Diary
+web_psych_state_title: Psychological state
+web_psych_loneliness: Loneliness
+web_psych_stress: Stress
+web_psych_questionnaire: Self-assessment
+web_psych_q_loading: Loading questionnaire…
+web_psych_q_submit: Submit
+web_psych_q_done: Assessment recorded
+web_psych_q_score_label: Score (0-3)
+web_diary_title: Diary
+web_diary_loading: Loading diary…
+web_diary_no_entries: No diary entries yet
+web_diary_content_placeholder: What happened today?
+web_diary_emotion: Emotion
+web_diary_emotion_neutral: Neutral
+web_diary_emotion_calm: Calm
+web_diary_emotion_anxious: Anxious
+web_diary_emotion_hopeful: Hopeful
+web_diary_emotion_sad: Sad
+web_diary_emotion_angry: Angry
+web_diary_save: Save entry
+web_diary_done: Entry saved
+web_location_title: Location & places
+web_location_gps: GPS coordinates
+web_location_unknown: Unknown
+web_location_pois: Points of interest
+web_location_no_pois: No POIs yet
+web_location_add: Add a place
+web_location_name_placeholder: Name
+web_location_type_placeholder: Type (e.g. water, shelter)
+web_location_desc_placeholder: Description (optional)
+web_location_save: Save
+web_location_remove: Remove
+web_comms_title: Spark network
+web_comms_status: Status
+web_comms_start: Start
+web_comms_stop: Stop
+web_comms_scan: Scan
+web_comms_no_neighbors: No neighbors yet
+web_weather_title: Weather
+web_weather_pressure: Pressure (hPa)
+web_weather_set_pressure: Set manual pressure
+web_weather_done: Updated
+web_weather_forecast: 12-hour forecast
+web_environment_title: Environment assessment
+web_environment_loading: Assessing…
+web_community_tab: Community
+web_community_status: Governance status
+web_community_no_members: No members yet
+web_community_member_add: Add member
+web_community_member_name: Name
+web_community_member_role: Role (commander/expert/executor/observer)
+web_community_member_save: Add
+web_community_assess: Org assessment
+web_community_recommend: Role suggestions
+web_trade_title: Knowledge trade
+web_trade_no_trades: No trades yet

@@ -234,3 +234,134 @@ def register_survival_routes(app, check):
         if reset_manager_svc is None:
             return service_unavailable("reset_manager", app=app)
         return {"logs": reset_manager_svc.db.get_reset_logs(limit)}
+
+    # ---------------- Psychology questionnaire ----------------
+
+    @app.get("/api/psych/questions")
+    async def api_psych_questions():
+        """List the self-assessment questions."""
+        psych = _get_service(app, 'psychology')
+        if psych is None:
+            return service_unavailable("psychology", app=app)
+        return {"questions": psych.get_self_assessment_questions()}
+
+    @app.post("/api/psych/assessment")
+    async def api_psych_assessment(request: Request):
+        """Submit answers (dict of question_id -> int score) and get a result."""
+        psych = _get_service(app, 'psychology')
+        if psych is None:
+            return service_unavailable("psychology", app=app)
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        answers = body.get("answers", body) if isinstance(body, dict) else {}
+        if not isinstance(answers, dict):
+            return error_response("Answers must be a dict", detail="Use {qid: score, ...}")
+        try:
+            normalized = {k: int(v) for k, v in answers.items()}
+        except (TypeError, ValueError):
+            return error_response("Scores must be integers")
+        return psych.process_assessment(normalized)
+
+    # ---------------- Weather ----------------
+
+    @app.get("/api/weather")
+    async def api_weather():
+        weather = _get_service(app, 'weather')
+        if weather is None:
+            return service_unavailable("weather", app=app)
+        return {
+            "current": weather.get_current_conditions(),
+            "forecast": weather.predict_weather(),
+            "guide": weather.get_cloud_guide(),
+        }
+
+    @app.post("/api/weather/pressure")
+    async def api_weather_pressure(request: Request):
+        weather = _get_service(app, 'weather')
+        if weather is None:
+            return service_unavailable("weather", app=app)
+        body = await _safe_json(request)
+        try:
+            hpa = float(body.get("pressure", body.get("hpa", 0)))
+        except (TypeError, ValueError):
+            return error_response("pressure must be a number")
+        weather.set_manual_pressure(hpa)
+        return {"status": "ok", "pressure_hpa": hpa}
+
+    # ---------------- Environment ----------------
+
+    @app.get("/api/environment")
+    async def api_environment():
+        env = _get_service(app, 'environment')
+        if env is None:
+            return service_unavailable("environment", app=app)
+        return env.assess()
+
+    # ---------------- Map / POI ----------------
+
+    @app.get("/api/map/poi")
+    async def api_map_list():
+        m = _get_service(app, 'map_system')
+        if m is None:
+            return service_unavailable("map_system", app=app)
+        pois = m.get_all()
+        return {"pois": [_poi_dict(p) for p in pois]}
+
+    @app.post("/api/map/poi")
+    async def api_map_add(request: Request):
+        m = _get_service(app, 'map_system')
+        if m is None:
+            return service_unavailable("map_system", app=app)
+        body = await _safe_json(request)
+        name = (body.get("name") or "").strip()
+        poi_type = (body.get("type") or body.get("poi_type") or "general").strip()
+        if not name:
+            return error_response("name required")
+        try:
+            poi = m.add_poi(
+                name=name,
+                poi_type=poi_type,
+                description=body.get("description", ""),
+                lat=body.get("lat"),
+                lon=body.get("lon"),
+            )
+        except TypeError:
+            # older signature: positional
+            poi = m.add_poi(name, poi_type, body.get("description", ""))
+        return {"status": "ok", "poi": _poi_dict(poi)}
+
+    @app.delete("/api/map/poi/{poi_id}")
+    async def api_map_remove(poi_id: str):
+        m = _get_service(app, 'map_system')
+        if m is None:
+            return service_unavailable("map_system", app=app)
+        m.remove_poi(poi_id)
+        return {"status": "ok", "id": poi_id}
+
+
+# Module-level helpers (kept here so they don't bloat the closure)
+
+
+async def _safe_json(request: Request) -> dict:
+    try:
+        body = await request.json()
+        return body if isinstance(body, dict) else {}
+    except Exception:
+        return {}
+
+
+def _poi_dict(poi) -> dict:
+    if poi is None:
+        return {}
+    if isinstance(poi, dict):
+        return poi
+    return {
+        "id": getattr(poi, "id", None),
+        "name": getattr(poi, "name", ""),
+        "type": getattr(poi, "type", ""),
+        "description": getattr(poi, "description", ""),
+        "lat": getattr(poi, "lat", None),
+        "lon": getattr(poi, "lon", None),
+    }

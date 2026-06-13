@@ -184,6 +184,8 @@
       <button class="sub-tab active" data-subtab="knowledge">{{ t('web_tab_knowledge') }}</button>
       <button class="sub-tab" data-subtab="chat">{{ t('web_tab_chat') }}</button>
       <button class="sub-tab" data-subtab="experience">{{ t('web_tab_experience') }}</button>
+      <button class="sub-tab" data-subtab="mind">{{ t('web_tab_mind') }}</button>
+      <button class="sub-tab" data-subtab="diary">{{ t('web_tab_diary') }}</button>
       <button class="sub-tab" data-subtab="modules">{{ t('web_tab_modules') }}</button>
     </div>
 
@@ -236,6 +238,38 @@
         <button onclick="loadLLM()" class="btn-primary">{{ t('web_load_model') }}</button>
       </div>
     </div>
+
+    <!-- Mind Sub-tab -->
+    <div id="subtab-mind" class="subtab-content hidden">
+      <h3 style="margin:0 0 8px;">{{ t('web_psych_state_title') }}</h3>
+      <div id="psych-state" class="text-sm text-on-surface-variant" style="margin-bottom:12px;">{{ t('web_loading') }}</div>
+      <details>
+        <summary class="text-secondary text-sm" style="cursor:pointer;">{{ t('web_psych_questionnaire') }}</summary>
+        <div id="psych-questionnaire" class="text-sm" style="margin-top:8px;">{{ t('web_psych_q_loading') }}</div>
+        <button class="action-btn action-primary" style="margin-top:8px;" onclick="submitAssessment()">{{ t('web_psych_q_submit') }}</button>
+      </details>
+    </div>
+
+    <!-- Diary Sub-tab -->
+    <div id="subtab-diary" class="subtab-content hidden">
+      <h3 style="margin:0 0 8px;">{{ t('web_diary_title') }}</h3>
+      <div style="display:grid;gap:8px;margin-bottom:12px;">
+        <textarea id="diary-content" placeholder="{{ t('web_diary_content_placeholder') }}" rows="3" style="background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:8px 10px;border-radius:4px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label class="text-xs text-secondary">{{ t('web_diary_emotion') }}:</label>
+          <select id="diary-emotion" style="background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:4px 8px;border-radius:4px;font-size:13px;">
+            <option value="neutral">{{ t('web_diary_emotion_neutral') }}</option>
+            <option value="calm">{{ t('web_diary_emotion_calm') }}</option>
+            <option value="anxious">{{ t('web_diary_emotion_anxious') }}</option>
+            <option value="hopeful">{{ t('web_diary_emotion_hopeful') }}</option>
+            <option value="sad">{{ t('web_diary_emotion_sad') }}</option>
+            <option value="angry">{{ t('web_diary_emotion_angry') }}</option>
+          </select>
+          <button class="action-btn action-primary" onclick="saveDiary()">{{ t('web_diary_save') }}</button>
+        </div>
+      </div>
+      <div id="diary-list" class="text-sm text-on-surface-variant">{{ t('web_diary_loading') }}</div>
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -270,6 +304,8 @@ function switchTab(tab) {
   if (target) target.classList.remove('hidden');
   if (tab === 'experience') refreshExperience();
   if (tab === 'modules') refreshModules();
+  if (tab === 'mind') refreshPsych();
+  if (tab === 'diary') refreshDiary();
 }
 
 document.querySelectorAll('.sub-tab').forEach(btn => {
@@ -552,6 +588,85 @@ async function saveResource(rtype) {
     });
     closeResEdit();
     refreshDashboard();
+  } catch(e) { alert(e); }
+}
+
+/* === Mind: psychological state + self-assessment === */
+const PSYCH_I18N = {
+  loneliness: "{{ t('web_psych_loneliness') }}",
+  stress: "{{ t('web_psych_stress') }}",
+  q_loading: "{{ t('web_psych_q_loading') }}",
+  q_done: "{{ t('web_psych_q_done') }}",
+  q_score_label: "{{ t('web_psych_q_score_label') }}",
+};
+async function refreshPsych() {
+  try {
+    const s = await api("/api/psych");
+    const state = s.state || s;
+    const stateEl = document.getElementById("psych-state");
+    stateEl.innerHTML = `
+      <div>${PSYCH_I18N.loneliness}: <strong>${state.loneliness ?? '-'}</strong></div>
+      <div>${PSYCH_I18N.stress}: <strong>${state.stress ?? '-'}</strong></div>`;
+    const qs = await api("/api/psych/questions");
+    const list = qs.questions || [];
+    const qEl = document.getElementById("psych-questionnaire");
+    qEl.innerHTML = list.map((q, i) =>
+      `<div style="margin-bottom:6px;">
+         <div class="text-sm" style="margin-bottom:2px;">${escHtml(q.question || q.text || ('Q'+(i+1)))}</div>
+         <input type="number" min="0" max="3" value="0" data-qid="${q.id || ('q'+i)}"
+                placeholder="${PSYCH_I18N.q_score_label}"
+                style="width:80px;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:4px 8px;border-radius:4px;font-size:13px;"/>
+       </div>`
+    ).join("");
+  } catch(e) { document.getElementById("psych-state").textContent = String(e); }
+}
+async function submitAssessment() {
+  const inputs = document.querySelectorAll("#psych-questionnaire input[data-qid]");
+  const answers = {};
+  inputs.forEach(el => { answers[el.dataset.qid] = parseInt(el.value || 0, 10); });
+  try {
+    await fetch("/api/psych/assessment", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({answers}),
+    });
+    alert(PSYCH_I18N.q_done);
+    refreshPsych();
+  } catch(e) { alert(e); }
+}
+
+/* === Diary === */
+const DIARY_I18N = {
+  no_entries: "{{ t('web_diary_no_entries') }}",
+  done: "{{ t('web_diary_done') }}",
+};
+async function refreshDiary() {
+  const el = document.getElementById("diary-list");
+  try {
+    const data = await api("/api/diary?limit=20");
+    const entries = Array.isArray(data) ? data : (data.entries || []);
+    if (!entries.length) { el.textContent = DIARY_I18N.no_entries; return; }
+    el.innerHTML = entries.map(e =>
+      `<div style="padding:8px 10px;border-left:2px solid var(--primary);background:var(--surface-low);margin-bottom:6px;">
+         <div class="text-xs text-secondary">${escHtml(e.timestamp || e.date || '')} · ${escHtml(e.emotion || '-')}</div>
+         <div style="white-space:pre-wrap;">${escHtml(e.content || '')}</div>
+       </div>`
+    ).join("");
+  } catch(e) { el.textContent = String(e); }
+}
+async function saveDiary() {
+  const content = document.getElementById("diary-content").value.trim();
+  const emotion = document.getElementById("diary-emotion").value;
+  if (!content) return;
+  try {
+    await fetch("/api/diary/add", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({content, emotion}),
+    });
+    document.getElementById("diary-content").value = "";
+    alert(DIARY_I18N.done);
+    refreshDiary();
   } catch(e) { alert(e); }
 }
 </script>

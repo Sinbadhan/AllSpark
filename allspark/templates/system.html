@@ -167,6 +167,55 @@
       </div>
     </div>
   </div>
+
+  <!-- Location card -->
+  <div class="info-card span-12">
+    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">place</span> {{ t('web_location_title') }}</h3>
+    <div id="loc-gps" class="text-sm text-on-surface-variant" style="margin-bottom:10px;">{{ t('web_location_gps') }}: {{ t('web_location_unknown') }}</div>
+    <h4 style="margin:8px 0 6px;font-size:13px;">{{ t('web_location_pois') }}</h4>
+    <div id="poi-list" class="text-sm text-on-surface-variant" style="margin-bottom:10px;">{{ t('web_loading') }}</div>
+    <details>
+      <summary class="text-secondary text-sm" style="cursor:pointer;margin-bottom:8px;">{{ t('web_location_add') }}</summary>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+        <input id="poi-name" placeholder="{{ t('web_location_name_placeholder') }}" style="background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
+        <input id="poi-type" placeholder="{{ t('web_location_type_placeholder') }}" style="background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
+        <input id="poi-desc" placeholder="{{ t('web_location_desc_placeholder') }}" style="grid-column:1 / -1;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
+      </div>
+      <button class="action-btn action-primary" style="margin-top:8px;" onclick="addPoi()">{{ t('web_location_save') }}</button>
+    </details>
+  </div>
+
+  <!-- Comms card -->
+  <div class="info-card span-12">
+    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">cell_tower</span> {{ t('web_comms_title') }}</h3>
+    <div id="comms-status" class="text-sm text-on-surface-variant" style="margin-bottom:10px;">{{ t('web_loading') }}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="action-btn action-primary" onclick="commsAction('start')">{{ t('web_comms_start') }}</button>
+      <button class="action-btn action-outline" onclick="commsAction('stop')">{{ t('web_comms_stop') }}</button>
+      <button class="action-btn action-outline" onclick="commsAction('scan')">{{ t('web_comms_scan') }}</button>
+      <button class="action-btn action-outline" onclick="refreshComms()">{{ t('web_btn_refresh') }}</button>
+    </div>
+  </div>
+
+  <!-- Weather card -->
+  <div class="info-card span-12">
+    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">cloud</span> {{ t('web_weather_title') }}</h3>
+    <div id="weather-current" class="text-sm text-on-surface-variant" style="margin-bottom:8px;">{{ t('web_loading') }}</div>
+    <div id="weather-forecast" class="text-sm" style="margin-bottom:10px;"></div>
+    <details>
+      <summary class="text-secondary text-sm" style="cursor:pointer;">{{ t('web_weather_set_pressure') }}</summary>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+        <input id="weather-pressure" type="number" step="0.1" placeholder="{{ t('web_weather_pressure') }}" style="flex:1;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
+        <button class="action-btn action-primary" onclick="setPressure()">{{ t('web_btn_save') }}</button>
+      </div>
+    </details>
+  </div>
+
+  <!-- Environment card -->
+  <div class="info-card span-12">
+    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">eco</span> {{ t('web_environment_title') }}</h3>
+    <div id="env-result" class="text-sm text-on-surface-variant">{{ t('web_environment_loading') }}</div>
+  </div>
 </div>
 {% endblock %}
 
@@ -220,10 +269,14 @@ async function refreshSystem() {
       modTable.innerHTML = entries.map(m => {
         const statusColor = m.loaded ? "var(--success)" : m.can_load ? "var(--warning)" : "var(--secondary)";
         const statusText = m.loaded ? "loaded" : m.can_load ? "available" : "disabled";
+        const flagOn = m.flag_enabled !== false; // unknown -> assume on
+        const action = flagOn
+          ? `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" onclick="moduleAction('${escHtml(m.name)}','disable')">${MODULE_I18N.disable}</button>`
+          : `<button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" onclick="moduleAction('${escHtml(m.name)}','enable')">${MODULE_I18N.enable}</button>`;
         return '<tr><td style="color:var(--primary-container);font-weight:600;">' + escHtml(m.name) + '</td>' +
           '<td style="color:' + statusColor + '">' + statusText + '</td>' +
           '<td>--</td><td>--</td>' +
-          '<td style="text-align:right;color:var(--secondary);">--</td></tr>';
+          '<td style="text-align:right;">' + action + '</td></tr>';
       }).join("");
     } else {
       modTable.innerHTML = '<tr><td colspan="5" class="text-secondary" style="padding:12px;">' + I18N.no_modules + '</td></tr>';
@@ -352,6 +405,22 @@ async function confirmReset(level) {
 }
 /* === Mode control === */
 const MODE_I18N = { done: "{{ t('web_mode_done') }}" };
+const MODULE_I18N = {
+  enable: "{{ t('web_modules_action_enable') }}",
+  disable: "{{ t('web_modules_action_disable') }}",
+  done_enable: "{{ t('web_modules_done_enable') }}",
+  done_disable: "{{ t('web_modules_done_disable') }}",
+  failed: "{{ t('web_modules_action_failed') }}",
+};
+const COMMS_I18N = { no_neighbors: "{{ t('web_comms_no_neighbors') }}" };
+const POI_I18N = {
+  no_pois: "{{ t('web_location_no_pois') }}",
+  unknown: "{{ t('web_location_unknown') }}",
+  remove: "{{ t('web_location_remove') }}",
+};
+const ENV_I18N = { loading: "{{ t('web_environment_loading') }}" };
+const WEATHER_I18N = { done: "{{ t('web_weather_done') }}" };
+
 async function applyModes() {
   const p = document.getElementById("mode-personality").value;
   const o = document.getElementById("mode-operating").value;
@@ -371,5 +440,131 @@ async function applyModes() {
     else alert(JSON.stringify({personality: d1, operating: d2}));
   } catch(e) { alert(e); }
 }
+
+/* === Module enable/disable === */
+async function moduleAction(name, action) {
+  try {
+    const r = await fetch("/api/modules/" + encodeURIComponent(name) + "/" + action, {method: "POST"});
+    const data = await r.json();
+    if (data.status === "ok") {
+      refreshSystem();
+    } else {
+      alert(MODULE_I18N.failed + ": " + (data.error || JSON.stringify(data)));
+    }
+  } catch(e) { alert(MODULE_I18N.failed + ": " + e); }
+}
+
+/* === Location / POI === */
+async function refreshLocation() {
+  // GPS
+  try {
+    const gps = await api("/api/gps");
+    const el = document.getElementById("loc-gps");
+    if (gps && (gps.lat !== undefined || gps.location)) {
+      const loc = gps.location || gps;
+      const lat = loc.lat !== undefined ? loc.lat : "?";
+      const lon = loc.lon !== undefined ? loc.lon : "?";
+      el.textContent = "{{ t('web_location_gps') }}: " + lat + ", " + lon;
+    } else {
+      el.textContent = "{{ t('web_location_gps') }}: " + POI_I18N.unknown;
+    }
+  } catch(e) {}
+  // POIs
+  const list = document.getElementById("poi-list");
+  try {
+    const data = await api("/api/map/poi");
+    const pois = data.pois || [];
+    if (!pois.length) { list.textContent = POI_I18N.no_pois; return; }
+    list.innerHTML = pois.map(p =>
+      `<div style="padding:6px 10px;border:1px solid var(--surface-container-high);border-radius:4px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">
+         <div>
+           <div style="font-weight:600;">${escHtml(p.name)}</div>
+           <div class="text-xs text-secondary">${escHtml(p.type || "")} · ${escHtml(p.description || "")}</div>
+         </div>
+         <button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" onclick="removePoi('${p.id}')">${POI_I18N.remove}</button>
+       </div>`
+    ).join("");
+  } catch(e) { list.textContent = String(e); }
+}
+async function addPoi() {
+  const name = document.getElementById("poi-name").value.trim();
+  const type = document.getElementById("poi-type").value.trim() || "general";
+  const desc = document.getElementById("poi-desc").value.trim();
+  if (!name) return;
+  try {
+    await fetch("/api/map/poi", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({name, type, description: desc}),
+    });
+    document.getElementById("poi-name").value = "";
+    document.getElementById("poi-type").value = "";
+    document.getElementById("poi-desc").value = "";
+    refreshLocation();
+  } catch(e) { alert(e); }
+}
+async function removePoi(id) {
+  try {
+    await fetch("/api/map/poi/" + encodeURIComponent(id), {method: "DELETE"});
+    refreshLocation();
+  } catch(e) { alert(e); }
+}
+refreshLocation();
+
+/* === Comms === */
+async function refreshComms() {
+  const el = document.getElementById("comms-status");
+  try {
+    const data = await api("/api/network/status");
+    el.innerHTML = `<pre style="white-space:pre-wrap;margin:0;font-family:JetBrains Mono,monospace;font-size:11px;">${escHtml(JSON.stringify(data, null, 2))}</pre>`;
+  } catch(e) { el.textContent = String(e); }
+}
+async function commsAction(action) {
+  try {
+    let url = "/api/network/" + action;
+    const r = await fetch(url, {method: "POST"});
+    await r.json();
+    refreshComms();
+  } catch(e) { alert(e); }
+}
+refreshComms();
+
+/* === Weather === */
+async function refreshWeather() {
+  try {
+    const data = await api("/api/weather");
+    const cur = data.current || {};
+    document.getElementById("weather-current").textContent =
+      Object.keys(cur).map(k => k + ": " + cur[k]).join("  ·  ");
+    const fc = data.forecast || {};
+    const summary = fc.summary || fc.description || JSON.stringify(fc);
+    document.getElementById("weather-forecast").innerHTML =
+      "<strong>{{ t('web_weather_forecast') }}:</strong> " + escHtml(summary);
+  } catch(e) { document.getElementById("weather-current").textContent = String(e); }
+}
+async function setPressure() {
+  const hpa = parseFloat(document.getElementById("weather-pressure").value);
+  if (isNaN(hpa)) return;
+  try {
+    await fetch("/api/weather/pressure", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({pressure: hpa}),
+    });
+    alert(WEATHER_I18N.done);
+    refreshWeather();
+  } catch(e) { alert(e); }
+}
+refreshWeather();
+
+/* === Environment === */
+async function refreshEnvironment() {
+  const el = document.getElementById("env-result");
+  try {
+    const data = await api("/api/environment");
+    el.innerHTML = `<pre style="white-space:pre-wrap;margin:0;font-family:JetBrains Mono,monospace;font-size:11px;">${escHtml(JSON.stringify(data, null, 2))}</pre>`;
+  } catch(e) { el.textContent = String(e); }
+}
+refreshEnvironment();
 </script>
 {% endblock %}
