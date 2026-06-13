@@ -6,24 +6,52 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-06-13
+
+First public stable release. Builds on the v0.7 architecture refactor
+with security hardening, sdist hygiene, and a documented engineering
+roadmap. No breaking changes for existing v0.7 users.
+
 ### Added
 
 - Open-source contribution, security, configuration, release, and code-of-conduct documentation.
-- PyPI/GitHub project metadata preparation.
+- `MANIFEST.in` to keep `tests/` out of the published sdist and to ship
+  the public docs (CHANGELOG, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT,
+  docs/) inside it.
+- `docs/TYPING_ROADMAP.md` recording the 157-error mypy debt with a
+  10-step repayment plan against `disable_error_code`.
+- `docs/BENCHMARKS.md` capturing an import-time baseline for 27 modules
+  (sum-of-means 158.9 ms; slowest is `core.i18n` at 149.7 ms).
+- `docs/adr/` with ADR 001 (spark-net encryption), ADR 002 (Tier 3
+  knowledge review), and ADR 003 (SKF package signing) — all formally
+  Deferred to v2.0+.
+- PyPI/GitHub project metadata.
 
 ### Changed
 
-- Synchronized project status documents around the current v0.7.0 codebase.
-- Clarified that mypy is CI-enforced but still uses historical typing-debt allowlists.
+- Bumped to v1.0.0 across `pyproject.toml`, `allspark/__init__.py`,
+  `README.md`, `README_CN.md`. Trove classifier moved to
+  `Development Status :: 5 - Production/Stable`.
+- Synchronized internal status documents around the current codebase
+  (537 tests across 26 files).
+- Clarified that mypy is CI-enforced but still uses historical
+  typing-debt allowlists.
+- `TECH-DECISIONS.md §4` now links to `docs/adr/` instead of carrying
+  inline TBD bullets.
 
 ### Security
 
-- Hardened SKF Web API path handling: `/api/skf/{info,export,import}` now confine
-  the `path` query parameter to `~/.allspark/skf/` and reject attempts to escape
-  the directory (previously these endpoints accepted arbitrary filesystem paths).
+- Hardened SKF Web API path handling: `/api/skf/{info,export,import}`
+  now confine the `path` query parameter to `~/.allspark/skf/` and
+  reject attempts to escape the directory (previously these endpoints
+  accepted arbitrary filesystem paths — a path-traversal vulnerability).
 - Verification endpoints `/api/verify/{entry,batch}` now obtain
-  `KnowledgeVerifier` through the ServiceContainer instead of constructing it
-  inline, matching the project's dependency-injection policy.
+  `KnowledgeVerifier` through the ServiceContainer instead of
+  constructing it inline, matching the project's dependency-injection
+  policy.
+- Source distribution no longer ships the `tests/` tree (was leaking
+  despite `.gitignore` because setuptools default-includes the
+  directory).
 
 ## [0.7.0] - 2026-05-20
 

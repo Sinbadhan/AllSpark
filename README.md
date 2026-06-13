@@ -1,6 +1,6 @@
 # 🔥 AllSpark — Offline AI Survival System
 
-**v0.7.0** | [中文](README_CN.md)
+**v1.0.0** | [中文](README_CN.md)
 
 > **In extreme conditions, preserve and rebuild human civilization.**
 

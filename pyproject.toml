@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "allspark"
-version = "0.7.0"
+version = "1.0.0"
 description = "火种 AllSpark — 离线人工智能生存系统"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -14,7 +14,7 @@ authors = [
 requires-python = ">=3.10"
 keywords = ["offline-ai", "survival", "knowledge-base", "fastapi", "llm", "raspberry-pi"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: Apache Software License",
