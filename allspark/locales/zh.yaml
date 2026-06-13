@@ -1329,3 +1329,59 @@ web_footer_mode: 模式
 web_footer_status_label: 状态
 web_footer_status_alert: 告警
 web_footer_status_nominal: 正常
+
+# === Web UI v1.1 — Stage 1: Platform basics ===
+web_lang_switch_label: 切换语言
+web_lang_zh: 中文
+web_lang_en: English
+web_about_title: 关于 AllSpark
+web_about_version: 版本
+web_about_license: 许可证
+web_about_homepage: 项目主页
+web_about_features: 功能特性
+web_about_close: 关闭
+web_about_loading: 加载中…
+web_btn_refresh: 刷新
+web_btn_save: 保存
+web_btn_cancel: 取消
+web_btn_confirm: 确认
+web_danger_zone: 危险操作
+web_danger_zone_subtitle: 不可逆的系统级操作，请谨慎执行
+web_reset_title: 三级重置
+web_reset_l1_title: L1 评估重置
+web_reset_l1_desc: 清空当前评估缓存，保留所有数据。
+web_reset_l2_title: L2 档案重置
+web_reset_l2_desc: 清空任务、目标、经验、日记，保留语言/硬件配置和知识库。
+web_reset_l3_title: L3 出厂重置
+web_reset_l3_desc: 清空全部数据，恢复至首次启动状态。需输入 RESET 二次确认。
+web_reset_confirm_l3: 输入 RESET 以确认出厂重置
+web_reset_btn_execute: 执行重置
+web_reset_executing: 重置执行中…
+web_reset_done: 重置完成
+web_reset_failed: 重置失败
+web_reset_cancelled: 已取消
+web_backup_title: 数据备份
+web_backup_subtitle: 创建/恢复快照、紧急保存
+web_backup_create: 创建快照
+web_backup_label_placeholder: 标签（可选，默认时间戳）
+web_backup_emergency: 紧急保存
+web_backup_list: 快照列表
+web_backup_restore: 恢复
+web_backup_restore_title: 恢复快照
+web_backup_restore_warn: 恢复将覆盖当前数据库，且不可撤销。
+web_backup_restore_confirm: 输入 RESET 以确认恢复
+web_backup_no_snapshots: 暂无快照
+web_skf_title: 知识包 SKF
+web_skf_export_title: 导出 SKF
+web_skf_import_title: 导入 SKF
+web_skf_path_placeholder: 文件名或绝对路径（限于 ~/.allspark/skf/ 内）
+web_skf_filter_category: 分类过滤（可选）
+web_skf_filter_language: 语言过滤（可选 zh/en）
+web_skf_btn_export: 导出
+web_skf_btn_import: 导入
+web_skf_btn_info: 查看详情
+web_skf_verify: 验证完整性
+web_skf_verify_required: 启用导入前完整性校验
+web_skf_done_export: SKF 已导出至
+web_skf_done_import: SKF 已导入
+web_skf_error: 操作失败

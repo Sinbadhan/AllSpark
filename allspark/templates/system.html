@@ -99,6 +99,45 @@
     <div id="llm-detail" class="text-sm text-on-surface-variant">{{ t('web_loading') }}</div>
     <button onclick="loadLLM()" class="btn-primary mt-3">{{ t('web_system_load_model') }}</button>
   </div>
+
+  <!-- Backups card -->
+  <div class="info-card span-12">
+    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">save</span> {{ t('web_backup_title') }}</h3>
+    <div class="text-secondary text-sm" style="margin-bottom:8px;">{{ t('web_backup_subtitle') }}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+      <input id="backup-label" type="text" placeholder="{{ t('web_backup_label_placeholder') }}"
+             style="flex:1;min-width:180px;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
+      <button class="action-btn action-primary" onclick="createSnapshot()">{{ t('web_backup_create') }}</button>
+      <button class="action-btn action-outline" onclick="emergencySave()">{{ t('web_backup_emergency') }}</button>
+      <button class="action-btn action-outline" onclick="refreshSnapshots()">{{ t('web_btn_refresh') }}</button>
+    </div>
+    <div id="snapshot-list" class="text-sm text-on-surface-variant">{{ t('web_loading') }}</div>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="info-card span-12" style="border-color:var(--critical, #ff4444);">
+    <h3 class="info-title" style="color:var(--critical, #ff4444);">
+      <span class="material-symbols-outlined" style="font-size:16px;">warning</span> {{ t('web_danger_zone') }}
+    </h3>
+    <div class="text-secondary text-sm" style="margin-bottom:12px;">{{ t('web_danger_zone_subtitle') }}</div>
+    <div style="display:grid;gap:12px;">
+      <div style="padding:10px;border:1px solid var(--surface-container-high);border-radius:4px;">
+        <div style="font-weight:600;">{{ t('web_reset_l1_title') }}</div>
+        <div class="text-sm text-secondary">{{ t('web_reset_l1_desc') }}</div>
+        <button class="action-btn action-outline" style="margin-top:8px;" onclick="confirmReset(1)">{{ t('web_reset_btn_execute') }}</button>
+      </div>
+      <div style="padding:10px;border:1px solid var(--surface-container-high);border-radius:4px;">
+        <div style="font-weight:600;">{{ t('web_reset_l2_title') }}</div>
+        <div class="text-sm text-secondary">{{ t('web_reset_l2_desc') }}</div>
+        <button class="action-btn action-outline" style="margin-top:8px;" onclick="confirmReset(2)">{{ t('web_reset_btn_execute') }}</button>
+      </div>
+      <div style="padding:10px;border:1px solid var(--critical, #ff4444);border-radius:4px;">
+        <div style="font-weight:600;color:var(--critical, #ff4444);">{{ t('web_reset_l3_title') }}</div>
+        <div class="text-sm text-secondary">{{ t('web_reset_l3_desc') }}</div>
+        <button class="action-btn" style="margin-top:8px;background:var(--critical, #ff4444);color:#fff;" onclick="confirmReset(3)">{{ t('web_reset_btn_execute') }}</button>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -194,5 +233,93 @@ async function loadLLM() {
 
 refreshSystem();
 setInterval(refreshSystem, 15000);
+
+/* === Backups === */
+const BACKUP_I18N = {
+  no_snapshots: "{{ t('web_backup_no_snapshots') }}",
+  restore: "{{ t('web_backup_restore') }}",
+  restore_title: "{{ t('web_backup_restore_title') }}",
+  restore_warn: "{{ t('web_backup_restore_warn') }}",
+  restore_confirm: "{{ t('web_backup_restore_confirm') }}",
+  done_export: "{{ t('web_skf_done_export') }}",
+  err: "{{ t('web_skf_error') }}",
+};
+async function refreshSnapshots() {
+  try {
+    const data = await api("/api/preserve/snapshots");
+    const list = data.snapshots || [];
+    const el = document.getElementById("snapshot-list");
+    if (!list.length) { el.textContent = BACKUP_I18N.no_snapshots; return; }
+    el.innerHTML = '<table class="mini-table" style="width:100%;"><thead><tr><th>LABEL</th><th>SIZE</th><th>WHEN</th><th></th></tr></thead><tbody>' +
+      list.map(s => {
+        const label = (s.label || s.name || "").replace(/"/g, '&quot;');
+        const size = s.size_bytes ? Math.round(s.size_bytes/1024) + ' KB' : '--';
+        const when = s.created_at || '--';
+        return `<tr><td>${escHtml(label)}</td><td>${size}</td><td class="text-secondary">${escHtml(when)}</td><td><button class="action-btn action-outline" style="padding:4px 10px;font-size:11px;" onclick="restoreSnapshot('${label}')">${BACKUP_I18N.restore}</button></td></tr>`;
+      }).join('') + '</tbody></table>';
+  } catch(e) {
+    document.getElementById("snapshot-list").textContent = String(e);
+  }
+}
+async function createSnapshot() {
+  const label = document.getElementById("backup-label").value.trim();
+  try {
+    const r = await fetch("/api/preserve/snapshot" + (label ? "?label=" + encodeURIComponent(label) : ""), {method: "POST"});
+    await r.json();
+    document.getElementById("backup-label").value = "";
+    refreshSnapshots();
+  } catch(e) { alert(BACKUP_I18N.err + ': ' + e); }
+}
+async function emergencySave() {
+  try {
+    await fetch("/api/preserve/emergency", {method: "POST"});
+    refreshSnapshots();
+  } catch(e) { alert(BACKUP_I18N.err + ': ' + e); }
+}
+async function restoreSnapshot(label) {
+  const typed = prompt(BACKUP_I18N.restore_warn + "\n\n" + BACKUP_I18N.restore_confirm, "");
+  if (typed !== "RESET") return;
+  try {
+    const r = await fetch("/api/preserve/restore?label=" + encodeURIComponent(label) + "&confirm=RESET", {method: "POST"});
+    const data = await r.json();
+    if (data.status === "error") { alert(data.error + ': ' + (data.detail || '')); return; }
+    alert("OK: " + JSON.stringify(data));
+    refreshSnapshots();
+  } catch(e) { alert(BACKUP_I18N.err + ': ' + e); }
+}
+refreshSnapshots();
+
+/* === Danger zone: reset === */
+const RESET_I18N = {
+  l1_title: "{{ t('web_reset_l1_title') }}",
+  l2_title: "{{ t('web_reset_l2_title') }}",
+  l3_title: "{{ t('web_reset_l3_title') }}",
+  l3_confirm: "{{ t('web_reset_confirm_l3') }}",
+  executing: "{{ t('web_reset_executing') }}",
+  done: "{{ t('web_reset_done') }}",
+  failed: "{{ t('web_reset_failed') }}",
+  cancelled: "{{ t('web_reset_cancelled') }}",
+};
+async function confirmReset(level) {
+  let body = {confirm: true};
+  if (level === 3) {
+    const typed = prompt(RESET_I18N.l3_title + "\n\n" + RESET_I18N.l3_confirm, "");
+    if (typed !== "RESET") { alert(RESET_I18N.cancelled); return; }
+    body.force = true;
+  } else {
+    const title = level === 1 ? RESET_I18N.l1_title : RESET_I18N.l2_title;
+    if (!confirm(title)) { alert(RESET_I18N.cancelled); return; }
+  }
+  try {
+    const r = await fetch("/api/reset/" + level, {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (data.success) { alert(RESET_I18N.done); window.location.reload(); }
+    else { alert(RESET_I18N.failed + ': ' + (data.message || data.error || '?')); }
+  } catch(e) { alert(RESET_I18N.failed + ': ' + e); }
+}
 </script>
 {% endblock %}

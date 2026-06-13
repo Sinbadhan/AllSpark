@@ -119,6 +119,9 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
     from allspark.adapters.routes.survival import register_survival_routes
     register_survival_routes(app, check)
 
+    from allspark.adapters.routes.system import register_system_routes
+    register_system_routes(app, check)
+
     return app
 
 

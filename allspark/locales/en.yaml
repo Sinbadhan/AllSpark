@@ -1392,3 +1392,59 @@ web_footer_mode: Mode
 web_footer_status_label: Status
 web_footer_status_alert: ALERT
 web_footer_status_nominal: nominal
+
+# === Web UI v1.1 — Stage 1: Platform basics ===
+web_lang_switch_label: Switch language
+web_lang_zh: 中文
+web_lang_en: English
+web_about_title: About AllSpark
+web_about_version: Version
+web_about_license: License
+web_about_homepage: Project homepage
+web_about_features: Feature flags
+web_about_close: Close
+web_about_loading: Loading…
+web_btn_refresh: Refresh
+web_btn_save: Save
+web_btn_cancel: Cancel
+web_btn_confirm: Confirm
+web_danger_zone: Danger zone
+web_danger_zone_subtitle: Irreversible system-level actions. Proceed with care.
+web_reset_title: Three-level reset
+web_reset_l1_title: L1 — Assessment reset
+web_reset_l1_desc: Clears the assessment cache. All data is preserved.
+web_reset_l2_title: L2 — Archive reset
+web_reset_l2_desc: Clears tasks, goals, experience and diary. Keeps language, hardware config and knowledge base.
+web_reset_l3_title: L3 — Factory reset
+web_reset_l3_desc: Erases all data and returns the system to first-boot state. Requires typing RESET to confirm.
+web_reset_confirm_l3: Type RESET to confirm factory reset
+web_reset_btn_execute: Execute reset
+web_reset_executing: Reset in progress…
+web_reset_done: Reset complete
+web_reset_failed: Reset failed
+web_reset_cancelled: Cancelled
+web_backup_title: Data backup
+web_backup_subtitle: Create/restore snapshots, emergency save
+web_backup_create: Create snapshot
+web_backup_label_placeholder: Label (optional, defaults to timestamp)
+web_backup_emergency: Emergency save
+web_backup_list: Snapshot list
+web_backup_restore: Restore
+web_backup_restore_title: Restore snapshot
+web_backup_restore_warn: Restoring will overwrite the current database and cannot be undone.
+web_backup_restore_confirm: Type RESET to confirm restore
+web_backup_no_snapshots: No snapshots yet
+web_skf_title: Knowledge packs (SKF)
+web_skf_export_title: Export SKF
+web_skf_import_title: Import SKF
+web_skf_path_placeholder: Filename or absolute path (must stay under ~/.allspark/skf/)
+web_skf_filter_category: Category filter (optional)
+web_skf_filter_language: Language filter (optional, zh/en)
+web_skf_btn_export: Export
+web_skf_btn_import: Import
+web_skf_btn_info: Inspect
+web_skf_verify: Validate integrity
+web_skf_verify_required: Validate during import
+web_skf_done_export: SKF exported to
+web_skf_done_import: SKF imported
+web_skf_error: Operation failed

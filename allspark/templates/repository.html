@@ -62,10 +62,10 @@
         <span class="material-symbols-outlined text-primary-container">history</span> {{ t('web_repository_knowledge_entries') }}
       </h2>
       <div class="flex items-center gap-2">
-        <button disabled class="h-9 px-4 border-grid bg-background text-on-surface-variant text-sm font-semibold opacity-50 cursor-not-allowed flex items-center gap-1" title="{{ t('web_repository_export_disabled') }}">
+        <button id="btn-skf-export" class="action-btn action-outline" onclick="openSkfExport()">
           <span class="material-symbols-outlined text-sm">download</span> {{ t('web_repository_export') }}
         </button>
-        <button disabled class="h-9 px-4 bg-primary-container/40 text-on-primary-container/50 text-sm font-semibold cursor-not-allowed flex items-center gap-1" title="{{ t('web_repository_import_disabled') }}">
+        <button id="btn-skf-import" class="action-btn action-primary" onclick="openSkfImport()">
           <span class="material-symbols-outlined text-sm">upload</span> {{ t('web_repository_import') }}
         </button>
       </div>
@@ -87,6 +87,20 @@ const REPO_I18N = {
   no_knowledge: "{{ t('web_repository_no_knowledge') }}",
   no_experience: "{{ t('web_repository_no_experience') }}",
   skf_note: "{{ t('web_repository_skf_note') }}",
+};
+const SKF_I18N = {
+  path_hint: "{{ t('web_skf_path_placeholder') }}",
+  path_placeholder: "{{ t('web_skf_path_placeholder') }}",
+  export_title: "{{ t('web_skf_export_title') }}",
+  import_title: "{{ t('web_skf_import_title') }}",
+  filter_category: "{{ t('web_skf_filter_category') }}",
+  filter_language: "{{ t('web_skf_filter_language') }}",
+  btn_export: "{{ t('web_skf_btn_export') }}",
+  btn_import: "{{ t('web_skf_btn_import') }}",
+  btn_info: "{{ t('web_skf_btn_info') }}",
+  verify_required: "{{ t('web_skf_verify_required') }}",
+  done_export: "{{ t('web_skf_done_export') }}",
+  done_import: "{{ t('web_skf_done_import') }}",
 };
 
 let currentSection = "knowledge";
@@ -111,9 +125,86 @@ async function showSection(section) {
       break;
     case "skf":
       titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">inventory_2</span> SKF PACKAGES';
-      contentEl.innerHTML = '<div class="text-secondary text-sm p-4 text-center">' + REPO_I18N.skf_note + '</div>';
+      contentEl.innerHTML = renderSkfPanel();
       break;
   }
+}
+
+function renderSkfPanel() {
+  return `
+    <div class="p-4">
+      <div class="text-secondary text-sm" style="margin-bottom:12px;">
+        ${SKF_I18N.path_hint}
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:280px;border:1px solid var(--surface-container-high);border-radius:4px;padding:12px;">
+          <h4 style="margin:0 0 8px;color:var(--on-surface);">${SKF_I18N.export_title}</h4>
+          <input id="skf-export-path" placeholder="${SKF_I18N.path_placeholder}" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;margin-bottom:6px;"/>
+          <input id="skf-export-cat" placeholder="${SKF_I18N.filter_category}" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;margin-bottom:6px;"/>
+          <input id="skf-export-lang" placeholder="${SKF_I18N.filter_language}" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;margin-bottom:8px;"/>
+          <button class="action-btn action-primary" onclick="doSkfExport()">${SKF_I18N.btn_export}</button>
+          <button class="action-btn action-outline" onclick="doSkfInfo('export')">${SKF_I18N.btn_info}</button>
+        </div>
+        <div style="flex:1;min-width:280px;border:1px solid var(--surface-container-high);border-radius:4px;padding:12px;">
+          <h4 style="margin:0 0 8px;color:var(--on-surface);">${SKF_I18N.import_title}</h4>
+          <input id="skf-import-path" placeholder="${SKF_I18N.path_placeholder}" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;margin-bottom:6px;"/>
+          <label style="display:flex;align-items:center;gap:6px;color:var(--secondary);font-size:13px;margin-bottom:8px;">
+            <input id="skf-import-verify" type="checkbox" checked/>${SKF_I18N.verify_required}
+          </label>
+          <button class="action-btn action-primary" onclick="doSkfImport()">${SKF_I18N.btn_import}</button>
+          <button class="action-btn action-outline" onclick="doSkfInfo('import')">${SKF_I18N.btn_info}</button>
+        </div>
+      </div>
+      <div id="skf-result" class="text-sm" style="margin-top:12px;color:var(--on-surface-variant);"></div>
+    </div>`;
+}
+
+function openSkfExport() { showSection("skf"); }
+function openSkfImport() { showSection("skf"); }
+
+async function doSkfExport() {
+  const path = document.getElementById("skf-export-path").value.trim();
+  const cat = document.getElementById("skf-export-cat").value.trim();
+  const lang = document.getElementById("skf-export-lang").value.trim();
+  if (!path) { setSkfResult("error", SKF_I18N.path_placeholder); return; }
+  const qs = new URLSearchParams({path});
+  if (cat) qs.set("category", cat);
+  if (lang) qs.set("language", lang);
+  try {
+    const r = await fetch("/api/skf/export?" + qs.toString(), {method: "POST"});
+    const data = await r.json();
+    if (data.status === "ok") setSkfResult("ok", SKF_I18N.done_export + ': ' + data.path);
+    else setSkfResult("error", (data.error || data.detail || JSON.stringify(data)));
+  } catch(e) { setSkfResult("error", String(e)); }
+}
+
+async function doSkfImport() {
+  const path = document.getElementById("skf-import-path").value.trim();
+  const verify = document.getElementById("skf-import-verify").checked;
+  if (!path) { setSkfResult("error", SKF_I18N.path_placeholder); return; }
+  try {
+    const r = await fetch("/api/skf/import?path=" + encodeURIComponent(path) + "&verify=" + (verify ? "true" : "false"), {method: "POST"});
+    const data = await r.json();
+    if (data.status === "ok") setSkfResult("ok", SKF_I18N.done_import + ': ' + JSON.stringify(data));
+    else setSkfResult("error", JSON.stringify(data));
+  } catch(e) { setSkfResult("error", String(e)); }
+}
+
+async function doSkfInfo(which) {
+  const path = document.getElementById(which === "export" ? "skf-export-path" : "skf-import-path").value.trim();
+  if (!path) { setSkfResult("error", SKF_I18N.path_placeholder); return; }
+  try {
+    const r = await fetch("/api/skf/info?path=" + encodeURIComponent(path));
+    const data = await r.json();
+    setSkfResult(data.status === "ok" ? "ok" : "error", JSON.stringify(data, null, 2));
+  } catch(e) { setSkfResult("error", String(e)); }
+}
+
+function setSkfResult(level, msg) {
+  const el = document.getElementById("skf-result");
+  if (!el) return;
+  el.style.color = level === "ok" ? "var(--success, #44cc44)" : "var(--critical, #ff4444)";
+  el.textContent = msg;
 }
 
 async function loadKnowledgeTable(el) {

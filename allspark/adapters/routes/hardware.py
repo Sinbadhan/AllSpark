@@ -138,3 +138,18 @@ def register_hardware_routes(app, check):
         container, db = check()
         preserve_svc = _require_service(app, 'data_preservation')
         return {"snapshots": preserve_svc.list_snapshots()}
+
+    @app.post("/api/preserve/restore")
+    async def preserve_restore(label: str = Query(...), confirm: str = Query("")):
+        """Restore a snapshot. Requires confirm='RESET' to prevent accidents."""
+        container, db = check()
+        if confirm != "RESET":
+            from allspark.adapters.routes.helpers import error_response
+            return error_response(
+                "Confirmation required",
+                detail="Restore overwrites the current database. "
+                       "Add ?confirm=RESET to acknowledge this is intentional.",
+                next_action="Re-issue the request with ?confirm=RESET.",
+            )
+        preserve_svc = _require_service(app, 'data_preservation')
+        return preserve_svc.restore_snapshot(label)

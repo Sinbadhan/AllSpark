@@ -414,6 +414,12 @@ table { border-collapse: collapse; width: 100%; }
         <span class="material-symbols-outlined" style="color:var(--on-surface-variant);font-size:18px;">search</span>
       </div>
       <button class="icon-btn"><span class="material-symbols-outlined">notifications</span></button>
+      <button class="icon-btn" id="lang-toggle-btn" title="{{ t('web_lang_switch_label') }}" onclick="toggleLanguage()">
+        <span class="material-symbols-outlined">translate</span>
+      </button>
+      <button class="icon-btn" id="about-btn" title="{{ t('web_about_title') }}" onclick="openAbout()">
+        <span class="material-symbols-outlined">info</span>
+      </button>
       <button class="icon-btn" onclick="location.href='/config'"><span class="material-symbols-outlined">settings</span></button>
     </div>
   </header>
@@ -460,6 +466,67 @@ async function updateFooter() {
 }
 updateFooter();
 setInterval(updateFooter, 30000);
+
+/* === Global: language toggle === */
+const CURRENT_LANG = "{{ lang }}";
+async function toggleLanguage() {
+  const target = CURRENT_LANG === "zh" ? "en" : "zh";
+  try {
+    const r = await fetch("/api/system/language", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({lang: target}),
+    });
+    const data = await r.json();
+    if (data.status === "ok") {
+      // Re-fetch the current page to pick up server-rendered translations.
+      window.location.reload();
+    }
+  } catch(e) { console.error(e); }
+}
+
+/* === Global: About modal === */
+async function openAbout() {
+  let modal = document.getElementById("about-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "about-modal";
+    modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
+    modal.innerHTML = `
+      <div class="card" style="max-width:520px;width:90%;max-height:80vh;overflow-y:auto;padding:20px;">
+        <h2 style="margin:0 0 12px;">{{ t('web_about_title') }}</h2>
+        <div id="about-body" class="text-sm">{{ t('web_about_loading') }}</div>
+        <div style="margin-top:16px;text-align:right;">
+          <button class="action-btn action-outline" onclick="closeAbout()">{{ t('web_about_close') }}</button>
+        </div>
+      </div>`;
+    modal.addEventListener("click", e => { if (e.target === modal) closeAbout(); });
+    document.body.appendChild(modal);
+  }
+  modal.style.display = "flex";
+  try {
+    const data = await api("/api/system/about");
+    const flags = data.feature_flags || {};
+    const flagsHtml = Object.keys(flags).sort().map(k =>
+      `<tr><td style="padding:2px 8px;">${k}</td><td style="color:${flags[k] ? 'var(--success)' : 'var(--secondary)'};">${flags[k] ? '✓' : '✗'}</td></tr>`
+    ).join("");
+    document.getElementById("about-body").innerHTML = `
+      <p><strong>${data.name_zh || ''} ${data.name_en || 'AllSpark'}</strong></p>
+      <p>{{ t('web_about_version') }}: <code>${data.version}</code></p>
+      <p>{{ t('web_about_license') }}: ${data.license}</p>
+      <p>{{ t('web_about_homepage') }}: <a href="${data.homepage}" target="_blank" rel="noopener" style="color:var(--primary);">${data.homepage}</a></p>
+      <details style="margin-top:12px;">
+        <summary style="cursor:pointer;color:var(--secondary);">{{ t('web_about_features') }}</summary>
+        <table style="margin-top:8px;font-family:JetBrains Mono,monospace;font-size:12px;">${flagsHtml}</table>
+      </details>`;
+  } catch(e) {
+    document.getElementById("about-body").textContent = String(e);
+  }
+}
+function closeAbout() {
+  const m = document.getElementById("about-modal");
+  if (m) m.style.display = "none";
+}
 </script>
 {% block scripts %}{% endblock %}
 </body>
