@@ -239,12 +239,27 @@ def register_core_routes(app, check):
         lesson: str = Query(""),
     ):
         container, db = check()
+        # Fall back to JSON body when query params are absent. Body may be
+        # missing, empty, or non-JSON — none of which should reach the DB.
         if event is None or outcome is None:
-            data = await request.json()
-            event = data.get("event", event)
-            outcome = data.get("outcome", outcome)
-            lesson = data.get("lesson", lesson)
-        entry = container.get("experience").log(event=event, outcome=outcome, lesson=lesson)
+            try:
+                data = await request.json()
+            except Exception:
+                data = {}
+            if isinstance(data, dict):
+                event = data.get("event", event)
+                outcome = data.get("outcome", outcome)
+                lesson = data.get("lesson", lesson)
+        # Validate before hitting the NOT NULL constraint on experience_log.event
+        # (regression: B-1 — wrong-shape body used to surface as a 500).
+        missing = [k for k, v in (("event", event), ("outcome", outcome)) if not v]
+        if missing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Missing required field(s): {', '.join(missing)}. "
+                       f"Body must contain {{event, outcome, lesson?}}.",
+            )
+        entry = container.get("experience").log(event=event, outcome=outcome, lesson=lesson or "")
         return {"id": entry.id, "status": "ok"}
 
     @app.get("/api/experience/patterns")
