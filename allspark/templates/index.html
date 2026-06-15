@@ -448,7 +448,7 @@ async function refreshExperience() {
   if (!data.length) { list.innerHTML = '<div class="text-secondary text-sm">' + I18N.web_no_experiences + '</div>'; return; }
   list.innerHTML = data.map(e =>
     '<div class="exp-item"><div class="exp-text"><div class="exp-title">' + escHtml(e.event) + '</div><div class="exp-sub">' + escHtml(e.outcome) + '</div></div>' +
-    '<span class="exp-badge ' + (e.promoted ? 'promoted' : 'raw') + '">' + (e.promoted ? "PROMOTED" : "RAW") + '</span></div>'
+    '<span class="exp-badge ' + (e.promoted ? 'promoted' : 'raw') + '">' + (e.promoted ? I18N.web_executions_promoted : I18N.web_executions_raw) + '</span></div>'
   ).join("");
   try {
     const stats = await api("/api/status");

@@ -98,15 +98,22 @@ class ModuleRegistry:
             return False
         return bool(getattr(self.flags, mod.feature_flag, False))
 
-    def disable(self, module_name: str):
+    def disable(self, module_name: str) -> bool:
         mod = self._modules.get(module_name)
-        if mod and not mod.is_core:
-            self._disabled.add(module_name)
-            self._loaded.pop(module_name, None)
-            mod.instance = None
+        if not mod:
+            return False
+        if mod.is_core:
+            return False
+        self._disabled.add(module_name)
+        self._loaded.pop(module_name, None)
+        mod.instance = None
+        return True
 
-    def enable(self, module_name: str):
+    def enable(self, module_name: str) -> bool:
+        if module_name not in self._modules:
+            return False
         self._disabled.discard(module_name)
+        return True
 
     def get_status(self, lang: str = "zh") -> list[dict]:
         result = []

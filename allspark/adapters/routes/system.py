@@ -9,7 +9,7 @@ from allspark.adapters.routes.helpers import (
     error_response,
     service_unavailable,
 )
-from allspark.core.i18n import get_language, set_language
+from allspark.core.i18n import get_language, set_language, t
 from allspark.core.models import OperatingMode, PersonalityMode
 
 _VALID_LANGS = {"zh", "en"}
@@ -40,7 +40,7 @@ def register_system_routes(app, check):
     async def system_set_language(request: Request):
         container, db = check()
         body = await _safe_json(request)
-        lang = (body.get("lang") or body.get("language") or "").strip().lower()
+        lang = (body.get("lang") or "").strip().lower()
         if lang not in _VALID_LANGS:
             return error_response(
                 "Invalid language",
@@ -117,11 +117,13 @@ def register_system_routes(app, check):
         registry = _get_service(app, "registry")
         if registry is None:
             return service_unavailable("registry", app=app)
-        try:
-            ok = registry.enable(module_name)
-        except Exception as e:
-            return error_response("Enable failed", detail=str(e))
-        return {"status": "ok" if ok else "error", "module": module_name, "enabled": True}
+        ok = registry.enable(module_name)
+        if not ok:
+            return error_response(
+                t("error_module_not_found", name=module_name),
+                detail=t("error_module_unsupported", name=module_name),
+            )
+        return {"status": "ok", "module": module_name, "enabled": True}
 
     @app.post("/api/modules/{module_name}/disable")
     async def modules_disable(module_name: str):
@@ -129,11 +131,12 @@ def register_system_routes(app, check):
         registry = _get_service(app, "registry")
         if registry is None:
             return service_unavailable("registry", app=app)
-        try:
-            ok = registry.disable(module_name)
-        except Exception as e:
-            return error_response("Disable failed", detail=str(e))
-        return {"status": "ok" if ok else "error", "module": module_name, "enabled": False}
+        ok = registry.disable(module_name)
+        if not ok:
+            return error_response(
+                t("error_module_not_found", name=module_name),
+            )
+        return {"status": "ok", "module": module_name, "enabled": False}
 
     # ---------------- Tasks: start / complete / fail ----------------
 
