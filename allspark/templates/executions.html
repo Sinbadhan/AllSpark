@@ -203,7 +203,7 @@ async function taskAction(taskId, action) {
     const data = await r.json();
     if (data.status === "ok") refreshExecutions();
     else alert(TASK_I18N.failed_action + ": " + (data.error || JSON.stringify(data)));
-  } catch(e) { alert(TASK_I18N.failed_action + ": " + e); }
+  } catch(e) { notify(e); }
 }
 
 /* === Goals === */
@@ -237,13 +237,13 @@ async function addGoal() {
     });
     document.getElementById("goal-add-desc").value = "";
     refreshGoals();
-  } catch(e) { alert(e); }
+  } catch(e) { notify(e); }
 }
 async function completeGoal(id) {
   try {
     await fetch("/api/goals/" + encodeURIComponent(id) + "/complete", {method: "POST"});
     refreshGoals();
-  } catch(e) { alert(e); }
+  } catch(e) { notify(e); }
 }
 
 /* === Timeline === */

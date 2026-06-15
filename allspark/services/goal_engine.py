@@ -387,7 +387,7 @@ class GoalEngine:
                 f"   {t('goal_progress_label')}: {ms_info} ({progress_pct}%){deadline_info}"
             )
 
-        return "\n".join(lines)
+        return "\n─────\n".join(lines)
 
     def check_goal_progress(self) -> list[dict]:
         goals = self.db.get_active_goals()

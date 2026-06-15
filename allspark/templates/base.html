@@ -454,7 +454,14 @@ const FOOTER_I18N = {
 };
 async function api(path, opts = {}) {
   const res = await fetch(API + path, opts);
-  return res.json();
+  const data = await res.json();
+  if (!res.ok && data.status === "error") {
+    return {...data, _http_error: true, _http_status: res.status};
+  }
+  return data;
+}
+function notify(msg) {
+  alert(typeof msg === 'string' ? msg : I18N.web_error_occurred || 'An error occurred');
 }
 async function updateFooter() {
   try {

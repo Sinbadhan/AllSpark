@@ -337,13 +337,13 @@ async function createSnapshot() {
     await r.json();
     document.getElementById("backup-label").value = "";
     refreshSnapshots();
-  } catch(e) { alert(BACKUP_I18N.err + ': ' + e); }
+  } catch(e) { notify(e); }
 }
 async function emergencySave() {
   try {
     await fetch("/api/preserve/emergency", {method: "POST"});
     refreshSnapshots();
-  } catch(e) { alert(BACKUP_I18N.err + ': ' + e); }
+  } catch(e) { notify(e); }
 }
 async function restoreSnapshot(label) {
   const typed = prompt(BACKUP_I18N.restore_warn + "\n\n" + BACKUP_I18N.restore_confirm, "");
@@ -354,7 +354,7 @@ async function restoreSnapshot(label) {
     if (data.status === "error") { alert(data.error + ': ' + (data.detail || '')); return; }
     alert(I18N.web_alert_ok + ": " + JSON.stringify(data));
     refreshSnapshots();
-  } catch(e) { alert(BACKUP_I18N.err + ': ' + e); }
+  } catch(e) { notify(e); }
 }
 refreshSnapshots();
 
@@ -394,7 +394,7 @@ async function confirmReset(level) {
         : (data.error || data.message || '?');
       alert(RESET_I18N.failed + ': ' + reason);
     }
-  } catch(e) { alert(RESET_I18N.failed + ': ' + e); }
+  } catch(e) { notify(e); }
 }
 /* === Mode control === */
 const MODE_I18N = { done: "{{ t('web_mode_done') }}" };
@@ -431,7 +431,7 @@ async function applyModes() {
     const d1 = await r1.json(), d2 = await r2.json();
     if (d1.status === "ok" && d2.status === "ok") alert(MODE_I18N.done);
     else alert(JSON.stringify({personality: d1, operating: d2}));
-  } catch(e) { alert(e); }
+  } catch(e) { notify(e); }
 }
 
 /* === Module enable/disable === */
@@ -444,7 +444,7 @@ async function moduleAction(name, action) {
     } else {
       alert(MODULE_I18N.failed + ": " + (data.error || JSON.stringify(data)));
     }
-  } catch(e) { alert(MODULE_I18N.failed + ": " + e); }
+  } catch(e) { notify(e); }
 }
 
 /* === Location / POI === */
@@ -494,13 +494,13 @@ async function addPoi() {
     document.getElementById("poi-type").value = "";
     document.getElementById("poi-desc").value = "";
     refreshLocation();
-  } catch(e) { alert(e); }
+  } catch(e) { notify(e); }
 }
 async function removePoi(id) {
   try {
     await fetch("/api/map/poi/" + encodeURIComponent(id), {method: "DELETE"});
     refreshLocation();
-  } catch(e) { alert(e); }
+  } catch(e) { notify(e); }
 }
 refreshLocation();
 
@@ -518,7 +518,7 @@ async function commsAction(action) {
     const r = await fetch(url, {method: "POST"});
     await r.json();
     refreshComms();
-  } catch(e) { alert(e); }
+  } catch(e) { notify(e); }
 }
 refreshComms();
 
@@ -546,7 +546,7 @@ async function setPressure() {
     });
     alert(WEATHER_I18N.done);
     refreshWeather();
-  } catch(e) { alert(e); }
+  } catch(e) { notify(e); }
 }
 refreshWeather();
 

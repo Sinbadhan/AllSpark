@@ -582,7 +582,7 @@ async function saveResource(rtype) {
     });
     closeResEdit();
     refreshDashboard();
-  } catch(e) { alert(e); }
+  } catch(e) { notify(e); }
 }
 
 /* === Mind: psychological state + self-assessment === */
@@ -626,7 +626,7 @@ async function submitAssessment() {
     });
     alert(PSYCH_I18N.q_done);
     refreshPsych();
-  } catch(e) { alert(e); }
+  } catch(e) { notify(e); }
 }
 
 /* === Diary === */
@@ -661,7 +661,7 @@ async function saveDiary() {
     document.getElementById("diary-content").value = "";
     alert(DIARY_I18N.done);
     refreshDiary();
-  } catch(e) { alert(e); }
+  } catch(e) { notify(e); }
 }
 </script>
 {% endblock %}

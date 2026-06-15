@@ -180,6 +180,10 @@ def register_survival_routes(app, check):
         lat = data.get("latitude", 0)
         lon = data.get("longitude", 0)
         alt = data.get("altitude", 0)
+        if not (-90 <= lat <= 90):
+            return error_response(t("error_gps_invalid"), detail=t("error_gps_lat_range"))
+        if not (-180 <= lon <= 180):
+            return error_response(t("error_gps_invalid"), detail=t("error_gps_lng_range"))
         location = gps_manager_svc.set_manual_position(lat, lon, alt)
         return {"success": True, "location": location}
 

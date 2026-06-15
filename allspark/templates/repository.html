@@ -313,7 +313,7 @@ async function addMember() {
     }
     document.getElementById("member-name").value = "";
     loadCommunityData();
-  } catch(e) { alert(e); }
+  } catch(e) { notify(e); }
 }
 
 async function loadKnowledgeTable(el) {
