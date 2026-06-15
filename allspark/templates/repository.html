@@ -301,11 +301,16 @@ async function addMember() {
   const role = document.getElementById("member-role").value.trim() || "executor";
   if (!name) return;
   try {
-    await fetch("/api/governance/member/add", {
+    const r = await fetch("/api/governance/member/add", {
       method: "POST",
       headers: {"content-type": "application/json"},
       body: JSON.stringify({name, role}),
     });
+    const data = await r.json();
+    if (data.status === "error") {
+      alert(data.error + (data.detail ? ': ' + data.detail : ''));
+      return;
+    }
     document.getElementById("member-name").value = "";
     loadCommunityData();
   } catch(e) { alert(e); }

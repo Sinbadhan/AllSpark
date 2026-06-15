@@ -1,8 +1,30 @@
-"""Governance and Trade API routes."""
+"""Governance and Trade API routes.
 
-from fastapi import Query
+POST endpoints accept JSON body, matching the rest of the web API
+(survival/system/etc.). GET endpoints keep query params per REST
+convention. Regression: B-4 — the only POST that the Web UI ever calls
+(`member/add`) used JSON body while the route declared `Query(...)`,
+which silently 422'd and made the form do nothing.
+"""
 
-from allspark.adapters.routes.helpers import _require_service
+from fastapi import Query, Request
+
+from allspark.adapters.routes.helpers import _require_service, error_response
+
+
+async def _safe_json(request: Request) -> dict:
+    """Read the request body as a JSON dict, returning {} on any failure."""
+    try:
+        body = await request.json()
+        return body if isinstance(body, dict) else {}
+    except Exception:
+        return {}
+
+
+def _split_csv(s: str | None) -> list[str]:
+    if not s:
+        return []
+    return [x.strip() for x in s.split(",") if x.strip()]
 
 
 def register_governance_routes(app, check):
@@ -13,37 +35,54 @@ def register_governance_routes(app, check):
         return gov_svc.get_status()
 
     @app.post("/api/governance/member/add")
-    async def governance_member_add(
-        name: str = Query(...),
-        role: str = Query("executor"),
-        domains: str = Query(""),
-    ):
+    async def governance_member_add(request: Request):
         container, db = check()
         gov_svc = _require_service(app, 'governance')
-        domain_list = [d.strip() for d in domains.split(",") if d.strip()] if domains else []
-        member = gov_svc.add_member(name, role=role, domains=domain_list)
+        body = await _safe_json(request)
+        name = (body.get("name") or "").strip()
+        if not name:
+            return error_response(
+                "Name required",
+                detail="Body must contain {name: '<member-name>'}.",
+            )
+        role = (body.get("role") or "executor").strip()
+        domains = body.get("domains") or []
+        if isinstance(domains, str):
+            domains = _split_csv(domains)
+        member = gov_svc.add_member(name, role=role, domains=list(domains))
         return {"status": "ok", "member": {"id": member.id, "name": member.name, "role": member.role, "is_commander": member.is_commander}}
 
     @app.post("/api/governance/member/remove")
-    async def governance_member_remove(member_id: str = Query(...)):
+    async def governance_member_remove(request: Request):
         container, db = check()
         gov_svc = _require_service(app, 'governance')
+        body = await _safe_json(request)
+        member_id = (body.get("member_id") or "").strip()
+        if not member_id:
+            return error_response("member_id required",
+                                  detail="Body must contain {member_id: '<id>'}.")
         if gov_svc.remove_member(member_id):
             return {"status": "ok"}
-        return {"status": "error", "message": "Cannot remove member"}
+        return error_response("Cannot remove member", detail=f"No member with id '{member_id}'.")
 
     @app.post("/api/governance/member/role")
-    async def governance_member_role(
-        member_id: str = Query(...),
-        role: str = Query(...),
-        domains: str = Query(""),
-    ):
+    async def governance_member_role(request: Request):
         container, db = check()
         gov_svc = _require_service(app, 'governance')
-        domain_list = [d.strip() for d in domains.split(",") if d.strip()] if domains else None
-        if gov_svc.assign_role(member_id, role, domain_list):
+        body = await _safe_json(request)
+        member_id = (body.get("member_id") or "").strip()
+        role = (body.get("role") or "").strip()
+        if not member_id or not role:
+            return error_response(
+                "member_id and role required",
+                detail="Body must contain {member_id, role, domains?}.",
+            )
+        domains = body.get("domains")
+        if isinstance(domains, str):
+            domains = _split_csv(domains)
+        if gov_svc.assign_role(member_id, role, list(domains) if domains is not None else None):
             return {"status": "ok"}
-        return {"status": "error", "message": "Cannot assign role"}
+        return error_response("Cannot assign role", detail=f"No member '{member_id}' or invalid role '{role}'.")
 
     @app.get("/api/governance/members")
     async def governance_members():
@@ -77,39 +116,52 @@ def register_governance_routes(app, check):
         gov_svc = _require_service(app, 'governance')
         result = gov_svc.calculate_survival_value(member_id)
         if not result:
-            return {"status": "error", "message": "Member not found"}
+            return error_response("Member not found", detail=f"No member with id '{member_id}'.")
         return result
 
     @app.post("/api/governance/conflict/create")
-    async def governance_conflict_create(
-        title: str = Query(...),
-        parties: str = Query(...),
-    ):
+    async def governance_conflict_create(request: Request):
         container, db = check()
         gov_svc = _require_service(app, 'governance')
-        party_list = [p.strip() for p in parties.split(",") if p.strip()]
-        conflict = gov_svc.create_conflict(title, "", party_list)
+        body = await _safe_json(request)
+        title = (body.get("title") or "").strip()
+        parties_raw = body.get("parties")
+        if not title or not parties_raw:
+            return error_response(
+                "title and parties required",
+                detail="Body must contain {title, parties (list or comma-separated str)}.",
+            )
+        parties = parties_raw if isinstance(parties_raw, list) else _split_csv(parties_raw)
+        conflict = gov_svc.create_conflict(title, body.get("description", ""), parties)
         return {"status": "ok", "conflict_id": conflict.id}
 
     @app.post("/api/governance/conflict/mediate")
-    async def governance_conflict_mediate(conflict_id: str = Query(...)):
+    async def governance_conflict_mediate(request: Request):
         container, db = check()
         gov_svc = _require_service(app, 'governance')
+        body = await _safe_json(request)
+        conflict_id = (body.get("conflict_id") or "").strip()
+        if not conflict_id:
+            return error_response("conflict_id required",
+                                  detail="Body must contain {conflict_id: '<id>'}.")
         result = gov_svc.mediate_conflict(conflict_id)
         if not result:
-            return {"status": "error", "message": "Conflict not found"}
+            return error_response("Conflict not found", detail=f"No conflict '{conflict_id}'.")
         return result
 
     @app.post("/api/governance/conflict/resolve")
-    async def governance_conflict_resolve(
-        conflict_id: str = Query(...),
-        resolution: str = Query("Resolved"),
-    ):
+    async def governance_conflict_resolve(request: Request):
         container, db = check()
         gov_svc = _require_service(app, 'governance')
+        body = await _safe_json(request)
+        conflict_id = (body.get("conflict_id") or "").strip()
+        if not conflict_id:
+            return error_response("conflict_id required",
+                                  detail="Body must contain {conflict_id, resolution?}.")
+        resolution = body.get("resolution") or "Resolved"
         if gov_svc.resolve_conflict(conflict_id, resolution):
             return {"status": "ok"}
-        return {"status": "error", "message": "Cannot resolve conflict"}
+        return error_response("Cannot resolve conflict", detail=f"No conflict '{conflict_id}'.")
 
     @app.get("/api/governance/conflicts")
     async def governance_conflicts():
@@ -131,31 +183,44 @@ def register_governance_routes(app, check):
         return trade_svc.get_status()
 
     @app.post("/api/trade/propose")
-    async def trade_propose(
-        target_spark_id: str = Query(...),
-        offer_ids: str = Query(""),
-        request_ids: str = Query(""),
-    ):
+    async def trade_propose(request: Request):
         container, db = check()
         trade_svc = _require_service(app, 'trade_engine')
-        offer_list = [i.strip() for i in offer_ids.split(",") if i.strip()] if offer_ids else []
-        request_list = [i.strip() for i in request_ids.split(",") if i.strip()] if request_ids else []
-        offer = trade_svc.propose_trade("local", target_spark_id, offer_list, request_list)
+        body = await _safe_json(request)
+        target = (body.get("target_spark_id") or "").strip()
+        if not target:
+            return error_response(
+                "target_spark_id required",
+                detail="Body must contain {target_spark_id, offer_ids?, request_ids?}.",
+            )
+        offer_raw = body.get("offer_ids") or []
+        request_raw = body.get("request_ids") or []
+        offer_list = offer_raw if isinstance(offer_raw, list) else _split_csv(offer_raw)
+        request_list = request_raw if isinstance(request_raw, list) else _split_csv(request_raw)
+        offer = trade_svc.propose_trade("local", target, list(offer_list), list(request_list))
         return {"status": "ok", "trade_id": offer.id}
 
     @app.post("/api/trade/accept")
-    async def trade_accept(trade_id: str = Query(...)):
+    async def trade_accept(request: Request):
         container, db = check()
         trade_svc = _require_service(app, 'trade_engine')
+        body = await _safe_json(request)
+        trade_id = (body.get("trade_id") or "").strip()
+        if not trade_id:
+            return error_response("trade_id required", detail="Body must contain {trade_id}.")
         return trade_svc.accept_trade(trade_id)
 
     @app.post("/api/trade/reject")
-    async def trade_reject(trade_id: str = Query(...)):
+    async def trade_reject(request: Request):
         container, db = check()
         trade_svc = _require_service(app, 'trade_engine')
+        body = await _safe_json(request)
+        trade_id = (body.get("trade_id") or "").strip()
+        if not trade_id:
+            return error_response("trade_id required", detail="Body must contain {trade_id}.")
         if trade_svc.reject_trade(trade_id):
             return {"status": "ok"}
-        return {"status": "error", "message": "Trade not found"}
+        return error_response("Trade not found", detail=f"No trade '{trade_id}'.")
 
     @app.get("/api/trade/evaluate")
     async def trade_evaluate(trade_id: str = Query(...)):
@@ -163,7 +228,7 @@ def register_governance_routes(app, check):
         trade_svc = _require_service(app, 'trade_engine')
         result = trade_svc.evaluate_trade(trade_id)
         if not result:
-            return {"status": "error", "message": "Trade not found"}
+            return error_response("Trade not found", detail=f"No trade '{trade_id}'.")
         return result
 
     @app.get("/api/trade/list")
