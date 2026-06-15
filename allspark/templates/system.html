@@ -400,7 +400,13 @@ async function confirmReset(level) {
     });
     const data = await r.json();
     if (data.success) { alert(RESET_I18N.done); window.location.reload(); }
-    else { alert(RESET_I18N.failed + ': ' + (data.message || data.error || '?')); }
+    else {
+      // Prefer the structured reason list returned by the reset manager.
+      const reason = (data.reasons && data.reasons.length)
+        ? data.reasons.join('\n')
+        : (data.error || data.message || '?');
+      alert(RESET_I18N.failed + ': ' + reason);
+    }
   } catch(e) { alert(RESET_I18N.failed + ': ' + e); }
 }
 /* === Mode control === */

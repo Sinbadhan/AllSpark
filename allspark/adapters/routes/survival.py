@@ -197,7 +197,13 @@ def register_survival_routes(app, check):
         reset_manager_svc = _get_service(app, 'reset_manager')
         if reset_manager_svc is None:
             return service_unavailable("reset_manager", app=app)
-        data = await request.json()
+        # Body may be missing/empty (e.g. fetch without payload). Don't 500.
+        try:
+            data = await request.json()
+        except Exception:
+            data = {}
+        if not isinstance(data, dict):
+            data = {}
         confirm = data.get("confirm", False)
         if not confirm:
             return error_response(
@@ -216,17 +222,32 @@ def register_survival_routes(app, check):
                 next_action="Use level 1 (assessment), 2 (archive), or 3 (factory reset).",
             )
         result = reset_manager_svc.execute_reset(reset_level, force=bool(data.get("force", False)))
+        ok = result.get("status") == "ok"
 
         # FACTORY reset wipes the operating_state row that marks the system as
         # initialized, but the FastAPI app keeps `app.state.initialized=True`
         # in process memory. Without this re-sync, the user lands on the
         # dashboard instead of the init wizard after L3.
-        if reset_level == ResetLevel.FACTORY and result.get("status") == "ok":
+        if reset_level == ResetLevel.FACTORY and ok:
             container, db = check()
             app.state.initialized = db.is_initialized()
             app.state.engine = None
 
-        return {"success": result.get("status") == "ok", "message": result.get("status", "")}
+        # Surface the rejection reason(s) the manager produced. Without this
+        # the UI shows "rejected" with no clue (regression: B-3 — cooldown,
+        # hibernation, emergency-state blocks all looked the same).
+        response: dict = {
+            "success": ok,
+            "status": result.get("status", ""),
+            "message": result.get("status", ""),
+        }
+        reasons = result.get("reason") or []
+        if isinstance(reasons, list) and reasons:
+            response["reasons"] = reasons
+            response["error"] = reasons[0] if isinstance(reasons[0], str) else str(reasons[0])
+        elif isinstance(reasons, str) and reasons:
+            response["error"] = reasons
+        return response
 
     @app.get("/api/psych")
     async def api_psych():
