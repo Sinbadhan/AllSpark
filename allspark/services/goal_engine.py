@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
-from allspark.core.i18n import t
+from allspark.core.i18n import mark, render, t
 from allspark.core.models import Goal, Milestone, OperatingMode, ResourceType
 
 logger = logging.getLogger(__name__)
@@ -132,7 +132,7 @@ class GoalEngine:
                 ms = Milestone(
                     id=f"{goal.id}-m{i+1}",
                     goal_id=goal.id,
-                    description=t(ms_key),
+                    description=mark(ms_key),
                     done=False,
                     order=i + 1,
                     created_at=datetime.now().isoformat(),
@@ -182,8 +182,8 @@ class GoalEngine:
         deadline = (now + timedelta(hours=template["deadline_hours"])).isoformat()
         return Goal(
             id=f"{template['id_prefix']}-{uuid.uuid4().hex[:6]}",
-            title=t(template["title_key"]),
-            description=t(template["desc_key"]),
+            title=mark(template["title_key"]),
+            description=mark(template["desc_key"]),
             goal_type="auto",
             category=template["category"],
             priority=template["priority"],
@@ -264,12 +264,12 @@ class GoalEngine:
 
             goals = self.db.get_active_goals()
             has_shelter = any(
-                g.title and ("庇护" in g.title or "shelter" in g.title.lower())
+                g.title and ("庇护" in render(g.title) or "shelter" in render(g.title).lower())
                 for g in goals
             )
             if not has_shelter:
                 goal = self.add_manual_goal(
-                    title=t("goal_weather_shelter_title"),
+                    title=mark("goal_weather_shelter_title"),
                     category="survival",
                     priority="high",
                     milestone_descriptions=[
@@ -377,8 +377,8 @@ class GoalEngine:
                     logger.warning(f"Failed to parse goal deadline '{g.deadline}': {e}")
 
             lines.append(
-                f"{icon} [{g.category}] {g.title}\n"
-                f"   {g.rationale or g.description}\n"
+                f"{icon} [{g.category}] {render(g.title)}\n"
+                f"   {render(g.rationale or g.description)}\n"
                 f"   {t('goal_progress_label')}: {ms_info} ({progress_pct}%){deadline_info}"
             )
 
@@ -510,7 +510,14 @@ class GoalEngine:
                 phase=phase,
                 priority=priority,
                 title=ms.description,
-                description=t("task_from_goal_desc", goal_title=goal.title, ms_desc=ms.description),
+                # Pass goal.title / ms.description through verbatim — render()
+                # resolves nested markers at read time, so the embedded title
+                # also follows the current language.
+                description=mark(
+                    "task_from_goal_desc",
+                    goal_title=goal.title,
+                    ms_desc=ms.description,
+                ),
                 status="pending",
                 created_at=now,
                 updated_at=now,

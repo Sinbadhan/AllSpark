@@ -3,6 +3,7 @@
 from fastapi import Request
 
 from allspark.adapters.routes.helpers import _get_service, error_response, service_unavailable
+from allspark.core.i18n import render
 
 
 def register_survival_routes(app, check):
@@ -15,7 +16,7 @@ def register_survival_routes(app, check):
         goals = goal_engine_svc.get_active_goals()
         return {"goals": [
             {
-                "id": g.id, "title": g.title, "description": g.description,
+                "id": g.id, "title": render(g.title), "description": render(g.description),
                 "priority": g.priority, "status": g.status, "progress": g.progress,
                 "category": g.category, "milestone_done": g.milestone_done,
                 "milestone_count": g.milestone_count, "deadline": g.deadline,
@@ -34,14 +35,14 @@ def register_survival_routes(app, check):
         milestones = goal_engine_svc.db.get_milestones_by_goal(goal_id)
         return {
             "goal": {
-                "id": goal.id, "title": goal.title, "description": goal.description,
+                "id": goal.id, "title": render(goal.title), "description": render(goal.description),
                 "priority": goal.priority, "status": goal.status, "progress": goal.progress,
                 "category": goal.category, "source": goal.source,
                 "milestone_done": goal.milestone_done, "milestone_count": goal.milestone_count,
                 "deadline": goal.deadline, "rationale": goal.rationale,
             },
             "milestones": [
-                {"id": m.id, "description": m.description, "done": m.done, "order": m.order}
+                {"id": m.id, "description": render(m.description), "done": m.done, "order": m.order}
                 for m in milestones
             ],
         }
@@ -59,7 +60,7 @@ def register_survival_routes(app, check):
             priority=data.get("priority", "medium"),
             category=data.get("category", "survival"),
         )
-        return {"goal": {"id": goal.id, "title": goal.title}}
+        return {"goal": {"id": goal.id, "title": render(goal.title)}}
 
     @app.post("/api/goals/{goal_id}/complete")
     async def api_complete_goal(goal_id: str):
@@ -107,8 +108,8 @@ def register_survival_routes(app, check):
         return {"events": [
             {
                 "id": e["id"], "day": e["day"], "timestamp": e["timestamp"],
-                "event_type": e["event_type"], "title": e["title"],
-                "description": e["description"], "emotion": e["emotion"],
+                "event_type": e["event_type"], "title": render(e["title"]),
+                "description": render(e["description"]), "emotion": e["emotion"],
             } for e in events
         ]}
 

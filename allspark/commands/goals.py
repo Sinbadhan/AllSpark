@@ -1,7 +1,7 @@
 from rich.table import Table
 
 from allspark.commands.base import BaseCommand
-from allspark.core.i18n import t
+from allspark.core.i18n import render, t
 
 
 class GoalCommand(BaseCommand):
@@ -29,12 +29,12 @@ class GoalCommand(BaseCommand):
                 self.console.print(f"[yellow]{t('goal_specify_title')}[/]")
                 return
             goal = ge.add_manual_goal(title=title)
-            self.console.print(t("goal_added", title=goal.title))
+            self.console.print(t("goal_added", title=render(goal.title)))
             if goal.milestone_count > 0:
                 milestones = self.db.get_milestones_by_goal(goal.id)
                 for ms in milestones:
                     status_icon = "✅" if ms.done else "⬜"
-                    self.console.print(f"  {status_icon} {ms.order}. {ms.description}")
+                    self.console.print(f"  {status_icon} {ms.order}. {render(ms.description)}")
 
         elif sub in ("完成", "complete", "done"):
             goal_id = args[1] if len(args) > 1 else ""
@@ -44,7 +44,7 @@ class GoalCommand(BaseCommand):
             result = ge.complete_goal(goal_id)
             if result:
                 goal = self.db.get_goal(goal_id)
-                self.console.print(t("goal_completed", title=goal.title if goal else goal_id))
+                self.console.print(t("goal_completed", title=render(goal.title) if goal else goal_id))
             else:
                 self.console.print(t("goal_not_found", id=goal_id))
 
@@ -56,7 +56,7 @@ class GoalCommand(BaseCommand):
             result = ge.abandon_goal(goal_id)
             if result:
                 goal = self.db.get_goal(goal_id)
-                self.console.print(t("goal_abandoned", title=goal.title if goal else goal_id))
+                self.console.print(t("goal_abandoned", title=render(goal.title) if goal else goal_id))
             else:
                 goal = self.db.get_goal(goal_id)
                 if goal and goal.priority == "critical":
@@ -72,7 +72,7 @@ class GoalCommand(BaseCommand):
             result = ge.pause_goal(goal_id)
             if result:
                 goal = self.db.get_goal(goal_id)
-                self.console.print(t("goal_paused", title=goal.title if goal else goal_id))
+                self.console.print(t("goal_paused", title=render(goal.title) if goal else goal_id))
             else:
                 goal = self.db.get_goal(goal_id)
                 if goal and goal.priority == "critical":
@@ -88,7 +88,7 @@ class GoalCommand(BaseCommand):
             result = ge.resume_goal(goal_id)
             if result:
                 goal = self.db.get_goal(goal_id)
-                self.console.print(t("goal_resumed", title=goal.title if goal else goal_id))
+                self.console.print(t("goal_resumed", title=render(goal.title) if goal else goal_id))
             else:
                 self.console.print(t("goal_not_found", id=goal_id))
 
@@ -102,10 +102,10 @@ class GoalCommand(BaseCommand):
                 self.console.print(t("goal_not_found", id=goal_id))
                 return
             goal = detail["goal"]
-            self.console.print(f"[bold]{goal.title}[/] — {goal.description}")
+            self.console.print(f"[bold]{render(goal.title)}[/] — {render(goal.description)}")
             for ms in detail["milestones"]:
                 status_icon = "✅" if ms.done else "⬜"
-                self.console.print(f"  {status_icon} {ms.order}. {ms.description}")
+                self.console.print(f"  {status_icon} {ms.order}. {render(ms.description)}")
             progress_pct = int(goal.progress * 100)
             self.console.print(f"\n  {t('goal_progress', pct=progress_pct, done=goal.milestone_done, total=goal.milestone_count)}")
 
@@ -114,7 +114,8 @@ class GoalCommand(BaseCommand):
             if generated:
                 self.console.print(f"[green]{t('goal_generated', count=len(generated))}[/]")
                 for g in generated:
-                    self.console.print(f"  🔴 {g.title}" if g.priority == "critical" else f"  🟡 {g.title}")
+                    title_str = render(g.title)
+                    self.console.print(f"  🔴 {title_str}" if g.priority == "critical" else f"  🟡 {title_str}")
             else:
                 self.console.print(f"[dim]{t('goal_no_new')}[/]")
 

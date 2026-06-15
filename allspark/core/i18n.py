@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 
@@ -94,3 +95,63 @@ def t(key: str, **kwargs) -> str:
         except (KeyError, IndexError):
             return msg
     return msg
+
+
+# ---------------------------------------------------------------------------
+# i18n persistence — store the *key* in DB, render at read time.
+# Background: B-2. Storing a translated string in `tasks.title` etc. means
+# the user's choice of language at write time gets baked in forever and
+# the next `lang xx` switch leaves a half-translated UI behind.
+#
+# Format: "t:<key>|<json-args>"  (json omitted when args is empty)
+#   mark("urgent_find_water")             -> "t:urgent_find_water"
+#   mark("timeline_diary", date="2026...")-> 't:timeline_diary|{"date":"2026..."}'
+# Anything that doesn't start with "t:" is treated as a literal — that
+# preserves user-typed input (manual goal titles, diary content, etc.)
+# and stays backward-compatible with rows written before this change.
+# ---------------------------------------------------------------------------
+
+_MARKER_PREFIX = "t:"
+
+
+def mark(key: str, **kwargs) -> str:
+    """Encode an i18n key (and optional format args) for DB storage.
+
+    Use anywhere the result will be persisted and later rendered to a
+    user-visible string under whatever language is current at read time.
+    """
+    if kwargs:
+        return f"{_MARKER_PREFIX}{key}|{json.dumps(kwargs, ensure_ascii=False, sort_keys=True)}"
+    return f"{_MARKER_PREFIX}{key}"
+
+
+def render(stored: str | None) -> str:
+    """Resolve a stored string. Marker → translate. Literal → passthrough.
+
+    Marker args that themselves are markers get resolved recursively, so a
+    Goal whose title is `mark("urgent_find_water")` can be safely embedded
+    as the `goal_title` arg of another marker — both surface in the same
+    language at read time.
+    """
+    if not stored or not isinstance(stored, str):
+        return stored or ""
+    if not stored.startswith(_MARKER_PREFIX):
+        return stored
+    payload = stored[len(_MARKER_PREFIX):]
+    if "|" in payload:
+        key, raw = payload.split("|", 1)
+        try:
+            args = json.loads(raw)
+        except Exception:
+            return t(key)
+        if not isinstance(args, dict):
+            return t(key)
+        # Recursively resolve any nested markers in the args.
+        resolved = {k: (render(v) if isinstance(v, str) else v) for k, v in args.items()}
+        return t(key, **resolved)
+    return t(payload)
+
+
+def is_marker(stored: str | None) -> bool:
+    """True iff `stored` was produced by `mark()`."""
+    return isinstance(stored, str) and stored.startswith(_MARKER_PREFIX)

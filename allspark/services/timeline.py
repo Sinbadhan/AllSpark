@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from allspark.core.i18n import t
+from allspark.core.i18n import mark, render, t
 from allspark.core.models import TimelineEventType
 
 
@@ -39,8 +39,8 @@ class TimelineManager:
     def record_goal_completed(self, goal_id: str, goal_title: str):
         return self.add_event(
             event_type=TimelineEventType.GOAL_COMPLETED.value,
-            title=t("timeline_goal_completed", title=goal_title),
-            description=t("timeline_goal_completed_desc", id=goal_id, title=goal_title),
+            title=mark("timeline_goal_completed", title=goal_title),
+            description=mark("timeline_goal_completed_desc", id=goal_id, title=goal_title),
             emotion="positive",
             related_goal_id=goal_id,
         )
@@ -48,7 +48,7 @@ class TimelineManager:
     def record_milestone(self, goal_id: str, milestone_desc: str):
         return self.add_event(
             event_type=TimelineEventType.MILESTONE.value,
-            title=t("timeline_milestone", desc=milestone_desc),
+            title=mark("timeline_milestone", desc=milestone_desc),
             description=milestone_desc,
             emotion="positive",
             related_goal_id=goal_id,
@@ -57,7 +57,7 @@ class TimelineManager:
     def record_resource_change(self, resource_type: str, change: str):
         return self.add_event(
             event_type=TimelineEventType.RESOURCE_CHANGE.value,
-            title=t("timeline_resource_change", type=resource_type),
+            title=mark("timeline_resource_change", type=resource_type),
             description=change,
             emotion="neutral",
         )
@@ -65,15 +65,15 @@ class TimelineManager:
     def record_member_joined(self, member_name: str):
         return self.add_event(
             event_type=TimelineEventType.MEMBER_JOINED.value,
-            title=t("timeline_member_joined", name=member_name),
-            description=t("timeline_member_joined_desc", name=member_name),
+            title=mark("timeline_member_joined", name=member_name),
+            description=mark("timeline_member_joined_desc", name=member_name),
             emotion="positive",
         )
 
     def record_knowledge_acquired(self, knowledge_title: str):
         return self.add_event(
             event_type=TimelineEventType.KNOWLEDGE_ACQUIRED.value,
-            title=t("timeline_knowledge_acquired", title=knowledge_title),
+            title=mark("timeline_knowledge_acquired", title=knowledge_title),
             description=knowledge_title,
             emotion="positive",
         )
@@ -81,8 +81,8 @@ class TimelineManager:
     def record_diary_entry(self, diary_id: str, date: str, emotion: str = "neutral"):
         return self.add_event(
             event_type=TimelineEventType.DIARY_ENTRY.value,
-            title=t("timeline_diary", date=date),
-            description=t("timeline_diary_desc", id=diary_id),
+            title=mark("timeline_diary", date=date),
+            description=mark("timeline_diary_desc", id=diary_id),
             emotion=emotion,
         )
 
@@ -168,7 +168,7 @@ class TimelineManager:
                 "positive": "😊", "negative": "😔", "neutral": "📝",
             }.get(e.get("emotion", "neutral"), "📝")
 
-            lines.append(f"  {ts} {emotion_icon} {e['title']}")
+            lines.append(f"  {ts} {emotion_icon} {render(e['title'])}")
 
         return "\n".join(lines)
 

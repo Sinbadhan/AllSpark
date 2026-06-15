@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from allspark.core.i18n import t
+from allspark.core.i18n import render, t
 from allspark.core.models import ResourceType
 
 logger = logging.getLogger(__name__)
@@ -137,7 +137,7 @@ class DailyBriefing:
                 g.priority, "⚪"
             )
             pct = int(g.progress * 100)
-            lines.append(f"  {icon} {g.title} ({pct}%)")
+            lines.append(f"  {icon} {render(g.title)} ({pct}%)")
 
         return "\n".join(lines)
 
@@ -149,7 +149,7 @@ class DailyBriefing:
         lines = [t("briefing_urgent_tasks")]
         for task in active[:5]:
             status_icon = {"pending": "⬜", "in_progress": "🔄"}.get(task.status, "⬜")
-            lines.append(f"  {status_icon} {task.title}")
+            lines.append(f"  {status_icon} {render(task.title)}")
         return "\n".join(lines)
 
     def _knowledge_tip(self) -> str:

@@ -3,7 +3,7 @@ from datetime import datetime
 
 from allspark.core.config import PHASE_DESC_KEYS, PHASE_GOAL_KEYS
 from allspark.core.database import Database
-from allspark.core.i18n import t
+from allspark.core.i18n import mark, render, t
 from allspark.core.models import Task, TaskType
 from allspark.services.resource_manager import ResourceManager
 
@@ -119,8 +119,8 @@ class MissionPlanner:
                     task = Task(
                         id=f"task-urgent-water-{datetime.now().strftime('%H%M%S')}",
                         phase=0, priority=0,
-                        title=t("urgent_find_water"),
-                        description=t("urgent_find_water_desc"),
+                        title=mark("urgent_find_water"),
+                        description=mark("urgent_find_water_desc"),
                         status="pending",
                         created_at=now, updated_at=now
                     )
@@ -131,8 +131,8 @@ class MissionPlanner:
                     task = Task(
                         id=f"task-urgent-food-{datetime.now().strftime('%H%M%S')}",
                         phase=0, priority=1,
-                        title=t("urgent_find_food"),
-                        description=t("urgent_find_food_desc"),
+                        title=mark("urgent_find_food"),
+                        description=mark("urgent_find_food_desc"),
                         status="pending",
                         created_at=now, updated_at=now
                     )
@@ -261,13 +261,13 @@ class MissionPlanner:
             lines.append(t("current_tasks_label"))
             for task in main:
                 status_icon = {"pending": "⬜", "in_progress": "🔄", "completed": "✅", "failed": "❌"}.get(task.status, "❓")
-                lines.append(f"  {status_icon} [{task.id}] {task.title} (Phase {task.phase})")
+                lines.append(f"  {status_icon} [{task.id}] {render(task.title)} (Phase {task.phase})")
                 if task.description:
-                    lines.append(f"     {task.description}")
+                    lines.append(f"     {render(task.description)}")
         if side:
             lines.append(f"\n{'─' * 20}")
             lines.append(t("side_missions_label"))
             for task in side:
                 status_icon = {"pending": "◇", "in_progress": "▶", "completed": "✓", "failed": "✗"}.get(task.status, "?")
-                lines.append(f"  {status_icon} [{task.id}] {task.title}")
+                lines.append(f"  {status_icon} [{task.id}] {render(task.title)}")
         return "\n".join(lines)

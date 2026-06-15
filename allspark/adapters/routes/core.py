@@ -6,7 +6,7 @@ from fastapi import HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from allspark.adapters.routes.helpers import _get_service, error_response
-from allspark.core.i18n import set_language
+from allspark.core.i18n import render, set_language
 
 
 class ChatRequest:
@@ -291,8 +291,8 @@ def register_core_routes(app, check):
                 "id": t.id,
                 "phase": t.phase,
                 "priority": t.priority,
-                "title": t.title,
-                "description": t.description,
+                "title": render(t.title),
+                "description": render(t.description),
                 "status": t.status,
             }
             for t in active

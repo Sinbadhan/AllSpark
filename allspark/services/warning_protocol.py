@@ -14,7 +14,7 @@ from datetime import datetime
 
 from allspark.base_service import BaseService
 from allspark.core.database import Database
-from allspark.core.i18n import t
+from allspark.core.i18n import mark, t
 from allspark.core.models import ActionPlan, ResourceType
 
 logger = logging.getLogger(__name__)
@@ -182,7 +182,7 @@ class WarningProtocol(BaseService):
                 try:
                     timeline.add_event(
                         event_type="system_event",
-                        title=t("wp_plan_executing", title=plan.title),
+                        title=mark("wp_plan_executing", title=plan.title),
                         description=result,
                     )
                 except Exception as e:

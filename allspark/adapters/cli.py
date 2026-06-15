@@ -9,7 +9,7 @@ from allspark.adapters.init_wizard import run_init_wizard
 from allspark.bootstrap import ApplicationBootstrap
 from allspark.commands.dispatcher import CommandDispatcher
 from allspark.core.database import Database
-from allspark.core.i18n import init_language, t
+from allspark.core.i18n import init_language, mark, t
 from allspark.core.models import OperatingMode
 
 console = Console()
@@ -115,8 +115,8 @@ class SparkCLI:
         if timeline:
             timeline.add_event(
                 event_type="system_event",
-                title=t("spark_activated"),
-                description=t("spark_activated_desc"),
+                title=mark("spark_activated"),
+                description=mark("spark_activated_desc"),
             )
 
         goal_engine = self.container.get("goal_engine")

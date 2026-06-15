@@ -2,7 +2,7 @@ from rich.table import Table
 
 from allspark.commands.base import BaseCommand
 from allspark.container import ServiceContainer
-from allspark.core.i18n import t
+from allspark.core.i18n import render, t
 from allspark.core.models import OperatingMode, ResourceType
 
 
@@ -121,7 +121,7 @@ class StatusCommand(BaseCommand):
             task_table.add_column(t("field_status"), justify="center")
             for task in tasks:
                 status_icon = {"pending": "⬜", "in_progress": "🔄", "completed": "✅", "failed": "❌"}.get(task.status, "❓")
-                task_table.add_row(task.id, f"Phase {task.phase}", task.title, status_icon)
+                task_table.add_row(task.id, f"Phase {task.phase}", render(task.title), status_icon)
             self.console.print(task_table)
 
 
