@@ -201,6 +201,11 @@ class GoalEngine:
                         category: str = "survival", priority: str = "medium",
                         created_by: str = "", deadline: str = "",
                         milestone_descriptions: list[str] = None) -> Goal:
+        # B-14: Skip if an active goal with the same title already exists
+        for g in self.db.get_active_goals():
+            if g.title == title:
+                return g
+
         now = datetime.now()
         goal = Goal(
             id=f"manual-{uuid.uuid4().hex[:6]}",

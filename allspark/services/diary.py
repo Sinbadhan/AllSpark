@@ -21,6 +21,20 @@ class DiaryManager:
         entry_id = f"diary-{uuid.uuid4().hex[:8]}"
         date_str = now.strftime("%Y-%m-%d")
 
+        # B-13: Deduplicate — same date + content + emotion is a duplicate
+        existing = self.db.conn.execute(
+            "SELECT id FROM diary_entries WHERE date=? AND content=? AND emotion=?",
+            (date_str, content, emotion),
+        ).fetchone()
+        if existing:
+            return {
+                "id": existing["id"],
+                "date": date_str,
+                "emotion": emotion,
+                "duplicate": True,
+                "content_length": len(content),
+            }
+
         self.db.conn.execute(
             "INSERT OR REPLACE INTO diary_entries VALUES (?,?,?,?,?,?,?,?,?)",
             (

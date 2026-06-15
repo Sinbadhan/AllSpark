@@ -66,24 +66,38 @@ class StatusCommand(BaseCommand):
                 if is_offline:
                     res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
                     continue
-                avail = t("res_unit_hours", hours=r.estimated_remaining_hours)
-                status = "🟢" if r.estimated_remaining_hours > 72 else "🟡" if r.estimated_remaining_hours > 24 else "🔴"
+                if r.estimated_remaining_hours < 0:
+                    avail = t("res_sustained")
+                    status = "🟢"
+                else:
+                    avail = t("res_unit_hours", hours=r.estimated_remaining_hours)
+                    status = "🟢" if r.estimated_remaining_hours > 72 else "🟡" if r.estimated_remaining_hours > 24 else "🔴"
                 res_table.add_row(name, f"{r.current_amount:.0f}Wh", avail, status)
             elif r.type == ResourceType.WATER:
                 name = t("res_water_table")
                 if is_offline:
                     res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
                     continue
-                days = r.estimated_remaining_hours / 24.0
-                status = "🟢" if days > 7 else "🟡" if days > 3 else "🔴"
-                res_table.add_row(name, f"{r.current_amount:.1f}L", t("res_unit_days", days=days), status)
+                if r.estimated_remaining_hours < 0:
+                    avail = t("res_sustained")
+                    status = "🟢"
+                else:
+                    days = r.estimated_remaining_hours / 24.0
+                    avail = t("res_unit_days", days=days)
+                    status = "🟢" if days > 7 else "🟡" if days > 3 else "🔴"
+                res_table.add_row(name, f"{r.current_amount:.1f}L", avail, status)
             elif r.type == ResourceType.FOOD:
                 name = t("res_food_table")
                 if is_offline:
                     res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
                     continue
-                days = r.estimated_remaining_hours / 24.0
-                status = "🟢" if days > 14 else "🟡" if days > 5 else "🔴"
+                if r.estimated_remaining_hours < 0:
+                    avail = t("res_sustained")
+                    status = "🟢"
+                else:
+                    days = r.estimated_remaining_hours / 24.0
+                    avail = t("res_unit_days", days=days)
+                    status = "🟢" if days > 14 else "🟡" if days > 5 else "🔴"
                 res_table.add_row(name, f"{r.current_amount:.0f}kcal", t("res_unit_days", days=days), status)
             elif r.type == ResourceType.FIRE:
                 name = t("res_fire_table")

@@ -60,21 +60,25 @@ class ResourceManager:
         r.estimated_remaining_hours = self._estimate_remaining(r)
         self.db.upsert_resource(r)
 
+    # Sentinel: -1 means "sustained / cannot estimate" (consumption=0 or intake>=consumption).
+    # Display layer should render this as "--" or t("web_power_sustained").
+    SUSTAINED = -1.0
+
     def _estimate_remaining(self, r: Resource) -> float:
         if r.type == ResourceType.POWER:
             if r.daily_consumption <= r.daily_intake:
-                return 9999.0
+                return self.SUSTAINED
             net_hourly = (r.daily_consumption - r.daily_intake) / 24.0
             if net_hourly <= 0:
-                return 9999.0
+                return self.SUSTAINED
             return r.current_amount / net_hourly
         elif r.type in (ResourceType.WATER, ResourceType.FOOD):
             if r.daily_consumption <= 0:
-                return 9999.0
+                return self.SUSTAINED
             return (r.current_amount / r.daily_consumption) * 24.0
         elif r.type == ResourceType.FIRE:
             if r.daily_consumption <= 0:
-                return 9999.0
+                return self.SUSTAINED
             return r.current_amount * 24.0
         return 0.0
 

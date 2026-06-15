@@ -272,22 +272,25 @@ class PowerMonitor:
             "charging": reading.charging,
         }}
 
+    # Sentinel: -1 means "sustained / cannot estimate".
+    SUSTAINED = -1.0
+
     def _estimate_hours(self, power) -> float:
         from allspark.core.models import ResourceType
         if power.type == ResourceType.POWER:
             if power.daily_consumption <= power.daily_intake:
-                return 9999.0
+                return self.SUSTAINED
             net_hourly = (power.daily_consumption - power.daily_intake) / 24.0
             if net_hourly <= 0:
-                return 9999.0
+                return self.SUSTAINED
             return power.current_amount / net_hourly
         elif power.type in (ResourceType.WATER, ResourceType.FOOD):
             if power.daily_consumption <= 0:
-                return 9999.0
+                return self.SUSTAINED
             return (power.current_amount / power.daily_consumption) * 24.0
         elif power.type == ResourceType.FIRE:
             if power.daily_consumption <= 0:
-                return 9999.0
+                return self.SUSTAINED
             return power.current_amount * 24.0
         return 0.0
 

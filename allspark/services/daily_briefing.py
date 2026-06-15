@@ -87,7 +87,9 @@ class DailyBriefing:
                 continue
 
             remaining = ""
-            if r.estimated_remaining_hours > 0:
+            if r.estimated_remaining_hours < 0:
+                remaining = f" ({t('res_sustained')})"
+            elif r.estimated_remaining_hours > 0:
                 hours = r.estimated_remaining_hours
                 if hours < 24:
                     remaining = f" ({hours:.0f}h)"

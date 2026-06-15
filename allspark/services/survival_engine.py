@@ -40,8 +40,8 @@ class SurvivalAssessmentEngine:
         if not water_configured and not food_configured:
             return 1
 
-        water_days = (water.estimated_remaining_hours / 24.0) if water_configured else float("inf")
-        food_days = (food.estimated_remaining_hours / 24.0) if food_configured else float("inf")
+        water_days = (water.estimated_remaining_hours / 24.0 if water.estimated_remaining_hours >= 0 else float("inf")) if water_configured else float("inf")
+        food_days = (food.estimated_remaining_hours / 24.0 if food.estimated_remaining_hours >= 0 else float("inf")) if food_configured else float("inf")
 
         if water_days < 3 or food_days < 2:
             return 0
@@ -59,16 +59,16 @@ class SurvivalAssessmentEngine:
             if not self.resource_mgr.is_configured(r):
                 continue
             if r.type == ResourceType.WATER:
-                days = r.estimated_remaining_hours / 24.0
+                days = r.estimated_remaining_hours / 24.0 if r.estimated_remaining_hours >= 0 else float("inf")
                 if days < 3:
                     bottlenecks.append((t("resource_water"), days, t("res_unit_days", days=days).split()[0] if days < 1 else "d"))
             elif r.type == ResourceType.FOOD:
-                days = r.estimated_remaining_hours / 24.0
+                days = r.estimated_remaining_hours / 24.0 if r.estimated_remaining_hours >= 0 else float("inf")
                 if days < 5:
                     bottlenecks.append((t("resource_food"), days, "d"))
             elif r.type == ResourceType.POWER:
                 hours = r.estimated_remaining_hours
-                if hours < 24:
+                if hours >= 0 and hours < 24:
                     bottlenecks.append((t("resource_power"), hours, "h"))
             elif r.type == ResourceType.FIRE:
                 if r.current_amount < 10:
