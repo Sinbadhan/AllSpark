@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 
 from allspark.core.config import PERSONALITY_GREETING_KEYS, PERSONALITY_TEMPLATES
-from allspark.core.i18n import t
+from allspark.core.i18n import mark, t
 from allspark.core.models import OperatingMode, PersonalityMode
 from allspark.services.rule_engine import INTENT_KEYWORDS
 
@@ -59,17 +59,19 @@ class PersonalitySystem:
 
         if self.db:
             try:
-                self.db.conn.execute(
-                    "INSERT INTO timeline_events VALUES (?,?,?,?,?,?,?,?,?)",
-                    (
-                        f"personality-{datetime.now().strftime('%H%M%S')}",
-                        0, datetime.now().isoformat(), "system",
-                        f"Personality: {from_mode.value} → {to_mode.value}",
-                        f"Operating mode: {operating_mode.value}, Phase: {phase}",
-                        "neutral", "", 1,
-                    ),
+                from allspark.core.models import TimelineEvent
+                event = TimelineEvent(
+                    id=f"personality-{datetime.now().strftime('%H%M%S')}",
+                    day=0,
+                    timestamp=datetime.now().isoformat(),
+                    event_type="system",
+                    title=mark("timeline_personality_change", from_mode=from_mode.value, to_mode=to_mode.value),
+                    description=mark("timeline_personality_change_desc", operating_mode=operating_mode.value, phase=str(phase)),
+                    emotion="neutral",
+                    related_goal_id="",
+                    auto_generated=True,
                 )
-                self.db.conn.commit()
+                self.db.save_timeline_event(event)
             except Exception as e:
                 logger.warning(f"Failed to record personality transition to timeline: {e}")
 

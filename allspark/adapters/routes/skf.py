@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import HTTPException, Query
 
 from allspark.core.config import DEFAULT_DB_DIR
+from allspark.core.i18n import t
 from allspark.services.skf_manager import SKFPackage, export_skf, import_skf
 
 _SAFE_SKF_DIR = DEFAULT_DB_DIR / "skf"
@@ -17,7 +18,7 @@ def _safe_skf_path(path: str, *, must_exist: bool = False) -> str:
     safe_root = _SAFE_SKF_DIR.resolve()
     resolved = candidate.resolve(strict=False)
     if safe_root != resolved and safe_root not in resolved.parents:
-        raise HTTPException(400, "SKF paths must stay under ~/.allspark/skf")
+        raise HTTPException(400, t("error_skf_path_traversal"))
     if must_exist and not resolved.exists():
         raise HTTPException(404, "SKF file not found")
     resolved.parent.mkdir(parents=True, exist_ok=True)

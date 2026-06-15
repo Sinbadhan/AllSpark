@@ -441,6 +441,8 @@ table { border-collapse: collapse; width: 100%; }
 </div>
 
 <script>
+const I18N = {{ web_i18n | tojson }};
+const LANG = "{{ lang }}";
 const API = "";
 const FOOTER_I18N = {
   resources: "{{ t('web_footer_resources') }}",
@@ -468,7 +470,7 @@ updateFooter();
 setInterval(updateFooter, 30000);
 
 /* === Global: language toggle === */
-const CURRENT_LANG = "{{ lang }}";
+const CURRENT_LANG = LANG;
 async function toggleLanguage() {
   const target = CURRENT_LANG === "zh" ? "en" : "zh";
   try {

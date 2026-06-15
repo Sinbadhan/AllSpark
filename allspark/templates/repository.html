@@ -115,23 +115,23 @@ async function showSection(section) {
 
   switch(section) {
     case "knowledge":
-      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">history</span> KNOWLEDGE ENTRIES';
+      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">history</span> ' + I18N.web_tab_knowledge;
       await loadKnowledgeTable(contentEl);
       break;
     case "experience":
-      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">psychology</span> EXPERIENCE LOG';
+      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">psychology</span> ' + I18N.web_tab_experience;
       await loadExperienceTable(contentEl);
       break;
     case "models":
-      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">smart_toy</span> LLM MODELS';
+      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">smart_toy</span> ' + I18N.web_tab_llm;
       await loadModelsTable(contentEl);
       break;
     case "skf":
-      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">inventory_2</span> SKF PACKAGES';
+      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">inventory_2</span> ' + I18N.web_tab_skf;
       contentEl.innerHTML = renderSkfPanel();
       break;
     case "community":
-      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">groups</span> COMMUNITY';
+      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">groups</span> ' + I18N.web_tab_community;
       contentEl.innerHTML = renderCommunityPanel();
       loadCommunityData();
       break;
@@ -332,10 +332,10 @@ async function loadKnowledgeTable(el) {
   el.innerHTML = `<table class="w-full text-left border-collapse min-w-[600px]">
     <thead class="sticky top-0 bg-surface-container-high border-b border-surface-container-high z-10">
       <tr>
-        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">ID</th>
-        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">TITLE</th>
-        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">CATEGORY</th>
-        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">TIER</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_id}</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_title}</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_category}</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_tier}</th>
       </tr>
     </thead>
     <tbody class="text-sm">${allEntries.map(e => `
@@ -358,10 +358,10 @@ async function loadExperienceTable(el) {
   el.innerHTML = `<table class="w-full text-left border-collapse min-w-[600px]">
     <thead class="sticky top-0 bg-surface-container-high border-b border-surface-container-high z-10">
       <tr>
-        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">TIMESTAMP</th>
-        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">EVENT</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_when}</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_title}</th>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">OUTCOME</th>
-        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">STATUS</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_status}</th>
       </tr>
     </thead>
     <tbody class="text-sm">${data.map(e => `
@@ -382,9 +382,9 @@ async function loadModelsTable(el) {
   el.innerHTML = `<table class="w-full text-left border-collapse min-w-[600px]">
     <thead class="sticky top-0 bg-surface-container-high border-b border-surface-container-high z-10">
       <tr>
-        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">MODEL</th>
-        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">SIZE</th>
-        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">STATUS</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_module}</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_size}</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_status}</th>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary text-right">ACTION</th>
       </tr>
     </thead>
@@ -393,7 +393,7 @@ async function loadModelsTable(el) {
       <tr class="hover:bg-surface-variant transition-colors border-b border-surface-container-high">
         <td class="p-3 text-primary">${escHtml(m.name)}</td>
         <td class="p-3 text-secondary">${m.size_mb}MB</td>
-        <td class="p-3"><span class="text-success flex items-center gap-1"><span class="text-[10px]">●</span> DOWNLOADED</span></td>
+        <td class="p-3"><span class="text-success flex items-center gap-1"><span class="text-[10px]">●</span> ${I18N.web_system_llm_loaded}</span></td>
         <td class="p-3 text-right">--</td>
       </tr>
     `).join("")}

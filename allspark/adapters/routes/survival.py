@@ -3,7 +3,7 @@
 from fastapi import Request
 
 from allspark.adapters.routes.helpers import _get_service, error_response, service_unavailable
-from allspark.core.i18n import render
+from allspark.core.i18n import render, t
 
 
 def register_survival_routes(app, check):
@@ -12,7 +12,7 @@ def register_survival_routes(app, check):
         """Get all active goals"""
         goal_engine_svc = _get_service(app, 'goal_engine')
         if goal_engine_svc is None:
-            return {**service_unavailable("goal_engine", app=app), "goals": []}
+            return service_unavailable("goal_engine", app=app)
         goals = goal_engine_svc.get_active_goals()
         return {"goals": [
             {
@@ -31,7 +31,7 @@ def register_survival_routes(app, check):
             return service_unavailable("goal_engine", app=app)
         goal = goal_engine_svc.db.get_goal(goal_id)
         if not goal:
-            return error_response("Goal not found", detail=f"No goal with id '{goal_id}'.")
+            return error_response(t("error_goal_not_found"), detail=t("error_goal_not_found_detail", goal_id=goal_id))
         milestones = goal_engine_svc.db.get_milestones_by_goal(goal_id)
         return {
             "goal": {
@@ -166,7 +166,7 @@ def register_survival_routes(app, check):
         """Get GPS location"""
         gps_manager_svc = _get_service(app, 'gps_manager')
         if gps_manager_svc is None:
-            return {**service_unavailable("gps_manager", app=app), "location": None}
+            return service_unavailable("gps_manager", app=app)
         loc = gps_manager_svc.get_position()
         return {"location": loc}
 
@@ -188,7 +188,7 @@ def register_survival_routes(app, check):
         """Get nearby POIs"""
         gps_manager_svc = _get_service(app, 'gps_manager')
         if gps_manager_svc is None:
-            return {**service_unavailable("gps_manager", app=app), "nearby": []}
+            return service_unavailable("gps_manager", app=app)
         nearby = [p for p in gps_manager_svc.annotate_pois_with_distance() if p.get("distance_km", 0) <= radius_km]
         return {"nearby": nearby}
 
@@ -288,7 +288,7 @@ def register_survival_routes(app, check):
             body = {}
         answers = body.get("answers", body) if isinstance(body, dict) else {}
         if not isinstance(answers, dict):
-            return error_response("Answers must be a dict", detail="Use {qid: score, ...}")
+            return error_response(t("error_answers_must_be_dict"), detail=t("error_answers_format"))
         try:
             normalized = {k: int(v) for k, v in answers.items()}
         except (TypeError, ValueError):

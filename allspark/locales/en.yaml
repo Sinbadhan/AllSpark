@@ -1558,3 +1558,82 @@ web_community_assess: Org assessment
 web_community_recommend: Role suggestions
 web_trade_title: Knowledge trade
 web_trade_no_trades: No trades yet
+timeline_personality_change: 'Personality: {from_mode} → {to_mode}'
+timeline_personality_change_desc: 'Operating mode: {operating_mode}, Phase: {phase}'
+
+# ─── Web JS strings (B-10) ──────────────────────────────────────────────
+web_no_experiences: No experiences yet
+web_no_modules: No modules loaded
+web_th_phase: PHASE
+web_th_task: TASK
+web_th_status: STATUS
+web_th_module: MODULE
+web_th_version: VERSION
+web_th_id: ID
+web_th_title: TITLE
+web_th_category: CATEGORY
+web_th_tier: TIER
+web_th_label: LABEL
+web_th_size: SIZE
+web_th_when: WHEN
+web_steps: Steps
+web_warnings: Warnings
+web_loading_model: Loading model...
+web_model_loaded: 'Model loaded: {name}'
+web_model_error: 'Error: {msg}'
+web_tab_llm: LLM MODELS
+web_tab_skf: SKF PACKAGES
+web_tab_community: COMMUNITY
+web_tab_timeline: Timeline
+web_alert_ok: OK
+web_error_occurred: An error occurred
+web_power_sustained: Sustained
+web_power_unknown: Unknown
+
+# ─── Psychology state labels (B-15) ─────────────────────────────────────
+psych_stable: Stable
+psych_crisis: Crisis
+psych_companion: Companion
+psych_multiplayer: Multiplayer
+psych_renaissance: Renaissance
+psych_lonely: Lonely
+psych_stressed: Stressed
+psych_anxious: Anxious
+psych_calm: Calm
+
+# ─── API error messages (B-19 / routes) ─────────────────────────────────
+error_goal_not_found: Goal not found
+error_goal_not_found_detail: No goal with id '{goal_id}'.
+error_answers_must_be_dict: Answers must be a dict
+error_answers_format: 'Use {qid: score, ...}'
+error_cannot_remove_member: Cannot remove member
+error_member_not_found_detail: No member with id '{member_id}'.
+error_cannot_assign_role: Cannot assign role
+error_invalid_member_or_role: No member '{member_id}' or invalid role '{role}'.
+error_conflict_not_found: Conflict not found
+error_conflict_not_found_detail: No conflict '{conflict_id}'.
+error_cannot_resolve_conflict: Cannot resolve conflict
+error_trade_id_required: trade_id required
+error_trade_id_format: Body must contain {trade_id}.
+error_trade_not_found: Trade not found
+error_trade_not_found_detail: No trade '{trade_id}'.
+error_not_initialized: AllSpark not initialized. Complete setup first.
+error_service_not_available: Service '{name}' not available
+error_module_not_found: Module '{name}' does not exist
+error_module_unsupported: Hardware does not support '{name}'
+error_module_disabled: Module '{name}' has been disabled
+error_module_available: Module '{name}' is supported but not yet loaded
+error_skf_path_traversal: SKF paths must stay under ~/.allspark/skf
+error_gps_invalid: Invalid GPS coordinates
+error_gps_lat_range: Latitude must be between -90 and 90
+error_gps_lng_range: Longitude must be between -180 and 180
+timeline_selfharm_intervention: Self-harm intervention Level 3 triggered
+timeline_selfharm_intervention_desc: Highest authority notified
+psych_stable: Stable
+psych_crisis: Crisis
+psych_companion: Companion
+psych_multiplayer: Multiplayer
+psych_renaissance: Renaissance
+psych_lonely: Lonely
+psych_stressed: Stressed
+psych_distressed: Distressed

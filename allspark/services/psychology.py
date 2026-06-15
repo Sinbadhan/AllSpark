@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from allspark.core.i18n import t
+from allspark.core.i18n import mark, t
 
 logger = logging.getLogger(__name__)
 
@@ -192,7 +192,7 @@ class PsychologyTracker:
         lines = [
             t("psych_status_header"),
             "━━━━━━━━━━━━━━━━━━━━━━━━━━",
-            t("psych_overall_state", icon=icon, state=assessment['overall_state']),
+            t("psych_overall_state", icon=icon, state=t(f"psych_{assessment['overall_state']}")),
             t("psych_loneliness_index", pct=loneliness_pct),
             t("psych_stress_index", pct=stress_pct),
             t("psych_needs_intervention", yes=t("field_yes") if assessment['needs_intervention'] else t("field_no")),
@@ -272,17 +272,19 @@ class PsychologyTracker:
             result["recorded"] = True
 
             try:
-                self.db.conn.execute(
-                    "INSERT INTO timeline_events VALUES (?,?,?,?,?,?,?,?,?)",
-                    (
-                        f"intervention-{datetime.now().strftime('%H%M%S')}",
-                        0, datetime.now().isoformat(), "system",
-                        "Self-harm intervention Level 3 triggered",
-                        "Highest authority notified",
-                        "critical", "", 1,
-                    ),
+                from allspark.core.models import TimelineEvent
+                event = TimelineEvent(
+                    id=f"intervention-{datetime.now().strftime('%H%M%S')}",
+                    day=0,
+                    timestamp=datetime.now().isoformat(),
+                    event_type="system",
+                    title=mark("timeline_selfharm_intervention"),
+                    description=mark("timeline_selfharm_intervention_desc"),
+                    emotion="critical",
+                    related_goal_id="",
+                    auto_generated=True,
                 )
-                self.db.conn.commit()
+                self.db.save_timeline_event(event)
             except Exception as e:
                 logger.warning(f"Failed to record self-harm Level 3 intervention to timeline: {e}")
 

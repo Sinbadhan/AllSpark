@@ -48,7 +48,7 @@
 <div class="subtab-bar" style="margin-bottom:12px;">
   <button class="sub-tab active" data-exectab="tasks" onclick="switchExecTab('tasks')">{{ t('web_active_tasks') }}</button>
   <button class="sub-tab" data-exectab="goals" onclick="switchExecTab('goals')">{{ t('web_goals_tab') }}</button>
-  <button class="sub-tab" data-exectab="timeline" onclick="switchExecTab('timeline')">Timeline</button>
+  <button class="sub-tab" data-exectab="timeline" onclick="switchExecTab('timeline')">{{ t('web_tab_timeline') }}</button>
 </div>
 
 <div id="exectab-tasks" class="exec-tab-content">
@@ -73,11 +73,7 @@
 
 {% block scripts %}
 <script>
-const I18N = {
-  empty: "{{ t('web_executions_empty') }}",
-  promoted: "{{ t('web_executions_promoted') }}",
-  raw: "{{ t('web_executions_raw') }}",
-};
+// I18N is provided globally by base.html (contains all web_ prefixed keys)
 const TASK_I18N = {
   start: "{{ t('web_task_action_start') }}",
   complete: "{{ t('web_task_action_complete') }}",
@@ -108,7 +104,7 @@ async function refreshExecutions() {
     document.getElementById("stat-failed").textContent = failed;
 
     if (!tasks.length && !experiences.length) {
-      container.innerHTML = '<div class="text-secondary text-sm p-4 text-center">' + I18N.empty + '</div>';
+      container.innerHTML = '<div class="text-secondary text-sm p-4 text-center">' + I18N.web_executions_empty + '</div>';
       return;
     }
 
@@ -160,7 +156,7 @@ async function refreshExecutions() {
               <div class="font-semibold text-on-surface text-sm">${escHtml(e.event)}</div>
               <div class="text-on-surface-variant text-xs mt-0.5">${escHtml(e.outcome)}</div>
             </div>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${e.promoted ? 'bg-success-dim text-success' : 'bg-surface-container text-secondary'}">${e.promoted ? I18N.promoted : I18N.raw}</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${e.promoted ? 'bg-success-dim text-success' : 'bg-surface-container text-secondary'}">${e.promoted ? I18N.web_executions_promoted : I18N.web_executions_raw}</span>
           </div>
         </div>`;
       }).join("");
@@ -215,7 +211,7 @@ async function refreshGoals() {
   const el = document.getElementById("goal-list");
   try {
     const goals = await api("/api/goals");
-    if (!goals.length) { el.textContent = GOAL_I18N.empty; return; }
+    if (!goals.length) { el.textContent = GOAL_I18N.web_executions_empty; return; }
     el.innerHTML = goals.map(g => `
       <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:10px;margin-bottom:8px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">

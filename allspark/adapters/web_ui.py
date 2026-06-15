@@ -11,7 +11,7 @@ from allspark.adapters.routes.helpers import http_exception_handler
 from allspark.bootstrap import ApplicationBootstrap
 from allspark.core.config import DEFAULT_DB_DIR
 from allspark.core.database import Database
-from allspark.core.i18n import get_language, init_language, set_language, t
+from allspark.core.i18n import MESSAGES, get_language, init_language, set_language, t
 from allspark.infrastructure.hardware import compute_feature_flags, detect_hardware
 from allspark.infrastructure.module_loader import ModuleRegistry
 
@@ -35,8 +35,15 @@ _jinja_env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)), autoescape
 def _render_template(name: str, **context) -> str:
     template = _jinja_env.get_template(name)
     context.setdefault("t", t)
-    context.setdefault("lang", get_language())
+    lang = get_language()
+    context.setdefault("lang", lang)
     context.setdefault("version", __version__)
+    # Inject all web_ prefixed i18n keys as window.I18N for JS-side usage
+    web_i18n = {
+        k: v for k, v in MESSAGES.get(lang, {}).items()
+        if k.startswith("web_") or k.startswith("error_") or k.startswith("psych_")
+    }
+    context.setdefault("web_i18n", web_i18n)
     return template.render(**context)
 
 

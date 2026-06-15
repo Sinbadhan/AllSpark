@@ -308,7 +308,7 @@ const I18N = {
 };
 
 function i18n(key, params) {
-  const lang = selectedLang || "en";
+  const lang = selectedLang || (navigator.language.startsWith('zh') ? 'zh' : 'en');
   let text = (I18N[lang] && I18N[lang][key]) || (I18N.en[key]) || key;
   if (params) {
     for (const [k, v] of Object.entries(params)) {

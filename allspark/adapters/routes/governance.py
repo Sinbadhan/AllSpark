@@ -10,6 +10,7 @@ which silently 422'd and made the form do nothing.
 from fastapi import Query, Request
 
 from allspark.adapters.routes.helpers import _require_service, error_response
+from allspark.core.i18n import t
 
 
 async def _safe_json(request: Request) -> dict:
@@ -63,7 +64,7 @@ def register_governance_routes(app, check):
                                   detail="Body must contain {member_id: '<id>'}.")
         if gov_svc.remove_member(member_id):
             return {"status": "ok"}
-        return error_response("Cannot remove member", detail=f"No member with id '{member_id}'.")
+        return error_response(t("error_cannot_remove_member"), detail=t("error_member_not_found_detail", member_id=member_id))
 
     @app.post("/api/governance/member/role")
     async def governance_member_role(request: Request):
@@ -82,7 +83,7 @@ def register_governance_routes(app, check):
             domains = _split_csv(domains)
         if gov_svc.assign_role(member_id, role, list(domains) if domains is not None else None):
             return {"status": "ok"}
-        return error_response("Cannot assign role", detail=f"No member '{member_id}' or invalid role '{role}'.")
+        return error_response(t("error_cannot_assign_role"), detail=t("error_invalid_member_or_role", member_id=member_id, role=role))
 
     @app.get("/api/governance/members")
     async def governance_members():
@@ -116,7 +117,7 @@ def register_governance_routes(app, check):
         gov_svc = _require_service(app, 'governance')
         result = gov_svc.calculate_survival_value(member_id)
         if not result:
-            return error_response("Member not found", detail=f"No member with id '{member_id}'.")
+            return error_response(t("error_cannot_remove_member"), detail=t("error_member_not_found_detail", member_id=member_id))
         return result
 
     @app.post("/api/governance/conflict/create")
@@ -146,7 +147,7 @@ def register_governance_routes(app, check):
                                   detail="Body must contain {conflict_id: '<id>'}.")
         result = gov_svc.mediate_conflict(conflict_id)
         if not result:
-            return error_response("Conflict not found", detail=f"No conflict '{conflict_id}'.")
+            return error_response(t("error_conflict_not_found"), detail=t("error_conflict_not_found_detail", conflict_id=conflict_id))
         return result
 
     @app.post("/api/governance/conflict/resolve")
@@ -161,7 +162,7 @@ def register_governance_routes(app, check):
         resolution = body.get("resolution") or "Resolved"
         if gov_svc.resolve_conflict(conflict_id, resolution):
             return {"status": "ok"}
-        return error_response("Cannot resolve conflict", detail=f"No conflict '{conflict_id}'.")
+        return error_response(t("error_cannot_resolve_conflict"), detail=t("error_conflict_not_found_detail", conflict_id=conflict_id))
 
     @app.get("/api/governance/conflicts")
     async def governance_conflicts():
@@ -207,7 +208,7 @@ def register_governance_routes(app, check):
         body = await _safe_json(request)
         trade_id = (body.get("trade_id") or "").strip()
         if not trade_id:
-            return error_response("trade_id required", detail="Body must contain {trade_id}.")
+            return error_response(t("error_trade_id_required"), detail=t("error_trade_id_format"))
         return trade_svc.accept_trade(trade_id)
 
     @app.post("/api/trade/reject")
@@ -217,10 +218,10 @@ def register_governance_routes(app, check):
         body = await _safe_json(request)
         trade_id = (body.get("trade_id") or "").strip()
         if not trade_id:
-            return error_response("trade_id required", detail="Body must contain {trade_id}.")
+            return error_response(t("error_trade_id_required"), detail=t("error_trade_id_format"))
         if trade_svc.reject_trade(trade_id):
             return {"status": "ok"}
-        return error_response("Trade not found", detail=f"No trade '{trade_id}'.")
+        return error_response(t("error_trade_not_found"), detail=t("error_trade_not_found_detail", trade_id=trade_id))
 
     @app.get("/api/trade/evaluate")
     async def trade_evaluate(trade_id: str = Query(...)):
@@ -228,7 +229,7 @@ def register_governance_routes(app, check):
         trade_svc = _require_service(app, 'trade_engine')
         result = trade_svc.evaluate_trade(trade_id)
         if not result:
-            return error_response("Trade not found", detail=f"No trade '{trade_id}'.")
+            return error_response(t("error_trade_not_found"), detail=t("error_trade_not_found_detail", trade_id=trade_id))
         return result
 
     @app.get("/api/trade/list")

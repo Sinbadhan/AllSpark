@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from allspark.core.i18n import render, t
+from allspark.core.i18n import mark, render, t
 from allspark.core.models import ResourceType
 
 logger = logging.getLogger(__name__)
@@ -162,9 +162,15 @@ class DailyBriefing:
         if not entry:
             return ""
 
+        from allspark.core.i18n import get_language
+        current_lang = get_language()
+        lang_tag = ""
+        if entry.language and entry.language != current_lang:
+            lang_tag = f" [{entry.language}]"
+
         return (
             f"{t('briefing_daily_knowledge')}\n"
-            f"  [{entry.category}] {entry.title}\n"
+            f"  [{entry.category}]{lang_tag} {entry.title}\n"
             f"  {entry.summary}"
         )
 
@@ -202,6 +208,9 @@ class DailyBriefing:
     def _pick_knowledge_entry(self, target_categories: list[str]):
         import random
 
+        from allspark.core.i18n import get_language
+        current_lang = get_language()
+
         all_cats = self.db.get_distinct_knowledge_categories()
         if not all_cats:
             return None
@@ -209,6 +218,11 @@ class DailyBriefing:
         for cat_keyword in target_categories:
             for cat in all_cats:
                 if cat_keyword.lower() in cat.lower():
+                    # Try current language first
+                    entries = self.db.get_knowledge_by_category(cat, language=current_lang)
+                    if entries:
+                        return random.choice(entries)
+                    # Fallback: any language
                     entries = self.db.get_knowledge_by_category(cat)
                     if entries:
                         return random.choice(entries)
@@ -226,6 +240,14 @@ class DailyBriefing:
             for sub in subcats:
                 if cat_keyword.lower() in sub.lower():
                     rows = self.db.conn.execute(
+                        "SELECT * FROM knowledge WHERE subcategory = ? AND language = ?",
+                        (sub, current_lang),
+                    ).fetchall()
+                    if rows:
+                        entries = [self.db._row_to_entry(r) for r in rows]
+                        return random.choice(entries)
+                    # Fallback: any language
+                    rows = self.db.conn.execute(
                         "SELECT * FROM knowledge WHERE subcategory = ?", (sub,)
                     ).fetchall()
                     if rows:
@@ -233,7 +255,9 @@ class DailyBriefing:
                         return random.choice(entries)
 
         cat = random.choice(all_cats)
-        entries = self.db.get_knowledge_by_category(cat)
+        entries = self.db.get_knowledge_by_category(cat, language=current_lang)
+        if not entries:
+            entries = self.db.get_knowledge_by_category(cat)
         if entries:
             return random.choice(entries)
 
@@ -306,18 +330,16 @@ class DailyBriefing:
         day = self._calculate_day_number()
         content = self.generate()
 
-        self.db.conn.execute(
-            "INSERT OR REPLACE INTO timeline_events VALUES (?,?,?,?,?,?,?,?,?)",
-            (
-                f"briefing-{now.strftime('%Y%m%d')}",
-                day,
-                now.isoformat(),
-                "system_event",
-                t("briefing_title", date=now.strftime("%Y-%m-%d")),
-                content[:500],
-                "neutral",
-                "",
-                1,
-            ),
+        from allspark.core.models import TimelineEvent
+        event = TimelineEvent(
+            id=f"briefing-{now.strftime('%Y%m%d')}",
+            day=day,
+            timestamp=now.isoformat(),
+            event_type="system_event",
+            title=mark("briefing_title", date=now.strftime("%Y-%m-%d")),
+            description=content[:500],
+            emotion="neutral",
+            related_goal_id="",
+            auto_generated=True,
         )
-        self.db.conn.commit()
+        self.db.save_timeline_event(event)

@@ -457,17 +457,30 @@ class Database:
             entries.append(self._row_to_entry(r))
         return entries
 
-    def get_knowledge_by_category(self, category: str, subcategory: str = "") -> list[KnowledgeEntry]:
-        if subcategory:
-            rows = self.conn.execute(
-                "SELECT * FROM knowledge WHERE category=? AND subcategory=? ORDER BY priority",
-                (category, subcategory)
-            ).fetchall()
+    def get_knowledge_by_category(self, category: str, subcategory: str = "",
+                                    language: str = "") -> list[KnowledgeEntry]:
+        if language:
+            if subcategory:
+                rows = self.conn.execute(
+                    "SELECT * FROM knowledge WHERE category=? AND subcategory=? AND language=? ORDER BY priority",
+                    (category, subcategory, language)
+                ).fetchall()
+            else:
+                rows = self.conn.execute(
+                    "SELECT * FROM knowledge WHERE category=? AND language=? ORDER BY priority",
+                    (category, language)
+                ).fetchall()
         else:
-            rows = self.conn.execute(
-                "SELECT * FROM knowledge WHERE category=? ORDER BY priority",
-                (category,)
-            ).fetchall()
+            if subcategory:
+                rows = self.conn.execute(
+                    "SELECT * FROM knowledge WHERE category=? AND subcategory=? ORDER BY priority",
+                    (category, subcategory)
+                ).fetchall()
+            else:
+                rows = self.conn.execute(
+                    "SELECT * FROM knowledge WHERE category=? ORDER BY priority",
+                    (category,)
+                ).fetchall()
         results = []
         for r in rows:
             results.append(self._row_to_entry(r))
@@ -910,7 +923,7 @@ class Database:
 
     def save_timeline_event(self, event):
         self.conn.execute(
-            "INSERT OR REPLACE INTO timeline_events VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT OR REPLACE INTO timeline_events VALUES (?,?,?,?,?,?,?,?,?)",
             (event.id, event.day, event.timestamp, event.event_type,
              event.title, event.description, event.emotion,
              event.related_goal_id, 1 if event.auto_generated else 0)

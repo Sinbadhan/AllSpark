@@ -221,20 +221,7 @@
 
 {% block scripts %}
 <script>
-const I18N = {
-  loaded: "{{ t('web_system_llm_loaded') }}",
-  not_loaded: "{{ t('web_system_llm_unloaded') }}",
-  no_modules: "{{ t('web_system_no_modules') }}",
-  hw_cpu: "{{ t('web_system_hw_cpu') }}",
-  hw_cores: "{{ t('web_system_hw_cores') }}",
-  hw_ram: "{{ t('web_system_hw_ram') }}",
-  hw_storage: "{{ t('web_system_hw_storage') }}",
-  hw_gpu: "{{ t('web_system_hw_gpu') }}",
-  hw_os: "{{ t('web_system_hw_os') }}",
-  errors: "{{ t('web_system_errors') }}",
-  warnings: "{{ t('web_system_warnings') }}",
-  restart: "{{ t('web_system_restart') }}",
-};
+// I18N is provided globally by base.html (contains all web_ prefixed keys)
 
 function escHtml(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
 
@@ -260,8 +247,8 @@ async function refreshSystem() {
       intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> CRITICAL';
       intStatus.style.color = "var(--critical)";
     }
-    document.getElementById("error-count").textContent = I18N.errors + ": " + errorCount;
-    document.getElementById("warning-count").textContent = I18N.warnings + ": " + warningCount;
+    document.getElementById("error-count").textContent = I18N.web_system_errors + ": " + errorCount;
+    document.getElementById("warning-count").textContent = I18N.web_system_warnings + ": " + warningCount;
 
     const modTable = document.getElementById("module-table");
     if (modules && Object.keys(modules).length) {
@@ -279,24 +266,24 @@ async function refreshSystem() {
           '<td style="text-align:right;">' + action + '</td></tr>';
       }).join("");
     } else {
-      modTable.innerHTML = '<tr><td colspan="5" class="text-secondary" style="padding:12px;">' + I18N.no_modules + '</td></tr>';
+      modTable.innerHTML = '<tr><td colspan="5" class="text-secondary" style="padding:12px;">' + I18N.web_system_no_modules + '</td></tr>';
     }
 
     const llmDetail = document.getElementById("llm-detail");
     if (llm) {
-      llmDetail.innerHTML = '<div style="margin-bottom:8px;"><strong>' + I18N.errors + ' / status:</strong> <span class="' + (llm.loaded ? 'text-success' : 'text-secondary') + '">' + (llm.loaded ? I18N.loaded : I18N.not_loaded) + '</span></div>' +
+      llmDetail.innerHTML = '<div style="margin-bottom:8px;"><strong>' + I18N.web_system_errors + ' / status:</strong> <span class="' + (llm.loaded ? 'text-success' : 'text-secondary') + '">' + (llm.loaded ? I18N.web_system_llm_loaded : I18N.web_system_llm_unloaded) + '</span></div>' +
         (llm.model ? '<div><strong>Model:</strong> ' + escHtml(llm.model) + '</div>' : '');
     }
 
     const hwDetail = document.getElementById("hw-detail");
     if (hw) {
       const rows = [
-        [I18N.hw_cpu, hw.cpu_model || hw.cpu_arch],
-        [I18N.hw_cores, hw.cpu_cores],
-        [I18N.hw_ram, hw.ram_total_gb + ' GB'],
-        [I18N.hw_storage, hw.storage_available_gb + ' / ' + hw.storage_total_gb + ' GB'],
-        [I18N.hw_gpu, hw.gpu_info || 'None'],
-        [I18N.hw_os, hw.os_name],
+        [I18N.web_system_hw_cpu, hw.cpu_model || hw.cpu_arch],
+        [I18N.web_system_hw_cores, hw.cpu_cores],
+        [I18N.web_system_hw_ram, hw.ram_total_gb + ' GB'],
+        [I18N.web_system_hw_storage, hw.storage_available_gb + ' / ' + hw.storage_total_gb + ' GB'],
+        [I18N.web_system_hw_gpu, hw.gpu_info || 'None'],
+        [I18N.web_system_hw_os, hw.os_name],
       ];
       hwDetail.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
         rows.map(([l, v]) =>
@@ -309,8 +296,8 @@ async function refreshSystem() {
 async function loadLLM() {
   try {
     const data = await api("/api/llm/load", {method: "POST"});
-    document.getElementById("llm-detail").innerHTML = '<span class="text-success">' + I18N.loaded + ': ' + escHtml(data.model || "unknown") + '</span>';
-  } catch(e) { document.getElementById("llm-detail").innerHTML = '<span class="text-critical">Error: ' + escHtml(e.message) + '</span>'; }
+    document.getElementById("llm-detail").innerHTML = '<span class="text-success">' + I18N.web_model_loaded.replace('{name}', escHtml(data.model || "unknown")) + '</span>';
+  } catch(e) { document.getElementById("llm-detail").innerHTML = '<span class="text-critical">' + I18N.web_model_error.replace('{msg}', escHtml(e.message)) + '</span>'; }
 }
 
 refreshSystem();
@@ -332,7 +319,7 @@ async function refreshSnapshots() {
     const list = data.snapshots || [];
     const el = document.getElementById("snapshot-list");
     if (!list.length) { el.textContent = BACKUP_I18N.no_snapshots; return; }
-    el.innerHTML = '<table class="mini-table" style="width:100%;"><thead><tr><th>LABEL</th><th>SIZE</th><th>WHEN</th><th></th></tr></thead><tbody>' +
+    el.innerHTML = '<table class="mini-table" style="width:100%;"><thead><tr><th>' + I18N.web_th_label + '</th><th>' + I18N.web_th_size + '</th><th>' + I18N.web_th_when + '</th><th></th></tr></thead><tbody>' +
       list.map(s => {
         const label = (s.label || s.name || "").replace(/"/g, '&quot;');
         const size = s.size_bytes ? Math.round(s.size_bytes/1024) + ' KB' : '--';
@@ -365,7 +352,7 @@ async function restoreSnapshot(label) {
     const r = await fetch("/api/preserve/restore?label=" + encodeURIComponent(label) + "&confirm=RESET", {method: "POST"});
     const data = await r.json();
     if (data.status === "error") { alert(data.error + ': ' + (data.detail || '')); return; }
-    alert("OK: " + JSON.stringify(data));
+    alert(I18N.web_alert_ok + ": " + JSON.stringify(data));
     refreshSnapshots();
   } catch(e) { alert(BACKUP_I18N.err + ': ' + e); }
 }

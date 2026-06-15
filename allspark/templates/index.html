@@ -276,13 +276,7 @@
 
 {% block scripts %}
 <script>
-const I18N = {
-  empty_tasks: "{{ t('web_no_active_tasks') }}",
-  no_results: "{{ t('web_no_results') }}",
-  unconfigured: "{{ t('web_unconfigured') }}",
-  set_amount_hint: "{{ t('web_set_amount_hint') }}",
-  remaining_unknown: "{{ t('web_remaining_unknown') }}",
-};
+// I18N is provided globally by base.html (contains all web_ prefixed keys)
 const resourceIcons = {
   water: "water_drop", food: "restaurant", fire: "local_fire_department",
   shelter: "home", medical: "medical_services", power: "bolt",
@@ -337,15 +331,15 @@ async function refreshDashboard() {
     const editBtn = `<span class="material-symbols-outlined" style="font-size:14px;cursor:pointer;color:var(--secondary);" title="${RES_I18N.edit_label}" onclick="event.stopPropagation();openResourceEdit('${r.type}',${r.amount||0},${r.daily_consumption||0},${r.daily_intake||0})">edit</span>`;
     if (!r.configured) {
       return '<div class="resource-card offline span-4">' +
-        '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value text-secondary">' + I18N.unconfigured + ' ' + editBtn + '</span></div>' +
+        '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value text-secondary">' + I18N.web_unconfigured + ' ' + editBtn + '</span></div>' +
         '<div style="font-size:24px;font-weight:700;color:var(--secondary);">--</div>' +
-        '<div class="card-remaining">' + I18N.set_amount_hint + '</div></div>';
+        '<div class="card-remaining">' + I18N.web_set_amount_hint + '</div></div>';
     }
     const hasEstimate = r.remaining_hours !== null && r.remaining_hours !== undefined;
     const pct = hasEstimate ? Math.min(100, Math.max(0, (r.remaining_hours / 168) * 100)) : 0;
     const statusColor = !hasEstimate ? "#888" : pct > 70 ? "#44cc44" : pct > 30 ? "#ffaa00" : "#ff4444";
     const statusText = !hasEstimate ? "UNKNOWN" : pct > 70 ? "OK" : pct > 30 ? "LOW" : "CRITICAL";
-    const remainingText = hasEstimate ? ('~' + Math.round(r.remaining_hours) + 'h remaining') : I18N.remaining_unknown;
+    const remainingText = hasEstimate ? ('~' + Math.round(r.remaining_hours) + 'h remaining') : I18N.web_remaining_unknown;
     return '<div class="resource-card span-4">' +
       '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + r.amount + r.unit + ' ' + editBtn + '</span></div>' +
       '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + statusColor + '"></div></div>' +
@@ -372,11 +366,11 @@ async function refreshDashboard() {
   const tlist = document.getElementById("task-list");
   if (tasks.length) {
     tlist.innerHTML = '<table class="mini-table"><thead><tr>' +
-      '<th>PHASE</th><th>TASK</th><th>STATUS</th></tr></thead><tbody>' +
+      '<th>' + I18N.web_th_phase + '</th><th>' + I18N.web_th_task + '</th><th>' + I18N.web_th_status + '</th></tr></thead><tbody>' +
       tasks.slice(0, 8).map(t => '<tr><td class="text-primary font-semibold">P' + t.phase + '</td><td>' + escHtml(t.title) + '</td><td class="text-success">' + t.status + '</td></tr>').join("") +
       '</tbody></table>';
   } else {
-    tlist.innerHTML = '<div class="text-secondary text-sm p-3">' + I18N.empty_tasks + '</div>';
+    tlist.innerHTML = '<div class="text-secondary text-sm p-3">' + I18N.web_no_active_tasks + '</div>';
   }
 }
 
@@ -387,7 +381,7 @@ async function searchKnowledge() {
   const results = await api("/api/knowledge/search?q=" + encodeURIComponent(q));
   const container = document.getElementById("knowledge-results");
   document.getElementById("knowledge-detail").style.display = "none";
-  if (!results.length) { container.innerHTML = '<div class="text-secondary text-sm p-4 text-center">No results found</div>'; return; }
+  if (!results.length) { container.innerHTML = '<div class="text-secondary text-sm p-4 text-center">' + I18N.web_no_results + '</div>'; return; }
   container.innerHTML = results.map(e =>
     '<div class="kb-entry" onclick="showKnowledge(\'' + e.id + '\')">' +
     '<div class="entry-title">' + escHtml(e.title) + '</div>' +
@@ -405,10 +399,10 @@ async function showKnowledge(id) {
   html += '<div class="kb-detail"><h3>' + escHtml(entry.title) + '</h3>';
   html += '<p class="text-sm mb-3">' + escHtml(entry.summary) + '</p>';
   if (entry.steps && entry.steps.length) {
-    html += '<div class="section-label">Steps</div><ol style="list-style:decimal inside;font-size:13px;">' + entry.steps.map(s => '<li>' + escHtml(s) + '</li>').join("") + '</ol>';
+    html += '<div class="section-label">' + I18N.web_steps + '</div><ol style="list-style:decimal inside;font-size:13px;">' + entry.steps.map(s => '<li>' + escHtml(s) + '</li>').join("") + '</ol>';
   }
   if (entry.warnings && entry.warnings.length) {
-    html += '<div class="section-label warn">Warnings</div>' + entry.warnings.map(w => '<div class="text-warn text-sm">· ' + escHtml(w) + '</div>').join("");
+    html += '<div class="section-label warn">' + I18N.web_warnings + '</div>' + entry.warnings.map(w => '<div class="text-warn text-sm">· ' + escHtml(w) + '</div>').join("");
   }
   html += '<div class="kb-meta">Tier ' + entry.priority + ' · ' + entry.category + '/' + entry.subcategory + ' · ' + entry.verification + ' · ' + entry.source + '</div></div>';
   container.innerHTML = html;
@@ -433,7 +427,7 @@ async function sendChat() {
     const data = await api("/api/chat", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({message: msg}) });
     document.querySelector("#chat-messages .chat-msg.system:last-child .bubble").textContent = data.response;
   } catch(e) {
-    document.querySelector("#chat-messages .chat-msg.system:last-child .bubble").textContent = "Error: " + e.message;
+    document.querySelector("#chat-messages .chat-msg.system:last-child .bubble").textContent = I18N.web_model_error.replace('{msg}', e.message);
   }
   const c = document.getElementById("chat-messages"); c.scrollTop = c.scrollHeight;
 }
@@ -451,7 +445,7 @@ document.getElementById("chat-input").addEventListener("keydown", e => { if (e.k
 async function refreshExperience() {
   const data = await api("/api/experience");
   const list = document.getElementById("exp-list");
-  if (!data.length) { list.innerHTML = '<div class="text-secondary text-sm">No experiences yet</div>'; return; }
+  if (!data.length) { list.innerHTML = '<div class="text-secondary text-sm">' + I18N.web_no_experiences + '</div>'; return; }
   list.innerHTML = data.map(e =>
     '<div class="exp-item"><div class="exp-text"><div class="exp-title">' + escHtml(e.event) + '</div><div class="exp-sub">' + escHtml(e.outcome) + '</div></div>' +
     '<span class="exp-badge ' + (e.promoted ? 'promoted' : 'raw') + '">' + (e.promoted ? "PROMOTED" : "RAW") + '</span></div>'
@@ -482,19 +476,19 @@ async function logExperience() {
 async function refreshModules() {
   const data = await api("/api/modules");
   const list = document.getElementById("module-list");
-  if (!data || !data.length) { list.innerHTML = '<div class="text-secondary text-sm">No modules loaded</div>'; return; }
-  list.innerHTML = '<table class="mini-table"><thead><tr><th>MODULE</th><th>STATUS</th><th>VERSION</th></tr></thead><tbody>' +
+  if (!data || !data.length) { list.innerHTML = '<div class="text-secondary text-sm">' + I18N.web_no_modules + '</div>'; return; }
+  list.innerHTML = '<table class="mini-table"><thead><tr><th>' + I18N.web_th_module + '</th><th>' + I18N.web_th_status + '</th><th>' + I18N.web_th_version + '</th></tr></thead><tbody>' +
     data.map(m => '<tr><td class="text-primary font-semibold">' + escHtml(m.name) + '</td><td class="text-success">' + (m.status || "active") + '</td><td>' + (m.version || "--") + '</td></tr>').join("") +
     '</tbody></table>';
 }
 
 async function loadLLM() {
   const statusEl = document.getElementById("llm-status");
-  statusEl.textContent = "Loading model...";
+  statusEl.textContent = I18N.web_loading_model;
   try {
     const data = await api("/api/llm/load", {method: "POST"});
-    statusEl.innerHTML = '<span class="text-success">Model loaded: ' + escHtml(data.model || "unknown") + '</span>';
-  } catch(e) { statusEl.innerHTML = '<span class="text-critical">Error: ' + escHtml(e.message) + '</span>'; }
+    statusEl.innerHTML = '<span class="text-success">' + I18N.web_model_loaded.replace('{name}', escHtml(data.model || "unknown")) + '</span>';
+  } catch(e) { statusEl.innerHTML = '<span class="text-critical">' + I18N.web_model_error.replace('{msg}', escHtml(e.message)) + '</span>'; }
 }
 
 // Init

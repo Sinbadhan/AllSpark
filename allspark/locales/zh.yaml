@@ -1495,3 +1495,82 @@ web_community_assess: 组织评估
 web_community_recommend: 角色推荐
 web_trade_title: 知识交易
 web_trade_no_trades: 暂无交易
+timeline_personality_change: 人格转变：{from_mode} → {to_mode}
+timeline_personality_change_desc: 运行模式：{operating_mode}，阶段：{phase}
+
+# ─── Web JS strings (B-10) ──────────────────────────────────────────────
+web_no_experiences: 暂无经验记录
+web_no_modules: 暂无模块加载
+web_th_phase: 阶段
+web_th_task: 任务
+web_th_status: 状态
+web_th_module: 模块
+web_th_version: 版本
+web_th_id: ID
+web_th_title: 标题
+web_th_category: 分类
+web_th_tier: 等级
+web_th_label: 标签
+web_th_size: 大小
+web_th_when: 时间
+web_steps: 步骤
+web_warnings: 警告
+web_loading_model: 加载模型中...
+web_model_loaded: 模型已加载：{name}
+web_model_error: 错误：{msg}
+web_tab_llm: LLM 模型
+web_tab_skf: SKF 包
+web_tab_community: 社区
+web_tab_timeline: 时间线
+web_alert_ok: 成功
+web_error_occurred: 发生错误
+web_power_sustained: 持续可用
+web_power_unknown: 未知
+
+# ─── Psychology state labels (B-15) ─────────────────────────────────────
+psych_stable: 稳定
+psych_crisis: 危机
+psych_companion: 陪伴
+psych_multiplayer: 多人协作
+psych_renaissance: 复兴
+psych_lonely: 孤独
+psych_stressed: 压力
+psych_anxious: 焦虑
+psych_calm: 平静
+
+# ─── API error messages (B-19 / routes) ─────────────────────────────────
+error_goal_not_found: 目标未找到
+error_goal_not_found_detail: 未找到 ID 为 '{goal_id}' 的目标
+error_answers_must_be_dict: 答案必须是字典
+error_answers_format: '请使用 {qid: score, ...} 格式'
+error_cannot_remove_member: 无法移除成员
+error_member_not_found_detail: 未找到 ID 为 '{member_id}' 的成员
+error_cannot_assign_role: 无法分配角色
+error_invalid_member_or_role: 成员 '{member_id}' 不存在或角色 '{role}' 无效
+error_conflict_not_found: 冲突未找到
+error_conflict_not_found_detail: 未找到冲突 '{conflict_id}'
+error_cannot_resolve_conflict: 无法解决冲突
+error_trade_id_required: trade_id 必填
+error_trade_id_format: 请求体必须包含 {trade_id}
+error_trade_not_found: 交易未找到
+error_trade_not_found_detail: 未找到交易 '{trade_id}'
+error_not_initialized: AllSpark 尚未初始化，请先完成设置
+error_service_not_available: '{name}'' 服务不可用'
+error_module_not_found: 模块 '{name}' 不存在
+error_module_unsupported: 硬件不支持 '{name}'
+error_module_disabled: 模块 '{name}' 已被禁用
+error_module_available: 模块 '{name}' 已支持但未加载
+error_skf_path_traversal: SKF 路径必须在 ~/.allspark/skf 目录下
+error_gps_invalid: GPS 坐标无效
+error_gps_lat_range: 纬度需在 -90 到 90 之间
+error_gps_lng_range: 经度需在 -180 到 180 之间
+timeline_selfharm_intervention: 自我伤害干预 Level 3 已触发
+timeline_selfharm_intervention_desc: 最高权限已通知
+psych_stable: 稳定
+psych_crisis: 危机
+psych_companion: 陪伴
+psych_multiplayer: 多人协作
+psych_renaissance: 复兴
+psych_lonely: 孤独
+psych_stressed: 压力
+psych_distressed: 痛苦
