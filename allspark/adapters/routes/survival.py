@@ -177,9 +177,20 @@ def register_survival_routes(app, check):
         if gps_manager_svc is None:
             return service_unavailable("gps_manager", app=app)
         data = await request.json()
-        lat = data.get("latitude", 0)
-        lon = data.get("longitude", 0)
-        alt = data.get("altitude", 0)
+        # Accept both canonical ("latitude"/"longitude") and shorthand ("lat"/"lng").
+        lat = data.get("latitude", data.get("lat", 0))
+        lon = data.get("longitude", data.get("lng", 0))
+        alt = data.get("altitude", data.get("alt", 0))
+        # Type validation — reject non-numeric values early.
+        try:
+            lat = float(lat)
+            lon = float(lon)
+            alt = float(alt)
+        except (TypeError, ValueError):
+            return error_response(
+                t("error_gps_invalid"),
+                detail="Latitude and longitude must be numeric values.",
+            )
         if not (-90 <= lat <= 90):
             return error_response(t("error_gps_invalid"), detail=t("error_gps_lat_range"))
         if not (-180 <= lon <= 180):
@@ -233,6 +244,15 @@ def register_survival_routes(app, check):
         # initialized, but the FastAPI app keeps `app.state.initialized=True`
         # in process memory. Without this re-sync, the user lands on the
         # dashboard instead of the init wizard after L3.
+        if not ok:
+            reasons = result.get("reason") or []
+            reason_text = reasons[0] if isinstance(reasons, list) and reasons else str(reasons) if reasons else "Reset rejected"
+            return error_response(
+                "Reset rejected",
+                detail=reason_text,
+                status=409,
+            )
+
         if reset_level == ResetLevel.FACTORY and ok:
             container, db = check()
             app.state.initialized = db.is_initialized()

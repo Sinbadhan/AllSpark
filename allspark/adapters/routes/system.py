@@ -40,7 +40,8 @@ def register_system_routes(app, check):
     async def system_set_language(request: Request):
         container, db = check()
         body = await _safe_json(request)
-        lang = (body.get("lang") or "").strip().lower()
+        # Accept both "language" (canonical) and "lang" (shorthand).
+        lang = (body.get("language") or body.get("lang") or "").strip().lower()
         if lang not in _VALID_LANGS:
             return error_response(
                 "Invalid language",

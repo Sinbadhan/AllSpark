@@ -136,6 +136,9 @@ def register_core_routes(app, check):
     async def get_by_category(category: str, subcategory: str = ""):
         container, db = check()
         if container.get("knowledge"):
+            cats = container.get("knowledge").get_categories()
+            if category not in cats:
+                raise HTTPException(404, f"Unknown category: '{category}'")
             entries = container.get("knowledge").get_by_category(category, subcategory)
             return [
                 {
