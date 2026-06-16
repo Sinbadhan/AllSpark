@@ -167,7 +167,7 @@ input { font-family: inherit; }
       <div class="brand-icon">A</div>
       <h1>ALLSPARK</h1>
     </div>
-    <p class="init-subtitle">Offline AI Survival System<span class="cursor-blink">_</span></p>
+    <p class="init-subtitle"><span data-i18n="web_init_subtitle">Offline AI Survival System</span><span class="cursor-blink">_</span></p>
 
     <div class="step-dots">
       <div class="step-dot" id="dot-1"></div>
@@ -237,7 +237,8 @@ input { font-family: inherit; }
 
 <script>
 let currentStep = 0;
-let selectedLang = "";
+// SHA-12: detect browser language as default so the wizard isn't English-by-accident.
+let selectedLang = (navigator.language && navigator.language.toLowerCase().startsWith('zh')) ? 'zh' : 'en';
 let hwData = null;
 
 const I18N = {
@@ -272,6 +273,19 @@ const I18N = {
     hw_label_gpu: "GPU",
     hw_label_os: "系统",
     model_size_speed: "大小：约 {size}GB | 速度：{speed} tokens/s",
+    web_init_subtitle: "离线 AI 生存系统",
+    web_init_default_survivor_name: "幸存者",
+    web_init_dl_error_prefix: "错误",
+    web_init_dl_failed: "失败",
+    web_init_dl_progress_error: "查询下载进度失败",
+    web_init_complete_error: "错误",
+    web_init_tier_phantom: "幻影 (2GB)",
+    web_init_tier_minimum: "最低 (4GB)",
+    web_init_tier_recommended: "推荐 (8GB)",
+    web_init_tier_comfortable: "舒适 (16GB)",
+    web_init_tier_flagship: "旗舰 (32GB+)",
+    web_init_tier_unknown: "未知",
+    web_init_value_none: "无",
   },
   en: {
     web_init_hw_detect: "Hardware Detection",
@@ -304,6 +318,19 @@ const I18N = {
     hw_label_gpu: "GPU",
     hw_label_os: "OS",
     model_size_speed: "Size: ~{size}GB | Speed: {speed} tokens/s",
+    web_init_subtitle: "Offline AI Survival System",
+    web_init_default_survivor_name: "Survivor",
+    web_init_dl_error_prefix: "Error",
+    web_init_dl_failed: "Failed",
+    web_init_dl_progress_error: "Error checking progress",
+    web_init_complete_error: "Error",
+    web_init_tier_phantom: "Phantom (2GB)",
+    web_init_tier_minimum: "Minimum (4GB)",
+    web_init_tier_recommended: "Recommended (8GB)",
+    web_init_tier_comfortable: "Comfortable (16GB)",
+    web_init_tier_flagship: "Flagship (32GB+)",
+    web_init_tier_unknown: "Unknown",
+    web_init_value_none: "None",
   }
 };
 
@@ -344,8 +371,20 @@ function goStep(n) {
     if (i + 1 === n) dot.classList.add("active");
   });
   if (n === 1) loadHardware();
+  if (n === 2) {
+    // SHA-12: pre-highlight the detected default language and enable Next.
+    const detected = selectedLang;
+    if (detected) {
+      document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("selected"));
+      const btn = document.getElementById("lang-" + detected);
+      if (btn) btn.classList.add("selected");
+      const next = document.getElementById("btn-step2-next");
+      if (next) next.disabled = false;
+    }
+  }
   if (n === 3) loadModels();
   applyI18n();
+  document.documentElement.lang = selectedLang === "zh" ? "zh-CN" : "en";
 }
 
 async function loadHardware() {
@@ -355,15 +394,15 @@ async function loadHardware() {
   document.getElementById("hw-info").classList.remove("hidden");
 
   const tierMap = {
-    phantom: ["Phantom (2GB)", "tier-phantom"],
-    minimum: ["Minimum (4GB)", "tier-minimum"],
-    recommended: ["Recommended (8GB)", "tier-recommended"],
-    comfortable: ["Comfortable (16GB)", "tier-comfortable"],
-    flagship: ["Flagship (32GB+)", "tier-flagship"],
+    phantom: ["web_init_tier_phantom", "tier-phantom"],
+    minimum: ["web_init_tier_minimum", "tier-minimum"],
+    recommended: ["web_init_tier_recommended", "tier-recommended"],
+    comfortable: ["web_init_tier_comfortable", "tier-comfortable"],
+    flagship: ["web_init_tier_flagship", "tier-flagship"],
   };
-  const [tierName, tierClass] = tierMap[data.tier] || ["Unknown", "tier-minimum"];
+  const [tierKey, tierClass] = tierMap[data.tier] || ["web_init_tier_unknown", "tier-minimum"];
   const badge = document.getElementById("hw-tier-badge");
-  badge.textContent = tierName;
+  badge.textContent = i18n(tierKey);
   badge.className = "tier-badge " + tierClass;
 
   document.getElementById("hw-grid").innerHTML = [
@@ -371,7 +410,7 @@ async function loadHardware() {
     [i18n("hw_label_cores"), data.cpu_cores],
     [i18n("hw_label_ram"), data.ram_total_gb + " GB"],
     [i18n("hw_label_storage"), data.storage_available_gb + " / " + data.storage_total_gb + " GB"],
-    [i18n("hw_label_gpu"), data.gpu_info || "None"],
+    [i18n("hw_label_gpu"), data.gpu_info || i18n("web_init_value_none")],
     [i18n("hw_label_os"), data.os_name],
   ].map(([l, v]) => '<div class="hw-item"><div class="label">' + l + '</div><div class="value">' + v + '</div></div>').join("");
 
@@ -431,14 +470,14 @@ async function downloadModel(modelName) {
   try {
     const result = await api("/api/init/download?model_name=" + encodeURIComponent(modelName), {method: "POST"});
     if (result.status === "error") {
-      document.getElementById("dl-status").textContent = "Error: " + (result.message || "Download failed");
-      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> Failed';
+      document.getElementById("dl-status").textContent = i18n("web_init_dl_error_prefix") + ": " + (result.message || i18n("web_init_dl_error"));
+      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> ' + i18n("web_init_dl_failed");
       btn.disabled = false;
       return;
     }
   } catch(e) {
-    document.getElementById("dl-status").textContent = "Error: " + e.message;
-    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> Failed';
+    document.getElementById("dl-status").textContent = i18n("web_init_dl_error_prefix") + ": " + e.message;
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> ' + i18n("web_init_dl_failed");
     btn.disabled = false;
     return;
   }
@@ -456,7 +495,7 @@ async function downloadModel(modelName) {
       } else if (prog.status === "error") {
         clearInterval(checkInterval);
         document.getElementById("dl-status").innerHTML = i18n("web_init_dl_error") + '<br><span style="font-size:10px;">' + i18n("web_init_dl_manual_hint") + '</span>';
-        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> Failed';
+        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> ' + i18n("web_init_dl_failed");
         btn.disabled = false;
       } else if (prog.status === "downloading") {
         const pct = Math.min(95, (prog.current_bytes / sizeBytes) * 100);
@@ -466,7 +505,7 @@ async function downloadModel(modelName) {
       }
     } catch(e) {
       clearInterval(checkInterval);
-      document.getElementById("dl-status").textContent = "Error checking progress";
+      document.getElementById("dl-status").textContent = i18n("web_init_dl_progress_error");
     }
   }, 2000);
 }
@@ -476,14 +515,14 @@ async function completeInit() {
   btn.disabled = true;
   btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:16px;">sync</span> ' + i18n("web_init_initializing");
 
-  const name = document.getElementById("survivor-name").value.trim() || "Survivor";
+  const name = document.getElementById("survivor-name").value.trim() || i18n("web_init_default_survivor_name");
   const lang = selectedLang || "zh";
 
   try {
     await api("/api/init/complete?language=" + lang + "&survivor_name=" + encodeURIComponent(name), {method: "POST"});
     window.location.reload();
   } catch(e) {
-    btn.textContent = "Error: " + e.message;
+    btn.textContent = i18n("web_init_complete_error") + ": " + e.message;
     btn.disabled = false;
   }
 }

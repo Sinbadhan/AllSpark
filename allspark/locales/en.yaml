@@ -1638,3 +1638,56 @@ psych_lonely: Lonely
 psych_stressed: Stressed
 psych_distressed: Distressed
 res_sustained: Sustained
+# === Bug fix: i18n bugs (SHA-12/13/15/20/22) ===
+web_init_subtitle: Offline AI Survival System
+web_init_default_survivor_name: Survivor
+web_init_dl_error_prefix: 'Error'
+web_init_dl_failed: Failed
+web_init_dl_progress_error: Error checking progress
+web_init_complete_error: Error
+web_init_tier_phantom: Phantom (2GB)
+web_init_tier_minimum: Minimum (4GB)
+web_init_tier_recommended: Recommended (8GB)
+web_init_tier_comfortable: Comfortable (16GB)
+web_init_tier_flagship: Flagship (32GB+)
+web_init_tier_unknown: Unknown
+web_init_value_none: None
+web_phase_label: 'PHASE {phase}'
+web_mode_prefix: 'MODE'
+web_status_unknown: UNKNOWN
+web_status_ok: OK
+web_status_low: LOW
+web_status_critical: CRITICAL
+web_remaining_hours_fmt: '~{h}h remaining'
+web_kb_back: Back
+web_kb_meta_tier_fmt: 'Tier {tier} · {category}/{subcategory}'
+web_kb_meta_full_fmt: 'Tier {tier} · {category}/{subcategory} · {verification} · {source}'
+web_kb_summary_short_fmt: '{summary}...'
+web_th_outcome: OUTCOME
+web_th_action: ACTION
+web_repo_promoted: PROMOTED
+web_repo_raw: RAW
+web_repo_available: AVAILABLE
+web_repo_download_btn: DOWNLOAD
+web_system_integrity_stable: STABLE
+web_system_integrity_degraded: DEGRADED
+web_system_integrity_critical: CRITICAL
+web_system_module_loaded: loaded
+web_system_module_available: available
+web_system_module_disabled: disabled
+web_system_status_label: status
+web_system_model_label: Model
+web_system_health_status_label: Health status
+web_skf_path_required: Please enter the SKF file path
+error_skf_file_not_found: SKF file not found
+error_skf_export_failed: 'SKF export failed: {detail}'
+error_skf_import_failed: 'SKF import failed: {detail}'
+error_skf_info_failed: 'SKF info read failed: {detail}'
+error_knowledge_entry_not_found: Knowledge entry not found
+briefing_knowledge_lang_fallback: '[no {lang} version]'
+resource_shelter: Shelter
+resource_medical: Medical
+resource_communication: Communication
+web_status_warning: WARNING
+lang_zh: Chinese
+lang_en: English

@@ -238,13 +238,13 @@ async function refreshSystem() {
     document.getElementById("integrity-value").textContent = integrity.toFixed(0) + "%";
     const intStatus = document.getElementById("integrity-status");
     if (integrity > 90) {
-      intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">check_circle</span> STABLE';
+      intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">check_circle</span> ' + I18N.web_system_integrity_stable;
       intStatus.style.color = "var(--success)";
     } else if (integrity > 60) {
-      intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">warning</span> DEGRADED';
+      intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">warning</span> ' + I18N.web_system_integrity_degraded;
       intStatus.style.color = "var(--warning)";
     } else {
-      intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> CRITICAL';
+      intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> ' + I18N.web_system_integrity_critical;
       intStatus.style.color = "var(--critical)";
     }
     document.getElementById("error-count").textContent = I18N.web_system_errors + ": " + errorCount;
@@ -255,7 +255,9 @@ async function refreshSystem() {
       const entries = Array.isArray(modules) ? modules : Object.values(modules);
       modTable.innerHTML = entries.map(m => {
         const statusColor = m.loaded ? "var(--success)" : m.can_load ? "var(--warning)" : "var(--secondary)";
-        const statusText = m.loaded ? "loaded" : m.can_load ? "available" : "disabled";
+        const statusText = m.loaded
+          ? I18N.web_system_module_loaded
+          : m.can_load ? I18N.web_system_module_available : I18N.web_system_module_disabled;
         const flagOn = m.flag_enabled !== false; // unknown -> assume on
         const action = flagOn
           ? `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" onclick="moduleAction('${escHtml(m.name)}','disable')">${MODULE_I18N.disable}</button>`
@@ -271,8 +273,8 @@ async function refreshSystem() {
 
     const llmDetail = document.getElementById("llm-detail");
     if (llm) {
-      llmDetail.innerHTML = '<div style="margin-bottom:8px;"><strong>' + I18N.web_system_errors + ' / status:</strong> <span class="' + (llm.loaded ? 'text-success' : 'text-secondary') + '">' + (llm.loaded ? I18N.web_system_llm_loaded : I18N.web_system_llm_unloaded) + '</span></div>' +
-        (llm.model ? '<div><strong>Model:</strong> ' + escHtml(llm.model) + '</div>' : '');
+      llmDetail.innerHTML = '<div style="margin-bottom:8px;"><strong>' + I18N.web_system_health_status_label + ':</strong> <span class="' + (llm.loaded ? 'text-success' : 'text-secondary') + '">' + (llm.loaded ? I18N.web_system_llm_loaded : I18N.web_system_llm_unloaded) + '</span></div>' +
+        (llm.model ? '<div><strong>' + I18N.web_system_model_label + ':</strong> ' + escHtml(llm.model) + '</div>' : '');
     }
 
     const hwDetail = document.getElementById("hw-detail");
@@ -282,7 +284,7 @@ async function refreshSystem() {
         [I18N.web_system_hw_cores, hw.cpu_cores],
         [I18N.web_system_hw_ram, hw.ram_total_gb + ' GB'],
         [I18N.web_system_hw_storage, hw.storage_available_gb + ' / ' + hw.storage_total_gb + ' GB'],
-        [I18N.web_system_hw_gpu, hw.gpu_info || 'None'],
+        [I18N.web_system_hw_gpu, hw.gpu_info || I18N.web_init_value_none],
         [I18N.web_system_hw_os, hw.os_name],
       ];
       hwDetail.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +

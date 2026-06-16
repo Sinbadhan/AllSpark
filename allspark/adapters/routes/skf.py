@@ -20,7 +20,7 @@ def _safe_skf_path(path: str, *, must_exist: bool = False) -> str:
     if safe_root != resolved and safe_root not in resolved.parents:
         raise HTTPException(400, t("error_skf_path_traversal"))
     if must_exist and not resolved.exists():
-        raise HTTPException(404, "SKF file not found")
+        raise HTTPException(404, t("error_skf_file_not_found"))
     resolved.parent.mkdir(parents=True, exist_ok=True)
     return str(resolved)
 
@@ -33,8 +33,10 @@ def register_skf_routes(app, check):
             path = _safe_skf_path(path, must_exist=True)
             pkg = SKFPackage.import_from_file(path)
             return {"status": "ok", "stats": pkg.get_stats(), "validation_errors": pkg.validate()}
+        except HTTPException:
+            raise
         except Exception as e:
-            raise HTTPException(400, str(e))
+            raise HTTPException(400, t("error_skf_info_failed", detail=str(e)))
 
     @app.post("/api/skf/export")
     async def skf_export(path: str = Query(...), category: str = Query(""), language: str = Query("")):
@@ -46,7 +48,7 @@ def register_skf_routes(app, check):
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(500, str(e))
+            raise HTTPException(500, t("error_skf_export_failed", detail=str(e)))
 
     @app.post("/api/skf/import")
     async def skf_import(path: str = Query(...), verify: bool = Query(True)):
@@ -60,7 +62,7 @@ def register_skf_routes(app, check):
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(500, str(e))
+            raise HTTPException(500, t("error_skf_import_failed", detail=str(e)))
 
     @app.get("/api/verify/stats")
     async def verify_stats():
@@ -75,7 +77,7 @@ def register_skf_routes(app, check):
         container, db = check()
         entry = db.get_knowledge(kid)
         if not entry:
-            raise HTTPException(404, "Entry not found")
+            raise HTTPException(404, t("error_knowledge_entry_not_found"))
         verifier = container.require("knowledge_verifier")
         report = verifier.verify_entry(entry)
         if entry.verification != report.level:

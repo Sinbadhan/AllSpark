@@ -41,7 +41,11 @@ def _render_template(name: str, **context) -> str:
     # Inject all web_ prefixed i18n keys as window.I18N for JS-side usage
     web_i18n = {
         k: v for k, v in MESSAGES.get(lang, {}).items()
-        if k.startswith("web_") or k.startswith("error_") or k.startswith("psych_")
+        if k.startswith("web_")
+        or k.startswith("error_")
+        or k.startswith("psych_")
+        or k.startswith("mode_")
+        or k.startswith("resource_")
     }
     context.setdefault("web_i18n", web_i18n)
     return template.render(**context)

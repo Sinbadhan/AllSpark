@@ -1575,3 +1575,56 @@ psych_lonely: 孤独
 psych_stressed: 压力
 psych_distressed: 痛苦
 res_sustained: 持续可用
+# === Bug fix: i18n bugs (SHA-12/13/15/20/22) ===
+web_init_subtitle: 离线 AI 生存系统
+web_init_default_survivor_name: 幸存者
+web_init_dl_error_prefix: '错误'
+web_init_dl_failed: 失败
+web_init_dl_progress_error: 查询下载进度失败
+web_init_complete_error: 错误
+web_init_tier_phantom: 幻影 (2GB)
+web_init_tier_minimum: 最低 (4GB)
+web_init_tier_recommended: 推荐 (8GB)
+web_init_tier_comfortable: 舒适 (16GB)
+web_init_tier_flagship: 旗舰 (32GB+)
+web_init_tier_unknown: 未知
+web_init_value_none: 无
+web_phase_label: 'PHASE {phase}'
+web_mode_prefix: '运行模式'
+web_status_unknown: 未知
+web_status_ok: 正常
+web_status_low: 偏低
+web_status_critical: 危急
+web_remaining_hours_fmt: '~{h}h 剩余'
+web_kb_back: 返回
+web_kb_meta_tier_fmt: 'Tier {tier} · {category}/{subcategory}'
+web_kb_meta_full_fmt: 'Tier {tier} · {category}/{subcategory} · {verification} · {source}'
+web_kb_summary_short_fmt: '{summary}...'
+web_th_outcome: 结果
+web_th_action: 操作
+web_repo_promoted: 已推广
+web_repo_raw: 原始
+web_repo_available: 可下载
+web_repo_download_btn: 下载
+web_system_integrity_stable: 稳定
+web_system_integrity_degraded: 退化
+web_system_integrity_critical: 危急
+web_system_module_loaded: 已加载
+web_system_module_available: 可用
+web_system_module_disabled: 已禁用
+web_system_status_label: 状态
+web_system_model_label: 模型
+web_system_health_status_label: 健康状态
+web_skf_path_required: 请输入 SKF 文件路径
+error_skf_file_not_found: 未找到 SKF 文件
+error_skf_export_failed: 'SKF 导出失败：{detail}'
+error_skf_import_failed: 'SKF 导入失败：{detail}'
+error_skf_info_failed: 'SKF 信息读取失败：{detail}'
+error_knowledge_entry_not_found: 知识条目不存在
+briefing_knowledge_lang_fallback: '[暂无{lang}版]'
+resource_shelter: 庇护所
+resource_medical: 医疗
+resource_communication: 通讯
+web_status_warning: 警告
+lang_zh: 中文
+lang_en: 英文

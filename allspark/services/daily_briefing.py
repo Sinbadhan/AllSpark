@@ -164,11 +164,16 @@ class DailyBriefing:
         if not entry:
             return ""
 
-        from allspark.core.i18n import get_language
+        from allspark.core.i18n import MESSAGES, get_language
         current_lang = get_language()
+        # SHA-15: when knowledge entry comes from a different language than
+        # the user's, surface a localized "[no <lang> version]" hint instead
+        # of a bare language code. The data-layer fix (full multi-language
+        # tier1-3 YAML coverage) lives in a separate, larger task.
         lang_tag = ""
         if entry.language and entry.language != current_lang:
-            lang_tag = f" [{entry.language}]"
+            lang_label = MESSAGES.get(current_lang, {}).get(f"lang_{current_lang}", current_lang)
+            lang_tag = f" {t('briefing_knowledge_lang_fallback', lang=lang_label)}"
 
         return (
             f"{t('briefing_daily_knowledge')}\n"
