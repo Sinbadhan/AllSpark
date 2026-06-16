@@ -1,9 +1,8 @@
 # Typing Debt Roadmap
 
-> **Status:** v1.0 ships with the historical mypy error-code allowlist
-> intact. CI runs mypy and fails on any *new* category not on the
-> allowlist, but ten existing categories are silenced. This document
-> records the actual debt and the agreed-upon repayment order.
+> **Status:** `union-attr` (37 errors) paid off 2026-06-16. Nine categories
+> remain silenced. CI runs mypy and fails on any *new* category not on the
+> allowlist. This document records the remaining debt and the repayment order.
 
 ## 1. Current allowlist
 
@@ -11,7 +10,7 @@
 
 ```
 arg-type, assignment, attr-defined, call-overload, index,
-list-item, operator, return-value, union-attr, var-annotated
+list-item, operator, return-value, var-annotated
 ```
 
 `ignore_missing_imports = true`, `no_implicit_optional = false`,
@@ -28,7 +27,7 @@ mypy allspark/ --ignore-missing-imports 2>&1 | grep "error:"
 
 | Error code        | Count | Notes |
 |-------------------|------:|-------|
-| `union-attr`      |    37 | Optional attribute access without narrowing |
+| ~~`union-attr`~~  |   ~~37~~ | ✅ Paid off 2026-06-16 |
 | `attr-defined`    |    32 | Mostly third-party objects with no stubs |
 | `operator`        |    22 | `int + None`, `str + bytes`, etc. |
 | `arg-type`        |    21 | Wider input types than callee accepts |
@@ -38,7 +37,7 @@ mypy allspark/ --ignore-missing-imports 2>&1 | grep "error:"
 | `return-value`    |     6 | Return type does not match signature |
 | `call-overload`   |     4 | Wrong overload selected |
 | `list-item`       |     2 | Heterogeneous list elements |
-| **Total**         | **157** | |
+| **Total**         | **120** | (was 157 before union-attr payoff) |
 
 Hot spots:
 
@@ -57,18 +56,18 @@ Hot spots:
 Easiest first — categories that usually require local annotation
 fixes rather than a structural rethink:
 
-| Step | Code            | Why this order |
-|-----:|-----------------|----------------|
-|  1   | `list-item`     | 2 errors, mechanical fix |
-|  2   | `var-annotated` | 7 errors, add literal annotations |
-|  3   | `return-value`  | 6 errors, signature alignment |
-|  4   | `call-overload` | 4 errors, often a missing cast |
-|  5   | `index`         | 10 errors, narrow Optional with `assert`/guard |
-|  6   | `assignment`    | 16 errors, refactor variable reuse |
-|  7   | `arg-type`      | 21 errors, narrow callers or widen callee |
-|  8   | `operator`      | 22 errors, often Optional arithmetic |
-|  9   | `attr-defined`  | 32 errors, may need `cast` or stubs |
-| 10   | `union-attr`    | 37 errors, the deepest debt; tackle last |
+| Step | Code            | Why this order | Status |
+|-----:|-----------------|----------------|--------|
+|  1   | `list-item`     | 2 errors, mechanical fix | |
+|  2   | `var-annotated` | 7 errors, add literal annotations | |
+|  3   | `return-value`  | 6 errors, signature alignment | |
+|  4   | `call-overload` | 4 errors, often a missing cast | |
+|  5   | `index`         | 10 errors, narrow Optional with `assert`/guard | |
+|  6   | `assignment`    | 16 errors, refactor variable reuse | |
+|  7   | `arg-type`      | 21 errors, narrow callers or widen callee | |
+|  8   | `operator`      | 22 errors, often Optional arithmetic | |
+|  9   | `attr-defined`  | 32 errors, may need `cast` or stubs | |
+|  ~~10~~   | ~~`union-attr`~~    | ~~37 errors, the deepest debt; tackle last~~ | ✅ Done 2026-06-16 |
 
 ## 4. Schedule
 
