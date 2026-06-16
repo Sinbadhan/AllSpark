@@ -107,9 +107,8 @@ class ResourceManager:
         changed = new_mode != old_mode
         if changed:
             state.mode = new_mode.value
-            state.power_remaining_hours = self.db.get_resource(
-                ResourceType.POWER
-            ).estimated_remaining_hours if self.db.get_resource(ResourceType.POWER) else 0
+            power = self.db.get_resource(ResourceType.POWER)
+            state.power_remaining_hours = power.estimated_remaining_hours if power else 0
             state.last_mode_change = datetime.now().isoformat()
             self.db.save_operating_state(state)
         return new_mode, changed

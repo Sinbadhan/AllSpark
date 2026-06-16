@@ -40,8 +40,8 @@ class SurvivalAssessmentEngine:
         if not water_configured and not food_configured:
             return 1
 
-        water_days = (water.estimated_remaining_hours / 24.0 if water.estimated_remaining_hours >= 0 else float("inf")) if water_configured else float("inf")
-        food_days = (food.estimated_remaining_hours / 24.0 if food.estimated_remaining_hours >= 0 else float("inf")) if food_configured else float("inf")
+        water_days = (water.estimated_remaining_hours / 24.0 if water.estimated_remaining_hours >= 0 else float("inf")) if water and water_configured else float("inf")
+        food_days = (food.estimated_remaining_hours / 24.0 if food.estimated_remaining_hours >= 0 else float("inf")) if food and food_configured else float("inf")
 
         if water_days < 3 or food_days < 2:
             return 0

@@ -190,7 +190,7 @@ def _step_model_setup(db: Database, hw_result: dict) -> dict:
 
     flags = hw_result.get("flags")
     profile = hw_result.get("profile")
-    if not flags:
+    if not flags or not profile:
         return {"model": None, "downloaded": False}
 
     recommended = flags.llm_model

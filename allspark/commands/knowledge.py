@@ -11,6 +11,8 @@ class MapCommand(BaseCommand):
 
     def execute(self, args: list[str]) -> None:
         maps = self.container.get("map_system")
+        if maps is None:
+            return
 
         if not args:
             self.console.print(maps.format_map())
@@ -126,6 +128,8 @@ class ExperienceCommand(BaseCommand):
 
     def execute(self, args: list[str]) -> None:
         exp = self.container.get("experience")
+        if exp is None:
+            return
 
         if not args:
             stats = exp.get_stats()

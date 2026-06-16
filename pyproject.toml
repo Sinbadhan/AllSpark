@@ -92,7 +92,6 @@ disable_error_code = [
     "list-item",
     "operator",
     "return-value",
-    "union-attr",
     "var-annotated",
 ]
 

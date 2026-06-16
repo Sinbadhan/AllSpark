@@ -214,6 +214,8 @@ class SetCommand(BaseCommand):
 
         resource_mgr.update_resource(rtype, amount, consumption, intake)
         updated = self.db.get_resource(rtype)
+        if updated is None:
+            return
         self.console.print(f"[green]{t('set_updated_with_unit', type=t(f'resource_{rtype.value}'), amount=updated.current_amount, unit=updated.unit)}[/]")
         if resource_mgr.has_remaining_estimate(updated):
             self.console.print(t("set_remaining_hours", hours=updated.estimated_remaining_hours))

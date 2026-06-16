@@ -42,6 +42,7 @@ class RuleEngine:
 
         mode, _ = self.resource_mgr.update_operating_mode()
         warnings = self.resource_mgr.check_warnings()
+        assert self.survival is not None
         assessment = self.survival.assess()
         phase = assessment["phase"]
         resources = assessment["resources"]
@@ -87,6 +88,8 @@ class RuleEngine:
 
     def _handle_status(self, assessment: dict, mode: OperatingMode,
                        warnings: list) -> str:
+        assert self.survival is not None
+        assert self.planner is not None
         lines = [
             self.survival.get_assessment_summary(),
             "",
@@ -210,6 +213,7 @@ class RuleEngine:
 
     def _handle_knowledge_query(self, intent: str, resources: list,
                                  warnings: list) -> str:
+        assert self.knowledge is not None
         intent_map = {
             "water": t("intent_keywords_water"),
             "fire": t("intent_keywords_fire"),

@@ -11,6 +11,8 @@ class LLMCommand(BaseCommand):
 
     def execute(self, args: list[str]) -> None:
         llm = self.container.get("llm")
+        if llm is None:
+            return
         registry = self.container.require("registry")
         survival = self.container.require("survival_engine")
 

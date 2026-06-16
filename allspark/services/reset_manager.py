@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+from typing import Any
 
 from allspark.core.i18n import t
 from allspark.core.models import OperatingMode, ResetLevel
@@ -42,7 +43,7 @@ class ResetManager:
         self._last_reset_time = None
 
     def evaluate_reset(self, level: ResetLevel) -> dict:
-        result = {
+        result: dict[str, Any] = {
             "level": level.value,
             "level_name": level.name,
             "allowed": True,
