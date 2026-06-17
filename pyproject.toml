@@ -83,16 +83,13 @@ warn_return_any = false
 check_untyped_defs = false
 # Historical typing debt is tracked separately; CI still runs mypy and fails on
 # syntax/import/config regressions while these categories are paid down.
+# Cleared in SHA-29 step 1-4: list-item, var-annotated, return-value, call-overload.
 disable_error_code = [
     "arg-type",
     "assignment",
     "attr-defined",
-    "call-overload",
     "index",
-    "list-item",
     "operator",
-    "return-value",
-    "var-annotated",
 ]
 
 [tool.pytest.ini_options]

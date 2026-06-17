@@ -248,7 +248,7 @@ class MissionPlanner:
                 "reasoning": "; ".join(reasons) if reasons else "standard priority",
             })
 
-        ranked.sort(key=lambda x: x["score"], reverse=True)
+        ranked.sort(key=lambda x: float(x["score"]), reverse=True)  # type: ignore[arg-type]
         return ranked
 
     def format_tasks(self, tasks: list[Task]) -> str:

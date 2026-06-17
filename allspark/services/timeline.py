@@ -124,7 +124,7 @@ class TimelineManager:
         ).fetchall()
         events = [dict(r) for r in rows]
 
-        type_counts = {}
+        type_counts: dict[str, int] = {}
         for e in events:
             et = e["event_type"]
             type_counts[et] = type_counts.get(et, 0) + 1

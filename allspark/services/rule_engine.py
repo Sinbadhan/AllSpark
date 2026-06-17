@@ -30,8 +30,8 @@ class RuleEngine:
         self.survival = container.get("survival_engine")
         self.planner = container.get("mission_planner")
         self.llm = container.get("llm")
-        self._assessment_cache = None
-        self._assessment_cache_time = 0
+        self._assessment_cache: dict | None = None
+        self._assessment_cache_time = 0.0
         self._assessment_cache_ttl = 60
 
     def _refresh_assessment(self, force: bool = False) -> dict:
@@ -47,6 +47,15 @@ class RuleEngine:
         phase = assessment["phase"]
         resources = assessment["resources"]
 
+        self._assessment_cache = {
+            "mode": mode,
+            "warnings": warnings,
+            "assessment": assessment,
+            "phase": phase,
+            "resources": resources,
+        }
+        self._assessment_cache_time = now
+        return self._assessment_cache
         self._assessment_cache = {
             "mode": mode,
             "warnings": warnings,

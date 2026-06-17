@@ -291,7 +291,7 @@ class SKFPackage:
         return errors
 
     def get_stats(self) -> dict:
-        categories = {}
+        categories: dict[str, int] = {}
         for k in self.knowledge_entries:
             categories[k.category] = categories.get(k.category, 0) + 1
 

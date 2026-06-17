@@ -112,7 +112,7 @@ class VectorEngine(BaseService):
             return fts_results[:limit]
 
         # RRF fusion
-        scores = {}
+        scores: dict[str, float] = {}
         K = 60
         for rank, entry in enumerate(fts_results, 1):
             scores[entry.id] = scores.get(entry.id, 0.0) + 1.0 / (K + rank)

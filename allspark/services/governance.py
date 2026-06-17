@@ -206,7 +206,7 @@ class GovernanceEngine:
         if total == 0:
             return {"status": "empty", "recommendation": "Add community members first"}
 
-        roles = {}
+        roles: dict[str, int] = {}
         for m in self._members.values():
             roles[m.role] = roles.get(m.role, 0) + 1
 
