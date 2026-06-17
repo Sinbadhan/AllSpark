@@ -139,18 +139,18 @@ class SKFCommand(BaseCommand):
         if subcmd in ("import", "导入") and len(args) > 1:
             path = args[1]
             try:
-                result = import_skf(self.db, path)
-                if result["status"] == "ok":
-                    imp = result["imported"]
+                imp_result: dict = import_skf(self.db, path)
+                if imp_result["status"] == "ok":
+                    imp = imp_result["imported"]
                     self.console.print(f"[green]✓ {t('skf_imported')}[/]")
                     self.console.print(f"  {t('skf_knowledge')}: {imp['knowledge']}")
                     self.console.print(f"  {t('skf_experience')}: {imp['experience']}")
                     self.console.print(f"  {t('skf_local_data')}: {imp['local_data']}")
                     self.console.print(f"  {t('skf_skipped')}: {imp['skipped']}")
-                    self.console.print(f"  {t('skf_source')}: {result['source_spark']}")
-                elif result["status"] == "validation_error":
+                    self.console.print(f"  {t('skf_source')}: {imp_result['source_spark']}")
+                elif imp_result["status"] == "validation_error":
                     self.console.print(f"[red]✗ {t('skf_validation_failed')}:[/]")
-                    for err in result["errors"]:
+                    for err in imp_result["errors"]:
                         self.console.print(f"  [red]• {err}[/]")
             except Exception as e:
                 self.console.print(f"[red]{t('skf_import_failed')}: {e}[/]")

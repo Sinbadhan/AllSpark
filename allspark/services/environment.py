@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from allspark.core.i18n import t
 from allspark.core.models import ResourceType
@@ -14,7 +15,7 @@ class EnvironmentAssessor:
         self.survival = survival
 
     def assess(self) -> dict:
-        result = {
+        result: dict[str, Any] = {
             "climate": self._assess_climate(),
             "terrain": self._assess_terrain(),
             "threats": self._assess_threats(),

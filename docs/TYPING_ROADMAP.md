@@ -1,7 +1,8 @@
 # Typing Debt Roadmap
 
-> **Status:** Steps 1-4 (`list-item`, `var-annotated`, `return-value`,
-> `call-overload`, 19 errors total) paid off 2026-06-17 in SHA-29. Five
+> **Status:** Steps 1-5 (`list-item`, `var-annotated`, `return-value`,
+> `call-overload`, `index`, 29 errors total) paid off 2026-06-17 in
+> SHA-29 + Step 10 (`union-attr`, 37 errors) paid off 2026-06-16. Four
 > categories remain silenced. CI runs mypy and fails on any *new*
 > category not on the allowlist. This document records the remaining
 > debt and the repayment order.
@@ -11,7 +12,7 @@
 `pyproject.toml [tool.mypy] disable_error_code` currently silences:
 
 ```
-arg-type, assignment, attr-defined, index, operator
+arg-type, assignment, attr-defined, operator
 ```
 
 `ignore_missing_imports = true`, `no_implicit_optional = false`,
@@ -33,12 +34,12 @@ mypy allspark/ --ignore-missing-imports 2>&1 | grep "error:"
 | ~~`var-annotated`~~ |  ~~7~~ | ✅ Paid off 2026-06-17 (SHA-29 step 2) |
 | ~~`return-value`~~ |   ~~6~~ | ✅ Paid off 2026-06-17 (SHA-29 step 3) |
 | ~~`call-overload`~~ |  ~~4~~ | ✅ Paid off 2026-06-17 (SHA-29 step 4) |
+| ~~`index`~~       |   ~~10~~ | ✅ Paid off 2026-06-17 (SHA-29 step 5) |
 | `attr-defined`    |    32 | Mostly third-party objects with no stubs |
 | `operator`        |    22 | `int + None`, `str + bytes`, etc. |
 | `arg-type`        |    21 | Wider input types than callee accepts |
 | `assignment`      |    16 | Re-binding to a stricter type |
-| `index`           |    10 | Subscripting on `Optional`/`Any` |
-| **Total**         | **101** | (was 120 before SHA-29 step 1-4 payoff) |
+| **Total**         | **91** | (was 120 before SHA-29 step 1-4; was 101 before step 5) |
 
 Hot spots:
 
@@ -63,7 +64,7 @@ fixes rather than a structural rethink:
 |  ~~2~~   | ~~`var-annotated`~~ | ~~7 errors, add literal annotations~~ | ✅ Done 2026-06-17 |
 |  ~~3~~   | ~~`return-value`~~  | ~~6 errors, signature alignment~~ | ✅ Done 2026-06-17 |
 |  ~~4~~   | ~~`call-overload`~~ | ~~4 errors, often a missing cast~~ | ✅ Done 2026-06-17 |
-|  5   | `index`         | 10 errors, narrow Optional with `assert`/guard | |
+|  ~~5~~   | ~~`index`~~     | ~~10 errors, narrow Optional with `assert`/guard~~ | ✅ Done 2026-06-17 |
 |  6   | `assignment`    | 16 errors, refactor variable reuse | |
 |  7   | `arg-type`      | 21 errors, narrow callers or widen callee | |
 |  8   | `operator`      | 22 errors, often Optional arithmetic | |
