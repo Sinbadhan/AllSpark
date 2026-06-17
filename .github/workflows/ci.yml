@@ -34,3 +34,10 @@ jobs:
 
       - name: Type check with mypy
         run: mypy allspark/ --ignore-missing-imports
+
+      - name: Module import smoke benchmark (advisory)
+        # Soft budget: prints ::warning:: and stays green when import time
+        # drifts above IMPORT_BUDGET_MS (default 600 ms). Track regressions
+        # over time without breaking unrelated PRs. Promote to --hard-fail
+        # when v1.2 lands and the floor has been stable.
+        run: python scripts/bench_import.py --check

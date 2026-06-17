@@ -1,12 +1,14 @@
 # Performance Benchmarks
 
-> **Status:** advisory only — not enforced in CI for v1.0.
+> **Status:** soft budget enforced in CI as of 2026-06-17 (SHA-30) —
+> overrun emits a `::warning::` on the run; promote to `--hard-fail`
+> once the floor is stable.
 > **Purpose:** track import time so structural regressions surface in
 > review rather than after release.
 
 ## 1. Import-time baseline (2026-06-13)
 
-Measured by `tests/bench_import.py` on macOS Darwin 25.5 / Python 3.10
+Measured by `scripts/bench_import.py` on macOS Darwin 25.5 / Python 3.10
 (local laptop, cold caches, 1 warmup + 3 runs per module).
 
 | Module                                  | Mean (ms) | Min (ms) | Max (ms) |
@@ -51,15 +53,18 @@ When opening a PR that touches import-time critical paths
 (`allspark/__init__.py`, `bootstrap.py`, `container.py`, `core/i18n.py`,
 or anything they pull in transitively):
 
-1. Run `python3 tests/bench_import.py` before and after the change.
+1. Run `python3 scripts/bench_import.py` before and after the change.
 2. If any module's mean time grows by **more than 30%**, or the
    sum-of-means grows by more than 30%, call it out in the PR
    description with the new numbers.
 3. Update §1 of this file when the change is intentional and lands.
 
-This is a **soft gate**: CI does not block on it for v1.0. The number is
-unstable on shared CI runners and would otherwise create false negatives.
-A future v1.1+ task may add a CI smoke benchmark with a wider tolerance.
+CI runs `python scripts/bench_import.py --check` on every PR. The
+default budget is **600 ms** total mean import time
+(`IMPORT_BUDGET_MS=600`); overrun emits `::warning::` on the run but
+keeps the build green so flaky-runner noise doesn't block unrelated
+work. Lower `IMPORT_BUDGET_MS` (or pass `--hard-fail`) when ready to
+enforce hard.
 
 ## 3. Out of scope
 
