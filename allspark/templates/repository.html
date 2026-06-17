@@ -94,6 +94,7 @@ const REPO_I18N = {
 const SKF_I18N = {
   path_hint: "{{ t('web_skf_path_placeholder') }}",
   path_placeholder: "{{ t('web_skf_path_placeholder') }}",
+  path_required: "{{ t('web_skf_path_required') }}",
   export_title: "{{ t('web_skf_export_title') }}",
   import_title: "{{ t('web_skf_import_title') }}",
   filter_category: "{{ t('web_skf_filter_category') }}",
@@ -174,7 +175,7 @@ async function doSkfExport() {
   const path = document.getElementById("skf-export-path").value.trim();
   const cat = document.getElementById("skf-export-cat").value.trim();
   const lang = document.getElementById("skf-export-lang").value.trim();
-  if (!path) { setSkfResult("error", SKF_I18N.path_placeholder); return; }
+  if (!path) { setSkfResult("error", SKF_I18N.path_required); return; }
   const qs = new URLSearchParams({path});
   if (cat) qs.set("category", cat);
   if (lang) qs.set("language", lang);
@@ -189,7 +190,7 @@ async function doSkfExport() {
 async function doSkfImport() {
   const path = document.getElementById("skf-import-path").value.trim();
   const verify = document.getElementById("skf-import-verify").checked;
-  if (!path) { setSkfResult("error", SKF_I18N.path_placeholder); return; }
+  if (!path) { setSkfResult("error", SKF_I18N.path_required); return; }
   try {
     const r = await fetch("/api/skf/import?path=" + encodeURIComponent(path) + "&verify=" + (verify ? "true" : "false"), {method: "POST"});
     const data = await r.json();
@@ -200,7 +201,7 @@ async function doSkfImport() {
 
 async function doSkfInfo(which) {
   const path = document.getElementById(which === "export" ? "skf-export-path" : "skf-import-path").value.trim();
-  if (!path) { setSkfResult("error", SKF_I18N.path_placeholder); return; }
+  if (!path) { setSkfResult("error", SKF_I18N.path_required); return; }
   try {
     const r = await fetch("/api/skf/info?path=" + encodeURIComponent(path));
     const data = await r.json();
@@ -360,7 +361,7 @@ async function loadExperienceTable(el) {
       <tr>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_when}</th>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_title}</th>
-        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">OUTCOME</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_outcome}</th>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_status}</th>
       </tr>
     </thead>
@@ -369,7 +370,7 @@ async function loadExperienceTable(el) {
         <td class="p-3 text-secondary text-xs">${e.timestamp || '--'}</td>
         <td class="p-3 text-on-surface">${escHtml(e.event)}</td>
         <td class="p-3 text-on-surface-variant">${escHtml(e.outcome)}</td>
-        <td class="p-3 text-right"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${e.promoted ? 'bg-success-dim text-success' : 'bg-surface-container text-secondary'}">${e.promoted ? "PROMOTED" : "RAW"}</span></td>
+        <td class="p-3 text-right"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${e.promoted ? 'bg-success-dim text-success' : 'bg-surface-container text-secondary'}">${e.promoted ? I18N.web_repo_promoted : I18N.web_repo_raw}</span></td>
       </tr>
     `).join("")}</tbody></table>`;
 }
@@ -385,7 +386,7 @@ async function loadModelsTable(el) {
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_module}</th>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_size}</th>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_status}</th>
-        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary text-right">ACTION</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary text-right">${I18N.web_th_action}</th>
       </tr>
     </thead>
     <tbody class="text-sm">
@@ -401,8 +402,8 @@ async function loadModelsTable(el) {
       <tr class="hover:bg-surface-variant transition-colors border-b border-surface-container-high opacity-60 hover:opacity-100">
         <td class="p-3 text-on-surface">${escHtml(d.name)}</td>
         <td class="p-3 text-secondary">--</td>
-        <td class="p-3"><span class="text-secondary flex items-center gap-1"><span class="text-[10px]">○</span> AVAILABLE</span></td>
-        <td class="p-3 text-right"><button onclick="downloadModel('${d.name}')" class="text-primary hover:underline text-xs">DOWNLOAD</button></td>
+        <td class="p-3"><span class="text-secondary flex items-center gap-1"><span class="text-[10px]">○</span> ${I18N.web_repo_available}</span></td>
+        <td class="p-3 text-right"><button onclick="downloadModel('${d.name}')" class="text-primary hover:underline text-xs">${I18N.web_repo_download_btn}</button></td>
       </tr>
     `).join("")}
     </tbody></table>`;

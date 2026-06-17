@@ -1,3 +1,4 @@
+import locale
 import urllib.request
 from pathlib import Path
 
@@ -168,11 +169,21 @@ def _ask_tier_override(detected_tier: HardwareTier) -> HardwareTier:
 def _step_language_select() -> str:
     console.print(f"\n[bold cyan]━━ {t('init_step_language')} ━━[/]")
     console.print(t("init_lang_prompt"))
-    console.print(f"  1. {t('init_lang_zh')}")
-    console.print(f"  2. {t('init_lang_en')}")
+
+    # SHA-12: detect system locale to suggest a default; user can override.
+    try:
+        sys_lang = (locale.getlocale()[0] or "").lower()
+    except Exception:
+        sys_lang = ""
+    default_choice = "1" if ("zh" in sys_lang or "cn" in sys_lang or "chinese" in sys_lang) else "2"
+    zh_marker = " (default)" if default_choice == "1" else ""
+    en_marker = " (default)" if default_choice == "2" else ""
+
+    console.print(f"  1. {t('init_lang_zh')}{zh_marker}")
+    console.print(f"  2. {t('init_lang_en')}{en_marker}")
 
     while True:
-        choice = console.input("\n🔥 [1/2] > ").strip()
+        choice = console.input(f"\n🔥 [1/2] (default {default_choice}) > ").strip() or default_choice
         if choice in ("1", "zh"):
             set_language("zh")
             console.print(f"[green]{t('init_lang_set_zh')}[/]")
