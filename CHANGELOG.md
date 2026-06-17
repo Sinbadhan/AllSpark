@@ -6,6 +6,75 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-06-17
+
+Maintenance release. Closes the v1.0.0 regression backlog (B-1..B-22),
+pays off the first half of the mypy typing roadmap, and lands a CI
+import-time benchmark guardrail. No public API changes.
+
+### Fixed
+
+- **Web/REST contracts** (B-1, B-3, B-4, B-6, B-7, B-8): `POST
+  /api/experience` now returns 400 for missing fields instead of
+  crashing 500; reset endpoints surface the rejection reason; community
+  governance endpoints accept JSON body uniformly with the rest of the
+  surface; `error_response()` returns the proper HTTP status code (~30
+  call sites); enabling a non-existent module rejects instead of
+  silently succeeding; language endpoint accepts `lang`/`language`
+  consistently.
+- **i18n persistence and rendering** (B-2, B-9, B-10, B-12, B-15, B-19,
+  B-20, B-22): titles persist as i18n keys (not translated strings) so
+  language switches re-render correctly; init wizard auto-detects
+  browser/system language; web JS templates route every visible string
+  through the i18n table (52 new keys, both locales); daily briefing
+  emits a localized "[no English version]" hint instead of a bare
+  language tag when a knowledge entry is monolingual; psych state and
+  resource-mode badges resolve through the i18n table; SKF route
+  errors are localized; network/vision unavailability returns a
+  friendly degraded card.
+- **Data semantics** (B-5, B-13, B-14, B-16): the 9999h "infinite"
+  power-runtime sentinel no longer leaks to the UI; diary refuses
+  duplicate (date, emotion, content) inserts; goal creation refuses
+  duplicate titles; resource status no longer reports SUFFICIENT when
+  consumption is zero / unknown.
+- **UX polish** (B-11, B-17, B-18, B-21): web replaces `alert(e)`-on-
+  exception with a friendly notify wrapper; CLI help columns are now
+  uniformly aligned; GPS coordinates are validated to lat ∈ [-90, 90]
+  / lng ∈ [-180, 180]; goal/task lists separate items with a thin rule
+  for legibility.
+
+### Added
+
+- `scripts/migrate_i18n_legacy.py` — one-shot migration that reverse-
+  maps persisted bilingual title strings back to i18n keys for tasks /
+  goals / timeline_events tables, and deduplicates timeline rows the
+  pre-B-2 bug created twice. Default mode is dry-run; `--apply`
+  commits in a single transaction. Tracks SHA-39.
+- `scripts/bench_import.py` — import-time module benchmark, runs in CI
+  as an advisory step. Soft budget defaults to 600 ms; overrun emits
+  `::warning::` and stays green. Promote to `--hard-fail` once the
+  floor is stable. Tracks SHA-30.
+- `docs/MANUAL_CHECKLIST.md` — verification checklist covering what
+  `pytest tests/` cannot: live LLM, voice/vision hardware, multi-node
+  spark networking, Docker elastic deployment, long-running scheduler.
+  Tracks SHA-36.
+
+### Changed
+
+- mypy typing debt: paid off five categories (`list-item`,
+  `var-annotated`, `return-value`, `call-overload`, `index`) — 29
+  errors total, on top of the 37 `union-attr` errors retired right
+  before v1.0.0. The `[tool.mypy] disable_error_code` allowlist drops
+  from 9 entries to 4 (`arg-type`, `assignment`, `attr-defined`,
+  `operator`). 91 known errors remain, scheduled by
+  `docs/TYPING_ROADMAP.md`. Tracks SHA-29.
+- CI workflow: `pytest tests/` step removed (the directory is
+  intentionally gitignored, see SHA-28); the workflow now exports
+  `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` to suppress the Node.js 20
+  deprecation warning.
+- `AUDIT_*.md` is now gitignored alongside the other internal status
+  docs (PRD/PROGRESS/ARCHITECTURE/REVIEW-PLAN/TECH-DECISIONS/CLAUDE).
+
 ## [1.0.0] - 2026-06-13
 
 First public stable release. Builds on the v0.7 architecture refactor
