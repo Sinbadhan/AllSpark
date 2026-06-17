@@ -8,7 +8,7 @@ from allspark.infrastructure.hardware import DeployMode, FeatureFlags
 
 logger = logging.getLogger(__name__)
 
-_DOCKER_SERVICES = {
+_DOCKER_SERVICES: dict[str, dict[str, object]] = {
     "llm": {
         "container": "allspark-llm",
         "port": 11434,
@@ -63,9 +63,9 @@ class DockerManager:
 
         services = {}
         for name, info in _DOCKER_SERVICES.items():
-            if not getattr(self.flags, info["requires_flag"], False):
+            if not getattr(self.flags, str(info["requires_flag"]), False):
                 continue
-            container = info["container"]
+            container = str(info["container"])
             services[name] = {
                 "container": container,
                 "port": info["port"],
@@ -86,7 +86,7 @@ class DockerManager:
             return {"status": "error", "message": t("docker_unknown_service", service=service)}
 
         info = _DOCKER_SERVICES[service]
-        if not getattr(self.flags, info["requires_flag"], False):
+        if not getattr(self.flags, str(info["requires_flag"]), False):
             return {"status": "error", "message": t("docker_service_disabled", service=service)}
 
         try:
@@ -176,7 +176,7 @@ class DockerManager:
         if service not in _DOCKER_SERVICES:
             return t("docker_unknown_service", service=service)
 
-        container = _DOCKER_SERVICES[service]["container"]
+        container = str(_DOCKER_SERVICES[service]["container"])
         try:
             result = subprocess.run(
                 ["docker", "logs", "--tail", str(lines), container],
@@ -198,7 +198,7 @@ class DockerManager:
             for name, info in _DOCKER_SERVICES.items():
                 try:
                     subprocess.run(
-                        ["docker", "rm", "-f", info["container"]],
+                        ["docker", "rm", "-f", str(info["container"])],
                         capture_output=True, text=True, timeout=30,
                     )
                 except Exception:

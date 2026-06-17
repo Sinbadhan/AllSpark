@@ -1,23 +1,24 @@
 # Typing Debt Roadmap
 
-> **Status:** `union-attr` (37 errors) paid off 2026-06-16. Nine categories
-> remain silenced. CI runs mypy and fails on any *new* category not on the
-> allowlist. This document records the remaining debt and the repayment order.
+> **Status:** Steps 1-4 (`list-item`, `var-annotated`, `return-value`,
+> `call-overload`, 19 errors total) paid off 2026-06-17 in SHA-29. Five
+> categories remain silenced. CI runs mypy and fails on any *new*
+> category not on the allowlist. This document records the remaining
+> debt and the repayment order.
 
 ## 1. Current allowlist
 
 `pyproject.toml [tool.mypy] disable_error_code` currently silences:
 
 ```
-arg-type, assignment, attr-defined, call-overload, index,
-list-item, operator, return-value, var-annotated
+arg-type, assignment, attr-defined, index, operator
 ```
 
 `ignore_missing_imports = true`, `no_implicit_optional = false`,
 `warn_return_any = false`, `check_untyped_defs = false` are also set;
 those are configuration choices, not debt categories.
 
-## 2. Measured debt (2026-06-13)
+## 2. Measured debt (2026-06-17)
 
 Captured by temporarily emptying `disable_error_code` and running:
 
@@ -28,16 +29,16 @@ mypy allspark/ --ignore-missing-imports 2>&1 | grep "error:"
 | Error code        | Count | Notes |
 |-------------------|------:|-------|
 | ~~`union-attr`~~  |   ~~37~~ | ✅ Paid off 2026-06-16 |
+| ~~`list-item`~~   |    ~~2~~ | ✅ Paid off 2026-06-17 (SHA-29 step 1) |
+| ~~`var-annotated`~~ |  ~~7~~ | ✅ Paid off 2026-06-17 (SHA-29 step 2) |
+| ~~`return-value`~~ |   ~~6~~ | ✅ Paid off 2026-06-17 (SHA-29 step 3) |
+| ~~`call-overload`~~ |  ~~4~~ | ✅ Paid off 2026-06-17 (SHA-29 step 4) |
 | `attr-defined`    |    32 | Mostly third-party objects with no stubs |
 | `operator`        |    22 | `int + None`, `str + bytes`, etc. |
 | `arg-type`        |    21 | Wider input types than callee accepts |
 | `assignment`      |    16 | Re-binding to a stricter type |
 | `index`           |    10 | Subscripting on `Optional`/`Any` |
-| `var-annotated`   |     7 | Container literals lacking annotations |
-| `return-value`    |     6 | Return type does not match signature |
-| `call-overload`   |     4 | Wrong overload selected |
-| `list-item`       |     2 | Heterogeneous list elements |
-| **Total**         | **120** | (was 157 before union-attr payoff) |
+| **Total**         | **101** | (was 120 before SHA-29 step 1-4 payoff) |
 
 Hot spots:
 
@@ -58,10 +59,10 @@ fixes rather than a structural rethink:
 
 | Step | Code            | Why this order | Status |
 |-----:|-----------------|----------------|--------|
-|  1   | `list-item`     | 2 errors, mechanical fix | |
-|  2   | `var-annotated` | 7 errors, add literal annotations | |
-|  3   | `return-value`  | 6 errors, signature alignment | |
-|  4   | `call-overload` | 4 errors, often a missing cast | |
+|  ~~1~~   | ~~`list-item`~~     | ~~2 errors, mechanical fix~~ | ✅ Done 2026-06-17 |
+|  ~~2~~   | ~~`var-annotated`~~ | ~~7 errors, add literal annotations~~ | ✅ Done 2026-06-17 |
+|  ~~3~~   | ~~`return-value`~~  | ~~6 errors, signature alignment~~ | ✅ Done 2026-06-17 |
+|  ~~4~~   | ~~`call-overload`~~ | ~~4 errors, often a missing cast~~ | ✅ Done 2026-06-17 |
 |  5   | `index`         | 10 errors, narrow Optional with `assert`/guard | |
 |  6   | `assignment`    | 16 errors, refactor variable reuse | |
 |  7   | `arg-type`      | 21 errors, narrow callers or widen callee | |

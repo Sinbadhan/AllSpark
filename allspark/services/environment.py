@@ -100,7 +100,7 @@ class EnvironmentAssessor:
         return result
 
     def _assess_threats(self) -> dict:
-        result = {
+        result: dict[str, object] = {
             "level": "low",
             "score": 0.8,
             "factors": [],
@@ -135,11 +135,11 @@ class EnvironmentAssessor:
                 result["score"] -= 0.2
                 result["factors"].append(t("env_threat_weather"))
 
-        result["score"] = max(0.0, min(1.0, result["score"]))
+        result["score"] = max(0.0, min(1.0, float(result["score"])))  # type: ignore[arg-type]
         return result
 
     def _assess_opportunities(self) -> dict:
-        result = {
+        result: dict[str, object] = {
             "score": 0.5,
             "items": [],
         }
@@ -165,7 +165,7 @@ class EnvironmentAssessor:
             result["score"] += 0.1
             result["items"].append(t("env_opp_pois", count=len(pois)))
 
-        result["score"] = min(1.0, result["score"])
+        result["score"] = min(1.0, float(result["score"]))  # type: ignore[arg-type]
         return result
 
     def format_assessment(self, assessment: dict = None) -> str:

@@ -2,14 +2,14 @@ import json
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, cast
 
 from allspark.core.i18n import mark, render, t
 from allspark.core.models import Goal, Milestone, OperatingMode, ResourceType
 
 logger = logging.getLogger(__name__)
 
-_GOAL_TEMPLATES = [
+_GOAL_TEMPLATES: list[dict[str, object]] = [
     {
         "id_prefix": "water",
         "title_key": "goal_water_title",
@@ -128,7 +128,7 @@ class GoalEngine:
             goal = self._create_goal_from_template(template)
             self.db.save_goal(goal)
 
-            for i, ms_key in enumerate(template["milestones_keys"]):
+            for i, ms_key in enumerate(cast(list[str], template["milestones_keys"])):
                 ms = Milestone(
                     id=f"{goal.id}-m{i+1}",
                     goal_id=goal.id,

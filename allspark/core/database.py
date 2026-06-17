@@ -1002,7 +1002,7 @@ class Database:
         )
         self.conn.commit()
 
-    def get_location(self, key: str) -> str:
+    def get_location(self, key: str) -> str | None:
         row = self.conn.execute(
             "SELECT value FROM spark_location WHERE key=?", (key,)
         ).fetchone()
@@ -1024,7 +1024,7 @@ class Database:
         )
         self.conn.commit()
 
-    def get_psych_state(self, date: str) -> dict:
+    def get_psych_state(self, date: str) -> dict | None:
         row = self.conn.execute(
             "SELECT * FROM psych_state WHERE date=?", (date,)
         ).fetchone()
@@ -1037,7 +1037,7 @@ class Database:
         ).fetchall()
         return [dict(r) for r in rows]
 
-    def get_latest_psych_state(self) -> dict:
+    def get_latest_psych_state(self) -> dict | None:
         row = self.conn.execute(
             "SELECT * FROM psych_state ORDER BY date DESC LIMIT 1"
         ).fetchone()

@@ -90,7 +90,7 @@ def register_core_routes(app, check):
             rtype = ResourceType(type)
         except ValueError:
             raise HTTPException(400, f"Invalid resource type: {type}")
-        kwargs = {}
+        kwargs: dict[str, float] = {}
         if consumption is not None:
             kwargs["consumption"] = float(consumption)
         if intake is not None:

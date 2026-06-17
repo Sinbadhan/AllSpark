@@ -113,8 +113,8 @@ class SparkNetwork:
         self._on_node_discovered: Optional[Callable] = None
         self._on_knowledge_received: Optional[Callable] = None
 
-    def detect_channels(self) -> dict[str, bool]:
-        results = {}
+    def detect_channels(self) -> dict[str, dict[str, object]]:
+        results: dict[str, dict[str, object]] = {}
 
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

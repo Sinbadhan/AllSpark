@@ -80,7 +80,7 @@ class PersonalitySystem:
         if not self._mode_history:
             return {"total_transitions": 0, "modes": {}}
 
-        mode_counts = {}
+        mode_counts: dict[str, int] = {}
         for entry in self._mode_history:
             mode = entry["to"]
             mode_counts[mode] = mode_counts.get(mode, 0) + 1
