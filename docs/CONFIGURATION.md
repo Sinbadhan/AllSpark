@@ -62,6 +62,50 @@ Local model files can be large and sensitive to licensing constraints. Keep mode
 
 LLM, RAG, vision, and voice capabilities are optional and should degrade gracefully when dependencies or model files are unavailable.
 
+### Default LLM per hardware tier
+
+The recommended LLM is picked automatically by the init wizard, based on detected hardware. Each tier has exactly one recommended model — sized to fit its RAM threshold, no auto-OOM risk:
+
+| Tier | RAM threshold | Default model | GGUF size | Runtime RAM |
+|------|--------------:|---------------|----------:|------------:|
+| Phantom | ≥ 2 GB | `qwen3-1_7b-instruct-q4` | ~1 GB | ~1.2 GB |
+| Minimum | ≥ 4 GB | `qwen3-4b-instruct-q4` | ~2.5 GB | ~3 GB |
+| Recommended | ≥ 8 GB | `qwen3-8b-instruct-q4` | ~5 GB | ~6 GB |
+| Comfortable | ≥ 16 GB | `qwen3-14b-instruct-q4` | ~9 GB | ~11 GB |
+| Flagship | ≥ 32 GB | `qwen3-32b-instruct-q4` | ~20 GB | ~24 GB |
+
+The full catalog (defaults + override candidates) lives in `allspark/data/models.yaml`.
+
+### Overriding the default model
+
+Three ways to swap the default, in priority order:
+
+1. **Environment variable** — highest priority:
+
+   ```bash
+   ALLSPARK_LLM_MODEL=deepseek-r1-distill-qwen-14b allspark
+   ```
+
+2. **`~/.allspark/config.toml`** — persists across runs:
+
+   ```toml
+   [llm]
+   model = "deepseek-r1-distill-qwen-14b"
+   ```
+
+3. **Drop a custom `.gguf` into `~/.allspark/models/`** — the init wizard auto-detects it.
+
+### Override catalog (advanced)
+
+Models that ship in `models.yaml` but are NOT defaults — opt in via the override mechanism above:
+
+| Name | Total / Activated | Min RAM | Best for |
+|------|------------------:|--------:|----------|
+| `deepseek-v4-flash` | 284B / 13B MoE | ≥ 192 GB | Workstation users wanting frontier reasoning |
+| `deepseek-v4-pro` | 1.6T / 49B MoE | ≥ 1 TB | Datacenter-class deployments |
+| `deepseek-r1-distill-qwen-14b` | 14B dense | ≥ 16 GB | Reasoning-heavy survival decision-making |
+| `qwen3-coder-30b-a3b-instruct-q4` | 30B / 3B MoE | ≥ 32 GB | Tool-call / function-call heavy use |
+
 ## Hardware profiles
 
 AllSpark is designed to scale from low-resource devices to more capable offline systems:
@@ -92,7 +136,15 @@ Current network features are best treated as LAN/local-trust prototypes. Disaste
 
 ## Environment variables
 
-The current project primarily uses code defaults, local files, and runtime state. Do not assume an environment variable exists unless it is documented in code. Future environment variables should be added here with defaults, safety notes, and examples.
+The current project primarily uses code defaults, local files, and runtime state. Documented variables:
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `ALLSPARK_LLM_MODEL` | Override the LLM picked by the init wizard. Value should match a name in `allspark/data/models.yaml` or a custom `.gguf` filename in `~/.allspark/models/`. | (unset — use tier default) |
+| `IMPORT_BUDGET_MS` | Budget for `scripts/bench_import.py --check`. Overrun emits `::warning::` (warn-only by default). | `600` |
+| `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` | CI-only, suppresses Node.js 20 deprecation warning. | (set in `.github/workflows/ci.yml`) |
+
+Do not assume an environment variable exists unless it is documented here.
 
 ## Sensitive files checklist
 

@@ -1,4 +1,4 @@
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __name_zh__ = "火种"
 __name_en__ = "AllSpark"
 

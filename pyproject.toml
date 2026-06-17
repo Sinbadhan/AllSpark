@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "allspark"
-version = "1.0.1"
+version = "1.0.2"
 description = "火种 AllSpark — 离线人工智能生存系统"
 readme = "README.md"
 license = { file = "LICENSE" }

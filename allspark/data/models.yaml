@@ -1,0 +1,170 @@
+# AllSpark LLM Model Registry
+#
+# Defines the recommended model for each hardware tier, plus a catalog
+# of override models for advanced users. The init wizard picks the
+# tier-default automatically; users can override via:
+#
+#   1. ALLSPARK_LLM_MODEL=<name> environment variable (highest priority)
+#   2. ~/.allspark/config.toml `[llm] model = "<name>"`
+#   3. Drop a custom .gguf into ~/.allspark/models/ — auto-detected
+#
+# Sizing math (Q4_K_M GGUF unless noted):
+#   - file_gb       — disk footprint
+#   - runtime_gb    — RAM needed at inference (file + KV cache + overhead)
+#   - min_ram_gb    — host RAM floor below which the model OOMs
+#
+# When updating this file:
+#   - Verify URLs resolve before merging
+#   - Keep recommendation slot to ONE model per tier (user policy)
+#   - New override entries go under `overrides:`, not `recommendations:`
+
+version: 1
+
+# Recommended model per hardware tier. Exactly ONE per tier.
+# Hardware tier ↔ minimum RAM (matches infrastructure/hardware.py
+# TIER_THRESHOLDS):
+#   PHANTOM      ≥ 2 GB
+#   MINIMUM      ≥ 4 GB
+#   RECOMMENDED  ≥ 8 GB
+#   COMFORTABLE  ≥ 16 GB
+#   FLAGSHIP     ≥ 32 GB
+recommendations:
+  PHANTOM: qwen3-1_7b-instruct-q4
+  MINIMUM: qwen3-4b-instruct-q4
+  RECOMMENDED: qwen3-8b-instruct-q4
+  COMFORTABLE: qwen3-14b-instruct-q4
+  FLAGSHIP: qwen3-32b-instruct-q4
+
+# Full catalog. Each entry must define name/family/file_gb/runtime_gb/
+# min_ram_gb/url_hf. url_mirror is optional (used in regions with
+# limited HuggingFace access).
+models:
+  # ── Defaults (Qwen3 series, 2025) ───────────────────────────────────
+  qwen3-1_7b-instruct-q4:
+    family: qwen3
+    role: general
+    quant: Q4_K_M
+    file_gb: 1.0
+    runtime_gb: 1.2
+    min_ram_gb: 2
+    speed_tps: "~2"
+    context: 32768
+    notes: "Phantom-tier default. Tiny but functional for 2-4 GB devices."
+    url_hf: https://huggingface.co/Qwen/Qwen3-1.7B-Instruct-GGUF/resolve/main/qwen3-1.7b-instruct-q4_k_m.gguf
+    url_mirror: https://hf-mirror.com/Qwen/Qwen3-1.7B-Instruct-GGUF/resolve/main/qwen3-1.7b-instruct-q4_k_m.gguf
+
+  qwen3-4b-instruct-q4:
+    family: qwen3
+    role: general
+    quant: Q4_K_M
+    file_gb: 2.5
+    runtime_gb: 3.0
+    min_ram_gb: 4
+    speed_tps: "~5"
+    context: 32768
+    notes: "Minimum-tier default. Solid bilingual baseline."
+    url_hf: https://huggingface.co/Qwen/Qwen3-4B-Instruct-GGUF/resolve/main/qwen3-4b-instruct-q4_k_m.gguf
+    url_mirror: https://hf-mirror.com/Qwen/Qwen3-4B-Instruct-GGUF/resolve/main/qwen3-4b-instruct-q4_k_m.gguf
+
+  qwen3-8b-instruct-q4:
+    family: qwen3
+    role: general
+    quant: Q4_K_M
+    file_gb: 5.0
+    runtime_gb: 6.0
+    min_ram_gb: 8
+    speed_tps: "~10"
+    context: 131072
+    notes: "Recommended-tier default. The sweet spot for 8 GB devices."
+    url_hf: https://huggingface.co/Qwen/Qwen3-8B-Instruct-GGUF/resolve/main/qwen3-8b-instruct-q4_k_m.gguf
+    url_mirror: https://hf-mirror.com/Qwen/Qwen3-8B-Instruct-GGUF/resolve/main/qwen3-8b-instruct-q4_k_m.gguf
+
+  qwen3-14b-instruct-q4:
+    family: qwen3
+    role: general
+    quant: Q4_K_M
+    file_gb: 9.0
+    runtime_gb: 11.0
+    min_ram_gb: 16
+    speed_tps: "~18"
+    context: 131072
+    notes: "Comfortable-tier default. Strong at multi-turn planning."
+    url_hf: https://huggingface.co/Qwen/Qwen3-14B-Instruct-GGUF/resolve/main/qwen3-14b-instruct-q4_k_m.gguf
+    url_mirror: https://hf-mirror.com/Qwen/Qwen3-14B-Instruct-GGUF/resolve/main/qwen3-14b-instruct-q4_k_m.gguf
+
+  qwen3-32b-instruct-q4:
+    family: qwen3
+    role: general
+    quant: Q4_K_M
+    file_gb: 20.0
+    runtime_gb: 24.0
+    min_ram_gb: 32
+    speed_tps: "~35"
+    context: 131072
+    notes: "Flagship-tier default. Closest open-weight to commercial-grade."
+    url_hf: https://huggingface.co/Qwen/Qwen3-32B-Instruct-GGUF/resolve/main/qwen3-32b-instruct-q4_k_m.gguf
+    url_mirror: https://hf-mirror.com/Qwen/Qwen3-32B-Instruct-GGUF/resolve/main/qwen3-32b-instruct-q4_k_m.gguf
+
+  # ── Override catalog ────────────────────────────────────────────────
+  # Not shipped as defaults. Users opt in via config.toml or env var.
+
+  # DeepSeek V4 series — frontier MoE reasoning, workstation-and-up only.
+  deepseek-v4-flash:
+    family: deepseek
+    role: reasoning
+    quant: Q4_K_M
+    file_gb: 158.0          # MoE expert FP4 packing — see HF model card
+    runtime_gb: 180.0
+    min_ram_gb: 192
+    speed_tps: "~12"
+    context: 1048576
+    notes: |
+      DeepSeek-V4-Flash: 284B total / 13B activated MoE, 1M context, FP4+FP8
+      mixed native precision. Workstation-class only. NOT a default.
+      Reference: https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash
+    url_hf: https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash
+    # No first-party GGUF as of catalog date — pick a community quant.
+
+  deepseek-v4-pro:
+    family: deepseek
+    role: reasoning
+    quant: Q4_K_M
+    file_gb: 800.0
+    runtime_gb: 900.0
+    min_ram_gb: 1024
+    speed_tps: "~8"
+    context: 1048576
+    notes: |
+      DeepSeek-V4-Pro: 1.6T total / 49B activated MoE. Datacenter-class.
+      Listed for completeness; expect to need a 1 TB-RAM rig.
+      Reference: https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro
+    url_hf: https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro
+
+  # Reasoning override — for users who want explicit chain-of-thought
+  # over generic instruct on Comfortable+.
+  deepseek-r1-distill-qwen-14b:
+    family: deepseek
+    role: reasoning
+    quant: Q4_K_M
+    file_gb: 9.0
+    runtime_gb: 11.0
+    min_ram_gb: 16
+    speed_tps: "~15"
+    context: 131072
+    notes: "Reasoning-mode alternative to qwen3-14b. Better at multi-step survival decisions, slower at chit-chat."
+    url_hf: https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B-GGUF/resolve/main/deepseek-r1-distill-qwen-14b-q4_k_m.gguf
+    url_mirror: https://hf-mirror.com/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B-GGUF/resolve/main/deepseek-r1-distill-qwen-14b-q4_k_m.gguf
+
+  # Tool-use override — Qwen3 Coder MoE for users who lean on tool calls.
+  qwen3-coder-30b-a3b-instruct-q4:
+    family: qwen3
+    role: coder
+    quant: Q4_K_M
+    file_gb: 18.0
+    runtime_gb: 22.0
+    min_ram_gb: 32
+    speed_tps: "~40"
+    context: 262144
+    notes: "Tool-use / function-call alternative to qwen3-32b on FLAGSHIP. 30B total / 3B activated MoE — fast for its quality tier."
+    url_hf: https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/qwen3-coder-30b-a3b-instruct-q4_k_m.gguf
+    url_mirror: https://hf-mirror.com/Qwen/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/qwen3-coder-30b-a3b-instruct-q4_k_m.gguf

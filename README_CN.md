@@ -1,6 +1,6 @@
 # 🔥 火种 AllSpark — 离线人工智能生存系统
 
-**v1.0.1** | [English](README.md)
+**v1.0.2** | [English](README.md)
 
 > **在极端条件下，保存并重建人类文明。**
 

@@ -6,6 +6,63 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-06-17
+
+Maintenance release. Externalizes the LLM model registry, upgrades
+default models from Qwen2.5 to Qwen3 across all hardware tiers, and
+adds an override mechanism so workstation users can opt into frontier
+models like DeepSeek-V4-Flash without code changes.
+
+### Added
+
+- `allspark/data/models.yaml` — single source of truth for the
+  tier→model mapping, GGUF download URLs (HF + hf-mirror), and per-
+  model resource requirements. Replaces three previously-hardcoded
+  dicts (`hardware.LLM_MODEL_MAP`, `web_ui.MODEL_DOWNLOAD_URLS`/
+  `MIRROR_DOWNLOAD_URLS`, `init_wizard.MODEL_DOWNLOAD_URLS`/
+  `MIRROR_URLS`).
+- `allspark.services.model_registry` — typed loader for `models.yaml`
+  exposing `get_recommended_model()`, `get_model()`, `list_models()`,
+  and `resolve_model_name()` with override priority
+  env > config.toml > yaml default.
+- LLM model override entry points: the `ALLSPARK_LLM_MODEL`
+  environment variable, the `[llm] model = "..."` key in
+  `~/.allspark/config.toml`, or dropping a custom `.gguf` directly
+  into `~/.allspark/models/`. All three documented in
+  `docs/CONFIGURATION.md`.
+- Override catalog in `models.yaml`: `deepseek-v4-flash` (284B/13B
+  MoE, ≥192GB), `deepseek-v4-pro` (1.6T/49B MoE, ≥1TB),
+  `deepseek-r1-distill-qwen-14b` (reasoning-mode option for
+  Comfortable+), `qwen3-coder-30b-a3b-instruct-q4` (tool-use option
+  for Flagship). None are defaults — strict per-tier RAM-fit policy
+  keeps 32GB Flagship users from auto-OOM.
+
+### Changed
+
+- Default LLMs upgraded from Qwen2.5 (Sept 2024) to Qwen3 series
+  across all five tiers:
+    - Phantom (≥2GB): Qwen3-1.7B-Instruct-Q4_K_M (was Qwen2.5-1.5B)
+    - Minimum (≥4GB): Qwen3-4B-Instruct-Q4_K_M (was Qwen2.5-3B)
+    - Recommended (≥8GB): Qwen3-8B-Instruct-Q4_K_M (was Qwen2.5-7B)
+    - Comfortable (≥16GB): Qwen3-14B-Instruct-Q4_K_M (unchanged size)
+    - Flagship (≥32GB): Qwen3-32B-Instruct-Q4_K_M (was Qwen2.5-72B —
+      72B-Q4 needed 40GB+ which exceeded the tier RAM threshold and
+      auto-OOM'd many users; 32B fits the budget honestly)
+- `infrastructure.hardware.LLM_MODEL_MAP` is retained for backward
+  compatibility but now sources its identifiers from `models.yaml`.
+  The `compute_feature_flags()` function delegates LLM selection to
+  the registry and respects override env/config.
+- `init_wizard._choose_other_model()` and `web_ui` model APIs read
+  the catalog dynamically from `model_registry`. Adding a new model
+  is now a yaml change, not a code change.
+
+### Documentation
+
+- `docs/CONFIGURATION.md` adds a "Default LLM per hardware tier"
+  section with the upgraded mapping, an "Overriding the default
+  model" how-to, and an "Override catalog (advanced)" reference for
+  the V4 / R1-Distill / Coder lineup.
+
 ## [1.0.1] - 2026-06-17
 
 Maintenance release. Closes the v1.0.0 regression backlog (B-1..B-22),

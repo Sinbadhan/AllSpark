@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 from allspark.core.config import DEFAULT_DB_DIR
-from allspark.infrastructure.hardware import LLM_MODEL_MAP, FeatureFlags, HardwareTier
+from allspark.infrastructure.hardware import FeatureFlags, HardwareTier
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +44,11 @@ class LLMEngine:
         model_path = self._find_model()
         if not model_path:
             model_name = self.flags.llm_model
+            download_hint = self._download_hint(model_name)
             self._error = (
                 f"Model file not found: {model_name}.gguf\n"
                 f"Expected location: {LLM_MODELS_DIR}/{model_name}.gguf\n"
-                f"Download from: https://huggingface.co/Qwen/Qwen2.5-{self._model_size()}-Instruct-GGUF"
+                f"Download from: {download_hint}"
             )
             return False
 
@@ -190,11 +191,16 @@ class LLMEngine:
 
         return None
 
-    def _model_size(self) -> str:
-        info = LLM_MODEL_MAP.get(self.flags.tier, {})
-        model = info.get("model", "Qwen2.5-3B")
-        size = model.replace("Qwen2.5-", "").replace("-Q4", "")
-        return size
+    def _download_hint(self, model_name: str) -> str:
+        """Best-effort download URL for ``model_name`` from the catalog;
+        falls back to the HuggingFace search page when the model is not
+        in the catalog (custom user .gguf)."""
+        try:
+            from allspark.services import model_registry
+            entry = model_registry.get_model(model_name)
+            return entry.url_mirror or entry.url_hf
+        except (KeyError, ImportError):
+            return f"https://huggingface.co/models?search={model_name}"
 
     def get_status(self) -> dict:
         return {

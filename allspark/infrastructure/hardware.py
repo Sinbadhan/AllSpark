@@ -85,12 +85,17 @@ TIER_THRESHOLDS = {
 }
 
 LLM_MODEL_MAP = {
-    HardwareTier.PHANTOM: {"model": "Qwen2.5-1.5B-Q4", "size_gb": 1, "speed_tps": "~1"},
-    HardwareTier.MINIMUM: {"model": "Qwen2.5-3B-Q4", "size_gb": 2, "speed_tps": "~3"},
-    HardwareTier.RECOMMENDED: {"model": "Qwen2.5-7B-Q4", "size_gb": 4.5, "speed_tps": "~8"},
-    HardwareTier.COMFORTABLE: {"model": "Qwen2.5-14B-Q4", "size_gb": 9, "speed_tps": "~15"},
-    HardwareTier.FLAGSHIP: {"model": "Qwen2.5-72B-Q4", "size_gb": 40, "speed_tps": "~50"},
+    HardwareTier.PHANTOM: {"model": "qwen3-1_7b-instruct-q4", "size_gb": 1, "speed_tps": "~2"},
+    HardwareTier.MINIMUM: {"model": "qwen3-4b-instruct-q4", "size_gb": 2.5, "speed_tps": "~5"},
+    HardwareTier.RECOMMENDED: {"model": "qwen3-8b-instruct-q4", "size_gb": 5, "speed_tps": "~10"},
+    HardwareTier.COMFORTABLE: {"model": "qwen3-14b-instruct-q4", "size_gb": 9, "speed_tps": "~18"},
+    HardwareTier.FLAGSHIP: {"model": "qwen3-32b-instruct-q4", "size_gb": 20, "speed_tps": "~35"},
 }
+# NOTE: this dict is kept for backward compatibility with code that
+# expects the old shape. The single source of truth is
+# `allspark/data/models.yaml`, exposed via
+# `allspark.services.model_registry`. Any update here MUST stay in sync
+# with `recommendations:` in models.yaml.
 
 
 def detect_hardware() -> HardwareProfile:
@@ -205,13 +210,18 @@ def _classify_tier(profile: HardwareProfile) -> HardwareTier:
 
 
 def compute_feature_flags(tier: HardwareTier, gpu_available: bool = False) -> FeatureFlags:
+    # Lazy import to avoid circular dependency: model_registry imports
+    # HardwareTier from this module.
+    from allspark.services.model_registry import resolve_model_name
+
     flags = FeatureFlags()
+    llm_model = resolve_model_name(tier)
 
     if tier == HardwareTier.PHANTOM:
         flags.vector_rag = False
         flags.kiwix = False
         flags.llm = True
-        flags.llm_model = LLM_MODEL_MAP[tier]["model"]
+        flags.llm_model = llm_model
         flags.multilingual_knowledge = False
         flags.image_recognition = False
         flags.voice_input = False
@@ -232,7 +242,7 @@ def compute_feature_flags(tier: HardwareTier, gpu_available: bool = False) -> Fe
         flags.vector_rag = True
         flags.kiwix = True
         flags.llm = True
-        flags.llm_model = LLM_MODEL_MAP[tier]["model"]
+        flags.llm_model = llm_model
         flags.multilingual_knowledge = True
         flags.image_recognition = gpu_available
         flags.voice_input = False
@@ -253,7 +263,7 @@ def compute_feature_flags(tier: HardwareTier, gpu_available: bool = False) -> Fe
         flags.vector_rag = True
         flags.kiwix = True
         flags.llm = True
-        flags.llm_model = LLM_MODEL_MAP[tier]["model"]
+        flags.llm_model = llm_model
         flags.multilingual_knowledge = True
         flags.image_recognition = True
         flags.voice_input = gpu_available
@@ -274,7 +284,7 @@ def compute_feature_flags(tier: HardwareTier, gpu_available: bool = False) -> Fe
         flags.vector_rag = True
         flags.kiwix = True
         flags.llm = True
-        flags.llm_model = LLM_MODEL_MAP[tier]["model"]
+        flags.llm_model = llm_model
         flags.multilingual_knowledge = True
         flags.image_recognition = True
         flags.voice_input = True

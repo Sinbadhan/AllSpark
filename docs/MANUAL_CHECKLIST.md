@@ -28,7 +28,7 @@ CI on GitHub runs `ruff` + `mypy` + `python scripts/bench_import.py
 
 | # | Item | Hardware | Notes |
 |---:|------|----------|-------|
-| 2.1 | LLM inference | CPU+GPU box with `llama-cpp-python` and Qwen2.5 model | first response within 60 s; subsequent within 10 s |
+| 2.1 | LLM inference | CPU+GPU box with `llama-cpp-python` and the tier-default Qwen3 GGUF | first response within 60 s; subsequent within 10 s |
 | 2.2 | Voice STT | Whisper.cpp + microphone | wake word `火种` triggers VAD; transcript matches utterance |
 | 2.3 | Voice TTS | pyttsx3 + speakers | speaks the daily briefing in current language |
 | 2.4 | Local vision | webcam + ONNX yolov8n | `vision identify <photo.jpg>` returns 1+ object class with confidence |

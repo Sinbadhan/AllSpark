@@ -13,7 +13,6 @@ from allspark.core.config import DEFAULT_DB_DIR
 from allspark.core.database import Database
 from allspark.core.i18n import get_language, set_language, t
 from allspark.infrastructure.hardware import (
-    LLM_MODEL_MAP,
     HardwareTier,
     compute_feature_flags,
     detect_hardware,
@@ -25,24 +24,9 @@ console = Console()
 
 MODELS_DIR = DEFAULT_DB_DIR / "models"
 
-MODEL_DOWNLOAD_URLS = {
-    "Qwen2.5-1.5B-Q4": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
-    "Qwen2.5-3B-Q4": "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf",
-    "Qwen2.5-7B-Q4": "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m.gguf",
-    "Qwen2.5-14B-Q4": "https://huggingface.co/Qwen/Qwen2.5-14B-Instruct-GGUF/resolve/main/qwen2.5-14b-instruct-q4_k_m.gguf",
-    "Qwen2.5-32B-Q4": "https://huggingface.co/Qwen/Qwen2.5-32B-Instruct-GGUF/resolve/main/qwen2.5-32b-instruct-q4_k_m.gguf",
-    "Qwen2.5-72B-Q4": "https://huggingface.co/Qwen/Qwen2.5-72B-Instruct-GGUF/resolve/main/qwen2.5-72b-instruct-q4_k_m.gguf",
-}
-
-# Mirror sources for regions with limited HuggingFace access
-MIRROR_URLS = {
-    "Qwen2.5-1.5B-Q4": "https://hf-mirror.com/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
-    "Qwen2.5-3B-Q4": "https://hf-mirror.com/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf",
-    "Qwen2.5-7B-Q4": "https://hf-mirror.com/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m.gguf",
-    "Qwen2.5-14B-Q4": "https://hf-mirror.com/Qwen/Qwen2.5-14B-Instruct-GGUF/resolve/main/qwen2.5-14b-instruct-q4_k_m.gguf",
-    "Qwen2.5-32B-Q4": "https://hf-mirror.com/Qwen/Qwen2.5-32B-Instruct-GGUF/resolve/main/qwen2.5-32b-instruct-q4_k_m.gguf",
-    "Qwen2.5-72B-Q4": "https://hf-mirror.com/Qwen/Qwen2.5-72B-Instruct-GGUF/resolve/main/qwen2.5-72b-instruct-q4_k_m.gguf",
-}
+# Model URLs and metadata live in allspark/data/models.yaml.
+# Use model_registry to access them.
+from allspark.services import model_registry as _registry  # noqa: E402
 
 
 def run_init_wizard(db: Database) -> dict:
@@ -205,9 +189,15 @@ def _step_model_setup(db: Database, hw_result: dict) -> dict:
         return {"model": None, "downloaded": False}
 
     recommended = flags.llm_model
-    model_info = LLM_MODEL_MAP.get(profile.tier, {})
-    size_gb = model_info.get("size_gb", 0)
-    speed = model_info.get("speed_tps", "?")
+    try:
+        recommended_entry = _registry.get_model(recommended)
+        size_gb = recommended_entry.file_gb
+        speed = recommended_entry.speed_tps
+    except KeyError:
+        # Recommended model isn't in the catalog (user override pointing
+        # at a custom .gguf). Show placeholders.
+        size_gb = 0
+        speed = "?"
 
     console.print(t("init_model_recommend", tier=profile.tier.value, model=recommended))
     console.print(t("init_model_size_speed", size=size_gb, speed=speed))
@@ -258,37 +248,35 @@ def _step_model_setup(db: Database, hw_result: dict) -> dict:
 def _choose_other_model() -> dict:
     console.print(f"\n{t('init_model_available')}")
 
-    model_keys = list(MODEL_DOWNLOAD_URLS.keys())
-    for i, name in enumerate(model_keys, 1):
-        info = LLM_MODEL_MAP.get(
-            next((t for t in HardwareTier if LLM_MODEL_MAP.get(t, {}).get("model") == name), None),
-            {}
+    catalog = _registry.list_models()
+    for i, entry in enumerate(catalog, 1):
+        console.print(
+            f"  {i}. {entry.name} (~{entry.file_gb}GB, ~{entry.speed_tps} t/s, "
+            f"min {entry.min_ram_gb}GB RAM)"
         )
-        size = info.get("size_gb", "?")
-        speed = info.get("speed_tps", "?")
-        console.print(f"  {i}. {name} (~{size}GB, ~{speed} t/s)")
 
     while True:
-        choice = console.input(f"\n🔥 [1-{len(model_keys)}] > ").strip()
+        choice = console.input(f"\n🔥 [1-{len(catalog)}] > ").strip()
         try:
             idx = int(choice) - 1
-            if 0 <= idx < len(model_keys):
-                name = model_keys[idx]
-                info = LLM_MODEL_MAP.get(
-                    next((t for t in HardwareTier if LLM_MODEL_MAP.get(t, {}).get("model") == name), None),
-                    {}
-                )
-                size_gb = info.get("size_gb", 2)
-                _download_model(name, size_gb)
-                return {"model": name, "downloaded": True}
+            if 0 <= idx < len(catalog):
+                entry = catalog[idx]
+                _download_model(entry.name, entry.file_gb)
+                return {"model": entry.name, "downloaded": True}
         except ValueError:
             pass
         console.print(f"[red]{t('init_hw_invalid_choice')}[/]")
 
 
 def _download_model(model_name: str, size_gb: float):
-    url = MODEL_DOWNLOAD_URLS.get(model_name)
-    mirror_url = MIRROR_URLS.get(model_name)
+    try:
+        entry = _registry.get_model(model_name)
+        url = entry.url_hf
+        mirror_url = entry.url_mirror
+    except KeyError:
+        # Unknown model name (probably a user-supplied custom .gguf already
+        # placed in MODELS_DIR) — nothing to download.
+        return
     if not url:
         return
 

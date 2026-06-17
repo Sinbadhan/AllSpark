@@ -17,15 +17,9 @@ from allspark.infrastructure.module_loader import ModuleRegistry
 
 MODELS_DIR = DEFAULT_DB_DIR / "models"
 
-# Mirror sources for regions with limited HuggingFace access
-MIRROR_DOWNLOAD_URLS = {
-    "Qwen2.5-1.5B-Q4": "https://hf-mirror.com/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
-    "Qwen2.5-3B-Q4": "https://hf-mirror.com/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf",
-    "Qwen2.5-7B-Q4": "https://hf-mirror.com/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m.gguf",
-    "Qwen2.5-14B-Q4": "https://hf-mirror.com/Qwen/Qwen2.5-14B-Instruct-GGUF/resolve/main/qwen2.5-14b-instruct-q4_k_m.gguf",
-    "Qwen2.5-32B-Q4": "https://hf-mirror.com/Qwen/Qwen2.5-32B-Instruct-GGUF/resolve/main/qwen2.5-32b-instruct-q4_k_m.gguf",
-    "Qwen2.5-72B-Q4": "https://hf-mirror.com/Qwen/Qwen2.5-72B-Instruct-GGUF/resolve/main/qwen2.5-72b-instruct-q4_k_m.gguf",
-}
+# Model URLs and metadata live in allspark/data/models.yaml.
+# Use model_registry to access them.
+from allspark.services import model_registry as _registry  # noqa: E402
 
 # Jinja2 template environment
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
@@ -52,12 +46,10 @@ def _render_template(name: str, **context) -> str:
 
 
 MODEL_DOWNLOAD_URLS = {
-    "Qwen2.5-1.5B-Q4": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
-    "Qwen2.5-3B-Q4": "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf",
-    "Qwen2.5-7B-Q4": "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF/resolve/main/qwen2.5-7b-instruct-q4_k_m.gguf",
-    "Qwen2.5-14B-Q4": "https://huggingface.co/Qwen/Qwen2.5-14B-Instruct-GGUF/resolve/main/qwen2.5-14b-instruct-q4_k_m.gguf",
-    "Qwen2.5-32B-Q4": "https://huggingface.co/Qwen/Qwen2.5-32B-Instruct-GGUF/resolve/main/qwen2.5-32b-instruct-q4_k_m.gguf",
-    "Qwen2.5-72B-Q4": "https://huggingface.co/Qwen/Qwen2.5-72B-Instruct-GGUF/resolve/main/qwen2.5-72b-instruct-q4_k_m.gguf",
+    entry.name: entry.url_hf for entry in _registry.list_models() if entry.url_hf
+}
+MIRROR_DOWNLOAD_URLS = {
+    entry.name: entry.url_mirror for entry in _registry.list_models() if entry.url_mirror
 }
 
 
