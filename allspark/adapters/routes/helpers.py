@@ -63,13 +63,23 @@ def service_unavailable(name: str, app=None) -> JSONResponse:
     )
 
 
-async def http_exception_handler(request: Request, exc: HTTPException):
-    """Convert all HTTPException to unified error format."""
+async def http_exception_handler(request: Request, exc: Exception):
+    """Convert all HTTPException to unified error format.
+
+    Starlette types the handler's exception param as ``Exception`` (not
+    ``HTTPException``), so we accept the broader type and narrow it here.
+    """
+    if isinstance(exc, HTTPException):
+        status_code = exc.status_code
+        detail = str(exc.detail)
+    else:
+        status_code = 500
+        detail = str(exc)
     return JSONResponse(
-        status_code=exc.status_code,
+        status_code=status_code,
         content={
             "status": "error",
-            "error": str(exc.detail),
+            "error": detail,
             "detail": "",
             "next_action": "",
         },

@@ -2,7 +2,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from allspark.core.i18n import t
 
@@ -69,7 +69,7 @@ class DiaryManager:
                     emotion: Optional[str] = None,
                     limit: int = 50) -> list[dict]:
         query = "SELECT * FROM diary_entries"
-        params = []
+        params: list[Any] = []
         conditions = []
 
         if date:

@@ -1,0 +1,454 @@
+- id: community/governance/structure/en
+  category: community
+  subcategory: governance
+  priority: 2
+  title: Community Governance Design
+  summary: Long-term survival needs stable community organization. Design a suitable
+    power structure and division of labor based on headcount and skill distribution.
+    AllSpark can help assess and recommend a structure.
+  steps:
+  - "Tally community size, skill distribution, and health status"
+  - "Under 10 people: flat structure, commander + executors"
+  - "10-30: add domain experts (medical/engineering/agriculture/defense)"
+  - "30+: group management with mid-level coordinators"
+  - "50+: consider a council; major decisions by vote"
+  - "AllSpark dynamically evaluates whether the structure fits the live data"
+  prerequisites:
+  - "Member registry"
+  - "Skill assessment"
+  - "AllSpark system"
+  warnings:
+  - "Over-concentration of power causes bad decisions and resentment"
+  - "Pure democracy is too slow in a crisis — balance is needed"
+  - "Review the structure every 2-4 weeks and adjust as needed"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: community/conflict/resolution/en
+  category: community
+  subcategory: conflict
+  priority: 2
+  title: Conflict Mediation and Arbitration
+  summary: Living together inevitably produces conflict. Build a systematic resolution
+    process so disputes don't escalate and threaten group survival.
+  steps:
+  - "Classify the conflict: resources / power / interpersonal / values"
+  - "Resource conflict: allocate by survival priority; AllSpark gives objective data"
+  - "Power conflict: return to role definitions; commander makes the final call"
+  - "Interpersonal: third-party mediation; physically separate if needed"
+  - "Values: agree to disagree; survival is the shared baseline"
+  - "Log every conflict and its resolution for future reference"
+  prerequisites:
+  - "Community rules"
+  - "A mediator"
+  - "AllSpark assist"
+  warnings:
+  - "Ignoring small conflicts leads to big blowups"
+  - "The mediator must be neutral, not a party to the conflict"
+  - "AllSpark's advice is a reference, not an order"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: community/education/system/en
+  category: community
+  subcategory: education
+  priority: 2
+  title: Knowledge Transfer and Education
+  summary: Civilizational continuity depends on passing down knowledge. Build a systematic
+    education system so critical skills don't die with any one person.
+  steps:
+  - "Inventory critical skills and their holders"
+  - "Train at least 2 successors for every critical skill"
+  - "Establish apprenticeship: expert mentoring, hands-on practice"
+  - "The AllSpark knowledge base is the standard textbook and assessment baseline"
+  - "Quarterly assessment of skill mastery"
+  - "Log learning progress and assessment results in AllSpark"
+  prerequisites:
+  - "Skill inventory"
+  - "Knowledge base"
+  - "Teaching time"
+  warnings:
+  - "Never let any critical skill rest with only one person"
+  - "Theory must pair with practice — armchair knowledge is lethal in a disaster"
+  - "Children's education must not stop — they are the future of civilization"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: engineering/blacksmithing/basics/en
+  category: engineering
+  subcategory: blacksmithing
+  priority: 2
+  title: Basic Blacksmithing
+  summary: Metalworking is a core rebuilding skill. Start with a simple forge and build
+    up basic forging technique to make tools and parts.
+  steps:
+  - "Build a simple forge: firebrick/mud-brick firebox connected to hand bellows"
+  - "Fuel: charcoal (hardwood-burned, easier to obtain than coal)"
+  - "Tools: iron hammer, tongs (recoverable from ruins)"
+  - "Heat steel to orange (about 900°C) and begin forging"
+  - "Basic operations: drawing (lengthen), upsetting (shorten), bending, punching"
+  - "Quench: heat red-hot then plunge into water or oil for hardness"
+  - "Temper: after quenching, low-heat (200-400°C) to remove brittleness"
+  prerequisites:
+  - "Refractory material"
+  - "Charcoal/fuel"
+  - "Hammer and tongs"
+  - "Scrap steel"
+  warnings:
+  - "Forging temperatures are extreme — wear protection (heavy gloves, goggles)"
+  - "Poor quenching cracks the workpiece — practice repeatedly"
+  - "Poor ventilation causes carbon monoxide poisoning"
+  - "Scrap steel composition is unknown and performance may be unstable"
+  verification: field_tested
+  source: pre_collapse
+  language: en
+- id: engineering/electricity/generator/en
+  category: engineering
+  subcategory: electricity
+  priority: 2
+  title: Simple Generator
+  summary: Electricity underpins modern civilization. Build a simple generator from
+    available materials to power AllSpark and key equipment.
+  steps:
+  - "Option 1: bicycle generator — modify a bike's rear wheel to drive an alternator; pedaling yields ~50-100W"
+  - "Option 2: hydro — use stream head with a homemade water wheel driving a generator; output scales with flow"
+  - "Option 3: wind — homemade blades + alternator; needs a steady wind area"
+  - "Option 4: steam — boiler + steam turbine; complex but high power"
+  - "Storage: lead-acid battery (car battery) to store energy"
+  - "Regulation: use a regulator circuit to protect equipment"
+  prerequisites:
+  - "Generator (an alternator works)"
+  - "Battery"
+  - "Wire"
+  - "Basic electronics"
+  warnings:
+  - "Insulate and protect electrical systems — electrocution kills"
+  - "Lead-acid batteries emit hydrogen while charging — ventilate"
+  - "Never short a battery — fire or explosion can result"
+  - "Prioritize powering the AllSpark system"
+  verification: field_tested
+  source: pre_collapse
+  language: en
+- id: engineering/electricity/wiring/en
+  category: engineering
+  subcategory: electricity
+  priority: 2
+  title: Basic Wiring
+  summary: Build a simple electrical system from scratch — wiring layout, protection,
+    and basic repair.
+  steps:
+  - "Plan circuits: separate lighting (12V LED), charging, and equipment lines"
+  - "Choose wire: copper is best, aluminum next; cross-section sized to current"
+  - "Joints: twist + insulating tape; solder if possible"
+  - "Protection: fuse each line (homemade: fine copper wire)"
+  - "Switches: simple knife switches for on/off"
+  - "Grounding: bond metal enclosures to earth to prevent shock"
+  prerequisites:
+  - "Wire"
+  - "Insulation"
+  - "Basic tools"
+  - "Multimeter (if available)"
+  warnings:
+  - "Insulate every exposed conductor — prevent shorts and shock"
+  - "Don't overload wire — it overheats and catches fire"
+  - "Don't touch electrical gear with wet hands"
+  - "Cut power before repairing"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: engineering/masonry/basics/en
+  category: engineering
+  subcategory: masonry
+  priority: 2
+  title: Basic Masonry and Building
+  summary: Long-term settlement needs permanent structures. Master basic masonry to
+    build sturdy shelters and facilities.
+  steps:
+  - "Materials: use what's local — stone, brick, rammed earth, bamboo/wood"
+  - "Foundation: dig 30-50cm deep, fill with crushed stone and compact"
+  - "Mortar: cement + sand + water (1:3:0.5); without cement use lime mortar or mud"
+  - "Walls: stagger joints, keep each course level, reinforce corners"
+  - "Openings: leave holes for doors/windows, place a lintel (wood beam or angle iron) above"
+  - "Roof: gabled or flat, chosen by rainfall"
+  prerequisites:
+  - "Building materials"
+  - "Tools (trowel, level)"
+  - "Labor"
+  warnings:
+  - "A weak foundation causes cracking or collapse"
+  - "Don't cut holes in load-bearing walls freely"
+  - "In seismic zones add ring beams and tie columns"
+  - "Work safely at height — prevent falls"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: agriculture/livestock/chicken/en
+  category: agriculture
+  subcategory: livestock
+  priority: 2
+  title: Poultry — Chickens
+  summary: Chickens are the easiest poultry, providing eggs and meat. Simple to manage
+    and fast-breeding, ideal for community raising.
+  steps:
+  - "Coop: 0.3-0.5m² per bird, well-ventilated, rain- and cold-proof"
+  - "Perches: 50-80cm off the ground, 20cm per bird"
+  - "Nest boxes: one per 3-4 hens, lined with straw"
+  - "Feed: grain + greens + insects + minerals (crushed eggshell for calcium)"
+  - "Water: clean water constantly, change daily"
+  - "Incubation: natural (broody hen) hatches in 21 days"
+  - "Health: keep the coop dry and clean, isolate sick birds"
+  prerequisites:
+  - "Coop"
+  - "Breeders (1 rooster : 8-10 hens)"
+  - "Feed source"
+  warnings:
+  - "Avian flu: wash and disinfect after handling sick birds"
+  - "Weasels/snakes/stray cats are the main predators — predator-proof the coop"
+  - "Don't feed moldy feed"
+  - "Quarantine new birds for a week before mixing"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: agriculture/livestock/goat/en
+  category: agriculture
+  subcategory: livestock
+  priority: 2
+  title: Goat Raising
+  summary: Goats are hardy, providing milk, meat, and hides. A key protein and nutrition
+    source after a disaster.
+  steps:
+  - "Pen: dry and ventilated, 1.5-2m² per adult goat"
+  - "Pasture: graze 4-6h daily, avoid toxic plants"
+  - "Supplement: hay + concentrate (corn, soybean meal); boost nutrition during lactation"
+  - "Water: clean water 2-3 times daily"
+  - "Breeding: sexually mature at 8-10 months, 150-day gestation, usually 1-2 kids"
+  - "Milking: twice daily, morning and evening, mind hygiene"
+  - "Health: deworm regularly, keep the pen clean"
+  prerequisites:
+  - "Pen"
+  - "Breeders"
+  - "Pasture or feed"
+  - "Water source"
+  warnings:
+  - "Goats strip bark — protect trees"
+  - "A damp pen causes hoof disease"
+  - "Quarantine newly purchased animals"
+  - "Boil goat milk before drinking"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: agriculture/aquaculture/fish_pond/en
+  category: agriculture
+  subcategory: aquaculture
+  priority: 2
+  title: Simple Fish Pond
+  summary: A fish pond is a stable protein source. Build a simple pond from natural
+    water or rain and raise freshwater fish.
+  steps:
+  - "Site: ample water, low ground, clay-rich soil"
+  - "Build: 100-500m², 1.5-2m deep, 1:1.5 slopes"
+  - "Seal: compact the bottom, line with clay or plastic film"
+  - "Prep: disinfect with quicklime 75kg/mu (≈112kg/ha), fill after 7 days"
+  - "Stock: polyculture of carp, crucian carp, grass carp (4:3:3)"
+  - "Feed: twice daily, 3-5% of body weight"
+  - "Manage: exchange 1/3 water periodically; monitor clarity (30-40cm)"
+  prerequisites:
+  - "Water source"
+  - "Land"
+  - "Fingerlings"
+  - "Feed"
+  warnings:
+  - "Don't build downstream of a pollution source"
+  - "In hot weather aerate to prevent fish kills"
+  - "Reinforce banks against escape in storms"
+  - "Don't overfeed — leftover feed fouls the water"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: medicine/herbal/pharmacopoeia/en
+  category: medicine
+  subcategory: herbal
+  priority: 2
+  title: Common Medicinal Plant Reference
+  summary: Once modern drugs run out, traditional herbs are the main treatment. Know
+    how to identify, collect, and use common medicinal plants.
+  steps:
+  - "Fever: honeysuckle (Lonicera) flowers/leaves as decoction, 10-15g per day"
+  - "Bleeding: sanqi powder topically, or crushed mugwort leaves on the wound"
+  - "Inflammation: dandelion whole-plant decoction, or crushed fresh leaves topically"
+  - "Diarrhea: pomegranate peel decoction, or strong tea"
+  - "Cough: loquat leaf (de-fuzzed) decoction, or fritillary bulb steamed with pear"
+  - "Detox: mung bean + licorice soup (mung bean 50g + licorice 10g decoction)"
+  - "Wounds: lithospermum oil (gromwell soaked in plant oil) applied topically"
+  prerequisites:
+  - "Plant identification skill"
+  - "Decoction vessels"
+  - "Dry storage"
+  warnings:
+  - "Confirm the plant species 100% before use — toxic lookalikes can kill"
+  - "Most herbs are contraindicated in pregnancy, especially blood-activating ones"
+  - "Herb dosing is imprecise — start small"
+  - "For serious illness, seek professional care first"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: medicine/surgery/basic/en
+  category: medicine
+  subcategory: surgery
+  priority: 2
+  title: Emergency Surgery Basics
+  summary: When professional care is unavailable, some procedures must be done by laypeople.
+    This is a last resort, only when no other option exists.
+  steps:
+  - "Debridement: irrigate the wound with boiled saline, remove debris and necrotic tissue"
+  - "Suturing: boiled sterile needle and thread; interrupted stitches 1cm apart"
+  - "Tooth extraction: loosen with sterile pliers, rock side to side, pull; bite gauze to stop bleeding"
+  - "Abscess: sterilize, incise with a sterile blade, drain pus"
+  - "Fracture: splint + bandage, immobilize the joints above and below"
+  - "Burns: cool-water rinse 20 minutes, don't pop blisters, dress sterile"
+  prerequisites:
+  - "Sterile instruments"
+  - "Gauze and bandages"
+  - "Basic medicines"
+  - "An assistant"
+  warnings:
+  - "This is a last resort — prefer professional care whenever any is available"
+  - "Sterilize all instruments (boil 15+ minutes)"
+  - "Watch closely for infection after: redness, heat, pus"
+  - "Record every procedure for later medical reference"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: communication/radio/ham/en
+  category: communication
+  subcategory: radio
+  priority: 2
+  title: Amateur Radio Communication
+  summary: Radio is the only reliable long-distance communication. Set up a ham station
+    to stay in touch with the outside world.
+  steps:
+  - "Gear: HF transceiver (3-30MHz), or modify a scrap receiver"
+  - "Antenna: a dipole is simplest — two 1/4-wavelength wires with feedline at the center"
+  - "Power: 12V battery or hand-crank generator"
+  - "Bands: 40m (7.000-7.200MHz) by day, 80m (3.500-3.900MHz) by night"
+  - "Mode: Morse code (most power-efficient) or voice (AM/SSB)"
+  - "Callsign: assign a temporary one — format: region code + serial"
+  - "Protocol: log time, frequency, counterpart callsign, and a summary of each contact"
+  prerequisites:
+  - "HF transceiver"
+  - "Antenna material"
+  - "Power"
+  - "Morse code chart"
+  warnings:
+  - "Transmitting high power can reveal your position — use cautiously"
+  - "Disconnect the antenna in thunderstorms to avoid lightning"
+  - "Never transmit false distress signals"
+  - "Follow basic etiquette; don't jam emergency frequencies"
+  verification: field_tested
+  source: pre_collapse
+  language: en
+- id: communication/morse/code/en
+  category: communication
+  subcategory: morse
+  priority: 2
+  title: Morse Code Quick Reference
+  summary: Morse is the most basic long-distance signaling code, sendable with simple
+    gear. SOS is the international distress signal.
+  steps:
+  - "Basics: dot (.) short press, dash (-) long press (3x dot length)"
+  - "SOS: ··· ——— ··· (three short, three long, three short)"
+  - "Common letters: A·- B-··· C-·-· D-·· E· F··-· G--· H···· I·· J·--- K-·- L·-·· M-- N-· O--- P·--· Q--·- R·-· S··· T- U··- V···- W·-- X-··- Y-·-- Z--··"
+  - "Numbers: 1·---- 2··--- 3···-- 4····- 5····· 6-···· 7--··· 8---·· 9----· 0-----"
+  - "Sending: send your callsign first, then theirs, then the message"
+  - "Light: flashlight/mirror — short flash = dot, long flash = dash"
+  - "Sound: short tap = dot, long tap = dash"
+  prerequisites:
+  - "A signaling device (flashlight/whistle/key)"
+  warnings:
+  - "Use SOS only in a genuine emergency"
+  - "Listen before transmitting — don't interfere with others"
+  - "Don't practice on emergency frequencies"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: defense/perimeter/design/en
+  category: defense
+  subcategory: perimeter
+  priority: 2
+  title: Community Defense Design
+  summary: A long-term settlement needs a systematic defense — from early warning to
+    denial, build layered defense in depth.
+  steps:
+  - "Outer warning: tripwires with bells/cans at 500m out"
+  - "Observation: a 24h watch on high ground"
+  - "Barrier: fence/hedge/ditch, 2m+ high"
+  - "Entry control: a single gate, with a guard and ID check"
+  - "Inner defense: harden core areas (supply cache/medical station) further"
+  - "Escape routes: plan at least 2 routes in different directions"
+  - "AllSpark assist: monitor sensor data, auto-alert on anomalies"
+  prerequisites:
+  - "Fencing material"
+  - "Labor"
+  - "Observation posts"
+  - "AllSpark system"
+  warnings:
+  - "Don't rely solely on physical barriers — human vigilance matters most"
+  - "Drill the defense plan so everyone knows the flow"
+  - "Avoid over-militarizing — it strains community morale"
+  - "AllSpark alerts assist but don't replace patrols"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: civilization/record/archives/en
+  category: civilization
+  subcategory: record
+  priority: 3
+  title: Civilizational Archive Recording
+  summary: Recording and preserving human knowledge is one of AllSpark's core missions.
+    Build a systematic archive.
+  steps:
+  - "Classify: science/technology/medicine/agriculture/history/culture/law/art"
+  - "Media: paper (most durable) + digital (AllSpark storage) + oral tradition"
+  - "Writing: use carbon ink or pencil — avoid erasable pens"
+  - "Paper: high-quality acid-free, dry sealed storage"
+  - "Digitize: AllSpark knowledge base as the standard format, back up to SKF regularly"
+  - "Update: audit archive completeness quarterly, fill gaps"
+  - "Transmit: critical knowledge held by many, on multiple media"
+  prerequisites:
+  - "Writing materials"
+  - "Storage space"
+  - "AllSpark system"
+  warnings:
+  - "Paper archives fear fire and water — store safely"
+  - "Don't rely on digital alone — EMP/hardware failure can lose it"
+  - "Oral tradition fades across generations — pair it with written records"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: civilization/law/basic/en
+  category: civilization
+  subcategory: law
+  priority: 3
+  title: Basic Community Legal Framework
+  summary: A long-term community needs a basic legal framework to keep order. Start
+    from the most fundamental survival rules and refine over time.
+  steps:
+  - "Article 1: Survival first — no action may endanger the group's basic survival"
+  - "Article 2: Resource sharing — basic survival resources (water/food/medicine) allocated by need"
+  - "Article 3: Labor duty — all able members must contribute work"
+  - "Article 4: No violence — zero tolerance for internal violence; disputes resolved by mediation"
+  - "Article 5: Knowledge sharing — survival knowledge held by any member must be taught to others"
+  - "Article 6: Command — the commander has temporary authority in emergencies"
+  - "Article 7: Appeal — any member may appeal a decision"
+  - "Amendment: changes require 2/3 majority"
+  prerequisites:
+  - "Community members"
+  - "AllSpark record system"
+  warnings:
+  - "Rules need majority buy-in or they're empty"
+  - "Enforcement must be fair — unfair enforcement is worse than none"
+  - "Revise rules as the community grows"
+  - "AllSpark can record and remind, but cannot enforce"
+  verification: expert_verified
+  source: pre_collapse
+  language: en

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from allspark.core.i18n import t
 
@@ -9,7 +9,7 @@ class WeatherPredictor:
         self.sensor_hub = sensor_hub
 
     def get_current_conditions(self) -> dict:
-        result = {
+        result: dict[str, Any] = {
             "pressure_hpa": None,
             "pressure_trend": "stable",
             "temperature_c": None,
@@ -52,7 +52,7 @@ class WeatherPredictor:
         if conditions is None:
             conditions = self.get_current_conditions()
 
-        prediction = {
+        prediction: dict[str, Any] = {
             "forecast": "unknown",
             "confidence": 0.0,
             "severity": "normal",

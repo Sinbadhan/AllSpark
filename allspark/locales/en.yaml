@@ -1286,6 +1286,11 @@ web_nav_executions: Executions
 web_nav_config: Config
 web_nav_repository: Repository
 web_nav_docs: Docs
+web_page_title_dashboard: Dashboard
+web_page_title_system: System Monitor
+web_page_title_executions: Executions
+web_page_title_config: Config
+web_page_title_repository: Repository
 web_execute_task: Execute Task
 web_search_placeholder: Search...
 web_dashboard_title: System Health Matrix
@@ -1317,6 +1322,7 @@ web_no_active_tasks: No active tasks
 web_no_results: No results found
 web_unconfigured: UNCONFIGURED
 web_set_amount_hint: Set amount and daily use to calculate remaining time
+web_set_amount_hint_short: Unconfigured — click to edit
 web_remaining_unknown: Remaining time unknown
 
 # ─── Web System / Executions / Config / Repository ───────────────────────
@@ -1586,6 +1592,8 @@ web_tab_skf: SKF PACKAGES
 web_tab_community: COMMUNITY
 web_tab_timeline: Timeline
 web_alert_ok: OK
+web_ok: OK
+web_cancel: Cancel
 web_error_occurred: An error occurred
 web_power_sustained: Sustained
 web_power_unknown: Unknown
@@ -1675,6 +1683,7 @@ web_system_integrity_critical: CRITICAL
 web_system_module_loaded: loaded
 web_system_module_available: available
 web_system_module_disabled: disabled
+web_system_module_unsupported: unsupported
 web_system_status_label: status
 web_system_model_label: Model
 web_system_health_status_label: Health status

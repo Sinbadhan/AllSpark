@@ -39,7 +39,7 @@ def register_survival_routes(app, check):
                 "priority": goal.priority, "status": goal.status, "progress": goal.progress,
                 "category": goal.category, "source": goal.source,
                 "milestone_done": goal.milestone_done, "milestone_count": goal.milestone_count,
-                "deadline": goal.deadline, "rationale": goal.rationale,
+                "deadline": goal.deadline, "rationale": render(goal.rationale),
             },
             "milestones": [
                 {"id": m.id, "description": render(m.description), "done": m.done, "order": m.order}

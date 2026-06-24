@@ -53,6 +53,7 @@ class SKFPackage:
         self.experience_log: list[ExperienceLog] = []
         self.local_data: list[dict] = []
         self.metadata: dict = {}
+        self._checksum_errors: list[str] = []
 
     @classmethod
     def from_db(cls, db, spark_id: str = "",
@@ -156,28 +157,28 @@ class SKFPackage:
         }
 
     def export_to_file(self, path: str) -> str:
-        path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
+        dest = Path(path)
+        dest.parent.mkdir(parents=True, exist_ok=True)
         data = self.to_dict()
 
-        with ZipFile(str(path), 'w', ZIP_DEFLATED) as zf:
+        with ZipFile(str(dest), 'w', ZIP_DEFLATED) as zf:
             zf.writestr(SKF_MANIFEST, json.dumps(data[SKF_MANIFEST], ensure_ascii=False, indent=2))
             zf.writestr(SKF_KNOWLEDGE, json.dumps(data[SKF_KNOWLEDGE], ensure_ascii=False, indent=2))
             zf.writestr(SKF_EXPERIENCE, json.dumps(data[SKF_EXPERIENCE], ensure_ascii=False, indent=2))
             if data[SKF_LOCAL_DATA]:
                 zf.writestr(SKF_LOCAL_DATA, json.dumps(data[SKF_LOCAL_DATA], ensure_ascii=False, indent=2))
 
-        return str(path)
+        return str(dest)
 
     @classmethod
     def import_from_file(cls, path: str) -> "SKFPackage":
-        path = Path(path)
-        if not path.exists():
-            raise FileNotFoundError(f"SKF file not found: {path}")
+        src = Path(path)
+        if not src.exists():
+            raise FileNotFoundError(f"SKF file not found: {src}")
 
         pkg = cls()
 
-        with ZipFile(str(path), 'r') as zf:
+        with ZipFile(str(src), 'r') as zf:
             names = zf.namelist()
 
             manifest_raw = zf.read(SKF_MANIFEST).decode('utf-8')
@@ -242,14 +243,14 @@ class SKFPackage:
                 experience_raw = zf.read(SKF_EXPERIENCE).decode('utf-8')
                 experience_data = json.loads(experience_raw)
                 for item in experience_data:
-                    entry = ExperienceLog(
+                    exp_entry = ExperienceLog(
                         id=item.get("id", str(uuid.uuid4())[:8]),
                         timestamp=item.get("timestamp", ""),
                         event=item.get("event", ""),
                         outcome=item.get("outcome", ""),
                         lesson=item.get("lesson", ""),
                     )
-                    pkg.experience_log.append(entry)
+                    pkg.experience_log.append(exp_entry)
 
             if SKF_LOCAL_DATA in names:
                 local_raw = zf.read(SKF_LOCAL_DATA).decode('utf-8')

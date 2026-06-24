@@ -8,7 +8,7 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from allspark.core.config import DEFAULT_DB_DIR
 
@@ -261,7 +261,7 @@ class DataPreservation:
         }
 
     def startup_integrity_check(self) -> dict:
-        result = {
+        result: dict[str, Any] = {
             "db_file_exists": self.db_path.exists(),
             "integrity_ok": False,
             "table_count": 0,

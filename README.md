@@ -255,7 +255,7 @@ AllSpark/
 │   ├── templates/                  # Web UI HTML templates
 │   └── docker/                     # Dockerfiles + docker-compose.yml
 │
-└── tests/                          # 537 automated tests (kept internal in public release)
+└── tests/                          # automated tests (count per `pytest tests/-q`; kept internal in public release)
 ```
 
 ---
@@ -278,7 +278,7 @@ AllSpark/
 
 | Check | Status |
 |-------|--------|
-| Automated tests | ✅ 537 passed |
+| Automated tests | ✅ see CI / pytest output |
 | Ruff lint | ✅ 0 errors |
 | mypy | ✅ CI-enforced, with historical typing debt isolated by error-code allowlist |
 | Packaging types | ✅ `py.typed` included |
@@ -289,7 +289,7 @@ AllSpark/
 ## Testing
 
 ```bash
-# Run all 537 tests
+# Run the full test suite
 python3 -m pytest tests/ -v --tb=short
 
 # Run specific module

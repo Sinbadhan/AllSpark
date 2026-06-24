@@ -11,6 +11,7 @@
 import logging
 import uuid
 from datetime import datetime
+from typing import cast
 
 from allspark.base_service import BaseService
 from allspark.core.database import Database
@@ -77,8 +78,8 @@ class WarningProtocol(BaseService):
         # Fallback to hardcoded heuristics
         if not plans and rtype in _FALLBACK_SOLUTIONS:
             for fallback in _FALLBACK_SOLUTIONS[rtype]:
-                title = t(fallback["title_key"])
-                steps = [t(skey) for skey in fallback["steps_keys"]]
+                title = t(cast(str, fallback["title_key"]))
+                steps = [t(skey) for skey in cast(list[str], fallback["steps_keys"])]
                 plans.append(ActionPlan(
                     id=f"plan-{uuid.uuid4().hex[:6]}",
                     warning_id=warning.get("resource", "unknown"),

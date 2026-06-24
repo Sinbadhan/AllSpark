@@ -1,0 +1,263 @@
+- id: agriculture/composting/system/en
+  category: agriculture
+  subcategory: composting
+  priority: 2
+  title: Composting System
+  summary: Sustainable agriculture needs steady nutrient replacement. Composting turns
+    organic waste into high-quality fertilizer — the cornerstone of self-sufficient
+    farming.
+  steps:
+  - "Choose a shaded, ventilated spot; build a 1m x 1m x 1m bin (wood/bamboo/brick)"
+  - "Layer: brown layer (dry leaves/straw/paper) → green layer (veg scraps/grass/manure) → thin soil"
+  - "Brown-to-green ratio about 3:1; keep moist but not waterlogged"
+  - "Turn the pile every 1-2 weeks to introduce air and speed decomposition"
+  - "Internal temp should reach 55-65°C (warm to the inserted hand)"
+  - "Done in 2-6 months — dark brown, crumbly, soil-like"
+  prerequisites:
+  - "Organic waste"
+  - "Composting space"
+  - "Turning tool"
+  warnings:
+  - "Do not add meat, oil, or diseased plants — they attract pests and spread disease"
+  - "Below 55°C the pile won't kill pathogens and weed seeds"
+  - "Cat/dog feces may carry parasites — avoid"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: agriculture/seed_saving/techniques/en
+  category: agriculture
+  subcategory: seed_saving
+  priority: 2
+  title: Seed Saving Techniques
+  summary: Seeds are the lifeblood of agriculture. Mastering seed saving lets you keep
+    planting without relying on external supply.
+  steps:
+  - "Select the healthiest plants for seed, mark them to avoid accidental harvest"
+  - "Wait until fruit is fully mature before collecting seed"
+  - "Wet seed (tomato/cucumber): scoop out, wash off pulp, dry"
+  - "Dry seed (beans/grains): dry pods/ears on the plant, then thresh"
+  - "Drying: air-dry in a cool ventilated spot 7-14 days to below 8% moisture"
+  - "Storage: paper bags or sealed jars with desiccant, in a cool dry place"
+  - "Label variety, date, source"
+  prerequisites:
+  - "Mature crops"
+  - "Drying space"
+  - "Storage containers"
+  warnings:
+  - "Hybrid (F1) seed segregates in offspring — prefer open-pollinated varieties"
+  - "Excess moisture causes mold"
+  - "Different brassica varieties cross-pollinate — isolate them"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: chemistry/paper/making/en
+  category: chemistry
+  subcategory: paper
+  priority: 2
+  title: Handmade Paper
+  summary: Paper is the foundation of recording and transmitting knowledge. Make paper
+    from plant fiber to carry civilization's memory forward.
+  steps:
+  - "Collect fiber: scrap paper/straw/hemp/bark (paper mulberry bark is best)"
+  - "Soak the material 1-2 days to soften"
+  - "Boil in lye (wood-ash water) 2-4h to break down lignin"
+  - "Wash thoroughly to remove lye"
+  - "Beat to pulp with a hammer/stone mortar"
+  - "Dilute pulp with water; add binder (sunset hibiscus/starch paste)"
+  - "Pull a sheet with a mold (wooden frame + fine mesh) — dip level and lift"
+  - "Couch onto a flat board, press out water, dry"
+  prerequisites:
+  - "Plant fiber"
+  - "Wood ash"
+  - "Paper mold"
+  - "Plenty of water"
+  warnings:
+  - "Boiling lye needs ventilation and protection"
+  - "Pulp concentration sets sheet thickness — thin when dilute, thick when concentrated"
+  - "Avoid direct sun while drying to prevent warping"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: chemistry/dye/natural/en
+  category: chemistry
+  subcategory: dye
+  priority: 2
+  title: Natural Dye Extraction
+  summary: Natural dyes color and mark. Different plants yield different hues — indigo
+    (blue), madder (red), cork tree (yellow).
+  steps:
+  - "Blue: ferment indigo plant leaves, add lye to make indigo"
+  - "Red: chop madder root, soak in hot water to extract alizarin"
+  - "Yellow: hot-water extract of cork-tree bark/pomegranate peel/onion skins"
+  - "Black: gallnuts (insect galls) with iron mordant"
+  - "Mordants: alum (aluminum), rusty water (iron), wood ash (alkaline)"
+  - "Dye sequence: mordant → rinse → dye → rinse → dry"
+  prerequisites:
+  - "Dye plants"
+  - "Mordant"
+  - "Water"
+  - "Containers"
+  warnings:
+  - "Some dye plants are toxic — wash hands after handling"
+  - "Iron mordant darkens color — mind the amount"
+  - "Natural dyes have lower colorfastness than chemical dyes — re-dip to deepen"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: mechanical/watermill/simple/en
+  category: mechanical
+  subcategory: watermill
+  priority: 2
+  title: Simple Watermill
+  summary: Use flowing water to grind grain and saw wood. Water power is a sustainable
+    mechanical energy source.
+  steps:
+  - "Site: a stream with steady flow and 0.5-2m of head"
+  - "Build the wheel: wooden disc 1-2m across, with buckets around the rim"
+  - "Mount the wheel on a horizontal shaft, buckets facing the flow"
+  - "Connect the millstone: wheel shaft drives the upper stone via gears"
+  - "Channel water: a flume directs water to the top of the wheel"
+  - "Maintain: check bearings for lubrication and wood for rot regularly"
+  prerequisites:
+  - "Stream"
+  - "Timber"
+  - "Millstone"
+  - "Basic carpentry"
+  warnings:
+  - "Floods can destroy the wheel — reinforce before rainy season"
+  - "Wooden bearings need frequent lubrication (animal fat/graphite)"
+  - "Shattered millstones can fly out — set up guards"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: mechanical/bicycle_generator/en
+  category: mechanical
+  subcategory: generator
+  priority: 2
+  title: Bicycle Generator
+  summary: Convert a scrap bicycle and a generator into a human-powered generator to
+    charge small devices and light a lamp.
+  steps:
+  - "Obtain a scrap bicycle and a DC/alternator generator"
+  - "Mount the generator beside the rear wheel"
+  - "Connect wheel and generator with a belt or friction roller"
+  - "Wire a rectifier and regulator circuit (12V system)"
+  - "Connect a battery to store power (lead-acid is easiest to find)"
+  - "Pedal to generate: moderate speed yields 50-100W"
+  prerequisites:
+  - "Bicycle"
+  - "Generator"
+  - "Rectifier"
+  - "Battery"
+  - "Basic circuit knowledge"
+  warnings:
+  - "Generator voltage is unstable — always regulate before connecting devices"
+  - "Lead-acid batteries emit hydrogen while charging — ventilate, keep away from flame"
+  - "Long pedaling sessions are exhausting — not for the frail"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: weather/shelter/climate_design/en
+  category: weather
+  subcategory: shelter
+  priority: 2
+  title: Climate-Adaptive Shelter Design
+  summary: Long-term settlement requires shelters designed for the local climate. Different
+    climates need different insulation, ventilation, and waterproofing strategies.
+  steps:
+  - "Cold regions: thick walls (earth/stone/wattle-and-daub), small south-facing windows, insulated double roof, underfloor heating flue"
+  - "Hot and humid: stilt houses against damp, wide eaves for shade, cross-ventilation, bamboo/wood structure"
+  - "Hot and dry: thick earth walls for thermal mass, small windows to cut radiant heat, courtyard layout, underground storage"
+  - "Wet regions: steep roofs, deep eaves, damp-proof course, drainage ditches"
+  - "Typhoon regions: low profile, tied and braced, leeward siting"
+  prerequisites:
+  - "Local climate data"
+  - "Building materials"
+  - "Tools"
+  warnings:
+  - "Site above the flood line, away from landslide slopes and wind funnels"
+  - "Flues/fireplaces must vent correctly — carbon monoxide is silently lethal"
+  - "Adobe buildings in seismic zones need reinforcement (bamboo/wood frame)"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: energy/wind/basic_turbine/en
+  category: energy
+  subcategory: wind
+  priority: 2
+  title: Simple Wind Turbine
+  summary: Wind is a sustainable energy source. Build a small wind generator from simple
+    materials to power lighting and comms.
+  steps:
+  - "Site: open high ground, average wind 4m/s or more"
+  - "Blades: split PVC pipe / wood / sheet metal, 3-blade design"
+  - "Hub: metal disc holding blades, centered on the generator shaft"
+  - "Generator: permanent-magnet DC motor (scrap auto/bike motor)"
+  - "Tower: 4-6m steel pipe or wood pole, secured with guy wires"
+  - "Electrical: rectifier → regulator → battery → inverter (if AC needed)"
+  - "Maintain: check blades, bearings, and connections regularly"
+  prerequisites:
+  - "Generator"
+  - "Blade material"
+  - "Tower"
+  - "Rectifier/regulator circuit"
+  warnings:
+  - "The tower must be solidly anchored — collapse is lethal"
+  - "Disconnect electrical lines in thunderstorms to avoid lightning strikes"
+  - "Spinning blades are a cutting hazard — set a safety perimeter"
+  - "Brake or lower blades above the design wind limit"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: energy/biogas/digester/en
+  category: energy
+  subcategory: biogas
+  priority: 2
+  title: Biogas Digester
+  summary: Biogas is combustible gas from anaerobic digestion of organic waste. The
+    effluent is excellent fertilizer — two benefits at once.
+  steps:
+  - "Site: near animal pens/toilets, where the water table is low"
+  - "Build: brick/stone cylindrical tank of 6-10m³, with feed, digestion, and gas chambers"
+  - "Seal: plaster the inner wall 3 times with cement mortar — gas- and water-tight"
+  - "Charge: manure + chopped straw + water, 8-10% solids"
+  - "Start: add old biogas slurry or cow manure as inoculum, seal and ferment"
+  - "Gas: production begins in 7-15 days; a blue flame means it's on spec"
+  - "Daily: feed daily, desludge periodically, keep pH 6.8-7.5"
+  prerequisites:
+  - "Building materials (brick/cement)"
+  - "Organic waste"
+  - "Labor"
+  warnings:
+  - "Biogas contains methane and hydrogen sulfide — suffocation and explosion risk"
+  - "Never smoke or use open flame near the digester"
+  - "Ventilate and post multiple watchers before entering for repair — the tank is oxygen-deficient and lethal"
+  - "Output drops in cold weather — insulate in winter"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: medicine/herbal/common/en
+  category: medicine
+  subcategory: herbal
+  priority: 2
+  title: Common Herbs and Their Uses
+  summary: When medicine runs short, common herbs can treat basic complaints. But identification
+    must be exact — misuse can be fatal.
+  steps:
+  - "Fever: chaihu (Bupleurum root, decoction), mint (leaf tea)"
+  - "Bleeding: sanqi (powder, topical), bletilla (powder on wound)"
+  - "Inflammation: honeysuckle (flower infusion), dandelion (whole-plant decoction)"
+  - "Diarrhea: pomegranate peel (decoction), plantain (leaf decoction)"
+  - "Parasites: mugwort (smoke/infusion), garlic (raw)"
+  - "Pain: yanhusuo (root decoction), chuansiong (root decoction)"
+  prerequisites:
+  - "Herb identification skill"
+  - "Reference guide"
+  warnings:
+  - "Never use a plant you cannot identify with 100% certainty — poison can kill"
+  - "Herb dosing is imprecise — start small"
+  - "Use herbs cautiously in pregnant women, children, and the frail"
+  - "Herbs cannot replace professional care — emergency use only"
+  verification: expert_verified
+  source: pre_collapse
+  language: en

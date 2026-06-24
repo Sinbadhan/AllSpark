@@ -12,9 +12,9 @@ _DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "knowledge"
 
 _TIER_FILES = {
     0: {"zh": "tier0_zh.yaml", "en": "tier0_en.yaml"},
-    1: {"zh": "tier1_zh.yaml"},
-    2: {"zh": "tier2_zh.yaml"},
-    3: {"zh": "tier3_zh.yaml"},
+    1: {"zh": "tier1_zh.yaml", "en": "tier1_en.yaml"},
+    2: {"zh": "tier2_zh.yaml", "en": "tier2_en.yaml"},
+    3: {"zh": "tier3_zh.yaml", "en": "tier3_en.yaml"},
 }
 
 

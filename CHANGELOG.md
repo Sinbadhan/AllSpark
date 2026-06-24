@@ -6,6 +6,70 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-06-24
+
+Stability convergence release. Closes the 2026-06-23 audit backlog — 9 Linear
+issues (SHA-36, 37, 40, 55, 56, 57, 58, 59, 60) covering two P1 contract bugs
+and the P2/P3 quality debt. Automated suite grows from 589 → 612 passed with
+6 hardware-gated live tests; mypy now runs clean with **zero** disabled error
+codes; the regression harness separates allowed degradation from real failures.
+
+### Fixed
+- **SHA-55** (P1): Web UI/API contract drift — `system.html` read the legacy
+  `m.loaded`/`m.can_load` fields the `/api/modules` endpoint never returned,
+  so every module rendered as "disabled"; `repository.html` read `e.category`
+  which the category endpoint omits, producing `undefined` in the knowledge
+  table. Frontend now reads the actual `status`/`hw_supported` fields and
+  re-tags the category client-side. Added contract pytest guards.
+- **SHA-56** (P1): Init wizard structured questionnaire was unreachable — the
+  CLI loader pointed at `adapters/data/questionnaire.yaml` (non-existent)
+  instead of `allspark/data/questionnaire.yaml`, silently degrading to
+  free-text. Web init wizard only collected `survivor-name`. Fixed the path,
+  added a `/api/init/questionnaire` endpoint, extended the Web Step 4 with the
+  full PRD §4.2.2 questionnaire (location/shelter/health/urgency/threats/
+  skills), and `/api/init/complete` now accepts a JSON body and persists
+  `questionnaire_version=2` plus the key fields.
+- **SHA-60**: Two real i18n bugs surfaced during harness triage — the topbar
+  `page_title` was hardcoded English ("Dashboard", "System Monitor", …) and
+  leaked into zh mode; goal `rationale` was persisted as a translated string
+  (baked in at startup language) instead of a `mark()` key, surviving a later
+  `lang` switch. Both now route through `t()`/`render()`.
+
+### Added
+- **SHA-37**: English knowledge YAML for tier1/2/3 (10/10/17 entries),
+  closing the bilingual gap — English users previously got only Tier 0.
+  Loader registers the `_en.yaml` files; bilingual-parity + English-title
+  pytest guards prevent future drift.
+- **SHA-36**: `tests/test_sha36_regression.py` (14 cases) — Spark Network
+  two-node loopback handshake/exchange/transfer, Docker graceful degradation
+  without a daemon, and adaptive TaskScheduler long-time scenarios driven by
+  `_last_run` manipulation instead of sleeping. `tests/test_live_smoke.py`
+  plus five pytest markers (`requires_llm`/`requires_voice`/`requires_vision`/
+  `requires_network`/`requires_docker`) gate hardware-dependent checks so they
+  no longer fold into the automated "done" count.
+- **SHA-59**: In-app toast + modal layer (`toast()`, `confirmDialog()`,
+  `promptDialog()`) replacing native `alert`/`confirm`/`prompt` across all
+  templates, with a regression test asserting no native dialogs remain.
+- **SHA-58**: CSS token aliases (`--surface-container*`) and a minimal
+  Tailwind-style utility subset so previously-dropped class declarations
+  resolve; Material Symbols offline fallback (`.icons-offline` hides ligature
+  text when the font is unavailable).
+
+### Changed
+- **SHA-40**: mypy `disable_error_code` block removed entirely — all four
+  previously-suppressed codes (assignment/arg-type/operator/attr-defined, 68
+  errors across 18 files) paid down. Regular `mypy allspark/` is green with no
+  overrides.
+- **SHA-57**: PROGRESS/TECH-DECISIONS/README/ARCHITECTURE synced to v1.0.2 →
+  v1.0.3 and Qwen2.5 → Qwen3; stale test counts replaced with "per pytest
+  output"; `AUDIT_2026-06-17.md` marked historical.
+- **SHA-60**: Regression harness now tags expected 503s (network/vision with
+  no backing hardware) as `degraded_allowlisted` with an explicit reason, and
+  the combined `INDEX.md` states the triage verdict so a release gate can
+  distinguish blocking failures from allowed degradation at a glance. CLI/HTML
+  false-positive heuristics tightened (startup-banner segmentation, icon
+  ligature span stripping, GPS acronym allowlist).
+
 ## [1.0.2] - 2026-06-17
 
 Maintenance release. Externalizes the LLM model registry, upgrades

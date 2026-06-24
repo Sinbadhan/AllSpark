@@ -43,7 +43,7 @@ class VADRecorder:
         self.on_audio = on_audio
         self.sample_rate = sample_rate
         self.running = False
-        self._thread = None
+        self._thread: threading.Thread | None = None
         self._stop_event = threading.Event()
 
     def is_available(self) -> bool:
