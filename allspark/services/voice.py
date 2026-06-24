@@ -88,7 +88,7 @@ class VoiceManager:
         self._is_listening = False
         self._session: VoiceSession | None = None
         self._vad: VADRecorder | None = None
-        self.wake_words = ("hey spark", "allspark", "火种")
+        self.wake_words: tuple[str, ...] = ("hey spark", "allspark", "火种")
 
     def is_stt_available(self) -> bool:
         return importlib.util.find_spec("whisper") is not None

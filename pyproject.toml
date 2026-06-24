@@ -80,9 +80,9 @@ warn_unused_configs = true
 ignore_missing_imports = true
 no_implicit_optional = false
 warn_return_any = false
-check_untyped_defs = false
-# Historical typing debt is tracked separately; CI still runs mypy and fails on
-# syntax/import/config regressions while these categories are paid down.
+check_untyped_defs = true
+# Historical typing debt is tracked separately; CI now checks typed surfaces and
+# untyped function bodies with no disabled error-code categories.
 # Cleared in SHA-29 step 1-4: list-item, var-annotated, return-value, call-overload.
 # Cleared in SHA-40: assignment, arg-type, operator, attr-defined (all four
 # previously-disabled codes are now enforced; mypy runs clean with no

@@ -1,11 +1,11 @@
 # Typing Roadmap
 
-> **Status:** v1.0.3 has paid down the historical mypy error-code allowlist.
-> `pyproject.toml [tool.mypy]` no longer uses `disable_error_code`, and the
-> regular project check is clean:
+> **Status:** v1.0.3 has paid down the historical mypy error-code allowlist
+> and the `--check-untyped-defs` follow-up debt. `pyproject.toml [tool.mypy]`
+> now checks untyped function bodies with no disabled error-code categories:
 >
 > ```bash
-> mypy allspark/ --ignore-missing-imports
+> mypy allspark/ --ignore-missing-imports --check-untyped-defs
 > ```
 
 ## 1. Current Policy
@@ -15,12 +15,11 @@ The current CI-oriented mypy policy is intentionally pragmatic:
 - `ignore_missing_imports = true`
 - `no_implicit_optional = false`
 - `warn_return_any = false`
-- `check_untyped_defs = false`
+- `check_untyped_defs = true`
 - zero `disable_error_code` overrides
 
-This means mypy now catches regular typed-surface regressions without hiding
-known categories. The next tightening step is to type-check untyped function
-bodies.
+This means mypy catches regular typed-surface regressions and checks the bodies
+of untyped functions without hiding known categories.
 
 ## 2. Remaining Strictness Debt
 
@@ -33,15 +32,7 @@ mypy allspark/ --ignore-missing-imports --check-untyped-defs
 | Scope | Count | Notes |
 |-------|------:|-------|
 | Regular mypy | 0 | Current project gate |
-| `--check-untyped-defs` | 13 | Follow-up strictness work |
-
-Hot spots:
-
-| File | Errors |
-|------|------:|
-| `allspark/adapters/cli.py` | 8 |
-| `allspark/bootstrap.py` | 4 |
-| `allspark/services/voice.py` | 1 |
+| `--check-untyped-defs` | 0 | Enabled in `pyproject.toml` |
 
 ## 3. Historical Repayment
 
@@ -57,11 +48,10 @@ Hot spots:
 | 8 | `operator` | Done v1.0.3 |
 | 9 | `attr-defined` | Done v1.0.3 |
 | 10 | `union-attr` | Done 2026-06-16 |
+| 11 | `check_untyped_defs` | Done 2026-06-24 |
 
 ## 4. Next Steps
 
-1. Fix the 13 `--check-untyped-defs` errors without weakening signatures.
-2. Flip `check_untyped_defs = true` in the same change that proves clean.
-3. Keep `pytest tests/` and regular mypy green.
-4. Later, evaluate `warn_return_any = true` and `no_implicit_optional = true`
+1. Keep `pytest tests/` and mypy green on every maintenance change.
+2. Later, evaluate `warn_return_any = true` and `no_implicit_optional = true`
    as separate scoped changes.

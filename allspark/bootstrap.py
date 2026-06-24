@@ -227,7 +227,7 @@ class ApplicationBootstrap:
     def _register_conditional_services(self):
         registry = self.registry
         container = self.container
-        llm = container.get("llm")
+        llm = container.require("llm")
 
         if self.flags.llm:
             loaded = llm.load()
@@ -376,26 +376,26 @@ class ApplicationBootstrap:
             container.register("gps_manager", gps)
             registry.register("gps_manager", gps)
 
-        weather = container.get("weather")
+        weather_svc = container.get("weather")
 
         if registry.should_load("environment"):
             from allspark.services.environment import EnvironmentAssessor
             env = EnvironmentAssessor(
                 db=self.db,
-                weather=weather,
+                weather=weather_svc,
                 resource_mgr=resource_mgr,
                 survival=survival,
             )
             container.register("environment", env)
             registry.register("environment", env)
 
-        diary = container.get("diary")
+        diary_svc = container.get("diary")
 
         if registry.should_load("voice"):
             from allspark.services.voice import VoiceManager
             voice = VoiceManager(
                 db=self.db,
-                diary=diary,
+                diary=diary_svc,
                 llm_engine=llm,
             )
             container.register("voice", voice)

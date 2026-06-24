@@ -8,9 +8,11 @@ from allspark import __version__
 from allspark.adapters.init_wizard import run_init_wizard
 from allspark.bootstrap import ApplicationBootstrap
 from allspark.commands.dispatcher import CommandDispatcher
+from allspark.container import ServiceContainer
 from allspark.core.database import Database
 from allspark.core.i18n import init_language, mark, t
 from allspark.core.models import OperatingMode
+from allspark.services.rule_engine import RuleEngine
 
 console = Console()
 
@@ -19,12 +21,38 @@ class SparkCLI:
     def __init__(self, db_path=None):
         self.db = Database(db_path)
         init_language(self.db)
-        self.container = None
-        self.engine = None
+        self._container: ServiceContainer | None = None
+        self._engine: RuleEngine | None = None
         self.running = True
         self.init_result = None
         self._flags = None
-        self._dispatcher = None
+        self._dispatcher: CommandDispatcher | None = None
+
+    @property
+    def container(self) -> ServiceContainer:
+        if self._container is None:
+            raise RuntimeError("CLI container accessed before bootstrap")
+        return self._container
+
+    @container.setter
+    def container(self, value: ServiceContainer) -> None:
+        self._container = value
+
+    @property
+    def engine(self) -> RuleEngine:
+        if self._engine is None:
+            raise RuntimeError("CLI engine accessed before bootstrap")
+        return self._engine
+
+    @engine.setter
+    def engine(self, value: RuleEngine) -> None:
+        self._engine = value
+
+    @property
+    def dispatcher(self) -> CommandDispatcher:
+        if self._dispatcher is None:
+            raise RuntimeError("CLI dispatcher accessed before setup")
+        return self._dispatcher
 
     def run(self):
         if not self.db.is_initialized():
@@ -32,8 +60,8 @@ class SparkCLI:
             if self.init_result and "hardware" in self.init_result:
                 self._flags = self.init_result["hardware"].get("flags")
 
-        self.container = ApplicationBootstrap(self.db, flags=self._flags).bootstrap()
-        self.engine = self.container.get("rule_engine")
+        self._container = ApplicationBootstrap(self.db, flags=self._flags).bootstrap()
+        self._engine = self.container.require("rule_engine")
         self._setup_dispatcher()
         self._print_banner()
         self._print_initial_status()
@@ -148,7 +176,7 @@ class SparkCLI:
         cmd = parts[0].lower()
         args = parts[1:] if len(parts) > 1 else []
 
-        if self._dispatcher.dispatch(cmd, args):
+        if self.dispatcher.dispatch(cmd, args):
             return
 
         response = self.engine.process_input(user_input)
