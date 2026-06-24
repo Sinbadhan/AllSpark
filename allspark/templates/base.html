@@ -24,6 +24,16 @@
   --border: #2a2a2a; --radius: 4px; --radius-lg: 8px;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
   --sidebar-w: 256px; --topbar-h: 48px; --footer-h: 32px;
+  /* SHA-58: alias the Material-style surface-container token names actually
+     used in templates to the real tokens defined above, so referenced
+     variables no longer resolve to empty strings in the browser. */
+  --surface-container: var(--surface-low);
+  --surface-container-low: var(--surface-low);
+  --surface-container-high: var(--surface-high);
+  --surface-container-highest: var(--surface-highest);
+  --surface-variant: var(--surface-mid);
+  --success-dim: rgba(68, 204, 68, 0.16);
+  --raised: var(--surface-high);
 }
 html { font-size: 14px; }
 body {
@@ -43,9 +53,13 @@ table { border-collapse: collapse; width: 100%; }
 
 /* ===== Material Symbols ===== */
 .material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', var(--font-mono);
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   font-size: 20px; vertical-align: middle; line-height: 1;
 }
+/* SHA-58: when the icon font is unavailable (offline), hide the ligature
+   text so it does not render as literal words next to labels. */
+.icons-offline .material-symbols-outlined { display: none; }
 
 /* ===== Utility Classes ===== */
 .text-primary { color: var(--primary); }
@@ -344,6 +358,124 @@ table { border-collapse: collapse; width: 100%; }
 }
 .sub-tab:hover { background: var(--surface-high); }
 .sub-tab.active { background: var(--primary); color: var(--on-primary); }
+
+/* ===== SHA-58: Minimal utility layer =====
+   Templates use Tailwind-style class names (text-sm, bg-surface-container-high,
+   px-2, hover:bg-surface-variant, ...) but the project ships NO Tailwind build
+   chain, so those declarations were silently dropped by the browser. This block
+   implements the subset actually referenced so the classes resolve to real
+   styles, backed by the CSS tokens above. */
+.text-sm { font-size: 13px; }
+.text-xs { font-size: 11px; }
+.text-lg { font-size: 16px; }
+.text-xl { font-size: 18px; }
+.text-\[10px\] { font-size: 10px; }
+.text-\[11px\] { font-size: 11px; }
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.text-secondary { color: var(--secondary); }
+.text-on-surface { color: var(--on-surface); }
+.text-on-surface-variant { color: var(--on-surface-variant); }
+.text-primary { color: var(--primary); }
+.text-primary-container { color: var(--primary-container); }
+.text-on-primary { color: var(--on-primary); }
+.text-success { color: var(--success); }
+.text-critical { color: var(--critical); }
+.text-warn { color: var(--warning); }
+.text-info { color: var(--info); }
+.text-tertiary { color: var(--tertiary); }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-mono { font-family: var(--font-mono); }
+.tracking-wider { letter-spacing: 0.05em; }
+.tracking-tighter { letter-spacing: -0.03em; }
+.border-b { border-bottom: 1px solid var(--border); }
+.border-t { border-top: 1px solid var(--border); }
+.border-l { border-left: 1px solid var(--border); }
+.border-r { border-right: 1px solid var(--border); }
+.border-primary { border-color: var(--primary-container); }
+.border-l-\[3px\] { border-left-width: 3px; }
+.border-collapse { border-collapse: collapse; }
+.border-surface-container-high { border-color: var(--surface-container-high); }
+.bg-surface { background: var(--surface); }
+.bg-surface-dim { background: var(--surface-dim); }
+.bg-surface-container { background: var(--surface-container); }
+.bg-surface-container-high { background: var(--surface-container-high); }
+.bg-surface-container-highest { background: var(--surface-container-highest); }
+.bg-raised { background: var(--raised); }
+.bg-success-dim { background: var(--success-dim); }
+.bg-\[\#0a0a0a\] { background: #0a0a0a; }
+.bg-\[\#141414\] { background: #141414; }
+.hover\:bg-surface-container:hover { background: var(--surface-container); }
+.hover\:bg-surface-container-high:hover { background: var(--surface-container-high); }
+.hover\:bg-surface-container-highest:hover { background: var(--surface-container-highest); }
+.hover\:bg-surface-variant:hover { background: var(--surface-variant); }
+.hover\:text-on-surface:hover { color: var(--on-surface); }
+.hover\:text-primary:hover { color: var(--primary); }
+.hover\:border-primary:hover { border-color: var(--primary-container); }
+.rounded-full { border-radius: 9999px; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.p-3 { padding: 12px; }
+.px-2 { padding-left: 8px; padding-right: 8px; }
+.px-3 { padding-left: 12px; padding-right: 12px; }
+.py-0\.5 { padding-top: 2px; padding-bottom: 2px; }
+.py-1 { padding-top: 4px; padding-bottom: 4px; }
+.py-2 { padding-top: 8px; padding-bottom: 8px; }
+.min-w-\[600px\] { min-width: 600px; }
+.min-w-\[150px\] { min-width: 150px; }
+.min-h-\[calc\(100vh-14rem\)\] { min-height: calc(100vh - 14rem); }
+.sticky { position: sticky; }
+.top-0 { top: 0; }
+.z-10 { z-index: 10; }
+.transition-colors { transition: color 0.15s, background-color 0.15s, border-color 0.15s; }
+
+/* ===== SHA-59: toast + modal ===== */
+.toast-stack {
+  position: fixed; bottom: 16px; right: 16px; z-index: 2000;
+  display: flex; flex-direction: column; gap: 8px; max-width: min(360px, 80vw);
+}
+.toast {
+  background: var(--surface-high); color: var(--on-surface);
+  border: 1px solid var(--border); border-left: 3px solid var(--secondary);
+  border-radius: var(--radius); padding: 10px 14px; font-size: 13px;
+  opacity: 0; transform: translateX(12px); transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.toast.show { opacity: 1; transform: translateX(0); }
+.toast-info { border-left-color: var(--info); }
+.toast-success, .toast.ok { border-left-color: var(--success); }
+.toast-error { border-left-color: var(--critical); }
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 2100; background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.modal-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 20px; max-width: 420px; width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+.modal-card.modal-danger { border-color: var(--critical); }
+.modal-title { font-size: 15px; font-weight: 700; color: var(--primary-container); margin-bottom: 8px; }
+.modal-message { font-size: 13px; color: var(--on-surface-variant); white-space: pre-wrap; margin-bottom: 12px; }
+.modal-input {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); color: var(--on-surface); font-family: var(--font-mono); font-size: 13px;
+  margin-bottom: 12px; outline: none;
+}
+.modal-input:focus { border-color: var(--primary-container); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.btn-primary { background: var(--primary-container); color: var(--on-primary-container); border: none; padding: 8px 16px; border-radius: var(--radius); font-weight: 600; font-size: 13px; cursor: pointer; }
+.btn-primary:hover { background: var(--primary); }
+.btn-primary.btn-danger { background: var(--critical); }
+.btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--on-surface); padding: 8px 16px; border-radius: var(--radius); font-weight: 600; font-size: 13px; cursor: pointer; }
+.btn-outline:hover { border-color: var(--primary-container); }
+
+/* SHA-59: collapse the footer on narrow viewports so it stops crowding content. */
+@media (max-width: 560px) {
+  .footer { flex-wrap: wrap; gap: 4px; padding: 4px 10px; font-size: 10px; }
+  .footer #footer-uptime { display: none; }
+}
 </style>
 {% block head %}{% endblock %}
 </head>
@@ -438,6 +570,10 @@ table { border-collapse: collapse; width: 100%; }
     </div>
   </footer>
 
+  <!-- SHA-59: in-app toast + modal (replaces native alert/confirm/prompt) -->
+  <div id="toast-stack" class="toast-stack"></div>
+  <div id="modal-root"></div>
+
 </div>
 
 <script>
@@ -461,7 +597,93 @@ async function api(path, opts = {}) {
   return data;
 }
 function notify(msg) {
-  alert(typeof msg === 'string' ? msg : I18N.web_error_occurred || 'An error occurred');
+  toast(typeof msg === 'string' ? msg : (I18N.web_error_occurred || 'An error occurred'), 'error');
+}
+// SHA-59: non-blocking toast notifications + Promise-based modal dialogs,
+// replacing native alert()/confirm()/prompt() across the Web UI.
+function toast(msg, level) {
+  level = level || 'info';
+  const stack = document.getElementById('toast-stack');
+  if (!stack) { return; }
+  const el = document.createElement('div');
+  el.className = 'toast toast-' + level;
+  el.textContent = String(msg);
+  stack.appendChild(el);
+  // animate in
+  requestAnimationFrame(() => el.classList.add('show'));
+  const ttl = level === 'error' ? 5000 : 3000;
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 250);
+  }, ttl);
+}
+function _modalRoot() { return document.getElementById('modal-root'); }
+function _closeModal() { const r = _modalRoot(); if (r) r.innerHTML = ''; }
+function _modalShell(opts) {
+  const r = _modalRoot();
+  if (!r) return null;
+  r.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-overlay';
+  const card = document.createElement('div');
+  card.className = 'modal-card' + (opts.danger ? ' modal-danger' : '');
+  const body = document.createElement('div');
+  body.className = 'modal-body';
+  if (opts.title) { const h = document.createElement('div'); h.className = 'modal-title'; h.textContent = opts.title; body.appendChild(h); }
+  if (opts.message) { const p = document.createElement('div'); p.className = 'modal-message'; p.textContent = opts.message; body.appendChild(p); }
+  card.appendChild(body);
+  wrap.appendChild(card);
+  wrap.addEventListener('click', (e) => { if (e.target === wrap && opts.dismissOnOverlay !== false) { _closeModal(); opts.onClose && opts.onClose(); } });
+  r.appendChild(wrap);
+  return { wrap: wrap, card: card, body: body };
+}
+function confirmDialog(title, opts) {
+  opts = opts || {};
+  return new Promise((resolve) => {
+    const sh = _modalShell({ title: title, danger: opts.danger, message: opts.message });
+    if (!sh) { resolve(false); return; }
+    const actions = document.createElement('div');
+    actions.className = 'modal-actions';
+    const ok = document.createElement('button');
+    ok.className = 'btn-primary' + (opts.danger ? ' btn-danger' : '');
+    ok.textContent = opts.okText || (I18N.web_ok || 'OK');
+    const cancel = document.createElement('button');
+    cancel.className = 'btn-outline';
+    cancel.textContent = opts.cancelText || (I18N.web_cancel || 'Cancel');
+    ok.onclick = () => { _closeModal(); resolve(true); };
+    cancel.onclick = () => { _closeModal(); resolve(false); };
+    actions.appendChild(cancel); actions.appendChild(ok);
+    sh.card.appendChild(actions);
+    ok.focus();
+  });
+}
+function promptDialog(title, opts) {
+  opts = opts || {};
+  return new Promise((resolve) => {
+    const sh = _modalShell({ title: title, danger: opts.danger, message: opts.message });
+    if (!sh) { resolve(null); return; }
+    const input = document.createElement('input');
+    input.className = 'modal-input';
+    input.placeholder = opts.placeholder || '';
+    input.value = opts.default || '';
+    const actions = document.createElement('div');
+    actions.className = 'modal-actions';
+    const ok = document.createElement('button');
+    ok.className = 'btn-primary';
+    ok.textContent = opts.okText || (I18N.web_ok || 'OK');
+    const cancel = document.createElement('button');
+    cancel.className = 'btn-outline';
+    cancel.textContent = opts.cancelText || (I18N.web_cancel || 'Cancel');
+    const submit = () => { const v = input.value; _closeModal(); resolve(v); };
+    const cancelFn = () => { _closeModal(); resolve(null); };
+    ok.onclick = submit;
+    cancel.onclick = cancelFn;
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+    sh.card.appendChild(input);
+    actions.appendChild(cancel); actions.appendChild(ok);
+    sh.card.appendChild(actions);
+    input.focus();
+  });
 }
 async function updateFooter() {
   try {
@@ -535,6 +757,19 @@ async function openAbout() {
 function closeAbout() {
   const m = document.getElementById("about-modal");
   if (m) m.style.display = "none";
+}
+</script>
+<script>
+// SHA-58: offline-first icon fallback. The Material Symbols font is loaded
+// from a CDN; when offline it never registers, so the icon ligature text
+// (e.g. "bolt", "person") would render as literal words. Detect that and
+// hide the icon glyphs so only the adjacent labels remain.
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(function () {
+    if (!document.fonts.check('1em "Material Symbols Outlined"')) {
+      document.documentElement.classList.add("icons-offline");
+    }
+  });
 }
 </script>
 {% block scripts %}{% endblock %}

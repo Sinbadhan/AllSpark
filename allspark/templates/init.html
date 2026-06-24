@@ -29,6 +29,7 @@ a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 input { font-family: inherit; }
 .material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', var(--font-mono);
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   font-size: 20px; vertical-align: middle; line-height: 1;
 }
@@ -155,6 +156,23 @@ input { font-family: inherit; }
 /* No LLM warning */
 .no-llm-warning { margin-top: 8px; font-size: 11px; color: var(--secondary); display: flex; align-items: center; gap: 4px; }
 
+/* Structured questionnaire (SHA-56) */
+.questionnaire { margin-bottom: 8px; }
+.q-field { margin-bottom: 14px; }
+.q-label { font-size: 12px; color: var(--secondary); margin-bottom: 6px; letter-spacing: 0.03em; }
+.q-select {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); color: var(--on-surface); font-size: 13px; outline: none;
+}
+.q-select:focus { border-color: var(--primary-container); }
+.q-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.q-chip {
+  padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 11px;
+  color: var(--on-surface-variant); cursor: pointer; transition: all 0.15s; background: var(--bg);
+}
+.q-chip:hover { border-color: var(--primary-container); }
+.q-chip.selected { border-color: var(--primary-container); background: rgba(255,107,53,0.12); color: var(--primary-container); }
+
 /* Spin animation */
 .animate-spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -225,6 +243,7 @@ input { font-family: inherit; }
     <div class="step hidden" id="step-4">
       <h2><span class="material-symbols-outlined">person</span> <span data-i18n="web_init_survivor_profile">Survivor Profile</span></h2>
       <input class="init-input" id="survivor-name" type="text" data-placeholder-zh="你的名字" data-placeholder-en="Your name" placeholder="Your name" value="Survivor">
+      <div id="questionnaire" class="questionnaire"></div>
       <div class="step-footer">
         <button onclick="goStep(3)" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
         <button onclick="completeInit()" id="btn-complete" class="btn-primary">
@@ -236,10 +255,15 @@ input { font-family: inherit; }
 </div>
 
 <script>
+// Server-injected i18n keys (web_*/error_*/q_* ...) for label resolution.
+window.I18N = {{ web_i18n | tojson }};
 let currentStep = 0;
 // SHA-12: detect browser language as default so the wizard isn't English-by-accident.
 let selectedLang = (navigator.language && navigator.language.toLowerCase().startsWith('zh')) ? 'zh' : 'en';
 let hwData = null;
+let questionnaireData = null;
+let selectedThreats = new Set();
+let selectedSkills = new Set();
 
 const I18N = {
   zh: {
@@ -286,6 +310,13 @@ const I18N = {
     web_init_tier_flagship: "旗舰 (32GB+)",
     web_init_tier_unknown: "未知",
     web_init_value_none: "无",
+    web_init_q_location: "你的位置类型",
+    web_init_q_shelter: "当前庇护",
+    web_init_q_health: "健康状况",
+    web_init_q_urgency: "紧迫程度",
+    web_init_q_threats: "面临的威胁（可多选）",
+    web_init_q_skills: "已有技能（可多选）",
+    web_init_q_optional: "（可选，可跳过）",
   },
   en: {
     web_init_hw_detect: "Hardware Detection",
@@ -331,6 +362,13 @@ const I18N = {
     web_init_tier_flagship: "Flagship (32GB+)",
     web_init_tier_unknown: "Unknown",
     web_init_value_none: "None",
+    web_init_q_location: "Your location type",
+    web_init_q_shelter: "Current shelter",
+    web_init_q_health: "Health status",
+    web_init_q_urgency: "Urgency level",
+    web_init_q_threats: "Threats you face (multi-select)",
+    web_init_q_skills: "Skills you have (multi-select)",
+    web_init_q_optional: "(optional, skippable)",
   }
 };
 
@@ -383,6 +421,7 @@ function goStep(n) {
     }
   }
   if (n === 3) loadModels();
+  if (n === 4) loadQuestionnaire();
   applyI18n();
   document.documentElement.lang = selectedLang === "zh" ? "zh-CN" : "en";
 }
@@ -510,6 +549,69 @@ async function downloadModel(modelName) {
   }, 2000);
 }
 
+async function loadQuestionnaire() {
+  const el = document.getElementById("questionnaire");
+  if (!el) return;
+  // Already loaded — just re-apply i18n labels.
+  if (questionnaireData !== null) { renderQuestionnaire(); return; }
+  try {
+    const data = await api("/api/init/questionnaire");
+    questionnaireData = (data && data.questions) ? data.questions : {};
+  } catch (e) {
+    questionnaireData = {};
+  }
+  renderQuestionnaire();
+}
+
+function qLabel(opt) {
+  // Resolve the option's label_key via the server-injected q_* i18n keys
+  // (window.I18N) when available, else fall back to the key itself.
+  const server = (window.I18N || {});
+  return server[opt.label_key] || opt.label_key;
+}
+
+function renderQuestionnaire() {
+  const el = document.getElementById("questionnaire");
+  if (!el || !questionnaireData) return;
+  const q = questionnaireData;
+  const optional = ' <span class="text-secondary" style="font-size:10px;">' + i18n("web_init_q_optional") + '</span>';
+
+  function selectField(id, opts, labelKey) {
+    const opts_html = ['<option value="">' + i18n("web_init_q_optional").replace(/[()]/g, '').trim() + '</option>']
+      .concat(opts.map(o => '<option value="' + o.key + '">' + escQ(qLabel(o)) + '</option>')).join("");
+    return '<div class="q-field"><div class="q-label">' + i18n(labelKey) + optional + '</div>' +
+      '<select class="q-select" id="' + id + '">' + opts_html + '</select></div>';
+  }
+
+  function chipField(id, opts, labelKey, selected) {
+    const chips = opts.map(o => {
+      const on = selected.has(o.key) ? ' selected' : '';
+      return '<span class="q-chip' + on + '" data-key="' + o.key + '" onclick="toggleChip(this,\'' + id + '\')">' + escQ(qLabel(o)) + '</span>';
+    }).join("");
+    return '<div class="q-field"><div class="q-label">' + i18n(labelKey) + optional + '</div><div class="q-chips" id="' + id + '">' + chips + '</div></div>';
+  }
+
+  let html = "";
+  if (q.location_types) html += selectField("q-location", q.location_types, "web_init_q_location");
+  if (q.shelter_statuses) html += selectField("q-shelter", q.shelter_statuses, "web_init_q_shelter");
+  if (q.health_statuses) html += selectField("q-health", q.health_statuses, "web_init_q_health");
+  if (q.urgency_levels) html += selectField("q-urgency", q.urgency_levels, "web_init_q_urgency");
+  if (q.threat_types) html += chipField("q-threats", q.threat_types, "web_init_q_threats", selectedThreats);
+  if (q.skill_categories) html += chipField("q-skills", q.skill_categories, "web_init_q_skills", selectedSkills);
+  el.innerHTML = html;
+}
+
+function escQ(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function toggleChip(el, id) {
+  const key = el.getAttribute("data-key");
+  const set = id === "q-threats" ? selectedThreats : selectedSkills;
+  if (set.has(key)) { set.delete(key); el.classList.remove("selected"); }
+  else { set.add(key); el.classList.add("selected"); }
+}
+
 async function completeInit() {
   const btn = document.getElementById("btn-complete");
   btn.disabled = true;
@@ -518,8 +620,26 @@ async function completeInit() {
   const name = document.getElementById("survivor-name").value.trim() || i18n("web_init_default_survivor_name");
   const lang = selectedLang || "zh";
 
+  // Collect structured questionnaire fields (SHA-56). Empty values are allowed
+  // — the user may skip; the server still records questionnaire_version=2.
+  const val = id => { const el = document.getElementById(id); return el ? el.value : ""; };
+  const payload = {
+    language: lang,
+    survivor_name: name,
+    location_type: val("q-location"),
+    shelter: val("q-shelter"),
+    health: val("q-health"),
+    urgency: val("q-urgency"),
+    threats: Array.from(selectedThreats).join(","),
+    skills: Array.from(selectedSkills).join(","),
+  };
+
   try {
-    await api("/api/init/complete?language=" + lang + "&survivor_name=" + encodeURIComponent(name), {method: "POST"});
+    await api("/api/init/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
     window.location.reload();
   } catch(e) {
     btn.textContent = i18n("web_init_complete_error") + ": " + e.message;

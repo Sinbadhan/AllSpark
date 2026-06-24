@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "allspark"
-version = "1.0.2"
+version = "1.0.3"
 description = "火种 AllSpark — 离线人工智能生存系统"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -84,16 +84,23 @@ check_untyped_defs = false
 # Historical typing debt is tracked separately; CI still runs mypy and fails on
 # syntax/import/config regressions while these categories are paid down.
 # Cleared in SHA-29 step 1-4: list-item, var-annotated, return-value, call-overload.
-disable_error_code = [
-    "arg-type",
-    "assignment",
-    "attr-defined",
-    "operator",
-]
+# Cleared in SHA-40: assignment, arg-type, operator, attr-defined (all four
+# previously-disabled codes are now enforced; mypy runs clean with no
+# disable_error_code overrides).
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"
+# SHA-36: hardware/live-model smoke tests are gated behind explicit markers so
+# they never get silently folded into the "all green" automated count. They
+# run only when the matching env var is set (real hardware / downloaded GGUF).
+markers = [
+    "requires_llm: needs llama-cpp-python + a downloaded GGUF (live model)",
+    "requires_voice: needs microphone + whisper/pyttsx3 (real audio I/O)",
+    "requires_vision: needs a multimodal model + sample image",
+    "requires_network: needs real peer discovery / multi-node hardware",
+    "requires_docker: needs a running docker daemon",
+]
 
 [tool.setuptools.packages.find]
 include = ["allspark*"]

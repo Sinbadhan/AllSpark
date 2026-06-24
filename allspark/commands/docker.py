@@ -1,3 +1,5 @@
+from typing import Optional
+
 from rich.panel import Panel
 from rich.table import Table
 
@@ -122,7 +124,7 @@ class DockerCommand(BaseCommand):
         else:
             self.console.print(f"[red]❌ {t('docker_stop_fail', message=result.get('message', ''))}[/]")
 
-    def _show_logs(self, service: str, lines: int = 50):
+    def _show_logs(self, service: Optional[str], lines: int = 50):
         mgr = self._get_docker_mgr()
         if not mgr:
             return
@@ -134,7 +136,7 @@ class DockerCommand(BaseCommand):
         logs = mgr.get_logs(service, lines)
         self.console.print(Panel(logs, title=f"{service} logs"))
 
-    def _migrate(self, target: str):
+    def _migrate(self, target: Optional[str]):
         if not target:
             self.console.print(f"[yellow]{t('docker_migrate_need_target')}[/]")
             return

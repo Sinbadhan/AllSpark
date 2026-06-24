@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from allspark.core.i18n import mark, render, t
 from allspark.core.models import TimelineEventType
@@ -98,7 +98,7 @@ class TimelineManager:
                      event_type: Optional[str] = None,
                      limit: int = 50) -> list[dict]:
         query = "SELECT * FROM timeline_events"
-        params = []
+        params: list[Any] = []
         conditions = []
 
         if day is not None:

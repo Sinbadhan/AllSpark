@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from allspark.core.i18n import mark, t
 
@@ -38,7 +38,7 @@ class PsychologyTracker:
             self._sentiment_samples = self._sentiment_samples[-100:]
 
     def assess_state(self) -> dict:
-        result = {
+        result: dict[str, Any] = {
             "loneliness_index": self._calculate_loneliness(),
             "stress_index": self._calculate_stress(),
             "overall_state": "stable",

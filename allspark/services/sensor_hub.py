@@ -260,7 +260,7 @@ class SensorHub:
         return SensorReading(
             sensor_type=device.sensor_type,
             timestamp=datetime.now().isoformat(),
-            value=None,
+            value=0.0,
             unit=units.get(device.sensor_type, ""),
             status="no_data",
             source="no_data",

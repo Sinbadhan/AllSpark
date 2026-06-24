@@ -1223,6 +1223,11 @@ web_nav_executions: 任务执行
 web_nav_config: 配置
 web_nav_repository: 资料库
 web_nav_docs: 文档
+web_page_title_dashboard: 仪表盘
+web_page_title_system: 系统监控
+web_page_title_executions: 任务执行
+web_page_title_config: 配置
+web_page_title_repository: 资料库
 web_execute_task: 启动操作
 web_search_placeholder: 搜索...
 web_dashboard_title: 系统健康总览
@@ -1254,6 +1259,7 @@ web_no_active_tasks: 暂无活跃任务
 web_no_results: 没有匹配结果
 web_unconfigured: 未配置
 web_set_amount_hint: 设置数量与每日消耗后即可计算剩余时间
+web_set_amount_hint_short: 未配置，点击编辑
 web_remaining_unknown: 剩余时间未知
 
 # ─── Web System / Executions / Config / Repository ───────────────────────
@@ -1523,6 +1529,8 @@ web_tab_skf: SKF 包
 web_tab_community: 社区
 web_tab_timeline: 时间线
 web_alert_ok: 成功
+web_ok: 确定
+web_cancel: 取消
 web_error_occurred: 发生错误
 web_power_sustained: 持续可用
 web_power_unknown: 未知
@@ -1612,6 +1620,7 @@ web_system_integrity_critical: 危急
 web_system_module_loaded: 已加载
 web_system_module_available: 可用
 web_system_module_disabled: 已禁用
+web_system_module_unsupported: 不支持
 web_system_status_label: 状态
 web_system_model_label: 模型
 web_system_health_status_label: 健康状态

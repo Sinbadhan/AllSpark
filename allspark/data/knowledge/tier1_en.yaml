@@ -1,0 +1,251 @@
+- id: agriculture/soil/preparation/en
+  category: agriculture
+  subcategory: soil
+  priority: 1
+  title: Soil Preparation and Improvement
+  summary: After short-term survival, a stable food supply must be established. Soil
+    preparation is the foundation of agriculture — clear weeds, till the soil, add
+    organic matter, and adjust pH.
+  steps:
+  - "Choose a sunny, well-drained plot, starting around 2m x 3m"
+  - "Clear weeds and stones, till 20-30 cm deep"
+  - "Add leaf mold, wood ash, or compost to improve soil structure"
+  - "Test pH with simple paper strips (6.0-7.0 is ideal)"
+  - "If too acidic add wood ash; if too alkaline add pine needles/leaf mold"
+  - "Level the ground and form beds (raised beds drain, low beds retain water)"
+  prerequisites:
+  - "Land"
+  - "Tools (hoe/spade)"
+  - "Source of organic matter"
+  warnings:
+  - "Do not plant near industrial zones or roads — soil may contain heavy metals"
+  - "Fresh manure must be composted for 6+ months before use"
+  - "Planting the same crop repeatedly depletes the soil; practice crop rotation"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: agriculture/crops/fast_growing/en
+  category: agriculture
+  subcategory: crops
+  priority: 1
+  title: Fast-Growing Crops
+  summary: After a disaster, rapid food output matters most. Recommended fast crops
+    — radish (30 days), bok choy (25 days), lettuce (30 days), bean sprouts (5-7 days).
+  steps:
+  - "Bean sprouts: soak mung/soy beans 8h, rinse twice daily, harvest in 5-7 days, no sunlight needed"
+  - "Bok choy: broadcast seeds, cover 0.5cm soil, keep moist, harvest in 25 days"
+  - "Radish: sow at 10cm spacing, harvest roots in 30-40 days"
+  - "Lettuce: broadcast or transplant seedlings, harvest outer leaves from 30 days"
+  - "Sweet potato: plant vine cuttings, harvest tubers in 60-90 days; leaves are also edible"
+  prerequisites:
+  - "Seeds or seedlings"
+  - "Soil"
+  - "Water source"
+  warnings:
+  - "Bean sprout production needs ventilation; damp enclosed spaces breed bacteria"
+  - "Do not eat moldy or discolored sprouts"
+  - "Wild seeds may not suit the local climate; prefer local varieties"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: agriculture/preservation/drying/en
+  category: agriculture
+  subcategory: preservation
+  priority: 1
+  title: Food Drying and Preservation
+  summary: Drying is the oldest food preservation method. Removing water stops microbial
+    growth, preserving food for months to years.
+  steps:
+  - "Choose fresh, undamaged produce, wash and dry it"
+  - "Slice thin (3-5mm) — thinner dries faster"
+  - "Sun drying: lay on a clean mesh rack in direct sun, flip daily, 2-5 days"
+  - "Smoking: build a rack over a fire, smoke low and slow for 6-12 hours"
+  - "Test dryness: bends without breaking and releases no moisture = fully dry"
+  - "Store sealed: cloth bags or airtight containers with desiccant (quicklime/rice husk ash)"
+  prerequisites:
+  - "Produce"
+  - "Dry environment or heat source"
+  warnings:
+  - "Humid weather is unsuitable for sun drying"
+  - "Incomplete drying causes mold — better over-dry than under-dry"
+  - "Keep smoking temperature below 60°C or you will cook, not dry, the food"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: chemistry/soap/making/en
+  category: chemistry
+  subcategory: soap
+  priority: 1
+  title: Handmade Soap
+  summary: Hygiene is key to survival. Make soap from fats and lye (extracted from
+    wood ash) for cleaning body and gear, preventing disease.
+  steps:
+  - "Collect hardwood ash (best), place in a container with holes"
+  - "Slowly pour hot water through the ash, collect the filtrate (lye)"
+  - "Evaporate lye to 1/3 volume (test with an egg for buoyancy)"
+  - "Warm fats (animal or vegetable oil both work)"
+  - "Slowly pour lye into the fat, stirring constantly until it thickens (trace)"
+  - "Pour into molds, insulate 24-48h, unmold and cure 4-6 weeks"
+  prerequisites:
+  - "Fats/oil"
+  - "Wood ash"
+  - "Containers"
+  - "Stirring tool"
+  warnings:
+  - "Lye is strongly corrosive — avoid skin and eye contact"
+  - "Work ventilated and wear protection when making soap"
+  - "Under-saponified soap can burn skin; cure it fully"
+  - "If lye contacts skin, rinse immediately with copious water"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: chemistry/charcoal/production/en
+  category: chemistry
+  subcategory: charcoal
+  priority: 1
+  title: Charcoal Production
+  summary: Charcoal is a key fuel and material. It burns hotter and cleaner than wood,
+    useful for smelting, filtration, and medicine.
+  steps:
+  - "Select hardwood (oak, jujube, etc.), cut to similar lengths"
+  - "Dig a round pit or build an earth kiln, leave a vent at the bottom"
+  - "Stand wood tightly upright, leaving an ignition channel in the center"
+  - "Cover with wet earth/mud, leaving only one top smoke hole"
+  - "Light from the bottom, control airflow for incomplete combustion"
+  - "Maintain 8-24h (depending on wood volume); seal when smoke turns from white to blue to clear"
+  - "Seal completely and cool 24h+ before opening the kiln"
+  prerequisites:
+  - "Hardwood"
+  - "Open ground"
+  - "Mud/earth"
+  warnings:
+  - "Charcoal burning produces carbon monoxide — do it outdoors only"
+  - "Never burn charcoal in an enclosed space or tent — CO poisoning is lethal"
+  - "Confirm no open flame remains before sealing, or it will reignite when opened"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: mechanical/tools/blacksmithing_basic/en
+  category: mechanical
+  subcategory: tools
+  priority: 1
+  title: Basic Forging and Tool Repair
+  summary: Metal tools are key to sustaining civilization. Basic forging lets you
+    repair and make knives, hoes, nails and other essentials.
+  steps:
+  - "Build a simple forge: mud/brick firebox with an air intake at the bottom"
+  - "Use charcoal fuel (reaches 1000°C+)"
+  - "Blow air with bellows or a fan to raise temperature"
+  - "Heat the iron in the forge to cherry red (about 800°C)"
+  - "Forge on an anvil — rough-shape first, then refine"
+  - "Quench: plunge the hot workpiece into water or oil for hardness"
+  - "Temper: reheat to 200-300°C and cool slowly to remove brittleness"
+  prerequisites:
+  - "Iron stock"
+  - "Charcoal"
+  - "Anvil or substitute"
+  - "Hammer"
+  - "Forge"
+  warnings:
+  - "Forging temperatures are extreme — watch for burns and fire"
+  - "Quenching throws steam and splatter — keep your distance"
+  - "Tempering too hot loses hardness; too low leaves brittleness"
+  - "When recycling scrap, distinguish iron from steel — steel hardens, iron does not"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: mechanical/rope_knots/essential/en
+  category: mechanical
+  subcategory: rope_knots
+  priority: 1
+  title: Essential Survival Knots
+  summary: Knots are a fundamental survival skill. Six core knots cover most needs
+    — building, securing, rescue, and binding.
+  steps:
+  - "Bowline: forms a fixed loop that won't slip — for rescue"
+  - "Clove hitch: fixes rope to a post/pole, adjustable"
+  - "Figure-8: a stopper knot, for climbing and safety"
+  - "Square lashing: binds crossed poles, for building frames"
+  - "Fisherman's bend: joins two ropes"
+  - "Taut-line hitch: an adjustable tension knot, for tents"
+  prerequisites:
+  - "Rope"
+  warnings:
+  - "Knots may slip when wet — use doubled knots at critical points"
+  - "Check knots regularly for looseness"
+  - "For rescue, keep rope load under 1/5 of breaking strength"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: weather/observation/basics/en
+  category: weather
+  subcategory: observation
+  priority: 1
+  title: Basic Weather Observation
+  summary: Without forecasts, reading natural signs to predict weather is vital for
+    survival decisions.
+  steps:
+  - "Clouds: cumulonimbus (cauliflower towers) → thunderstorm coming; cirrus (wispy high) → change in 1-2 days"
+  - "Wind: sudden shifts often bring weather change; in valleys wind uphill by day, downhill by night is normal"
+  - "Animals: swallows flying low → rain coming; ants relocating → heavy rain; bees returning → worsening weather"
+  - "Sky: red at dawn → storm coming; red at dusk → fair weather"
+  - "Feel: aching joints or sudden humidity → possible rain; muggy still air → thunderstorm precursor"
+  - "Record: log weather daily; after a week local patterns emerge"
+  prerequisites:
+  - "Observation"
+  - "Recording tool"
+  warnings:
+  - "Mountain weather changes very fast — don't plan trips on current conditions alone"
+  - "In thunderstorms stay away from high ground, isolated trees, and water"
+  - "In flood-prone areas, watch upstream weather"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: energy/fire/charcoal_gasifier/en
+  category: energy
+  subcategory: fire
+  priority: 1
+  title: Simple Charcoal Gasifier
+  summary: A charcoal gasifier incompletely burns wood to produce combustible gas for
+    cooking and heating, 2-3x more efficient than direct burning.
+  steps:
+  - "Prepare two metal drums (smaller inside larger)"
+  - "Punch holes in the bottom and sides of the inner drum (1cm dia, 5cm spacing)"
+  - "Load the inner drum with wood/charcoal, light from the top"
+  - "Cut an air intake at the bottom of the outer drum, attach a smoke pipe at top"
+  - "Combustion gas exits the pipe and can be burned a second time"
+  - "Adjust the intake to control heat output"
+  prerequisites:
+  - "Two metal drums"
+  - "Tools"
+  - "Wood/charcoal"
+  warnings:
+  - "Gasifiers produce carbon monoxide — use only in ventilated areas"
+  - "The body gets extremely hot — keep flammables away"
+  - "Clean ash regularly to maintain airflow"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: energy/solar/thermal_basic/en
+  category: energy
+  subcategory: solar
+  priority: 1
+  title: Basic Solar Thermal Use
+  summary: Solar is the most reliable energy source. Without complex gear you can
+    heat water, dry food, and cook with sunlight.
+  steps:
+  - "Solar water heater: a black container (painted bucket/pipe) in direct sun can heat water to 60°C"
+  - "Solar cooker: build a parabolic reflector from foil/mirrors; focal point reaches 200°C"
+  - "Solar drying: a clear plastic tunnel with ventilation speeds drying"
+  - "Solar still: cover a brine container with plastic film; condensate drips into a collector"
+  - "Best hours: 10am to 3pm"
+  prerequisites:
+  - "Black container / reflective material"
+  - "Sunlight"
+  warnings:
+  - "Solar cooker focal point is extremely hot — beware burns and fire"
+  - "Cloudy days and winter sharply reduce solar efficiency"
+  - "Solar still output is limited — use as a supplementary water source only"
+  verification: expert_verified
+  source: pre_collapse
+  language: en

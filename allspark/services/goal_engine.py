@@ -139,7 +139,7 @@ class GoalEngine:
                 )
                 self.db.save_milestone(ms)
 
-            goal.milestone_count = len(template["milestones_keys"])
+            goal.milestone_count = len(cast(list[str], template["milestones_keys"]))
             self.db.save_goal(goal)
             generated.append(goal)
 
@@ -192,7 +192,10 @@ class GoalEngine:
             progress=0.0,
             deadline=deadline,
             triggers=json.dumps(template["triggers"]),
-            rationale=t(template["rationale_key"]),
+            # SHA-60: persist the rationale as a marker, not a translated
+            # string — otherwise the zh-mode startup value is baked in and
+            # survives a later `lang en` (same class of bug as B-2).
+            rationale=mark(template["rationale_key"]),
             created_at=now.isoformat(),
             updated_at=now.isoformat(),
         )

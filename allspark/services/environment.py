@@ -44,7 +44,7 @@ class EnvironmentAssessor:
         return result
 
     def _assess_climate(self) -> dict:
-        result = {
+        result: dict[str, Any] = {
             "condition": "unknown",
             "score": 0.5,
             "details": "",
@@ -79,7 +79,7 @@ class EnvironmentAssessor:
         return result
 
     def _assess_terrain(self) -> dict:
-        result = {
+        result: dict[str, Any] = {
             "type": "unknown",
             "score": 0.5,
             "details": t("env_terrain_unknown"),
@@ -101,7 +101,7 @@ class EnvironmentAssessor:
         return result
 
     def _assess_threats(self) -> dict:
-        result: dict[str, object] = {
+        result: dict[str, Any] = {
             "level": "low",
             "score": 0.8,
             "factors": [],
@@ -140,7 +140,7 @@ class EnvironmentAssessor:
         return result
 
     def _assess_opportunities(self) -> dict:
-        result: dict[str, object] = {
+        result: dict[str, Any] = {
             "score": 0.5,
             "items": [],
         }

@@ -1,6 +1,7 @@
 import locale
 import urllib.request
 from pathlib import Path
+from typing import Any
 
 import yaml
 from rich.console import Console
@@ -43,7 +44,7 @@ def run_init_wizard(db: Database) -> dict:
         padding=(1, 2)
     ))
 
-    result = {}
+    result: dict[str, Any] = {}
 
     result["language"] = _step_language_select()
 
@@ -446,8 +447,14 @@ def _step_survivor_profile(db: Database) -> dict:
 
 
 def _load_questionnaire() -> dict:
-    """Load structured questionnaire data from YAML."""
-    q_path = Path(__file__).resolve().parent / "data" / "questionnaire.yaml"
+    """Load structured questionnaire data from YAML.
+
+    The questionnaire lives at ``allspark/data/questionnaire.yaml`` (a packaged
+    data asset), not next to this module under ``adapters/data/`` — the old
+    path silently fell through to ``{}`` and the CLI degraded to free-text
+    (SHA-56).
+    """
+    q_path = Path(__file__).resolve().parent.parent / "data" / "questionnaire.yaml"
     if not q_path.exists():
         return {}
     with open(q_path, "r", encoding="utf-8") as f:

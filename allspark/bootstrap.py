@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from typing import Any
 
 from allspark.container import ServiceContainer
 from allspark.core.database import Database
@@ -90,7 +91,7 @@ class ApplicationBootstrap:
 
     def _check_data_integrity(self) -> dict:
         """Verify database integrity after unexpected shutdown."""
-        result = {"ok": True, "issues": []}
+        result: dict[str, Any] = {"ok": True, "issues": []}
 
         try:
             check = self.db.conn.execute("PRAGMA integrity_check").fetchone()

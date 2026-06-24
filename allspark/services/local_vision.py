@@ -6,6 +6,7 @@ Uses ONNX Runtime when a local model is available; otherwise degrades safely.
 
 import logging
 from pathlib import Path
+from typing import Optional, cast
 
 from allspark.base_service import BaseService
 from allspark.core.config import DEFAULT_DB_DIR
@@ -35,10 +36,11 @@ _SURVIVAL_LABEL_MAP = {
 class LocalVisionEngine(BaseService):
     SERVICE_NAME = "local_vision"
 
-    def __init__(self, db: Database = None, **kwargs):
-        super().__init__(db, **kwargs)
+    def __init__(self, db: Optional[Database] = None, **kwargs):
+        super().__init__(cast(Database, db), **kwargs)
         self.model_dir = Path(kwargs.get("model_dir") or DEFAULT_DB_DIR / "models" / "vision")
-        self.model_path = Path(kwargs.get("model_path")) if kwargs.get("model_path") else None
+        model_path = kwargs.get("model_path")
+        self.model_path = Path(model_path) if model_path else None
         self._session = None
         self._available = False
         self._fallback_labels = kwargs.get("fallback_labels", False)

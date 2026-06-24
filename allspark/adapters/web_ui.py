@@ -2,7 +2,7 @@ import urllib.request
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from jinja2 import Environment, FileSystemLoader
 
@@ -40,6 +40,7 @@ def _render_template(name: str, **context) -> str:
         or k.startswith("psych_")
         or k.startswith("mode_")
         or k.startswith("resource_")
+        or k.startswith("q_")
     }
     context.setdefault("web_i18n", web_i18n)
     return template.render(**context)
@@ -57,7 +58,7 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
     app = FastAPI(title="ALLSPARK", version="0.7.0")
     app.add_exception_handler(HTTPException, http_exception_handler)
 
-    db = Database(db_path)
+    db = Database(Path(db_path) if db_path else None)
     init_language(db)
     app.state.db = db
     app.state.engine = None
@@ -71,31 +72,33 @@ def create_app(db_path: Optional[str] = None) -> FastAPI:
     async def index():
         if not app.state.initialized:
             return _render_template("init.html")
-        return _render_template("index.html", page_title="Dashboard")
+        # SHA-60: page_title flows into the topbar and <title>; route it
+        # through t() so it is not a hardcoded English leak in zh mode.
+        return _render_template("index.html", page_title=t("web_page_title_dashboard"))
 
     @app.get("/system", response_class=HTMLResponse)
     async def system_page():
         if not app.state.initialized:
             return _render_template("init.html")
-        return _render_template("system.html", page_title="System Monitor")
+        return _render_template("system.html", page_title=t("web_page_title_system"))
 
     @app.get("/executions", response_class=HTMLResponse)
     async def executions_page():
         if not app.state.initialized:
             return _render_template("init.html")
-        return _render_template("executions.html", page_title="Executions")
+        return _render_template("executions.html", page_title=t("web_page_title_executions"))
 
     @app.get("/config", response_class=HTMLResponse)
     async def config_page():
         if not app.state.initialized:
             return _render_template("init.html")
-        return _render_template("config.html", page_title="Config")
+        return _render_template("config.html", page_title=t("web_page_title_config"))
 
     @app.get("/repository", response_class=HTMLResponse)
     async def repository_page():
         if not app.state.initialized:
             return _render_template("init.html")
-        return _render_template("repository.html", page_title="Repository")
+        return _render_template("repository.html", page_title=t("web_page_title_repository"))
 
     # Init API routes
     _register_init_routes(app)
@@ -148,6 +151,20 @@ def _register_init_routes(app):
     @app.get("/api/init/status")
     async def init_status():
         return {"initialized": app.state.initialized}
+
+    @app.get("/api/init/questionnaire")
+    async def init_questionnaire():
+        """Structured questionnaire options (PRD §4.2.2).
+
+        Single source of truth is ``allspark/data/questionnaire.yaml``, shared
+        with the CLI wizard — the Web init wizard renders from this so the two
+        paths cannot drift (SHA-56). Each option carries a stable ``key``
+        (persisted in survivor_state) and a ``label_key`` resolved client-side
+        via the q_* i18n keys.
+        """
+        from allspark.adapters.init_wizard import _load_questionnaire
+
+        return {"version": "2", "questions": _load_questionnaire()}
 
     @app.get("/api/init/hardware")
     async def init_hardware():
@@ -276,10 +293,43 @@ def _register_init_routes(app):
 
     @app.post("/api/init/complete")
     async def init_complete(
+        request: Request,
         language: str = Query("zh"),
         survivor_name: str = Query("Survivor"),
         skip_model: bool = Query(False),
+        location_type: str = Query(""),
+        shelter: str = Query(""),
+        health: str = Query(""),
+        urgency: str = Query(""),
+        threats: str = Query(""),
+        skills: str = Query(""),
     ):
+        # The structured questionnaire fields may arrive either as query
+        # params (legacy GET-style POST) or as a JSON body (Web wizard).
+        # Merge JSON body on top so the Web init wizard can submit the full
+        # PRD §4.2.2 questionnaire (SHA-56).
+        body: dict = {}
+        try:
+            parsed = await request.json()
+            if isinstance(parsed, dict):
+                body = parsed
+        except Exception:
+            body = {}
+
+        def _pick(key: str, default: str) -> str:
+            val = body.get(key, default)
+            if isinstance(val, list):
+                return ",".join(str(v) for v in val if v)
+            return str(val or default)
+
+        location_type = _pick("location_type", location_type)
+        shelter = _pick("shelter", shelter)
+        health = _pick("health", health)
+        urgency = _pick("urgency", urgency)
+        threats = _pick("threats", threats)
+        skills = _pick("skills", skills)
+        survivor_name = _pick("survivor_name", survivor_name)
+        language = _pick("language", language)
 
         db = app.state.db
         profile = detect_hardware()
@@ -305,6 +355,15 @@ def _register_init_routes(app):
         set_language(language)
         db.save_survivor_state("name", survivor_name)
         db.save_survivor_state("language", language)
+        # Persist the structured questionnaire so the survival assessment has
+        # the same initial context the CLI wizard captures (SHA-56).
+        db.save_survivor_state("location_type", location_type)
+        db.save_survivor_state("shelter", shelter)
+        db.save_survivor_state("health", health)
+        db.save_survivor_state("urgency", urgency)
+        db.save_survivor_state("threats", threats)
+        db.save_survivor_state("skills", skills)
+        db.save_survivor_state("questionnaire_version", "2")
         db.mark_initialized()
 
         app.state.initialized = True

@@ -202,7 +202,7 @@ async function taskAction(taskId, action) {
     const r = await fetch("/api/tasks/" + encodeURIComponent(taskId) + "/" + action, {method: "POST"});
     const data = await r.json();
     if (data.status === "ok") refreshExecutions();
-    else alert(TASK_I18N.failed_action + ": " + (data.error || JSON.stringify(data)));
+    else toast(TASK_I18N.failed_action + ": " + (data.error || JSON.stringify(data)), "error");
   } catch(e) { notify(e); }
 }
 

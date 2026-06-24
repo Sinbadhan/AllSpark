@@ -309,7 +309,7 @@ async function addMember() {
     });
     const data = await r.json();
     if (data.status === "error") {
-      alert(data.error + (data.detail ? ': ' + data.detail : ''));
+      toast(data.error + (data.detail ? ': ' + data.detail : ''), "error");
       return;
     }
     document.getElementById("member-name").value = "";
@@ -327,7 +327,9 @@ async function loadKnowledgeTable(el) {
   let allEntries = [];
   for (const cat of cats) {
     const entries = await api(`/api/knowledge/category/${cat.category}`);
-    allEntries = allEntries.concat(entries);
+    // /api/knowledge/category returns {id,title,summary,priority} without the
+    // category field, so tag it back on to avoid a missing-value cell (SHA-55).
+    allEntries = allEntries.concat(entries.map(e => ({ ...e, category: cat.category })));
   }
 
   el.innerHTML = `<table class="w-full text-left border-collapse min-w-[600px]">

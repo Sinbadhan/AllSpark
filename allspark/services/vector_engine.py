@@ -119,12 +119,12 @@ class VectorEngine(BaseService):
         for rank, (kid, _sim) in enumerate(vector_ids, 1):
             scores[kid] = scores.get(kid, 0.0) + 1.0 / (K + rank)
 
-        ids_sorted = sorted(scores, key=scores.get, reverse=True)
+        ids_sorted = sorted(scores, key=lambda k: scores.get(k, 0.0), reverse=True)
         results = []
         for kid in ids_sorted[:limit]:
-            entry = self.db.get_knowledge(kid)
-            if entry:
-                results.append(entry)
+            k_entry = self.db.get_knowledge(kid)
+            if k_entry:
+                results.append(k_entry)
         return results
 
 

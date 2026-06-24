@@ -54,6 +54,7 @@ class FeatureFlags:
     kiwix: bool = False
     llm: bool = False
     llm_model: str = ""
+    tier: HardwareTier = HardwareTier.MINIMUM
     multilingual_knowledge: bool = True
     text_interaction: bool = True
     image_recognition: bool = False
@@ -215,6 +216,7 @@ def compute_feature_flags(tier: HardwareTier, gpu_available: bool = False) -> Fe
     from allspark.services.model_registry import resolve_model_name
 
     flags = FeatureFlags()
+    flags.tier = tier
     llm_model = resolve_model_name(tier)
 
     if tier == HardwareTier.PHANTOM:
