@@ -55,7 +55,7 @@ MIRROR_DOWNLOAD_URLS = {
 
 
 def create_app(db_path: Optional[str] = None) -> FastAPI:
-    app = FastAPI(title="ALLSPARK", version="0.7.0")
+    app = FastAPI(title="ALLSPARK", version=__version__)
     app.add_exception_handler(HTTPException, http_exception_handler)
 
     db = Database(Path(db_path) if db_path else None)

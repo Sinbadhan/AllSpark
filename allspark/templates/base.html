@@ -4,8 +4,6 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>{{ t('web_app_title') }} - {{ page_title }}</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
 /* ===== Reset & Base ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -22,7 +20,7 @@
   --error: #ffb4ab; --error-container: #93000a;
   --success: #44cc44; --warning: #ffaa00; --critical: #ff4444; --info: #4488ff;
   --border: #2a2a2a; --radius: 4px; --radius-lg: 8px;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  --font-mono: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
   --sidebar-w: 256px; --topbar-h: 48px; --footer-h: 32px;
   /* SHA-58: alias the Material-style surface-container token names actually
      used in templates to the real tokens defined above, so referenced
@@ -51,15 +49,13 @@ table { border-collapse: collapse; width: 100%; }
 ::-webkit-scrollbar-thumb { background: var(--surface-high); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--surface-highest); }
 
-/* ===== Material Symbols ===== */
+/* ===== Local icon fallback ===== */
 .material-symbols-outlined {
-  font-family: 'Material Symbols Outlined', var(--font-mono);
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  font-size: 20px; vertical-align: middle; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1em; font-family: var(--font-mono); font-weight: 700;
+  font-size: 0; vertical-align: middle; line-height: 1;
 }
-/* SHA-58: when the icon font is unavailable (offline), hide the ligature
-   text so it does not render as literal words next to labels. */
-.icons-offline .material-symbols-outlined { display: none; }
+.icons-ready .material-symbols-outlined { font-size: 18px; }
 
 /* ===== Utility Classes ===== */
 .text-primary { color: var(--primary); }
@@ -545,7 +541,7 @@ table { border-collapse: collapse; width: 100%; }
         <input placeholder="{{ t('web_search_placeholder') }}" type="text" id="global-search"/>
         <span class="material-symbols-outlined" style="color:var(--on-surface-variant);font-size:18px;">search</span>
       </div>
-      <button class="icon-btn"><span class="material-symbols-outlined">notifications</span></button>
+      <button class="icon-btn" id="notifications-btn" title="{{ t('web_notifications_title') }}" onclick="showNotifications()"><span class="material-symbols-outlined">notifications</span></button>
       <button class="icon-btn" id="lang-toggle-btn" title="{{ t('web_lang_switch_label') }}" onclick="toggleLanguage()">
         <span class="material-symbols-outlined">translate</span>
       </button>
@@ -588,6 +584,13 @@ const FOOTER_I18N = {
   status_alert: "{{ t('web_footer_status_alert') }}",
   status_nominal: "{{ t('web_footer_status_nominal') }}",
 };
+const GLOBAL_I18N = {
+  search_empty: "{{ t('web_global_search_empty') }}",
+  search_sent: "{{ t('web_global_search_sent') }}",
+  notifications_title: "{{ t('web_notifications_title') }}",
+  notifications_empty: "{{ t('web_notifications_empty') }}",
+  notifications_active: "{{ t('web_notifications_active') }}",
+};
 async function api(path, opts = {}) {
   const res = await fetch(API + path, opts);
   const data = await res.json();
@@ -598,6 +601,26 @@ async function api(path, opts = {}) {
 }
 function notify(msg) {
   toast(typeof msg === 'string' ? msg : (I18N.web_error_occurred || 'An error occurred'), 'error');
+}
+function applyLocalIcons() {
+  const map = {
+    menu: "☰", close: "×", dashboard: "▦", terminal: "▣", play_arrow: "▶", settings_input_component: "▥",
+    folder_open: "□", help: "?", sensors: "◉", search: "⌕", notifications: "!",
+    translate: "文", info: "i", settings: "⚙", check_circle: "✓", warning: "!",
+    error: "×", error_outline: "!", memory: "▤", tune: "≡", save: "▣", refresh: "↻", place: "⌖",
+    cell_tower: "⌁", cloud: "☁", eco: "◇", bolt: "⚡", water_drop: "◌",
+    restaurant: "⌗", local_fire_department: "△", today: "▣", expand_more: "⌄",
+    expand_less: "⌃", trending_up: "↗", chat: "□", psychology: "◎",
+    history: "↺", download: "↓", upload: "↑", snippet_folder: "▤",
+    description: "≡", inventory_2: "▤", edit: "✎", arrow_back: "←",
+    computer: "▣", smart_toy: "◇", person: "●", language: "文", sync: "↻"
+  };
+  document.querySelectorAll(".material-symbols-outlined").forEach(el => {
+    const key = (el.textContent || "").trim();
+    if (key.length <= 1) return;
+    el.textContent = map[key] || key.slice(0, 1) || "•";
+  });
+  document.documentElement.classList.add("icons-ready");
 }
 // SHA-59: non-blocking toast notifications + Promise-based modal dialogs,
 // replacing native alert()/confirm()/prompt() across the Web UI.
@@ -698,6 +721,53 @@ async function updateFooter() {
 updateFooter();
 setInterval(updateFooter, 30000);
 
+function runGlobalSearch(query) {
+  const q = (query || "").trim();
+  if (!q) { toast(GLOBAL_I18N.search_empty, "info"); return; }
+  if (location.pathname !== "/" || typeof window.searchKnowledge !== "function") {
+    location.href = "/?q=" + encodeURIComponent(q);
+    return;
+  }
+  const input = document.getElementById("knowledge-search");
+  if (typeof window.switchTab === "function") window.switchTab("knowledge");
+  if (input) input.value = q;
+  window.searchKnowledge();
+  toast(GLOBAL_I18N.search_sent.replace("{query}", q), "info");
+}
+
+async function showNotifications() {
+  try {
+    const data = await api("/api/status");
+    const warnings = data.warnings || [];
+    if (!warnings.length) {
+      toast(GLOBAL_I18N.notifications_empty, "info");
+      return;
+    }
+    const message = warnings.map(w => (w.message || w.resource || JSON.stringify(w))).join("\n");
+    await confirmDialog(GLOBAL_I18N.notifications_title, {
+      message: GLOBAL_I18N.notifications_active.replace("{count}", warnings.length) + "\n" + message,
+      okText: I18N.web_ok || "OK",
+      cancelText: I18N.web_cancel || "Cancel",
+    });
+  } catch(e) { notify(e); }
+}
+window.runGlobalSearch = runGlobalSearch;
+window.showNotifications = showNotifications;
+
+window.addEventListener("load", () => {
+  applyLocalIcons();
+  const iconObserver = new MutationObserver(() => applyLocalIcons());
+  iconObserver.observe(document.body, { childList: true, subtree: true });
+  const search = document.getElementById("global-search");
+  if (search) {
+    search.addEventListener("keydown", e => {
+      if (e.key === "Enter") runGlobalSearch(search.value);
+    });
+  }
+  const pending = new URLSearchParams(location.search).get("q");
+  if (pending) runGlobalSearch(pending);
+});
+
 /* === Global: language toggle === */
 const CURRENT_LANG = LANG;
 async function toggleLanguage() {
@@ -757,19 +827,6 @@ async function openAbout() {
 function closeAbout() {
   const m = document.getElementById("about-modal");
   if (m) m.style.display = "none";
-}
-</script>
-<script>
-// SHA-58: offline-first icon fallback. The Material Symbols font is loaded
-// from a CDN; when offline it never registers, so the icon ligature text
-// (e.g. "bolt", "person") would render as literal words. Detect that and
-// hide the icon glyphs so only the adjacent labels remain.
-if (document.fonts && document.fonts.ready) {
-  document.fonts.ready.then(function () {
-    if (!document.fonts.check('1em "Material Symbols Outlined"')) {
-      document.documentElement.classList.add("icons-offline");
-    }
-  });
 }
 </script>
 {% block scripts %}{% endblock %}

@@ -1,6 +1,6 @@
 # 🔥 AllSpark — Offline AI Survival System
 
-**v1.0.2** | [中文](README_CN.md)
+**v1.0.3** | [中文](README_CN.md)
 
 > **In extreme conditions, preserve and rebuild human civilization.**
 
@@ -24,7 +24,7 @@ AllSpark (AllSpark: A Survival-centric Offline AI Resource Kit) is an offline-fi
 | Feature | Description |
 |---------|-------------|
 | Rule Engine | Deterministic survival advice based on knowledge base, intent recognition + knowledge retrieval |
-| Local LLM | llama-cpp-python inference, Qwen2.5 series (1.5B~72B), auto-selected by hardware |
+| Local LLM | llama-cpp-python inference, Qwen3 series (1.7B~32B), auto-selected by hardware |
 | Survival Assessment | 5-dimensional resource assessment + phase determination + bottleneck identification |
 | Personality System | Crisis/Stable/Companion/Multiplayer/Renaissance — 5 adaptive modes |
 | Experience Accumulation | Experience recording → pattern recognition → knowledge entry loop |
@@ -173,11 +173,11 @@ help                    — Full help
 
 | Tier | RAM | Storage | Device | LLM Model | Deploy Mode |
 |------|-----|---------|--------|-----------|-------------|
-| Phantom | 2 GB | 16 GB | Raspberry Pi 4 | Qwen2.5-1.5B-Q4 | Process |
-| Minimum | 4 GB | 32 GB | Raspberry Pi 5 | Qwen2.5-3B-Q4 | Process |
-| Recommended | 8 GB | 64 GB | Mini PC | Qwen2.5-7B-Q4 | Docker |
-| Comfortable | 16 GB | 128 GB | Laptop | Qwen2.5-14B-Q4 | Docker |
-| Flagship | 32 GB+ | 256 GB+ | Workstation | Qwen2.5-72B-Q4 | Integration |
+| Phantom | 2 GB | 16 GB | Raspberry Pi 4 | Qwen3-1.7B-Instruct-Q4 | Process |
+| Minimum | 4 GB | 32 GB | Raspberry Pi 5 | Qwen3-4B-Instruct-Q4 | Process |
+| Recommended | 8 GB | 64 GB | Mini PC | Qwen3-8B-Instruct-Q4 | Docker |
+| Comfortable | 16 GB | 128 GB | Laptop | Qwen3-14B-Instruct-Q4 | Docker |
+| Flagship | 32 GB+ | 256 GB+ | Workstation | Qwen3-32B-Instruct-Q4 | Integration |
 
 > Without LLM, the system still runs normally via the rule engine, only losing open-ended Q&A capability.
 

@@ -1,7 +1,7 @@
 app_name: AllSpark
 app_name_full: AllSpark
 app_subtitle: Offline AI Survival System
-app_version: v0.7.0
+app_version: v1.0.3
 app_mission: In extreme conditions, preserve and rebuild human civilization.
 greeting: I'm here
 mode_proactive: Proactive
@@ -1293,6 +1293,11 @@ web_page_title_config: Config
 web_page_title_repository: Repository
 web_execute_task: Execute Task
 web_search_placeholder: Search...
+web_global_search_empty: Enter a search term first
+web_global_search_sent: Searching for "{query}"
+web_notifications_title: Notifications
+web_notifications_empty: No active alerts
+web_notifications_active: "{count} active alert(s)"
 web_dashboard_title: System Health Matrix
 web_dashboard_subtitle: Live telemetry and resource monitoring.
 web_active_tasks: Active Tasks
@@ -1454,6 +1459,12 @@ web_skf_verify_required: Validate during import
 web_skf_done_export: SKF exported to
 web_skf_done_import: SKF imported
 web_skf_error: Operation failed
+web_skf_path: Path
+web_skf_status: Status
+web_skf_entries: Entries
+web_skf_spark_id: Spark ID
+web_skf_created_at: Created
+web_skf_verified: Verified
 
 # === Web UI v1.1 — Stage 2: Survival core ===
 web_briefing_title: Today's briefing
@@ -1546,6 +1557,8 @@ web_comms_start: Start
 web_comms_stop: Stop
 web_comms_scan: Scan
 web_comms_no_neighbors: No neighbors yet
+web_comms_unavailable: Spark network is not running
+web_comms_unavailable_hint: Enable the module, or start discovery in a real multi-node environment.
 web_weather_title: Weather
 web_weather_pressure: Pressure (hPa)
 web_weather_set_pressure: Set manual pressure
@@ -1553,6 +1566,10 @@ web_weather_done: Updated
 web_weather_forecast: 12-hour forecast
 web_environment_title: Environment assessment
 web_environment_loading: Assessing…
+web_environment_climate: Climate
+web_environment_terrain: Terrain
+web_environment_threats: Threats
+web_environment_opportunities: Opportunities
 web_community_tab: Community
 web_community_status: Governance status
 web_community_no_members: No members yet

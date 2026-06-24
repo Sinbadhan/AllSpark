@@ -105,6 +105,12 @@ const SKF_I18N = {
   verify_required: "{{ t('web_skf_verify_required') }}",
   done_export: "{{ t('web_skf_done_export') }}",
   done_import: "{{ t('web_skf_done_import') }}",
+  path: "{{ t('web_skf_path') }}",
+  status: "{{ t('web_skf_status') }}",
+  entries: "{{ t('web_skf_entries') }}",
+  spark_id: "{{ t('web_skf_spark_id') }}",
+  created_at: "{{ t('web_skf_created_at') }}",
+  verified: "{{ t('web_skf_verified') }}",
 };
 
 let currentSection = "knowledge";
@@ -194,8 +200,8 @@ async function doSkfImport() {
   try {
     const r = await fetch("/api/skf/import?path=" + encodeURIComponent(path) + "&verify=" + (verify ? "true" : "false"), {method: "POST"});
     const data = await r.json();
-    if (data.status === "ok") setSkfResult("ok", SKF_I18N.done_import + ': ' + JSON.stringify(data));
-    else setSkfResult("error", JSON.stringify(data));
+    if (data.status === "ok") setSkfResult("ok", formatSkfResult(data, SKF_I18N.done_import));
+    else setSkfResult("error", formatSkfError(data));
   } catch(e) { setSkfResult("error", String(e)); }
 }
 
@@ -205,8 +211,25 @@ async function doSkfInfo(which) {
   try {
     const r = await fetch("/api/skf/info?path=" + encodeURIComponent(path));
     const data = await r.json();
-    setSkfResult(data.status === "ok" ? "ok" : "error", JSON.stringify(data, null, 2));
+    setSkfResult(data.status === "ok" ? "ok" : "error", data.status === "ok" ? formatSkfResult(data) : formatSkfError(data));
   } catch(e) { setSkfResult("error", String(e)); }
+}
+
+function formatSkfResult(data, prefix) {
+  const parts = [];
+  if (prefix) parts.push(prefix);
+  if (data.path) parts.push(SKF_I18N.path + ": " + data.path);
+  if (data.status) parts.push(SKF_I18N.status + ": " + data.status);
+  if (data.entries != null) parts.push(SKF_I18N.entries + ": " + data.entries);
+  if (data.count != null) parts.push(SKF_I18N.entries + ": " + data.count);
+  if (data.spark_id) parts.push(SKF_I18N.spark_id + ": " + data.spark_id);
+  if (data.created_at) parts.push(SKF_I18N.created_at + ": " + data.created_at);
+  if (data.verified != null) parts.push(SKF_I18N.verified + ": " + (data.verified ? "✓" : "✗"));
+  return parts.length ? parts.join(" · ") : (prefix || SKF_I18N.status + ": ok");
+}
+
+function formatSkfError(data) {
+  return data.error || data.detail || data.message || SKF_I18N.status + ": " + (data.status || "error");
 }
 
 function setSkfResult(level, msg) {

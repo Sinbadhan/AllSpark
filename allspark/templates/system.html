@@ -426,13 +426,23 @@ const MODULE_I18N = {
   done_disable: "{{ t('web_modules_done_disable') }}",
   failed: "{{ t('web_modules_action_failed') }}",
 };
-const COMMS_I18N = { no_neighbors: "{{ t('web_comms_no_neighbors') }}" };
+const COMMS_I18N = {
+  no_neighbors: "{{ t('web_comms_no_neighbors') }}",
+  unavailable: "{{ t('web_comms_unavailable') }}",
+  unavailable_hint: "{{ t('web_comms_unavailable_hint') }}",
+};
 const POI_I18N = {
   no_pois: "{{ t('web_location_no_pois') }}",
   unknown: "{{ t('web_location_unknown') }}",
   remove: "{{ t('web_location_remove') }}",
 };
-const ENV_I18N = { loading: "{{ t('web_environment_loading') }}" };
+const ENV_I18N = {
+  loading: "{{ t('web_environment_loading') }}",
+  climate: "{{ t('web_environment_climate') }}",
+  terrain: "{{ t('web_environment_terrain') }}",
+  threats: "{{ t('web_environment_threats') }}",
+  opportunities: "{{ t('web_environment_opportunities') }}",
+};
 const WEATHER_I18N = { done: "{{ t('web_weather_done') }}" };
 
 async function applyModes() {
@@ -530,7 +540,24 @@ async function refreshComms() {
   const el = document.getElementById("comms-status");
   try {
     const data = await api("/api/network/status");
-    el.innerHTML = `<pre style="white-space:pre-wrap;margin:0;font-family:JetBrains Mono,monospace;font-size:11px;">${escHtml(JSON.stringify(data, null, 2))}</pre>`;
+    if (data && data._http_error) {
+      const detail = data.detail || data.error || COMMS_I18N.unavailable;
+      const next = data.next_action || COMMS_I18N.unavailable_hint;
+      el.innerHTML = `
+        <div style="border:1px solid var(--warning);border-radius:4px;padding:10px;background:rgba(255,170,0,0.08);">
+          <div style="font-weight:700;color:var(--warning);margin-bottom:4px;">${COMMS_I18N.unavailable}</div>
+          <div class="text-sm text-secondary">${escHtml(detail)}</div>
+          <div class="text-xs text-secondary" style="margin-top:6px;">${escHtml(next)}</div>
+        </div>`;
+      return;
+    }
+    const peers = data.neighbors || data.peers || [];
+    const status = data.status || "idle";
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+        <span>${escHtml(status)}</span>
+        <span class="text-secondary">${COMMS_I18N.no_neighbors}: ${peers.length}</span>
+      </div>`;
   } catch(e) { el.textContent = String(e); }
 }
 async function commsAction(action) {
@@ -576,7 +603,40 @@ async function refreshEnvironment() {
   const el = document.getElementById("env-result");
   try {
     const data = await api("/api/environment");
-    el.innerHTML = `<pre style="white-space:pre-wrap;margin:0;font-family:JetBrains Mono,monospace;font-size:11px;">${escHtml(JSON.stringify(data, null, 2))}</pre>`;
+    const score = data.overall_score !== undefined ? Math.round(Number(data.overall_score) * 100) + "%" : "--";
+    const climate = data.climate || {};
+    const terrain = data.terrain || {};
+    const threats = data.threats || {};
+    const opportunities = data.opportunities || {};
+    const recs = data.recommendations || [];
+    el.innerHTML = `
+      <div style="display:grid;gap:8px;">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+          <span class="text-secondary">${I18N.web_environment_title}</span>
+          <strong class="text-primary">${score}</strong>
+        </div>
+        <div class="grid-responsive" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;">
+          <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:8px;">
+            <div class="text-xs text-secondary">${ENV_I18N.climate}</div>
+            <div>${escHtml(climate.condition || "--")}</div>
+            <div class="text-xs text-secondary">${escHtml(climate.details || "")}</div>
+          </div>
+          <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:8px;">
+            <div class="text-xs text-secondary">${ENV_I18N.terrain}</div>
+            <div>${escHtml(terrain.type || "--")}</div>
+            <div class="text-xs text-secondary">${escHtml(terrain.details || "")}</div>
+          </div>
+          <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:8px;">
+            <div class="text-xs text-secondary">${ENV_I18N.threats}</div>
+            <div>${escHtml(threats.level || "--")}</div>
+          </div>
+          <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:8px;">
+            <div class="text-xs text-secondary">${ENV_I18N.opportunities}</div>
+            <div>${(opportunities.items || []).map(escHtml).join("<br>") || "--"}</div>
+          </div>
+        </div>
+        ${recs.length ? '<div class="text-sm">' + recs.map(escHtml).join('<br>') + '</div>' : ''}
+      </div>`;
   } catch(e) { el.textContent = String(e); }
 }
 refreshEnvironment();

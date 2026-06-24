@@ -1,7 +1,7 @@
 app_name: 火种
 app_name_full: 火种 AllSpark
 app_subtitle: 离线人工智能生存系统
-app_version: v0.7.0
+app_version: v1.0.3
 app_mission: 在极端情况下，保存并重建人类文明。
 greeting: 我在这里
 mode_proactive: 主动模式
@@ -1230,6 +1230,11 @@ web_page_title_config: 配置
 web_page_title_repository: 资料库
 web_execute_task: 启动操作
 web_search_placeholder: 搜索...
+web_global_search_empty: 请输入搜索关键词
+web_global_search_sent: 正在搜索「{query}」
+web_notifications_title: 通知
+web_notifications_empty: 当前没有告警
+web_notifications_active: 当前有 {count} 条告警
 web_dashboard_title: 系统健康总览
 web_dashboard_subtitle: 实时遥测与资源监控。
 web_active_tasks: 活跃任务
@@ -1391,6 +1396,12 @@ web_skf_verify_required: 启用导入前完整性校验
 web_skf_done_export: SKF 已导出至
 web_skf_done_import: SKF 已导入
 web_skf_error: 操作失败
+web_skf_path: 路径
+web_skf_status: 状态
+web_skf_entries: 条目
+web_skf_spark_id: 火种 ID
+web_skf_created_at: 创建时间
+web_skf_verified: 校验
 
 # === Web UI v1.1 — Stage 2: Survival core ===
 web_briefing_title: 今日简报
@@ -1483,6 +1494,8 @@ web_comms_start: 启动
 web_comms_stop: 停止
 web_comms_scan: 扫描
 web_comms_no_neighbors: 暂无邻居
+web_comms_unavailable: 火种网络未启动
+web_comms_unavailable_hint: 可在模块表中启用，或在真实多节点环境中启动发现服务。
 web_weather_title: 天气
 web_weather_pressure: 气压（hPa）
 web_weather_set_pressure: 手动设定气压
@@ -1490,6 +1503,10 @@ web_weather_done: 已更新
 web_weather_forecast: 12 小时预报
 web_environment_title: 环境评估
 web_environment_loading: 评估中…
+web_environment_climate: 气候
+web_environment_terrain: 地形
+web_environment_threats: 威胁
+web_environment_opportunities: 机会
 web_community_tab: 社区
 web_community_status: 治理状态
 web_community_no_members: 暂无成员
@@ -1563,7 +1580,7 @@ error_trade_id_format: 请求体必须包含 {trade_id}
 error_trade_not_found: 交易未找到
 error_trade_not_found_detail: 未找到交易 '{trade_id}'
 error_not_initialized: AllSpark 尚未初始化，请先完成设置
-error_service_not_available: '{name}'' 服务不可用'
+error_service_not_available: 服务「{name}」不可用
 error_module_not_found: 模块 '{name}' 不存在
 error_module_unsupported: 硬件不支持 '{name}'
 error_module_disabled: 模块 '{name}' 已被禁用

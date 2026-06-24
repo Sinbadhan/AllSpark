@@ -334,11 +334,12 @@ async function refreshDashboard() {
     const icon = resourceIcons[r.type] || "inventory_2";
     const label = resourceLabel(r.type);
     const editBtn = `<span class="material-symbols-outlined" style="font-size:14px;cursor:pointer;color:var(--secondary);" title="${RES_I18N.edit_label}" onclick="event.stopPropagation();openResourceEdit('${r.type}',${r.amount||0},${r.daily_consumption||0},${r.daily_intake||0})">edit</span>`;
+    const keyAction = `if(event.key==='Enter'||event.key===' '){event.preventDefault();openResourceEdit('${r.type}',${r.amount||0},${r.daily_consumption||0},${r.daily_intake||0});}`;
     if (!r.configured) {
       // SHA-59: compact empty-state. Earlier every unconfigured card repeated
       // the long "set amount + daily use to calculate remaining time" hint,
       // crowding the dashboard. Now each card is a single dense line.
-      return '<div class="resource-card offline span-4" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',0,0,0)">' +
+      return '<div class="resource-card offline span-4" role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',0,0,0)" onkeydown="' + keyAction + '">' +
         '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value text-secondary">' + I18N.web_unconfigured + ' ' + editBtn + '</span></div>' +
         '<div class="card-status" style="font-size:13px;color:var(--secondary);">' + I18N.web_set_amount_hint_short + '</div>' +
         '<div class="card-remaining">' + escHtml(label) + '</div></div>';
@@ -585,7 +586,8 @@ function openResourceEdit(rtype, amount, consumption, intake) {
     modal.addEventListener("click", e => { if (e.target === modal) closeResEdit(); });
     document.body.appendChild(modal);
   }
-  document.getElementById("res-edit-title").textContent = `${RES_I18N.edit_label}: ${rtype.toUpperCase()}`;
+  const title = resourceLabel(rtype);
+  document.getElementById("res-edit-title").textContent = `${RES_I18N.edit_label}: ${title}`;
   document.getElementById("res-edit-amount").value = amount;
   document.getElementById("res-edit-consumption").value = consumption;
   document.getElementById("res-edit-intake").value = intake;
