@@ -1,9 +1,9 @@
 # 火种 AllSpark — 开发状态追踪
 
-> **最后更新：** 2026-06-24（v1.0.3 已发布）
+> **最后更新：** 2026-07-05（v1.0.3 收敛状态复核）
 > **当前版本：** v1.0.3
-> **整体状态：** v1.0.3 稳定性收敛 — 闭环 2026-06-23 审计 P1/P2/P3 队列（SHA-36/37/40/55/56/57/58/59/60 共 9 项）；mypy 4 个 disabled code 全部清零；regression harness 区分允许降级与真实失败；Web 契约/初始化向导/双语知识库/离线样式/UX 弹窗全部收敛。
-> **测试规模：** 当前以 CI/`pytest tests/ -q` 实际输出为准（v1.0.3 发布时 612 passed + 6 skipped 硬件 live 项），覆盖 Docker、命令层、优先级、预警协议、向量检索、外部知识库、本地视觉、语音会话、Web 契约、初始化向导、Spark Network 双节点、scheduler 等核心模块
+> **整体状态：** v1.0.3 稳定性收敛已复核 — 闭环 2026-06-23 审计 P1/P2/P3 队列（SHA-36/37/40/55/56/57/58/59/60 共 9 项）；mypy `check_untyped_defs` 已启用且通过；regression harness 已区分真实失败、允许降级、外部依赖不可用、环境禁止本地 TCP bind；Web 离线图标 fallback 已加覆盖测试。
+> **测试规模：** 当前 622 collected；本机/CI 口径预期 616 passed + 6 skipped；受限 sandbox 当前口径 614 passed + 8 skipped，本地 TCP 网络项会显式 skip 或 regression `environment_blocked`，覆盖 Docker、命令层、优先级、预警协议、向量检索、外部知识库、本地视觉、语音会话、Web 契约、初始化向导、Spark Network 双节点、scheduler 等核心模块
 
 ---
 
@@ -95,10 +95,10 @@
 
 | # | 功能 | 优先级 | 说明 |
 |---|------|--------|------|
-| 1 | Web 细节体验收敛 | 🟢 P2 | 全局搜索/通知反馈、可选服务降级卡片、离线字体/图标纯本地化 |
-| 2 | mypy 更严格配置 | 🟢 P3 | 常规 mypy 已零 disabled code；`--check-untyped-defs` 仍有少量后续债 |
-| 3 | bench `--hard-fail` 升级 | 🟢 P3 | 当前 600 ms 软门槛 emit warning，待基线稳定后切硬阈值 |
-| 4 | 真实环境集成测试 | 🟢 P3 | GPU/Docker/RPi fixtures 到位后补 `tests/integration/`；当前硬件 live 项已显式 skip/marker |
+| 1 | 真实环境集成验证 | 🟡 P2 | 已建立 `docs/REAL_WORLD_VALIDATION.md` 记录；下一步在 GPU/Docker/RPi/传感器/LLM 实机上跑验证矩阵 |
+| 2 | 视觉回归基线 | 🟢 P3 | Web 主要 UX 已收敛；仍可补 Playwright 截图基线防止布局/图标回退 |
+| 3 | bench `--hard-fail` 升级 | 🟢 P3 | 当前 `scripts/bench_import.py --check` 低于 600 ms 门槛，待多机基线稳定后切硬阈值 |
+| 4 | 发布/维护文档节奏 | 🟢 P3 | AGENTS/PROGRESS/ARCHITECTURE 已更新为当前测试口径；后续每次审计/发布后同步 |
 
 ### 远期功能（本轮不做）
 
