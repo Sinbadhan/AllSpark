@@ -149,8 +149,8 @@ class BootManager:
                     ("boot_duration_ms", str(total_ms))
                 )
                 self.db.conn.commit()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to persist boot time: %s", e)
 
         return report
 
@@ -162,8 +162,8 @@ class BootManager:
                     ("last_heartbeat", datetime.now().isoformat())
                 )
                 self.db.conn.commit()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to update heartbeat: %s", e)
 
     def get_boot_report(self) -> dict:
         return {

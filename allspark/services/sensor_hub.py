@@ -285,8 +285,8 @@ class SensorHub:
         for alert in alerts:
             try:
                 self._on_alert(device.name, alert)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Sensor alert callback failed for %s: %s", device.name, e)
 
     def manual_input(self, device_name: str, value: float) -> Optional[SensorReading]:
         device = self._devices.get(device_name)
@@ -395,10 +395,10 @@ class SensorHub:
                     try:
                         bus.read_byte(addr)
                         detected.append({"address": hex(addr), "name": name, "type": stype, "interface": "i2c"})
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("I2C probe failed at %s: %s", hex(addr), e)
                 bus.close()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("I2C auto-detect failed: %s", e)
 
         return detected

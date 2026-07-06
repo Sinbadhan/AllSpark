@@ -54,7 +54,7 @@ class VADRecorder:
 
     def start(self) -> dict:
         if not self.is_available():
-            return {"status": "error", "message": "sounddevice/webrtcvad not installed"}
+            return {"status": "error", "message": t("voice_error_sd_webrtcvad_not_installed")}
         if self.running:
             return {"status": "ok", "message": "already running"}
         self.running = True
@@ -116,16 +116,16 @@ class VoiceManager:
             self._whisper_model = whisper.load_model(model_name)
             return {"status": "ok", "model": model_name}
         except ImportError:
-            return {"status": "error", "message": "whisper not installed. Run: pip install openai-whisper"}
+            return {"status": "error", "message": t("voice_error_whisper_not_installed")}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
     def transcribe(self, audio_path: str, language: str = None) -> dict:
         if not self._whisper_model:
-            return {"status": "error", "message": "Whisper model not loaded. Use 'voice load' first."}
+            return {"status": "error", "message": t("voice_error_whisper_not_loaded")}
 
         if not os.path.exists(audio_path):
-            return {"status": "error", "message": f"Audio file not found: {audio_path}"}
+            return {"status": "error", "message": t("voice_error_audio_not_found", path=audio_path)}
 
         try:
             options = {}
@@ -152,11 +152,11 @@ class VoiceManager:
         except ImportError:
             return {
                 "status": "error",
-                "message": "sounddevice not installed. Run: pip install sounddevice",
+                "message": t("voice_error_sounddevice_not_installed"),
             }
 
         if not self._whisper_model:
-            return {"status": "error", "message": "Whisper model not loaded."}
+            return {"status": "error", "message": t("voice_error_whisper_not_loaded_short")}
 
         try:
             fs = 16000
@@ -189,7 +189,7 @@ class VoiceManager:
         except ImportError:
             return {
                 "status": "error",
-                "message": "pyttsx3 not installed. Run: pip install pyttsx3",
+                "message": t("voice_error_pyttsx3_not_installed"),
             }
         except Exception as e:
             return {"status": "error", "message": str(e)}
@@ -276,7 +276,7 @@ class VoiceManager:
 
         text = result["text"]
         if not text:
-            return {"status": "error", "message": "No speech detected"}
+            return {"status": "error", "message": t("voice_no_speech")}
 
         if self.diary:
             entry = self.diary.add_entry(content=text, emotion=emotion)

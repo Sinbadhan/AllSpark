@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional
 
 from allspark.core.database import Database
+from allspark.core.i18n import t
 from allspark.core.models import ExperienceLog, KnowledgeEntry
 
 logger = logging.getLogger(__name__)
@@ -87,7 +88,7 @@ class ExperienceEngine:
         steps = [f"Observed outcome: {o}" for o in outcomes[:5]]
         warnings = []
         if any("fail" in o.lower() or "失败" in o for o in outcomes):
-            warnings.append("Some attempts failed - verify before relying on this")
+            warnings.append(t("exp_warning_attempts_failed"))
 
         entry = KnowledgeEntry(
             id=kid,

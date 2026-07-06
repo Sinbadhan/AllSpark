@@ -1,9 +1,12 @@
+import logging
 import uuid
 from datetime import datetime
 from typing import Any, Optional
 
 from allspark.core.i18n import mark, render, t
 from allspark.core.models import TimelineEventType
+
+logger = logging.getLogger(__name__)
 
 
 class TimelineManager:
@@ -179,7 +182,8 @@ class TimelineManager:
             row = self.db.conn.execute(
                 "SELECT value FROM operating_state WHERE key='timeline_start_at'"
             ).fetchone()
-        except Exception:
+        except Exception as e:
+            logger.warning("Failed to read timeline_start_at: %s", e)
             row = None
 
         anchor = None
@@ -205,7 +209,7 @@ class TimelineManager:
                     ("timeline_start_at", anchor.isoformat()),
                 )
                 self.db.conn.commit()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to persist timeline_start_at: %s", e)
 
         return max(1, (datetime.now() - anchor).days + 1)

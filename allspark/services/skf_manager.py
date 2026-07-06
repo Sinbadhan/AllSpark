@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from allspark.core.i18n import t
 from allspark.core.models import ExperienceLog, KnowledgeEntry, MapPOI
 
 logger = logging.getLogger(__name__)
@@ -279,15 +280,15 @@ class SKFPackage:
             seen_ids.add(k.id)
 
             if not k.title:
-                errors.append(f"Knowledge {k.id}: missing title")
+                errors.append(t("skf_error_missing_title", id=k.id))
             if not k.summary:
-                errors.append(f"Knowledge {k.id}: missing summary")
+                errors.append(t("skf_error_missing_summary", id=k.id))
             if k.priority not in (0, 1, 2, 3):
-                errors.append(f"Knowledge {k.id}: invalid priority {k.priority}")
+                errors.append(t("skf_error_invalid_priority", id=k.id, priority=k.priority))
 
         for e in self.experience_log:
             if not e.event:
-                errors.append(f"Experience {e.id}: missing event")
+                errors.append(t("skf_error_missing_event", id=e.id))
 
         return errors
 

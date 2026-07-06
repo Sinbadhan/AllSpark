@@ -33,7 +33,7 @@ def error_response(
 def service_unavailable(name: str, app=None) -> JSONResponse:
     """Standard response when an optional service is not loaded."""
     reason = _t("error_service_not_available", name=name)
-    next_action = f"Check module status via /api/modules, or enable the feature flag for '{name}'."
+    next_action = _t("error_module_check_status", name=name)
 
     # Try to get richer info from ModuleRegistry
     if app:
@@ -47,16 +47,16 @@ def service_unavailable(name: str, app=None) -> JSONResponse:
             if mod_status:
                 if mod_status.get("status") == "unsupported":
                     reason = _t("error_module_unsupported", name=name)
-                    next_action = "This module requires higher hardware tier to run."
+                    next_action = _t("error_module_requires_higher_hw")
                 elif mod_status.get("status") == "disabled":
                     reason = _t("error_module_disabled", name=name)
-                    next_action = f"Re-enable '{name}' via /api/modules."
+                    next_action = _t("error_module_re_enable", name=name)
                 elif mod_status.get("status") == "available":
                     reason = _t("error_module_available", name=name)
-                    next_action = "Try restarting AllSpark or trigger a service load."
+                    next_action = _t("error_module_restart_or_load")
 
     return error_response(
-        error=f"{name} not available",
+        error=_t("error_module_not_available_short", name=name),
         detail=reason,
         next_action=next_action,
         status=503,

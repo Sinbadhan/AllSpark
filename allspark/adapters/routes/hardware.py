@@ -3,6 +3,7 @@
 from fastapi import Query
 
 from allspark.adapters.routes.helpers import _require_service
+from allspark.core.i18n import t
 
 
 def register_hardware_routes(app, check):
@@ -146,10 +147,9 @@ def register_hardware_routes(app, check):
         if confirm != "RESET":
             from allspark.adapters.routes.helpers import error_response
             return error_response(
-                "Confirmation required",
-                detail="Restore overwrites the current database. "
-                       "Add ?confirm=RESET to acknowledge this is intentional.",
-                next_action="Re-issue the request with ?confirm=RESET.",
+                t("error_confirmation_required"),
+                detail=t("error_restore_overwrites_db"),
+                next_action=t("error_reissue_with_confirm_reset"),
             )
         preserve_svc = _require_service(app, 'data_preservation')
         return preserve_svc.restore_snapshot(label)

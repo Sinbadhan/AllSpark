@@ -189,7 +189,7 @@ def register_survival_routes(app, check):
         except (TypeError, ValueError):
             return error_response(
                 t("error_gps_invalid"),
-                detail="Latitude and longitude must be numeric values.",
+                detail=t("error_lat_lon_numeric"),
             )
         if not (-90 <= lat <= 90):
             return error_response(t("error_gps_invalid"), detail=t("error_gps_lat_range"))
@@ -223,9 +223,9 @@ def register_survival_routes(app, check):
         confirm = data.get("confirm", False)
         if not confirm:
             return error_response(
-                "Confirmation required",
-                detail="Reset requires explicit confirmation to prevent accidental data loss.",
-                next_action="Send confirm=true in the request body.",
+                t("error_confirmation_required"),
+                detail=t("error_reset_requires_confirmation"),
+                next_action=t("error_send_confirm_true"),
             )
 
         from allspark.core.models import ResetLevel
@@ -233,9 +233,9 @@ def register_survival_routes(app, check):
         reset_level = level_map.get(level)
         if reset_level is None:
             return error_response(
-                "Invalid reset level",
-                detail=f"Level {level} is not valid.",
-                next_action="Use level 1 (assessment), 2 (archive), or 3 (factory reset).",
+                t("error_invalid_reset_level"),
+                detail=t("error_reset_level_not_valid", level=level),
+                next_action=t("error_reset_use_level"),
             )
         result = reset_manager_svc.execute_reset(reset_level, force=bool(data.get("force", False)))
         ok = result.get("status") == "ok"
@@ -246,9 +246,9 @@ def register_survival_routes(app, check):
         # dashboard instead of the init wizard after L3.
         if not ok:
             reasons = result.get("reason") or []
-            reason_text = reasons[0] if isinstance(reasons, list) and reasons else str(reasons) if reasons else "Reset rejected"
+            reason_text = reasons[0] if isinstance(reasons, list) and reasons else str(reasons) if reasons else t("error_reset_rejected")
             return error_response(
-                "Reset rejected",
+                t("error_reset_rejected"),
                 detail=reason_text,
                 status=409,
             )
@@ -316,7 +316,7 @@ def register_survival_routes(app, check):
         try:
             normalized = {k: int(v) for k, v in answers.items()}
         except (TypeError, ValueError):
-            return error_response("Scores must be integers")
+            return error_response(t("error_scores_must_be_integers"))
         return psych.process_assessment(normalized)
 
     # ---------------- Weather ----------------
@@ -341,7 +341,7 @@ def register_survival_routes(app, check):
         try:
             hpa = float(body.get("pressure", body.get("hpa", 0)))
         except (TypeError, ValueError):
-            return error_response("pressure must be a number")
+            return error_response(t("error_pressure_must_be_number"))
         weather.set_manual_pressure(hpa)
         return {"status": "ok", "pressure_hpa": hpa}
 
@@ -373,7 +373,7 @@ def register_survival_routes(app, check):
         name = (body.get("name") or "").strip()
         poi_type = (body.get("type") or body.get("poi_type") or "general").strip()
         if not name:
-            return error_response("name required")
+            return error_response(t("error_name_required"))
         try:
             poi = m.add_poi(
                 name=name,

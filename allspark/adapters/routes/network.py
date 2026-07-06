@@ -6,6 +6,7 @@ from fastapi import HTTPException, Query
 
 from allspark.adapters.routes.helpers import _get_service, _require_service, error_response
 from allspark.core.config import DEFAULT_DB_DIR
+from allspark.core.i18n import t
 from allspark.services.vision_engine import VisionTask
 
 _SAFE_MEDIA_DIR = DEFAULT_DB_DIR / "media"
@@ -58,7 +59,7 @@ def register_network_routes(app, check):
         network_svc = _get_service(app, 'spark_network')
         if network_svc is not None:
             return network_svc.request_exchange(node_id)
-        return error_response("Network not started", next_action="Start network discovery first via /api/network/start.")
+        return error_response(t("error_network_not_started"), next_action=t("error_start_network_first"))
 
     @app.post("/api/network/send")
     async def network_send(node_id: str = Query(...), entry_ids: str = Query(...)):
@@ -66,7 +67,7 @@ def register_network_routes(app, check):
         if network_svc is not None:
             ids = [x.strip() for x in entry_ids.split(",")]
             return network_svc.send_knowledge(node_id, ids)
-        return error_response("Network not started", next_action="Start network discovery first via /api/network/start.")
+        return error_response(t("error_network_not_started"), next_action=t("error_start_network_first"))
 
     @app.get("/api/vision/status")
     async def vision_status():

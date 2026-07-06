@@ -300,7 +300,7 @@ class VoiceCommand(BaseCommand):
                 self.console.print(f"[green]{t('voice_transcribed', language=result.get('language', '?'))}[/]")
                 self.console.print(f"  {result['text']}")
             else:
-                self.console.print(f"[red]✗ {result.get('message', 'Unknown error')}[/]")
+                self.console.print(f"[red]✗ {result.get('message', t('voice_unknown_error'))}[/]")
 
         elif sub in ("说话", "speak", "朗读"):
             text = " ".join(args[1:]) if len(args) > 1 else t("voice_default_text")

@@ -1,9 +1,12 @@
 import json
+import logging
 import uuid
 from datetime import datetime
 from typing import Optional
 
 from allspark.core.models import TradeOffer, TradeStatus
+
+logger = logging.getLogger(__name__)
 
 
 class TradeEngine:
@@ -32,8 +35,8 @@ class TradeEngine:
                     completed_at=r["completed_at"],
                 )
                 self._offers[offer.id] = offer
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to load trades from DB: %s", e)
 
     def propose_trade(self, proposer_id: str, target_spark_id: str,
                       offer_ids: list[str], request_ids: list[str]) -> TradeOffer:

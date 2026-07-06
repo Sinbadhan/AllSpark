@@ -80,8 +80,8 @@ class DataPreservation:
                     try:
                         self.db.conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
                         self.db.conn.commit()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning("WAL checkpoint failed before emergency save: %s", e)
 
                 shutil.copy2(str(self.db_path), str(backup_path))
                 integrity = self._verify_integrity(backup_path)
@@ -103,8 +103,8 @@ class DataPreservation:
                 if self.db:
                     try:
                         self.db.conn.commit()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning("DB commit failed before backup: %s", e)
                 shutil.copy2(str(self.db_path), str(backup_path))
                 self._cleanup_old_backups()
                 return str(backup_path)
@@ -121,8 +121,8 @@ class DataPreservation:
             )
             for old in backups[max_backups:]:
                 old.unlink()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Backup cleanup failed: %s", e)
 
     def create_snapshot(self, label: str = "") -> dict:
         try:
@@ -136,8 +136,8 @@ class DataPreservation:
                 if self.db:
                     try:
                         self.db.conn.commit()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning("DB commit failed before snapshot: %s", e)
                 shutil.copy2(str(self.db_path), str(snap_path))
                 meta = {
                     "label": label,
@@ -163,8 +163,8 @@ class DataPreservation:
                     meta = json.load(f)
                 meta["path"] = str(meta_path.with_suffix(""))
                 snapshots.append(meta)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to read snapshot meta %s: %s", meta_path, e)
         return snapshots
 
     def restore_snapshot(self, label_or_path: str) -> dict:
@@ -183,8 +183,8 @@ class DataPreservation:
             if self.db:
                 try:
                     self.db.conn.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("DB close failed during snapshot restore: %s", e)
 
             shutil.copy2(str(snap_path), str(self.db_path))
 
