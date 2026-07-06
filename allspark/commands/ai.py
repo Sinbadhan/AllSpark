@@ -193,9 +193,10 @@ class VerifyCommand(BaseCommand):
     ALIASES = ("验证",)
 
     def execute(self, args: list[str]) -> None:
-        from allspark.services.knowledge_verifier import KnowledgeVerifier
-
-        verifier = KnowledgeVerifier(self.db, self.container.get("llm"))
+        verifier = self.container.get("knowledge_verifier")
+        if verifier is None:
+            self.console.print(f"[red]{t('error_service_not_available', name='knowledge_verifier')}[/]")
+            return
 
         if not args:
             self.console.print(f"[bold]{t('verify_title')}[/]")

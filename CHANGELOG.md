@@ -6,6 +6,51 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Security
+- **H1**: Fixed `KnowledgeSigner._derive_key` bug — `getattr(self.db, "_db_path")`
+  referenced a non-existent attribute (actual: `db_path`), so every installation
+  derived the same HMAC key from the constant `"allspark-default"`. Key is now
+  per-node. Cross-node verification still requires a shared secret (v2.0 PKI per ADR 003).
+- **H2**: Spark Network TCP exchange server hardening — added
+  `SPARKNET_MAX_INCOMING_BYTES` (50 MB) cap to prevent memory-exhaustion DoS;
+  wired soft signature verification on the receive path (entries carrying a
+  signature are verified against a configurable `network_shared_secret`,
+  mismatches rejected; unsigned entries still accepted as unverified for
+  backward compatibility); added connection/transfer logging; replaced silent
+  `except Exception: pass` with logged handlers.
+- **H3**: Web API bearer-token auth — when the Web UI binds a non-loopback host
+  (`--host 0.0.0.0` or LAN IP), a bearer token is now required for all `/api/*`
+  routes (auto-generated unless `--web-token` is given). `/api/init/*` stays
+  open so the init wizard can bootstrap. The token is injected into HTML
+  templates and the browser fetch wrapper adds the `Authorization` header
+  automatically.
+
+### Changed
+- **L1/L2**: DI fixes — `commands/ai.py` VerifyCommand now uses
+  `container.get("knowledge_verifier")` instead of constructing directly;
+  `VisionEngine` is registered as a factory in bootstrap so `commands/comms.py`
+  no longer constructs/registers it manually; removed duplicate
+  `registry.register("self_learning", True)` in bootstrap (dead code).
+- **L3**: `vision_engine._check_multimodal` now reads `LLMEngine.get_status()`
+  instead of the private `_model_path` attribute.
+- **L8**: Added major-version upper bounds to runtime and dev dependencies
+  (`pyyaml<7`, `rich<16`, `fastapi<1`, `uvicorn<1`, `jinja2<4`, etc.).
+- **M4**: ~15 silent `except Exception:` handlers in `database.py`,
+  `data_preservation.py`, `sensor_hub.py`, `timeline.py`, `boot_manager.py`,
+  `trade_engine.py` now log at warning/debug with context. Control flow unchanged.
+
+### i18n
+- Cleared ~76 hardcoded user-visible strings across `adapters/routes/`,
+  `services/` (llm_engine, voice, skf_manager, experience_engine), and
+  `commands/` (governance, docker, survival). 67 new locale keys added to
+  `zh.yaml`/`en.yaml`. Web API error responses now go through `t()`.
+
+### Documentation
+- Updated `CLAUDE.md` from stale v0.7.0 to v1.0.3 (version, test count,
+  directory structure, mypy `check_untyped_defs` status, command class count).
+- `CONTRIBUTING.md`: corrected stale mypy allowlist note; documented that CI
+  does not run pytest and `tests/` is private.
+
 ## [1.0.3] - 2026-06-24
 
 Stability convergence release. Closes the 2026-06-23 audit backlog — 9 Linear

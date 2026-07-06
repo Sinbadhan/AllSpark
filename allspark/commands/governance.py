@@ -37,7 +37,7 @@ class GovernanceCommand(BaseCommand):
         sub = args[0].lower()
 
         if sub in ("add", "添加"):
-            name = args[1] if len(args) > 1 else "Unknown"
+            name = args[1] if len(args) > 1 else t("default_unknown_name")
             role = args[2] if len(args) > 2 else "executor"
             member = gov.add_member(name, role=role)
             self.console.print(f"[green]{t('community_member_added', name=member.name, id=member.id, role=member.role)}[/]")

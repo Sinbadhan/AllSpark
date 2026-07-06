@@ -1,4 +1,5 @@
 import json
+import logging
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -14,6 +15,8 @@ from allspark.core.models import (
     Task,
 )
 from allspark.core.tokenizer import tokenize, tokenize_query
+
+logger = logging.getLogger(__name__)
 
 
 class Database:
@@ -421,8 +424,8 @@ class Database:
                     if r["id"] not in seen_ids:
                         seen_ids.add(r["id"])
                         results.append(r)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("FTS query failed, falling back to LIKE: %s", e)
 
         if len(results) < limit:
             keywords = query.split() or [query]

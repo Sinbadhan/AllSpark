@@ -342,10 +342,18 @@ class KnowledgeSigner:
             self._key = self._derive_key()
 
     def _derive_key(self) -> bytes:
-        """Derive a key from the database path or use a default."""
+        """Derive a per-node key from the database path.
+
+        This key is only suitable for detecting local tampering of a node's
+        own entries — it is NOT a shared secret and cannot verify signatures
+        across nodes (each node's db_path differs). Cross-node signature
+        verification requires a ``secret_key`` passed explicitly to the
+        constructor (see ``SparkNetwork._get_shared_secret``). Falls back to
+        a constant only when no db is available at all.
+        """
         if self.db:
             try:
-                db_path = getattr(self.db, "_db_path", None) or "allspark-default"
+                db_path = str(getattr(self.db, "db_path", "") or "allspark-default")
                 return hashlib.sha256(f"allspark-sig-{db_path}".encode()).digest()
             except Exception as e:
                 logger.warning(f"Failed to derive signing key from DB path: {e}")

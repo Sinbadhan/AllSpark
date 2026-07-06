@@ -44,9 +44,9 @@ def register_system_routes(app, check):
         lang = (body.get("language") or body.get("lang") or "").strip().lower()
         if lang not in _VALID_LANGS:
             return error_response(
-                "Invalid language",
-                detail=f"'{lang}' is not supported.",
-                next_action=f"Use one of: {sorted(_VALID_LANGS)}",
+                t("error_invalid_language"),
+                detail=t("error_lang_not_supported", lang=lang),
+                next_action=t("error_lang_use_one_of", langs=", ".join(sorted(_VALID_LANGS))),
             )
         # set_language() persists to operating_state if a db_ref is set
         set_language(lang)
@@ -61,16 +61,16 @@ def register_system_routes(app, check):
         mode = (body.get("mode") or "").strip().lower()
         if not mode:
             return error_response(
-                "Mode required",
-                detail="Body must contain {mode: '<personality-mode>'}.",
+                t("error_mode_required"),
+                detail=t("error_body_mode_personality"),
             )
         try:
             target = PersonalityMode(mode)
         except ValueError:
             return error_response(
-                "Invalid personality mode",
-                detail=f"'{mode}' is not a known personality mode.",
-                next_action=f"Use one of: {[m.value for m in PersonalityMode]}",
+                t("error_invalid_personality_mode"),
+                detail=t("error_personality_mode_unknown", mode=mode),
+                next_action=t("error_personality_use_one_of", modes=", ".join(m.value for m in PersonalityMode)),
             )
         personality = _require_service(app, "personality")
         new_mode = personality.set_mode(target)
@@ -85,16 +85,16 @@ def register_system_routes(app, check):
         mode = (body.get("mode") or "").strip().lower()
         if not mode:
             return error_response(
-                "Mode required",
-                detail="Body must contain {mode: '<operating-mode>'}.",
+                t("error_mode_required"),
+                detail=t("error_body_mode_operating"),
             )
         try:
             target = OperatingMode(mode)
         except ValueError:
             return error_response(
-                "Invalid operating mode",
-                detail=f"'{mode}' is not a known operating mode.",
-                next_action=f"Use one of: {[m.value for m in OperatingMode]}",
+                t("error_invalid_operating_mode"),
+                detail=t("error_operating_mode_unknown", mode=mode),
+                next_action=t("error_operating_use_one_of", modes=", ".join(m.value for m in OperatingMode)),
             )
         # Operating mode is persisted in operating_state via Database.
         from datetime import datetime as _dt
@@ -162,7 +162,7 @@ def register_system_routes(app, check):
         if action == "fail":
             planner.fail_task(task_id)
             return {"status": "ok", "task_id": task_id, "new_status": "failed"}
-        raise HTTPException(400, f"Unknown action '{action}'. Use start | complete | fail.")
+        raise HTTPException(400, t("error_unknown_task_action", action=action))
 
 
 # ---------------- helpers ----------------

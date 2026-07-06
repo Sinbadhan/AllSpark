@@ -533,6 +533,13 @@ net_handshake_ok: Handshake successful
 net_remote_knowledge: Remote knowledge
 net_complementary: Complementary
 net_exchange_failed: Exchange failed
+net_error_no_lan: No LAN channel available
+net_error_node_not_found: Node {node_id} not found
+net_error_node_not_connected: Node {node_id} not connected
+net_error_no_response: No response from node
+net_error_no_database: No database available
+net_error_not_acked: Transfer not acknowledged
+net_error_no_entries: No valid entries to send
 network_usage: 'Usage: net | net scan | net start | net stop | net send <node> <knowledge_id>'
 network_usage_short: 'Usage: net | net scan | net start | net stop | net send <node>
   <ID>'
@@ -1717,3 +1724,89 @@ resource_communication: Communication
 web_status_warning: WARNING
 lang_zh: Chinese
 lang_en: English
+
+# ─── i18n cleanup: hardcoded user-visible strings ───────────────────────
+# routes/helpers.py — service_unavailable()
+error_module_check_status: Check module status via /api/modules, or enable the feature flag for '{name}'.
+error_module_requires_higher_hw: This module requires higher hardware tier to run.
+error_module_re_enable: Re-enable '{name}' via /api/modules.
+error_module_restart_or_load: Try restarting AllSpark or trigger a service load.
+error_module_not_available_short: '{name} not available'
+# routes/core.py
+error_missing_required_fields: 'Missing required field(s): {fields}. Body must contain {{event, outcome, lesson?}}.'
+error_llm_load_failed: LLM load failed
+# routes/system.py
+error_invalid_language: Invalid language
+error_lang_not_supported: '''{lang}'' is not supported.'
+error_lang_use_one_of: 'Use one of: {langs}'
+error_mode_required: Mode required
+error_body_mode_personality: 'Body must contain {mode: ''<personality-mode>''}.'
+error_invalid_personality_mode: Invalid personality mode
+error_personality_mode_unknown: '''{mode}'' is not a known personality mode.'
+error_personality_use_one_of: 'Use one of: {modes}'
+error_body_mode_operating: 'Body must contain {mode: ''<operating-mode>''}.'
+error_invalid_operating_mode: Invalid operating mode
+error_operating_mode_unknown: '''{mode}'' is not a known operating mode.'
+error_operating_use_one_of: 'Use one of: {modes}'
+error_unknown_task_action: 'Unknown action ''{action}''. Use start | complete | fail.'
+# routes/governance.py
+error_name_required: Name required
+error_body_name: 'Body must contain {name: ''<member-name>''}.'
+error_member_id_required: member_id required
+error_body_member_id: 'Body must contain {member_id: ''<id>''}.'
+error_member_id_and_role_required: member_id and role required
+error_body_member_id_role: 'Body must contain {member_id, role, domains?}.'
+error_title_and_parties_required: title and parties required
+error_body_title_parties: 'Body must contain {title, parties (list or comma-separated str)}.'
+error_conflict_id_required: conflict_id required
+error_body_conflict_id: 'Body must contain {conflict_id: ''<id>''}.'
+error_body_conflict_id_resolution: 'Body must contain {conflict_id, resolution?}.'
+error_target_spark_id_required: target_spark_id required
+error_body_target_spark_id: 'Body must contain {target_spark_id, offer_ids?, request_ids?}.'
+# routes/hardware.py
+error_confirmation_required: Confirmation required
+error_restore_overwrites_db: Restore overwrites the current database. Add ?confirm=RESET to acknowledge this is intentional.
+error_reissue_with_confirm_reset: Re-issue the request with ?confirm=RESET.
+# routes/survival.py
+error_lat_lon_numeric: Latitude and longitude must be numeric values.
+error_reset_requires_confirmation: Reset requires explicit confirmation to prevent accidental data loss.
+error_send_confirm_true: Send confirm=true in the request body.
+error_invalid_reset_level: Invalid reset level
+error_reset_level_not_valid: Level {level} is not valid.
+error_reset_use_level: Use level 1 (assessment), 2 (archive), or 3 (factory reset).
+error_reset_rejected: Reset rejected
+error_scores_must_be_integers: Scores must be integers
+error_pressure_must_be_number: pressure must be a number
+# routes/network.py
+error_network_not_started: Network not started
+error_start_network_first: Start network discovery first via /api/network/start.
+# services/llm_engine.py
+llm_error_disabled: LLM disabled by hardware flags
+llm_error_not_installed: 'llama-cpp-python not installed. Run: pip install llama-cpp-python'
+llm_error_model_not_found: |-
+  Model file not found: {model}.gguf
+  Expected location: {path}/{model}.gguf
+  Download from: {url}
+llm_error_load_failed: 'Failed to load model: {error}'
+llm_error_chat: '[LLM error: {error}]'
+# services/voice.py
+voice_error_sd_webrtcvad_not_installed: sounddevice/webrtcvad not installed
+voice_error_whisper_not_installed: 'whisper not installed. Run: pip install openai-whisper'
+voice_error_whisper_not_loaded: Whisper model not loaded. Use 'voice load' first.
+voice_error_audio_not_found: 'Audio file not found: {path}'
+voice_error_whisper_not_loaded_short: Whisper model not loaded.
+voice_error_sounddevice_not_installed: 'sounddevice not installed. Run: pip install sounddevice'
+voice_error_pyttsx3_not_installed: 'pyttsx3 not installed. Run: pip install pyttsx3'
+# services/skf_manager.py
+skf_error_missing_title: 'Knowledge {id}: missing title'
+skf_error_missing_summary: 'Knowledge {id}: missing summary'
+skf_error_invalid_priority: 'Knowledge {id}: invalid priority {priority}'
+skf_error_missing_event: 'Experience {id}: missing event'
+# services/experience_engine.py
+exp_warning_attempts_failed: Some attempts failed - verify before relying on this
+# commands/governance.py
+default_unknown_name: Unknown
+# commands/docker.py
+docker_logs_title: '{service} logs'
+# commands/survival.py
+voice_unknown_error: Unknown error

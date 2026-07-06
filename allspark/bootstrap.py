@@ -24,6 +24,7 @@ from allspark.services.resource_manager import ResourceManager
 from allspark.services.rule_engine import RuleEngine
 from allspark.services.scheduler import create_default_scheduler
 from allspark.services.survival_engine import SurvivalAssessmentEngine
+from allspark.services.vision_engine import VisionEngine
 
 logger = logging.getLogger(__name__)
 
@@ -167,6 +168,18 @@ class ApplicationBootstrap:
         local_vision.startup()
         self.container.register("local_vision", local_vision)
 
+        # VisionEngine — facade over LLM multimodal + local ONNX vision; built
+        # lazily via factory so routes/commands don't construct it manually
+        # (audit L2). Construction is cheap; multimodal detection defers to llm.
+        self.container.register_factory(
+            "vision",
+            lambda: VisionEngine(
+                llm_engine=self.container.get("llm"),
+                db=self.db,
+                local_vision=self.container.get("local_vision"),
+            ),
+        )
+
         experience = ExperienceEngine(self.db, llm=llm)
         self.container.register("experience", experience)
 
@@ -236,8 +249,6 @@ class ApplicationBootstrap:
 
         if self.flags.multilingual_knowledge:
             registry.register("multilingual", True)
-        if self.flags.self_learning:
-            registry.register("self_learning", True)
         if self.flags.offline_map:
             registry.register("offline_map", container.get("map_system"))
         if self.flags.self_learning:

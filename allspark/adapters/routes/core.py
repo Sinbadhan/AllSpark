@@ -6,7 +6,7 @@ from fastapi import HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from allspark.adapters.routes.helpers import _get_service, error_response
-from allspark.core.i18n import render, set_language
+from allspark.core.i18n import render, set_language, t
 
 
 class ChatRequest:
@@ -259,8 +259,7 @@ def register_core_routes(app, check):
         if missing:
             raise HTTPException(
                 status_code=400,
-                detail=f"Missing required field(s): {', '.join(missing)}. "
-                       f"Body must contain {{event, outcome, lesson?}}.",
+                detail=t("error_missing_required_fields", fields=", ".join(missing)),
             )
         entry = container.get("experience").log(event=event, outcome=outcome, lesson=lesson or "")
         return {"id": entry.id, "status": "ok"}
@@ -283,7 +282,7 @@ def register_core_routes(app, check):
             container.get("registry").register("llm", container.get("llm"))
             container.get("registry").save_to_db(db)
             return {"status": "ok", "model": container.get("llm").model_name}
-        return error_response("LLM load failed", detail=container.get("llm").error or "")
+        return error_response(t("error_llm_load_failed"), detail=container.get("llm").error or "")
 
     @app.get("/api/tasks")
     async def get_tasks():

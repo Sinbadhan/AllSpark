@@ -576,6 +576,22 @@ table { border-collapse: collapse; width: 100%; }
 const I18N = {{ web_i18n | tojson }};
 const LANG = "{{ lang }}";
 const API = "";
+// Bearer token for /api/* when the server binds non-loopback (audit H3).
+// Empty on loopback (no auth). Patched into all fetch calls below.
+const ALLSPARK_TOKEN = "{{ api_token }}";
+if (ALLSPARK_TOKEN) {
+  const _origFetch = window.fetch;
+  window.fetch = function(input, init) {
+    init = init || {};
+    const url = typeof input === "string" ? input : ((input && input.url) || "");
+    if (url.indexOf("/api/") !== -1 && url.indexOf("/api/init/") === -1) {
+      const h = new Headers(init.headers || {});
+      if (!h.has("Authorization")) { h.set("Authorization", "Bearer " + ALLSPARK_TOKEN); }
+      init.headers = h;
+    }
+    return _origFetch.call(this, input, init);
+  };
+}
 const FOOTER_I18N = {
   resources: "{{ t('web_footer_resources') }}",
   phase: "{{ t('web_footer_phase') }}",

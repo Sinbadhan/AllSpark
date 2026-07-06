@@ -43,8 +43,8 @@ def register_governance_routes(app, check):
         name = (body.get("name") or "").strip()
         if not name:
             return error_response(
-                "Name required",
-                detail="Body must contain {name: '<member-name>'}.",
+                t("error_name_required"),
+                detail=t("error_body_name"),
             )
         role = (body.get("role") or "executor").strip()
         domains = body.get("domains") or []
@@ -60,8 +60,8 @@ def register_governance_routes(app, check):
         body = await _safe_json(request)
         member_id = (body.get("member_id") or "").strip()
         if not member_id:
-            return error_response("member_id required",
-                                  detail="Body must contain {member_id: '<id>'}.")
+            return error_response(t("error_member_id_required"),
+                                  detail=t("error_body_member_id"))
         if gov_svc.remove_member(member_id):
             return {"status": "ok"}
         return error_response(t("error_cannot_remove_member"), detail=t("error_member_not_found_detail", member_id=member_id))
@@ -75,8 +75,8 @@ def register_governance_routes(app, check):
         role = (body.get("role") or "").strip()
         if not member_id or not role:
             return error_response(
-                "member_id and role required",
-                detail="Body must contain {member_id, role, domains?}.",
+                t("error_member_id_and_role_required"),
+                detail=t("error_body_member_id_role"),
             )
         domains = body.get("domains")
         if isinstance(domains, str):
@@ -129,8 +129,8 @@ def register_governance_routes(app, check):
         parties_raw = body.get("parties")
         if not title or not parties_raw:
             return error_response(
-                "title and parties required",
-                detail="Body must contain {title, parties (list or comma-separated str)}.",
+                t("error_title_and_parties_required"),
+                detail=t("error_body_title_parties"),
             )
         parties = parties_raw if isinstance(parties_raw, list) else _split_csv(parties_raw)
         conflict = gov_svc.create_conflict(title, body.get("description", ""), parties)
@@ -143,8 +143,8 @@ def register_governance_routes(app, check):
         body = await _safe_json(request)
         conflict_id = (body.get("conflict_id") or "").strip()
         if not conflict_id:
-            return error_response("conflict_id required",
-                                  detail="Body must contain {conflict_id: '<id>'}.")
+            return error_response(t("error_conflict_id_required"),
+                                  detail=t("error_body_conflict_id"))
         result = gov_svc.mediate_conflict(conflict_id)
         if not result:
             return error_response(t("error_conflict_not_found"), detail=t("error_conflict_not_found_detail", conflict_id=conflict_id))
@@ -157,8 +157,8 @@ def register_governance_routes(app, check):
         body = await _safe_json(request)
         conflict_id = (body.get("conflict_id") or "").strip()
         if not conflict_id:
-            return error_response("conflict_id required",
-                                  detail="Body must contain {conflict_id, resolution?}.")
+            return error_response(t("error_conflict_id_required"),
+                                  detail=t("error_body_conflict_id_resolution"))
         resolution = body.get("resolution") or "Resolved"
         if gov_svc.resolve_conflict(conflict_id, resolution):
             return {"status": "ok"}
@@ -191,8 +191,8 @@ def register_governance_routes(app, check):
         target = (body.get("target_spark_id") or "").strip()
         if not target:
             return error_response(
-                "target_spark_id required",
-                detail="Body must contain {target_spark_id, offer_ids?, request_ids?}.",
+                t("error_target_spark_id_required"),
+                detail=t("error_body_target_spark_id"),
             )
         offer_raw = body.get("offer_ids") or []
         request_raw = body.get("request_ids") or []

@@ -33,7 +33,11 @@ mypy allspark/ --ignore-missing-imports
 python3 -m pytest tests/ -v --tb=short
 ```
 
-`mypy` is enforced in CI, but the project still carries historical typing debt isolated by error-code allowlists. Do not present this as fully strict typing unless those allowlists are removed in a focused change.
+`mypy` is enforced in CI with `check_untyped_defs = true` and no disabled error-code categories — it runs clean. Historical typing debt was cleared in SHA-29/40.
+
+## Tests and CI
+
+CI runs `ruff check`, `mypy`, and an import smoke benchmark (`scripts/bench_import.py --check`, advisory). It does **not** run `pytest` — the `tests/` tree is kept private (gitignored, excluded from sdist via `MANIFEST.in`), so most test files live only in local working copies, not on the public branch. Run the full suite locally from your working copy before opening a PR.
 
 ## Pull request guidelines
 

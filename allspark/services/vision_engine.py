@@ -118,7 +118,8 @@ class VisionEngine:
 
     def _check_multimodal(self) -> bool:
         try:
-            model_path = self.llm._model_path or ""
+            status = self.llm.get_status() or {}
+            model_path = status.get("model_path") or ""
             multimodal_keywords = ["vl", "vision", "visual", "mm", "qwen2-vl", "llava", "bakllava", "cogvlm"]
             return any(kw in model_path.lower() for kw in multimodal_keywords)
         except Exception:

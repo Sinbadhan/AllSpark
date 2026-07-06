@@ -134,7 +134,7 @@ class DockerCommand(BaseCommand):
             return
 
         logs = mgr.get_logs(service, lines)
-        self.console.print(Panel(logs, title=f"{service} logs"))
+        self.console.print(Panel(logs, title=t("docker_logs_title", service=service)))
 
     def _migrate(self, target: Optional[str]):
         if not target:

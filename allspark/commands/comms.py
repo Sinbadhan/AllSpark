@@ -109,14 +109,9 @@ class VisionCommand(BaseCommand):
     ALIASES = ("视觉", "识别")
 
     def _get_vision(self):
-        vision = self.container.get("vision")
-        if not vision:
-            from allspark.services.vision_engine import VisionEngine
-            llm = self.container.get("llm")
-            local_vision = self.container.get("local_vision")
-            vision = VisionEngine(llm_engine=llm, db=self.db, local_vision=local_vision)
-            self.container.register("vision", vision)
-        return vision
+        # VisionEngine is registered as a factory in bootstrap; commands must
+        # not construct services manually (audit L2).
+        return self.container.get("vision")
 
     def execute(self, args: list[str]) -> None:
         from allspark.services.vision_engine import VisionTask

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 from allspark.core.config import DEFAULT_DB_DIR
+from allspark.core.i18n import t
 from allspark.infrastructure.hardware import FeatureFlags, HardwareTier
 
 logger = logging.getLogger(__name__)
@@ -32,23 +33,24 @@ class LLMEngine:
 
     def load(self) -> bool:
         if not self.flags.llm:
-            self._error = "LLM disabled by hardware flags"
+            self._error = t("llm_error_disabled")
             return False
 
         try:
             from llama_cpp import Llama
         except ImportError:
-            self._error = "llama-cpp-python not installed. Run: pip install llama-cpp-python"
+            self._error = t("llm_error_not_installed")
             return False
 
         model_path = self._find_model()
         if not model_path:
             model_name = self.flags.llm_model
             download_hint = self._download_hint(model_name)
-            self._error = (
-                f"Model file not found: {model_name}.gguf\n"
-                f"Expected location: {LLM_MODELS_DIR}/{model_name}.gguf\n"
-                f"Download from: {download_hint}"
+            self._error = t(
+                "llm_error_model_not_found",
+                model=model_name,
+                path=str(LLM_MODELS_DIR),
+                url=download_hint,
             )
             return False
 
@@ -68,7 +70,7 @@ class LLMEngine:
             self._available = True
             return True
         except Exception as e:
-            self._error = f"Failed to load model: {e}"
+            self._error = t("llm_error_load_failed", error=str(e))
             logger.error(f"Failed to load LLM model: {e}")
             return False
 
@@ -85,7 +87,7 @@ class LLMEngine:
             return response["choices"][0]["message"]["content"]
         except Exception as e:
             logger.error(f"LLM chat completion failed: {e}")
-            return f"[LLM error: {e}]"
+            return t("llm_error_chat", error=str(e))
 
     def generate(self, prompt: str, max_tokens: int = 256, temperature: float = 0.7) -> str:
         if not self._available or not self._llm:
@@ -101,7 +103,7 @@ class LLMEngine:
             return response["choices"][0]["text"]
         except Exception as e:
             logger.error(f"LLM generate failed: {e}")
-            return f"[LLM error: {e}]"
+            return t("llm_error_chat", error=str(e))
 
     def chat_stream(self, messages: list[dict], max_tokens: int = 512, temperature: float = 0.7):
         """Yield tokens one by one for SSE streaming."""
@@ -120,7 +122,7 @@ class LLMEngine:
                     yield delta["content"]
         except Exception as e:
             logger.error(f"LLM chat stream failed: {e}")
-            yield f"[LLM error: {e}]"
+            yield t("llm_error_chat", error=str(e))
 
     def survival_chat_stream(self, user_input: str, context: str = "", phase: int = 0):
         """Yield tokens for survival chat via SSE."""
