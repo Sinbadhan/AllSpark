@@ -25,20 +25,22 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "pyyaml>=6.0",
-    "rich>=13.0",
-    "prompt-toolkit>=3.0",
-    "jieba>=0.42",
-    "fastapi>=0.100",
-    "uvicorn>=0.20",
-    "jinja2>=3.1",
+    # Major-version caps prevent silent breakage from upstream majors
+    # (e.g. starlette 1.x / fastapi pin drift). Audit L8.
+    "pyyaml>=6.0,<7",
+    "rich>=13.0,<16",
+    "prompt-toolkit>=3.0,<4",
+    "jieba>=0.42,<1",
+    "fastapi>=0.100,<1",
+    "uvicorn>=0.20,<1",
+    "jinja2>=3.1,<4",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0",
-    "ruff>=0.4",
-    "mypy>=1.8",
+    "pytest>=7.0,<10",
+    "ruff>=0.4,<1",
+    "mypy>=1.8,<3",
 ]
 rag = [
     "sentence-transformers>=2.7",

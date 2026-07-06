@@ -1,9 +1,9 @@
 # 火种 AllSpark — 开发状态追踪
 
-> **最后更新：** 2026-07-05（v1.0.3 收敛状态复核）
+> **最后更新：** 2026-07-05（安全审计 P0-P3 修复：H1/H2/H3 + DI + i18n + 日志 + 依赖上界）
 > **当前版本：** v1.0.3
 > **整体状态：** v1.0.3 稳定性收敛已复核 — 闭环 2026-06-23 审计 P1/P2/P3 队列（SHA-36/37/40/55/56/57/58/59/60 共 9 项）；mypy `check_untyped_defs` 已启用且通过；regression harness 已区分真实失败、允许降级、外部依赖不可用、环境禁止本地 TCP bind；Web 离线图标 fallback 已加覆盖测试。
-> **测试规模：** 当前 622 collected；本机/CI 口径预期 616 passed + 6 skipped；受限 sandbox 当前口径 614 passed + 8 skipped，本地 TCP 网络项会显式 skip 或 regression `environment_blocked`，覆盖 Docker、命令层、优先级、预警协议、向量检索、外部知识库、本地视觉、语音会话、Web 契约、初始化向导、Spark Network 双节点、scheduler 等核心模块
+> **测试规模：** 当前 623 collected；本机/CI 口径预期 617 passed + 6 skipped；受限 sandbox 当前口径 614 passed + 8 skipped，本地 TCP 网络项会显式 skip 或 regression `environment_blocked`，覆盖 Docker、命令层、优先级、预警协议、向量检索、外部知识库、本地视觉、语音会话、Web 契约、初始化向导、Spark Network 双节点、scheduler 等核心模块
 
 ---
 
@@ -99,6 +99,7 @@
 | 2 | 视觉回归基线 | 🟢 P3 | Web 主要 UX 已收敛；仍可补 Playwright 截图基线防止布局/图标回退 |
 | 3 | bench `--hard-fail` 升级 | 🟢 P3 | 当前 `scripts/bench_import.py --check` 低于 600 ms 门槛，待多机基线稳定后切硬阈值 |
 | 4 | 发布/维护文档节奏 | 🟢 P3 | AGENTS/PROGRESS/ARCHITECTURE 已更新为当前测试口径；后续每次审计/发布后同步 |
+| 5 | database.py 领域拆分 | 🟡 P2 | 1125 行上帝对象混合 12+ 领域持久化（resources/knowledge/FTS/goals/diary/community/...）；按 KnowledgeRepository / GoalRepository / DiaryRepository 等拆分。2026-07-05 审计 M3 登记，v1.1 单独重构（遵循"修复与重构分开提交"） |
 
 ### 远期功能（本轮不做）
 
@@ -181,6 +182,7 @@ Apache 2.0 许可证、Database 层封装统一、备份文件验证场景下的
 | v1.0.1 | 2026-06-17 | **maintenance release** — 22 项回归 bug 闭环 + mypy Step 5（index, +10 errors paid off, allowlist 9→4）+ SHA-39 i18n 历史数据迁移脚本 + SHA-36 manual verification checklist + version bump |
 | v1.0.2 | 2026-06-17 | **模型外置** — 模型清单外置为 `data/models.yaml`（recommendations + catalog + override 入口）+ Qwen2.5→Qwen3 全 tier 升级 + DeepSeek-V4-Flash override 入口 |
 | v1.0.3 | 2026-06-24 | **稳定性收敛** — 闭环 2026-06-23 审计 P1/P2/P3（SHA-36/37/40/55/56/57/58/59/60 共 9 项）：Web 契约漂移 + 初始化向导问卷修复；tier1/2/3 英文知识库补齐；mypy 4 个 disabled code 全清（68→0）；Web 离线样式 token 收敛 + 原生弹窗替换为 toast/modal；全局搜索/通知/资源编辑反馈补齐；System 降级与环境评估改为可读卡片；Repository SKF 结果改为可读摘要；regression harness 区分允许降级；新增 Network/Docker/scheduler 回归 + 硬件 live 标记 |
+| Unreleased | 2026-07-05 | **安全审计 P0-P3 修复** — H1: KnowledgeSigner `_db_path` 密钥派生 bug 修复（属性名 `db_path`，密钥不再全局常量化）；H2: Spark Network 加 `SPARKNET_MAX_INCOMING_BYTES` DoS 上限 + 接收路径 soft 签名校验（`network_shared_secret` 配置后启用，签名缺失接受为 unverified）+ 传输日志；H3: Web 非回环绑定强制 bearer token（`--web-token`，`/api/init/*` 豁免，HTML 注入 token + fetch 自动加 header）；L1/L2: ai.py/comms.py DI 违规修复 + bootstrap vision factory + self_learning 重复注册清理；L3: vision_engine 改用 `get_status()`；L8: 运行时+dev 依赖加上界；M4: ~15 处静默 except 加日志；i18n: ~76 处硬编码清理 + 67 新 key；CLAUDE.md/CONTRIBUTING.md 同步。617 passed + 6 skipped |
 
 ---
 
