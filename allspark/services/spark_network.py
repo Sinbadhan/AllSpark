@@ -16,7 +16,9 @@ from allspark.core.config import (
     SPARKNET_DISCOVERY_PORT,
     SPARKNET_DISCOVERY_TIMEOUT,
     SPARKNET_EXCHANGE_PORT,
+    SPARKNET_MAX_INCOMING_BYTES,
 )
+from allspark.core.i18n import t
 from allspark.core.models import KnowledgeEntry
 
 logger = logging.getLogger(__name__)
@@ -113,6 +115,31 @@ class SparkNetwork:
         self._on_node_discovered: Optional[Callable] = None
         self._on_knowledge_received: Optional[Callable] = None
 
+    def _get_shared_secret(self) -> Optional[str]:
+        """Read the optional network shared secret from survivor_state.
+
+        When set (key ``network_shared_secret``), incoming knowledge transfers
+        carrying signatures are verified and rejected on mismatch. When unset,
+        all transfers are accepted as unverified — soft mode, backward
+        compatible with nodes that have not configured a secret (audit H1/H2).
+        """
+        if not self.db:
+            return None
+        try:
+            state = self.db.get_survivor_state() or {}
+            secret = state.get("network_shared_secret")
+            return secret if secret else None
+        except Exception:
+            return None
+
+    def _get_signer(self):
+        """Return a KnowledgeSigner with the shared secret, or None if unset."""
+        secret = self._get_shared_secret()
+        if not secret:
+            return None
+        from allspark.services.knowledge_verifier import KnowledgeSigner
+        return KnowledgeSigner(secret_key=secret, db=self.db)
+
     def detect_channels(self) -> dict[str, dict[str, object]]:
         results: dict[str, dict[str, object]] = {}
 
@@ -185,7 +212,7 @@ class SparkNetwork:
             self.detect_channels()
 
         if not self.channel_status.get(ChannelType.LAN, False):
-            return {"status": "error", "message": "No LAN channel available"}
+            return {"status": "error", "message": t("net_error_no_lan")}
 
         self._on_node_discovered = on_node_discovered
         self._on_knowledge_received = on_knowledge_received
@@ -225,10 +252,10 @@ class SparkNetwork:
     def request_exchange(self, node_id: str, categories: list = None) -> dict:
         node = self.nodes.get(node_id)
         if not node:
-            return {"status": "error", "message": f"Node {node_id} not found"}
+            return {"status": "error", "message": t("net_error_node_not_found", node_id=node_id)}
 
         if node.status != NodeStatus.CONNECTED:
-            return {"status": "error", "message": f"Node {node_id} not connected"}
+            return {"status": "error", "message": t("net_error_node_not_connected", node_id=node_id)}
 
         try:
             msg = NetworkMessage(
@@ -247,17 +274,17 @@ class SparkNetwork:
                     "remote_index": response.payload.get("index", {}),
                     "complementary": response.payload.get("complementary", []),
                 }
-            return {"status": "error", "message": "No response from node"}
+            return {"status": "error", "message": t("net_error_no_response")}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
     def send_knowledge(self, node_id: str, entry_ids: list[str]) -> dict:
         node = self.nodes.get(node_id)
         if not node:
-            return {"status": "error", "message": f"Node {node_id} not found"}
+            return {"status": "error", "message": t("net_error_node_not_found", node_id=node_id)}
 
         if not self.db:
-            return {"status": "error", "message": "No database available"}
+            return {"status": "error", "message": t("net_error_no_database")}
 
         entries = []
         for eid in entry_ids:
@@ -266,7 +293,7 @@ class SparkNetwork:
                 entries.append(entry)
 
         if not entries:
-            return {"status": "error", "message": "No valid entries to send"}
+            return {"status": "error", "message": t("net_error_no_entries")}
 
         try:
             knowledge_data = []
@@ -287,10 +314,22 @@ class SparkNetwork:
                     "language": k.language,
                 })
 
+            # Soft signature: sign outgoing entries when a shared secret is
+            # configured so peers can reject tampered transfers (audit H1/H2).
+            signer = self._get_signer()
+            signatures: dict[str, str] = {}
+            if signer:
+                for k in entries:
+                    signatures[k.id] = signer.sign_entry(k)
+
+            payload: dict = {"entries": knowledge_data}
+            if signatures:
+                payload["signatures"] = signatures
+
             msg = NetworkMessage(
                 msg_type="knowledge_transfer",
                 sender_id=self.spark_id,
-                payload={"entries": knowledge_data},
+                payload=payload,
             )
 
             response = self._send_tcp_message(node, msg)
@@ -300,20 +339,23 @@ class SparkNetwork:
                     "sent_count": len(entries),
                     "accepted_count": response.payload.get("accepted_count", 0),
                 }
-            return {"status": "error", "message": "Transfer not acknowledged"}
+            return {"status": "error", "message": t("net_error_not_acked")}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
-    def receive_knowledge(self, entries_data: list[dict]) -> dict:
+    def receive_knowledge(self, entries_data: list[dict], signatures: Optional[dict] = None) -> dict:
         if not self.db:
-            return {"status": "error", "message": "No database available"}
+            return {"status": "error", "message": t("net_error_no_database")}
 
         from allspark.services.knowledge_verifier import KnowledgeVerifier
         verifier = KnowledgeVerifier(self.db, self.llm)
+        signer = self._get_signer()
+        sig_enforced = signer is not None and bool(signatures)
 
         accepted = 0
         rejected = 0
         pending = 0
+        sig_rejected = 0
 
         for item in entries_data:
             entry = KnowledgeEntry(
@@ -331,6 +373,16 @@ class SparkNetwork:
                 version=item.get("version", 1),
                 language=item.get("language", "zh"),
             )
+
+            # Soft signature verification (audit H1/H2). Enforced only when a
+            # shared secret is configured AND the peer sent signatures; entries
+            # without a signature are accepted as unverified (gradual rollout).
+            if sig_enforced:
+                sig = signatures.get(entry.id) if signatures else None
+                if sig and not signer.verify_entry(entry, sig):
+                    sig_rejected += 1
+                    logger.warning("Rejected knowledge entry %s: signature mismatch", entry.id)
+                    continue
 
             report = verifier.verify_entry(entry)
 
@@ -353,6 +405,7 @@ class SparkNetwork:
             "accepted_count": accepted,
             "rejected_count": rejected,
             "pending_count": pending,
+            "sig_rejected_count": sig_rejected,
         }
 
     def get_status(self) -> dict:
@@ -382,7 +435,7 @@ class SparkNetwork:
                 data = beacon.to_json().encode("utf-8")
                 sock.sendto(data, ("<broadcast>", SPARKNET_DISCOVERY_PORT))
             except Exception:
-                pass
+                logger.debug("Beacon broadcast failed", exc_info=True)
             time.sleep(SPARKNET_BEACON_INTERVAL)
 
         sock.close()
@@ -403,7 +456,7 @@ class SparkNetwork:
             except socket.timeout:
                 continue
             except Exception:
-                pass
+                logger.debug("Beacon listen error", exc_info=True)
 
         sock.close()
 
@@ -459,6 +512,16 @@ class SparkNetwork:
             sock.close()
 
     def start_exchange_server(self, host: str = "0.0.0.0", port: int = SPARKNET_EXCHANGE_PORT) -> dict:
+        if host not in ("127.0.0.1", "localhost", "::1"):
+            if self._get_shared_secret():
+                logger.info("Exchange server binding %s:%d with signature verification", host, port)
+            else:
+                logger.warning(
+                    "Exchange server binding %s:%d WITHOUT signature verification — "
+                    "configure 'network_shared_secret' to reject tampered knowledge (audit H2)",
+                    host, port,
+                )
+
         def _handle_client(conn, addr):
             try:
                 data = b""
@@ -467,6 +530,12 @@ class SparkNetwork:
                     if not chunk:
                         break
                     data += chunk
+                    if len(data) > SPARKNET_MAX_INCOMING_BYTES:
+                        logger.warning(
+                            "Dropping transfer from %s: exceeded %d bytes",
+                            addr, SPARKNET_MAX_INCOMING_BYTES,
+                        )
+                        return
 
                 if not data:
                     return
@@ -487,17 +556,25 @@ class SparkNetwork:
 
                 elif msg.msg_type == "knowledge_transfer":
                     entries = msg.payload.get("entries", [])
-                    result = self.receive_knowledge(entries)
+                    signatures = msg.payload.get("signatures") or {}
+                    logger.info(
+                        "Knowledge transfer from %s: %d entries (signatures=%s)",
+                        addr, len(entries), "on" if signatures else "off",
+                    )
+                    result = self.receive_knowledge(entries, signatures)
 
                     response = NetworkMessage(
                         msg_type="transfer_ack",
                         sender_id=self.spark_id,
-                        payload={"accepted_count": result.get("accepted_count", 0)},
+                        payload={
+                            "accepted_count": result.get("accepted_count", 0),
+                            "sig_rejected_count": result.get("sig_rejected_count", 0),
+                        },
                     )
                     conn.sendall(response.to_json().encode("utf-8"))
 
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Error handling exchange client %s: %s", addr, e)
             finally:
                 conn.close()
 
@@ -516,6 +593,7 @@ class SparkNetwork:
                 except socket.timeout:
                     continue
                 except Exception:
+                    logger.warning("Exchange server accept loop terminated", exc_info=True)
                     break
             server.close()
 

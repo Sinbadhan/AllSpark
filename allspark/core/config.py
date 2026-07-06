@@ -96,3 +96,6 @@ SPARKNET_BEACON_INTERVAL = 30
 SPARKNET_DISCOVERY_TIMEOUT = 10
 SPARKNET_MESSAGE_ENCODING = "utf-8"
 SPARKNET_BUFFER_SIZE = 4096
+# Cap total bytes accepted on a single TCP exchange connection to prevent
+# memory-exhaustion DoS (audit H2). 50 MB is generous for knowledge transfers.
+SPARKNET_MAX_INCOMING_BYTES = 50 * 1024 * 1024

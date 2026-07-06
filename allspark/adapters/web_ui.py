@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from jinja2 import Environment, FileSystemLoader
 
 from allspark import __version__
@@ -26,12 +26,19 @@ TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 _jinja_env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)), autoescape=True)
 
 
+# Bearer token for /api/* when the Web UI binds non-loopback (audit H3).
+# Set by create_app(); read by _render_template to inject into the HTML so the
+# browser-side fetch wrapper can add the Authorization header automatically.
+_WEB_TOKEN: Optional[str] = None
+
+
 def _render_template(name: str, **context) -> str:
     template = _jinja_env.get_template(name)
     context.setdefault("t", t)
     lang = get_language()
     context.setdefault("lang", lang)
     context.setdefault("version", __version__)
+    context.setdefault("api_token", _WEB_TOKEN or "")
     # Inject all web_ prefixed i18n keys as window.I18N for JS-side usage
     web_i18n = {
         k: v for k, v in MESSAGES.get(lang, {}).items()
@@ -54,9 +61,32 @@ MIRROR_DOWNLOAD_URLS = {
 }
 
 
-def create_app(db_path: Optional[str] = None) -> FastAPI:
+def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> FastAPI:
+    global _WEB_TOKEN
+    _WEB_TOKEN = token
     app = FastAPI(title="ALLSPARK", version=__version__)
     app.add_exception_handler(HTTPException, http_exception_handler)
+    app.state.web_token = token
+
+    # Bearer-token gate for /api/* when bound non-loopback (audit H3).
+    # /api/init/* stays open so the init wizard can bootstrap before auth.
+    if token:
+        @app.middleware("http")
+        async def enforce_bearer_token(request: Request, call_next):
+            path = request.url.path
+            if path.startswith("/api/") and not path.startswith("/api/init/"):
+                auth = request.headers.get("authorization", "")
+                if auth != f"Bearer {token}":
+                    return JSONResponse(
+                        status_code=401,
+                        content={
+                            "status": "error",
+                            "error": "unauthorized",
+                            "detail": "Bearer token required for non-loopback binding",
+                            "next_action": "Add 'Authorization: Bearer <token>' header",
+                        },
+                    )
+            return await call_next(request)
 
     db = Database(Path(db_path) if db_path else None)
     init_language(db)

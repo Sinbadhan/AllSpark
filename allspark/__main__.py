@@ -38,6 +38,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--web", "-w", action="store_true", help="Start the Web UI instead of the CLI")
     parser.add_argument("--host", "-H", default="127.0.0.1", help="Web UI bind host (default: 127.0.0.1)")
     parser.add_argument("--port", "-p", type=int, default=8000, help="Web UI bind port (default: 8000)")
+    parser.add_argument("--web-token", dest="web_token", default=None,
+                        help="Bearer token for /api/* when binding non-loopback (auto-generated if omitted)")
     parser.add_argument("--db", dest="db_override", help="Path to the SQLite database file")
     return parser
 
@@ -64,6 +66,18 @@ def main(argv: list[str] | None = None):
         if host == "0.0.0.0":
             logger.warning("Web UI is binding to 0.0.0.0; only do this on a trusted local network.")
 
+        # Non-loopback binding requires bearer-token auth on /api/* (audit H3).
+        # Auto-generate a token if none provided; the Web UI receives it via the
+        # HTML template and patches fetch to include the header automatically.
+        web_token = None
+        if host not in ("127.0.0.1", "localhost", "::1"):
+            import secrets as _secrets
+            web_token = args.web_token or _secrets.token_urlsafe(32)
+            logger.warning(
+                "Bearer token auth ENABLED for /api/*. Token: %s "
+                "(pass via Authorization: Bearer <token>)", web_token,
+            )
+
         if _port_in_use(port, host):
             logger.warning(t("web_port_in_use", port=port))
             for alt in range(8001, 8020):
@@ -75,7 +89,7 @@ def main(argv: list[str] | None = None):
                 logger.error(t("web_no_port"))
                 sys.exit(1)
 
-        app = create_app(db_path)
+        app = create_app(db_path, token=web_token)
         logger.info(t("web_starting", host=host, port=port))
         uvicorn.run(app, host=host, port=port)
     else:

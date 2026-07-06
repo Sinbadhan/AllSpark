@@ -397,7 +397,8 @@ def test_reset_requires_confirm():
         c = _client(path)
         r = c.post("/api/reset/3", json={})
         assert r.json()["status"] == "error"
-        assert "confirm" in r.json()["error"].lower()
+        # next_action carries the language-neutral "confirm=true" token in both zh/en
+        assert "confirm=true" in r.json()["next_action"].lower()
 
 
 def test_reset_invalid_level():
@@ -657,3 +658,46 @@ def test_init_complete_accepts_questionnaire_json_body():
             assert state.get("skills") == "medical"
         finally:
             db.close()
+
+
+def test_bearer_token_middleware_protects_non_init_api():
+    """Non-loopback binding (token set) gates /api/* with Bearer auth (audit H3).
+
+    - /api/init/* stays open (init wizard must work pre-auth)
+    - other /api/* return 401 without a valid Bearer token
+    - correct Bearer token passes the middleware
+    - HTML pages receive the token via api_token context for the fetch wrapper
+    """
+    with TempDb() as path:
+        db = Database(path)
+        try:
+            db.mark_initialized()
+            flags = FeatureFlags(llm=True, web_ui=True)
+            ModuleRegistry(flags).save_to_db(db)
+        finally:
+            db.close()
+
+        token = "test-secret-token-xyz"
+        client = TestClient(create_app(path, token=token))
+
+        # /api/init/* is exempt — init wizard works before auth
+        assert client.get("/api/init/status").status_code == 200
+
+        # /api/status (non-init) requires the token
+        r = client.get("/api/status")
+        assert r.status_code == 401, r.text
+        assert r.json()["error"] == "unauthorized"
+
+        # Wrong token rejected
+        r = client.get("/api/status", headers={"Authorization": "Bearer wrong"})
+        assert r.status_code == 401, r.text
+
+        # Correct token passes the middleware (route may still 503 if the
+        # engine isn't fully loaded in this minimal fixture — the point is
+        # the middleware did not block)
+        r = client.get("/api/status", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code != 401, r.text
+
+        # HTML pages inject the token so the browser fetch wrapper can use it
+        html = client.get("/").text
+        assert f'const ALLSPARK_TOKEN = "{token}"' in html

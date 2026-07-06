@@ -489,6 +489,13 @@ net_handshake_ok: 握手成功
 net_remote_knowledge: 对方知识库
 net_complementary: 互补分类
 net_exchange_failed: 交换失败
+net_error_no_lan: 没有 LAN 通道可用
+net_error_node_not_found: 节点 {node_id} 未找到
+net_error_node_not_connected: 节点 {node_id} 未连接
+net_error_no_response: 节点无响应
+net_error_no_database: 数据库不可用
+net_error_not_acked: 传输未确认
+net_error_no_entries: 没有可发送的知识条目
 network_usage: '用法: 网络 | 网络 scan | 网络 start | 网络 stop | 网络 send <节点> <知识ID>'
 network_usage_short: '用法: 网络 | 网络 scan | 网络 start | 网络 stop | 网络 send <节点> <ID>'
 vision_text_fallback: 仅文本回退
@@ -1654,3 +1661,89 @@ resource_communication: 通讯
 web_status_warning: 警告
 lang_zh: 中文
 lang_en: 英文
+
+# ─── i18n cleanup: hardcoded user-visible strings ───────────────────────
+# routes/helpers.py — service_unavailable()
+error_module_check_status: 通过 /api/modules 检查模块状态，或为 '{name}' 启用功能开关。
+error_module_requires_higher_hw: 此模块需要更高的硬件等级才能运行。
+error_module_re_enable: 通过 /api/modules 重新启用 '{name}'。
+error_module_restart_or_load: 尝试重启火种或触发服务加载。
+error_module_not_available_short: '{name} 不可用'
+# routes/core.py
+error_missing_required_fields: '缺少必填字段：{fields}。请求体需包含 {{event, outcome, lesson?}}。'
+error_llm_load_failed: LLM 加载失败
+# routes/system.py
+error_invalid_language: 无效语言
+error_lang_not_supported: '''{lang}'' 不受支持。'
+error_lang_use_one_of: '请使用以下之一：{langs}'
+error_mode_required: 缺少 mode
+error_body_mode_personality: '请求体需包含 {mode: ''<人格模式>''}。'
+error_invalid_personality_mode: 无效人格模式
+error_personality_mode_unknown: '''{mode}'' 不是已知的人格模式。'
+error_personality_use_one_of: '请使用以下之一：{modes}'
+error_body_mode_operating: '请求体需包含 {mode: ''<运行模式>''}。'
+error_invalid_operating_mode: 无效运行模式
+error_operating_mode_unknown: '''{mode}'' 不是已知的运行模式。'
+error_operating_use_one_of: '请使用以下之一：{modes}'
+error_unknown_task_action: 未知操作 ''{action}''。请使用 start | complete | fail。
+# routes/governance.py
+error_name_required: 缺少 name
+error_body_name: '请求体需包含 {name: ''<成员名称>''}。'
+error_member_id_required: 缺少 member_id
+error_body_member_id: '请求体需包含 {member_id: ''<id>''}。'
+error_member_id_and_role_required: 缺少 member_id 和 role
+error_body_member_id_role: '请求体需包含 {member_id, role, domains?}。'
+error_title_and_parties_required: 缺少 title 和 parties
+error_body_title_parties: '请求体需包含 {title, parties (列表或逗号分隔字符串)}。'
+error_conflict_id_required: 缺少 conflict_id
+error_body_conflict_id: '请求体需包含 {conflict_id: ''<id>''}。'
+error_body_conflict_id_resolution: '请求体需包含 {conflict_id, resolution?}。'
+error_target_spark_id_required: 缺少 target_spark_id
+error_body_target_spark_id: '请求体需包含 {target_spark_id, offer_ids?, request_ids?}。'
+# routes/hardware.py
+error_confirmation_required: 需要确认
+error_restore_overwrites_db: 恢复将覆盖当前数据库。请添加 ?confirm=RESET 以确认此操作为有意为之。
+error_reissue_with_confirm_reset: 请使用 ?confirm=RESET 重新发起请求。
+# routes/survival.py
+error_lat_lon_numeric: 纬度和经度必须为数值。
+error_reset_requires_confirmation: 重置需要明确确认以防止数据意外丢失。
+error_send_confirm_true: 请在请求体中发送 confirm=true。
+error_invalid_reset_level: 无效重置等级
+error_reset_level_not_valid: 等级 {level} 无效。
+error_reset_use_level: 请使用等级 1（评估）、2（档案）或 3（出厂重置）。
+error_reset_rejected: 重置被拒绝
+error_scores_must_be_integers: 分数必须为整数
+error_pressure_must_be_number: 气压必须为数值
+# routes/network.py
+error_network_not_started: 网络未启动
+error_start_network_first: 请先通过 /api/network/start 启动网络发现。
+# services/llm_engine.py
+llm_error_disabled: LLM 已被硬件标志禁用
+llm_error_not_installed: 未安装 llama-cpp-python。请运行：pip install llama-cpp-python
+llm_error_model_not_found: |-
+  未找到模型文件：{model}.gguf
+  预期位置：{path}/{model}.gguf
+  下载地址：{url}
+llm_error_load_failed: 模型加载失败：{error}
+llm_error_chat: '[LLM 错误：{error}]'
+# services/voice.py
+voice_error_sd_webrtcvad_not_installed: 未安装 sounddevice/webrtcvad
+voice_error_whisper_not_installed: 未安装 whisper。请运行：pip install openai-whisper
+voice_error_whisper_not_loaded: Whisper 模型未加载。请先使用 'voice load'。
+voice_error_audio_not_found: 未找到音频文件：{path}
+voice_error_whisper_not_loaded_short: Whisper 模型未加载。
+voice_error_sounddevice_not_installed: 未安装 sounddevice。请运行：pip install sounddevice
+voice_error_pyttsx3_not_installed: 未安装 pyttsx3。请运行：pip install pyttsx3
+# services/skf_manager.py
+skf_error_missing_title: 知识 {id}：缺少标题
+skf_error_missing_summary: 知识 {id}：缺少摘要
+skf_error_invalid_priority: 知识 {id}：优先级 {priority} 无效
+skf_error_missing_event: 经验 {id}：缺少事件
+# services/experience_engine.py
+exp_warning_attempts_failed: 部分尝试失败，使用前请先验证
+# commands/governance.py
+default_unknown_name: 未知
+# commands/docker.py
+docker_logs_title: '{service} 日志'
+# commands/survival.py
+voice_unknown_error: 未知错误
