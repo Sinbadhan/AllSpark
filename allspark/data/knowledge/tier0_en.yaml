@@ -259,3 +259,335 @@
   verification: expert_verified
   source: pre_collapse
   language: en
+- id: survival/water/finding/plant/en
+  category: survival
+  subcategory: water
+  priority: 0
+  title: Plant Water Sources
+  summary: Some plants can serve as water sources. Morning dew, succulent plants,
+    bamboo, and vines can all provide moisture.
+  steps:
+  - Collect morning dew by tying cloth around your ankles and walking through grass, then wring out the water
+  - Bamboo — cut through the joints and tilt to pour out stored water
+  - Vines — sever and collect the dripping water from the cut end
+  - Cactus — slice open to extract juice (confirm the species is safe first)
+  - Coconut — young coconuts hold abundant fluid
+  prerequisites:
+  - Ability to identify local water-bearing plants
+  warnings:
+  - Sap from unknown plants may be toxic
+  - Plants with white milky sap are usually poisonous — avoid them
+  - Plant-sourced water is limited — cannot be the only water source
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: survival/water/finding/rain/en
+  category: survival
+  subcategory: water
+  priority: 0
+  title: Rainwater Collection
+  summary: Rainwater is one of the safest natural water sources. Collection is simple
+    — any large waterproof sheet will do.
+  steps:
+  - Find the largest available waterproof sheet (plastic, raincoat, tent, etc.)
+  - Place a weight in the center to form a funnel shape
+  - Put a container at the lowest point to collect
+  - Discard the first few minutes of rain (it washes dust from the air)
+  - Boil collected rainwater before drinking if possible
+  prerequisites:
+  - Large waterproof material
+  - Container
+  warnings:
+  - In acid-rain regions, rainwater may carry chemical contamination
+  - Collection containers must be clean
+  - Collect promptly — do not let water sit stagnant
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: survival/fire/methods/battery/en
+  category: survival
+  subcategory: fire
+  priority: 0
+  title: Battery Fire Starting
+  summary: Use a battery short-circuit to generate high heat and ignite tinder. A 3V+
+    battery (phone battery, 9V) with steel wool or fine wire works.
+  steps:
+  - Find a 3V+ battery and steel wool or very fine wire
+  - Pull apart and fluff the steel wool, place it on the tinder
+  - Touch both battery terminals to the steel wool at the same time
+  - The steel wool ignites immediately and glows red
+  - Quickly bring tinder to the flame
+  - Once the fire is stable, add more fuel
+  prerequisites:
+  - 3V+ battery
+  - Steel wool or fine wire
+  - Tinder
+  warnings:
+  - Do NOT use lithium batteries — they may explode
+  - Keep away from your face while operating
+  - Steel wool burns fast — act quickly
+  - Battery fire is one-shot — only attempt when confident
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: survival/fire/fuel/types/en
+  category: survival
+  subcategory: fire
+  priority: 0
+  title: Fuel Types and Selection
+  summary: Different fuels have different properties. Dry wood is the most common;
+    in emergencies, animal dung and fat also work.
+  steps:
+  - 'Dry wood: best fuel. Branches that snap cleanly when bent are dry; ones picked off the ground are often damp'
+  - 'Animal dung: dried cow dung is quality fuel — burns slowly and steadily'
+  - 'Fat/tallow: animal fat can serve as lamp oil — place in a container with a wick'
+  - 'Pine resin/fatwood: resin-rich pine (fatwood) ignites easily — the best tinder'
+  - 'Coal/peat: store when found — burns long'
+  - 'Urban ruins: wooden furniture, paper, and plastic all burn (beware toxic fumes)'
+  prerequisites:
+  - None
+  warnings:
+  - Plastic and chemicals produce toxic gases — use only in ventilated areas
+  - Wet wood produces heavy smoke — seek dry wood when possible
+  - NEVER make fire in enclosed spaces — carbon monoxide is lethal
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: survival/fire/building/types/en
+  category: survival
+  subcategory: fire
+  priority: 0
+  title: Fire Lay Types
+  summary: Different purposes call for different fire lays. Teepee for quick warmth,
+    star for fuel efficiency, long fire for group heating.
+  steps:
+  - 'Teepee (most common): tinder in the center, lean twigs in a cone, gradually thicker — quick ignition and warmth'
+  - 'Star fire: thick logs arranged radially, fire burns in the center — most fuel-efficient for long duration'
+  - 'Long/trench fire: shallow trench in the ground, thick logs on both sides — group heating and cooking'
+  - 'Reflector wall: stack stones or earth on one side — directs heat one way, ideal in front of a shelter'
+  - 'Dakota fire hole: dig a hole with a side air tunnel — low smoke, high efficiency, stealthy'
+  prerequisites:
+  - Dry fuel
+  - Tinder
+  warnings:
+  - Keep fire at least 2 meters from flammable materials
+  - In high wind, find shelter or dig a pit
+  - Before sleep, ensure fire is fully out or ringed with stones
+  - NEVER make fire inside a tent
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: survival/food/plants/universal_test/en
+  category: survival
+  subcategory: food
+  priority: 0
+  title: Universal Plant Edibility Test
+  summary: When you cannot confirm a plant is edible, use this step-by-step test.
+    It takes about 24 hours but can save your life.
+  steps:
+  - 'Step 1: Separate the plant — test leaves, stems, roots, flowers, and fruit one at a time'
+  - 'Step 2: Smell — a strong or pungent odor usually means toxic'
+  - 'Step 3: Skin test — rub plant juice on the inner wrist, wait 15 minutes'
+  - 'Step 4: Lip test — place on the lips for 3 minutes; a burning sensation means toxic'
+  - 'Step 5: Tongue test — hold on the tongue for 15 minutes; spit out if it stings'
+  - 'Step 6: Chew test — chew and hold in the mouth for 15 minutes; if no discomfort, swallow a small amount'
+  - 'Step 7: Wait 8 hours — if no nausea, vomiting, or diarrhea, that part is edible'
+  - 'Step 8: Test other parts of the plant the same way'
+  prerequisites:
+  - Patience and time
+  - Emergency use only
+  warnings:
+  - This test does NOT work for mushrooms — mushroom testing is unreliable
+  - Do not eat anything else during the test
+  - If any discomfort occurs, stop immediately and induce vomiting
+  - Children and the sick should not eat unconfirmed plants
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: survival/food/hunting/traps/en
+  category: survival
+  subcategory: food
+  priority: 0
+  title: Simple Traps
+  summary: In the wild, traps are more efficient than active hunting. The most basic
+    are the snare trap and the pit trap.
+  steps:
+  - 'Snare trap (simplest):'
+  - '  1. Make a sliding noose from fine wire or cord'
+  - '  2. Noose diameter about 10-15cm (small animals)'
+  - '  3. Set along animal trails, anchor to a stake'
+  - '  4. Bottom of the noose 5-10cm above the ground'
+  - 'Pit trap:'
+  - '  1. Dig a pit about 30cm deep on an animal trail'
+  - '  2. Place sharpened sticks (pungi) at the bottom'
+  - '  3. Cover the mouth with twigs and leaves'
+  - '  4. Place a small amount of bait on the cover'
+  prerequisites:
+  - Wire or cordage
+  - Knife
+  - Patience
+  warnings:
+  - Check traps regularly — prey may be taken by other predators
+  - Traps can injure people — mark them clearly
+  - Wild game must be thoroughly cooked
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: survival/food/fishing/basic/en
+  category: survival
+  subcategory: food
+  priority: 0
+  title: Basic Fishing Methods
+  summary: Near water, fishing is more reliable than hunting. Multiple methods work
+    even without proper gear.
+  steps:
+  - 'Handline fishing: cord + bent hook (safety pin or bone hook) + worm or insect bait'
+  - 'Spearfishing: sharpen a long stick, wait in the shallows, and thrust when fish pass'
+  - 'Fish weir: in shallows, build a half-circle stone wall; fish get trapped as water recedes'
+  - 'Night fishing: fish are more active at night — attract them with a torch or headlamp'
+  - 'Fish trap: weave a basket from branches with a reverse-barb entrance; bait and submerge it'
+  prerequisites:
+  - Access to water
+  warnings:
+  - All freshwater fish must be thoroughly cooked to kill parasites
+  - Avoid fish with abnormal color or deformities
+  - Some tropical species carry tetrodotoxin — confirm safety before eating
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: survival/food/preservation/drying/en
+  category: survival
+  subcategory: food
+  priority: 0
+  title: Food Drying and Preservation
+  summary: Drying is the oldest food preservation method. Without moisture, microbes
+    cannot grow. Meat and fruit can both be dried.
+  steps:
+  - 'Meat drying (jerky):'
+  - '  1. Cut lean meat into thin strips (about 0.5cm thick)'
+  - '  2. Trim all fat (fat spoils quickly)'
+  - '  3. Smoke-dry over fire until fully dry (bends without breaking)'
+  - '  4. Store in a dry, ventilated place'
+  - 'Fruit drying:'
+  - '  1. Slice into thin pieces'
+  - '  2. Sun-dry or dry over fire'
+  - '  3. Once fully dry, store in a sealed container'
+  prerequisites:
+  - Knife
+  - Dry environment or heat source
+  warnings:
+  - Jerky must be fully dry or it will mold
+  - Do not sun-dry outdoors on rainy days
+  - Reheat dried food before eating if possible
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: survival/shelter/natural/debris_hut/en
+  category: survival
+  subcategory: shelter
+  priority: 0
+  title: Debris Hut Shelter
+  summary: An insulating shelter built from leaves and branches, requiring no cordage.
+    Excellent warmth, suitable for cold environments.
+  steps:
+  - Find a sturdy pole about 2 meters long for the main ridge
+  - Rest one end on a stump or rock (about 1m high), the other on the ground
+  - Lean sticks on both sides to form an A-frame skeleton
+  - Pile leaves, grass, or moss on the skeleton (at least 30cm thick)
+  - Add more branches on top to keep the wind from blowing leaves away
+  - Line the inside with a thick bed of leaves
+  - Make a movable door from a bundle of leaves
+  prerequisites:
+  - Large amount of leaves
+  - Sticks
+  - Time
+  warnings:
+  - Leaf thickness is critical — too thin will not insulate
+  - Replenish scattered leaves regularly
+  - Keep some ventilation — do not fully seal
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: survival/shelter/urban/ruins/en
+  category: survival
+  subcategory: shelter
+  priority: 0
+  title: Urban Ruins Shelter
+  summary: In post-collapse urban ruins, using existing buildings is the fastest shelter
+    option. Watch for structural safety and contamination.
+  steps:
+  - 'Site selection: choose intact structures, away from unstable walls and high-rises'
+  - 'Prefer basements or ground floors (more stable, better insulation)'
+  - 'Check structure: walls without major cracks, floors not sagging, no tilt'
+  - 'Clear the space: remove broken glass, exposed wiring, and standing water'
+  - 'Seal entrances: block unused doors and windows with available materials; keep one entry'
+  - 'Insulation: lay scrap cloth, paper, or cardboard on the floor; small spaces retain heat better'
+  - 'Ventilation: ensure at least one air opening, especially if making fire'
+  prerequisites:
+  - Urban or town ruins environment
+  warnings:
+  - Unstable structures may collapse again at any time
+  - After nuclear events, mind radiation — basements are safer
+  - Ruins may contain residual chemicals — wear gloves
+  - Do NOT use elevators; do NOT make fire where gas is present
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: survival/medical/wound_care/en
+  category: survival
+  subcategory: medical
+  priority: 0
+  title: Basic Wound Care
+  summary: All wounds carry infection risk. Proper cleaning and dressing are the keys
+    to field wound care.
+  steps:
+  - 'Stop bleeding: direct pressure with a clean cloth (see Bleeding Control)'
+  - 'Flush the wound: rinse with plenty of clean water (boiled and cooled is best)'
+  - 'Remove debris: carefully take out visible fragments or dirt'
+  - 'Disinfect: wipe alcohol or iodine on the skin around the wound (do NOT pour into the wound)'
+  - 'Dress: cover the wound with a clean cloth, wrap snugly but not too tight'
+  - 'Daily check: watch for redness, heat, swelling, or pus'
+  - 'Change dressing: replace daily, keep the wound clean and dry'
+  prerequisites:
+  - Clean water
+  - Clean cloth or bandage
+  - Disinfectant (if available)
+  warnings:
+  - Do NOT suture deep wounds yourself
+  - Animal bites must be flushed thoroughly — very high infection risk
+  - A red streak extending from the wound toward the heart (lymphangitis) signals serious infection
+  - Tetanus — wounds from rusty nails or soil contamination carry tetanus risk
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: survival/medical/fracture/en
+  category: survival
+  subcategory: medical
+  priority: 0
+  title: Fracture First Aid
+  summary: Field fractures cannot be professionally treated, but proper splinting reduces
+    pain and prevents further injury, buying time.
+  steps:
+  - 'Identify fracture: severe pain, swelling, deformity, inability to move, bone crepitus'
+  - 'Do NOT attempt reduction (unless it is an open fracture with bone protruding)'
+  - 'Splint:'
+  - '  - Find sticks or branches long enough to use as splints'
+  - '  - The splint must extend beyond the joints above and below the fracture'
+  - '  - Tie the splint to the limb with cloth strips or cordage'
+  - '  - Pad soft material between the splint and skin before fixing'
+  - '  - Check distal circulation: can fingers or toes move, any sensation?'
+  - 'Open fracture (bone through the skin):'
+  - '  - Do NOT push the bone back in'
+  - '  - Cover the wound with a clean cloth'
+  - '  - Splint and seek medical care as soon as possible'
+  prerequisites:
+  - Sticks or splints
+  - Cloth strips or cordage
+  - Soft padding material
+  warnings:
+  - If fingers or toes turn purple or go numb after splinting, loosen and re-fix (too tight)
+  - Open fractures carry very high infection risk
+  - Do NOT move patients with pelvic or spinal fractures casually
+  verification: expert_verified
+  source: pre_collapse
+  language: en
