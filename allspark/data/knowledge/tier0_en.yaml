@@ -3,13 +3,13 @@
   subcategory: water
   priority: 0
   title: Water Purification by Boiling
-  summary: The most reliable water purification method. Boiling water for 1-3 minutes
-    kills most pathogens. Add 1 minute per 300m of elevation.
+  summary: The most reliable water purification method. Boiling kills most pathogens.
+    1 minute below 2000m, 3 minutes above 2000m.
   steps:
   - Find a heatable metal container (tin can, aluminum pot, etc.)
   - Pre-filter large particles through cloth or clothing
   - Heat water until it reaches a rolling boil
-  - Maintain boiling for 1 minute (sea level) to 3 minutes (high altitude)
+  - 'Below 2000m: maintain boiling for 1 minute; above 2000m: 3 minutes'
   - Let cool before drinking
   prerequisites:
   - Heatable container
@@ -41,7 +41,7 @@
   warnings:
   - Standing water (non-flowing) is higher risk — must purify before drinking
   - Unusual water color (green/yellow/cloudy) requires special treatment
-  - Water near industrial areas may have chemical contamination
+  - Water near industrial areas may have chemical contamination (boiling cannot remove it)
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -135,7 +135,7 @@
     roasted'
   - 'Purslane: stems and leaves edible, rich in Omega-3. Slightly sour taste'
   - 'Wild garlic/onion: distinct smell, leaves and bulbs both edible'
-  - 'Fiddlehead fern: young shoots edible, MUST boil with 2-3 water changes'
+  - 'Fiddlehead fern: young shoots edible, MUST boil at least 15 minutes and discard the water to reduce ptaquiloside (cannot be fully removed)'
   - 'Shepherd''s purse: leaves edible in soup or as filling'
   - 'Universal rule: if you''re not sure, DON''T eat it'
   prerequisites:
@@ -144,6 +144,7 @@
   - Fiddlehead ferns MUST be thoroughly boiled to remove toxins
   - Plants with white milky sap are often poisonous
   - NEVER eat mushrooms unless 100% certain
+  - Plants in urban areas may have chemical contamination
   - When eating any new plant, eat only a small amount and wait 6-8 hours
   verification: expert_verified
   source: pre_collapse
@@ -190,7 +191,8 @@
   - If cloth is soaked, add more cloth on top — do NOT remove first layer
   - Elevate injured limb above heart level
   - If pressure fails, apply tourniquet 5-10cm above wound
-  - Record tourniquet time — loosen 1-2 min every 30-45 min
+  - Record tourniquet time on the patient's forehead or on the tourniquet
+  - Do NOT loosen before professional medical help arrives (loosening causes rebleeding and reperfusion injury)
   prerequisites:
   - Clean cloth/clothing
   - Cordage/belt (for tourniquet)
@@ -198,7 +200,7 @@
   - Tourniquets are a last resort — they damage tissue
   - Record tourniquet time — over-limit may require amputation
   - Do NOT use wire/thin string as tourniquet
-  - Internal bleeding cannot be treated in the field
+  - Internal bleeding (abdominal swelling, vomiting blood) cannot be treated in the field — seek medical care immediately
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -213,7 +215,7 @@
   - Ensure safety for you and the victim
   - 'Check responsiveness: call loudly and tap shoulders'
   - 'Check breathing: observe chest movement for 5-10 seconds'
-  - 'Begin chest compressions: hands on center of breastbone'
+  - 'Begin chest compressions: hands on lower half of breastbone (midpoint between nipples)'
   - Push down 5-6cm, rate 100-120/min, allow full recoil
   - After 30 compressions, give 2 rescue breaths
   - Tilt head back, lift chin, pinch nose, blow for 1 second
@@ -309,8 +311,9 @@
   subcategory: fire
   priority: 0
   title: Battery Fire Starting
-  summary: Use a battery short-circuit to generate high heat and ignite tinder. A 3V+
-    battery (phone battery, 9V) with steel wool or fine wire works.
+  summary: Use a battery short-circuit to generate high heat and ignite tinder. A 9V
+    battery or multiple AA/AAA alkaline cells with steel wool or fine wire works
+    (NEVER use lithium batteries — explosion risk).
   steps:
   - Find a 3V+ battery and steel wool or very fine wire
   - Pull apart and fluff the steel wool, place it on the tinder
@@ -401,6 +404,7 @@
   - Do not eat anything else during the test
   - If any discomfort occurs, stop immediately and induce vomiting
   - Children and the sick should not eat unconfirmed plants
+  - This test is NOT 100% reliable — some deadly toxins (cicutoxin, aconitine) have delayed onset; use only as a last resort
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -502,7 +506,7 @@
   - Sticks
   - Time
   warnings:
-  - Leaf thickness is critical — too thin will not insulate
+  - Leaf thickness is critical — too thin will not insulate; in cold climates, double to 60cm+
   - Replenish scattered leaves regularly
   - Keep some ventilation — do not fully seal
   verification: expert_verified
@@ -530,6 +534,7 @@
   - After nuclear events, mind radiation — basements are safer
   - Ruins may contain residual chemicals — wear gloves
   - Do NOT use elevators; do NOT make fire where gas is present
+  - Fire in enclosed or poorly ventilated spaces produces carbon monoxide — lethal even without gas smell; ensure ventilation
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -569,7 +574,7 @@
     pain and prevents further injury, buying time.
   steps:
   - 'Identify fracture: severe pain, swelling, deformity, inability to move, bone crepitus'
-  - 'Do NOT attempt reduction (unless it is an open fracture with bone protruding)'
+  - 'Do NOT attempt reduction'
   - 'Splint:'
   - '  - Find sticks or branches long enough to use as splints'
   - '  - The splint must extend beyond the joints above and below the fracture'

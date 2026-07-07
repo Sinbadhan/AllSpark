@@ -153,6 +153,7 @@
   - "Don't overload wire — it overheats and catches fire"
   - "Don't touch electrical gear with wet hands"
   - "Cut power before repairing"
+  - "Homemade fuses: copper wire has a high melting point (1085°C) — it glows red hot before melting, may ignite nearby combustibles, and its trip characteristic is unreliable; prefer low-melting-point alloy wire (tin/lead/bismuth) or proper fuses; if unavailable, fine iron wire is better than copper"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -206,6 +207,7 @@
   - "Weasels/snakes/stray cats are the main predators — predator-proof the coop"
   - "Don't feed moldy feed"
   - "Quarantine new birds for a week before mixing"
+  - "Salmonella: wash hands after contacting droppings; wear mask and gloves when handling sick/dead birds"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -234,6 +236,7 @@
   - "A damp pen causes hoof disease"
   - "Quarantine newly purchased animals"
   - "Boil goat milk before drinking"
+  - "Zoonoses: brucellosis, Q fever, leptospirosis; wash and disinfect after contact; wear mask and gloves when handling aborted kids/placentas"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -248,7 +251,7 @@
   - "Site: ample water, low ground, clay-rich soil"
   - "Build: 100-500m², 1.5-2m deep, 1:1.5 slopes"
   - "Seal: compact the bottom, line with clay or plastic film"
-  - "Prep: disinfect with quicklime 75kg/mu (≈112kg/ha), fill after 7 days"
+  - "Prep: disinfect with quicklime 75kg/mu (≈1125kg/ha), fill after 7 days"
   - "Stock: polyculture of carp, crucian carp, grass carp (4:3:3)"
   - "Feed: twice daily, 3-5% of body weight"
   - "Manage: exchange 1/3 water periodically; monitor clarity (30-40cm)"
@@ -262,6 +265,7 @@
   - "In hot weather aerate to prevent fish kills"
   - "Reinforce banks against escape in storms"
   - "Don't overfeed — leftover feed fouls the water"
+  - "Freshwater fish (especially cyprinids) may carry liver flukes and lung flukes — cook thoroughly; raw or undercooked consumption is prohibited"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -300,7 +304,7 @@
   summary: When professional care is unavailable, some procedures must be done by laypeople.
     This is a last resort, only when no other option exists.
   steps:
-  - "Debridement: irrigate the wound with boiled saline, remove debris and necrotic tissue"
+  - "Debridement: irrigate the wound with boiled saline (should be 0.9% normal saline, about 9g salt/L water; hypertonic saline damages tissue), remove debris and necrotic tissue"
   - "Suturing: boiled sterile needle and thread; interrupted stitches 1cm apart"
   - "Tooth extraction: loosen with sterile pliers, rock side to side, pull; bite gauze to stop bleeding"
   - "Abscess: sterilize, incise with a sterile blade, drain pus"
@@ -316,6 +320,7 @@
   - "Sterilize all instruments (boil 15+ minutes)"
   - "Watch closely for infection after: redness, heat, pus"
   - "Record every procedure for later medical reference"
+  - "Surgery without proper conditions carries major risk and ethical issues; administer tetanus toxoid after debridement"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -344,6 +349,7 @@
   - "Disconnect the antenna in thunderstorms to avoid lightning"
   - "Never transmit false distress signals"
   - "Follow basic etiquette; don't jam emergency frequencies"
+  - "In normal times, operating a ham station requires a license and compliance with local regulations; most countries (including FCC Part 97 and China's Amateur Radio Station Management Measures) prohibit encrypted transmissions on amateur bands; in a life-threatening emergency you may transmit on any frequency"
   verification: field_tested
   source: pre_collapse
   language: en
@@ -396,6 +402,7 @@
   - "Drill the defense plan so everyone knows the flow"
   - "Avoid over-militarizing — it strains community morale"
   - "AllSpark alerts assist but don't replace patrols"
+  - "This system is for community self-defense only; any use of force must be legal and proportionate; no offensive or preemptive action is authorized"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -449,6 +456,7 @@
   - "Enforcement must be fair — unfair enforcement is worse than none"
   - "Revise rules as the community grows"
   - "AllSpark can record and remind, but cannot enforce"
+  - "This framework is for emergency community self-governance, not professional legal advice; return to the formal legal system once conditions allow; must not be used to circumvent existing law"
   verification: expert_verified
   source: pre_collapse
   language: en
