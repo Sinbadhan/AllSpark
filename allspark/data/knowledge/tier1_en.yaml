@@ -255,3 +255,55 @@
   verification: expert_verified
   source: pre_collapse
   language: en
+- id: weather/prediction/barometer/en
+  category: weather
+  subcategory: prediction
+  priority: 1
+  title: Barometer Weather Prediction
+  summary: Air pressure trend is a leading indicator of weather shifts. Steadily falling
+    pressure signals worsening weather; rising pressure signals improvement. A simple
+    device can substitute for a modern barometer.
+  steps:
+  - 'Trend: log pressure hourly; a drop of more than 3 hPa in 3 hours → bad weather coming; a rise → clearing'
+  - 'Simple barometer: invert a bottle into a basin of water; the level inside rises as pressure falls and falls as pressure rises'
+  - 'Combine with wind: falling pressure + shifting wind → frontal passage, often with precipitation; steady pressure + steady east wind → weather holds'
+  - 'Combine with clouds: falling pressure + increasing cirrus/cirrostratus → precipitation likely within 12-24 hours'
+  - 'Extreme: a sharp drop (more than 5 hPa in 3 hours) → severe storm or typhoon approaching; seek shelter immediately'
+  - Record a local baseline; continuous trends matter more than single readings
+  prerequisites:
+  - Barometer or simple device
+  - Recording tool
+  - Clock
+  warnings:
+  - 'Pressure is only a guide; combine with wind, clouds, and temperature'
+  - 'Simple barometers are affected by temperature; keep out of direct sunlight'
+  - 'Seek shelter when extreme weather arrives; do not rely on a single indicator'
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: weather/clouds/reading/en
+  category: weather
+  subcategory: clouds
+  priority: 1
+  title: Reading Clouds for Weather
+  summary: Cloud form and evolution are the most intuitive basis for short-term forecasting.
+    Identifying major cloud types and what they signal lets you read weather 1-24
+    hours ahead.
+  steps:
+  - 'Cirrus: wispy thin high clouds → weather will change (12-24 hours); increasing and thickening → front approaching, possible precipitation'
+  - 'Cirrocumulus: small mackerel-scale high clouds → "mackerel sky" often signals worsening weather'
+  - 'Cumulonimbus: towering cauliflower with anvil top → thunderstorm imminent, with strong wind, heavy rain, and hail'
+  - 'Stratocumulus: gray-white blocks/sheets covering sky → overcast or light rain, stable but damp'
+  - 'Stratus: uniform gray veil → drizzle or fog, poor visibility'
+  - 'Fair-weather cumulus: daytime cotton puffs that dissolve by evening → stable, fair weather'
+  - 'Altostratus/Nimbostratus: dark thick veil blocking the sun → sustained precipitation coming'
+  prerequisites:
+  - Observation
+  - Recording tool
+  warnings:
+  - 'In thunderstorms stay away from high ground, isolated trees, water, and metal'
+  - 'Mountain clouds can turn deadly fast; descend immediately when cumulonimbus builds'
+  - 'One cloud type is not enough — read the trend of the whole cloud system'
+  verification: expert_verified
+  source: pre_collapse
+  language: en

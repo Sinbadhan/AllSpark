@@ -443,3 +443,275 @@
   verification: expert_verified
   source: pre_collapse
   language: zh
+- id: communication/signals/visual
+  category: communication
+  subcategory: signals
+  priority: 3
+  title: 视觉求救信号
+  summary: 无线电失效时，视觉信号是吸引救援的主要手段。掌握国际通用视觉信号规范，可在远距离传递求救意图。
+  steps:
+  - 烟雾信号：白天点火加湿柴/绿草产生白烟；三柱分离的烟柱=国际求救（任何三的倍数信号=求救）
+  - 镜子反光：用镜子/磨光金属对准目标反复反射阳光；国际山地求救信号=每分钟6次闪光，停1分钟再重复
+  - 地面标志：开阔地用石块/树枝摆 SOS、V（求救）、X（需医疗）、→（方向）；字母至少6米长对比鲜明
+  - 高对比色布：橙/红/荧光色布系于高处摇动；夜间配手电形成闪烁
+  - 火光信号：夜间三堆等距火堆（三角形）=国际求救
+  - 信号镜备用：随身携带，可作生火放大镜
+  prerequisites:
+  - 信号镜或反光物
+  - 生火材料
+  - 高对比色物品
+  warnings:
+  - 烟雾信号须注意防火，清除周围可燃物并备水
+  - 信号位置必须开阔可见，避开密林峡谷
+  - 持续发出信号直到确认救援收到，不要过早停止
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: communication/signals/audio
+  category: communication
+  subcategory: signals
+  priority: 3
+  title: 音频求救信号
+  summary: 视线受阻或夜间时，声音是传递求救的关键。掌握标准音频信号规范，可在雾天、密林中有效呼救。
+  steps:
+  - 哨声：三短声=求救（国际通用），停顿后重复；救援回应=三声；哨声比喊叫省力且传得远
+  - 敲击：三下敲击后停顿，重复；可用木棒敲树干/金属，传声距离远
+  - 号角/枪声：三短声一组，间隔1分钟重复
+  - 节奏规范：任何"三的倍数"信号=求救；保持规律节奏便于识别
+  - 喊叫：仅作最后手段，极易耗体力且传距短；用低沉"嘿"声比尖叫持久
+  - 雾天优先用声信号，视觉信号失效
+  prerequisites:
+  - 救生哨
+  - 敲击物
+  warnings:
+  - 节省体力，定时发信号（如每5-10分钟一组）而非连续
+  - 雾天/密林优先用声信号
+  - 不要在救援未确认前停止发信号
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: communication/low_tech/relay
+  category: communication
+  subcategory: low_tech
+  priority: 3
+  title: 低技术通信中继
+  summary: 无电子通信时，靠人力与简单工具建立中继网络，可在分散社区间维持信息传递。
+  steps:
+  - 接力传信：信使按驿站间隔跑动传递口信/信件，每站换人换段
+  - 驿站制：每5-10公里设驿站，备食水与备用信使；记录传递时间与签名
+  - 信鸽：选归巢性强品种，单程回巢传递；基本训练从5公里起逐步加远，系小纸管于腿
+  - 地面标志链：路口设固定标志（石堆/刻痕/布条）指示方向、警告、状态
+  - 烽火/旗语：山头间建立烽火台或旗语站，预定信号编码传递简短信息
+  - 信息冗余：同一信息走多通道（人+鸽+标志），任一通道失败仍可达
+  prerequisites:
+  - 信使人力
+  - 驿站物资
+  - 信鸽（可选）
+  warnings:
+  - 信使安全优先，战乱时信息可加密但需平衡可送达性
+  - 信息冗余是关键——不要依赖单一通道
+  - 信鸽单程且易受天敌/天气影响，不可作唯一手段
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: civilization/education/oral
+  category: civilization
+  subcategory: education
+  priority: 3
+  title: 口述传承体系
+  summary: 无书写条件时，口述是知识与历史传承的主要方式。系统化的口述方法可大幅降低信息失真。
+  steps:
+  - 长辈口述：由技能持有人与长者定期口述历史、技术、家系
+  - 故事化记忆：将知识编成故事、歌谣、口诀，便于记忆与传递
+  - 定期集会：每周/每月集会讲述，形成固定仪式强化记忆
+  - 分龄传授：儿童学故事与基础技能，成人学专业技术与决策
+  - 多人共记：同一内容由多人分别记忆，互相校验纠错
+  - 仪式化背诵：成年礼/节日要求背诵关键内容，强化传承
+  - 实物辅助：用图刻、绳结、实物辅助记忆（如印加结绳）
+  prerequisites:
+  - 长者与技能持有人
+  - 集会场所
+  - 固定时间
+  warnings:
+  - 记录多种版本，比对差异，防止信息失真
+  - 关键技术必须配合实践操作，纯口述易丢细节
+  - 传承人意外死亡会丢失知识，必须多人备份
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: civilization/currency/barter
+  category: civilization
+  subcategory: currency
+  priority: 3
+  title: 物物交换与等价物
+  summary: 货币失效后，物物交换是基本贸易形式。建立等价物与交换比例，可大幅提升交换效率。
+  steps:
+  - 等价物：盐、工具、粮食、药品、烟酒常作一般等价物；选耐储、通用、易分割的物资
+  - 交换比例参考：以盐或粮食为基准标价（如1把刀=1公斤盐=2公斤粮食）
+  - 信用记录：用账本/刻木记录赊账与往来，定期结算
+  - 交换场所：固定时间地点设市，便于供需匹配与安全
+  - 鉴定与度量：统一度量衡（自制秤/量器），约定成色鉴定方法
+  - 交换规则：自愿、等价、当场清点；贵重物品中间人作证
+  prerequisites:
+  - 可交换物资
+  - 度量工具
+  - 账本
+  warnings:
+  - 稀有物资（药品/弹药/工具）须留战略储备，不可全部交换
+  - 防欺诈：熟悉常见作伪（掺假、缺秤、假冒成色）
+  - 贵重交换在公开场所进行，避免被劫
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: civilization/governance/council
+  category: civilization
+  subcategory: governance
+  priority: 3
+  title: 议事会制度
+  summary: 中等规模社区（30人以上）适合议事会制度。通过定期议事、协商投票与轮值制，平衡效率与公正。
+  steps:
+  - 议事会组成：按人口比例选议员（如每10人1席），含各领域代表
+  - 定期议事：每周/每月固定开会，议题提前公示
+  - 决策规则：一般事项一人一票多数决；重大事项2/3多数；涉及生存事项需共识
+  - 协商优先：先充分讨论求共识，投票为最后手段
+  - 记录决议：每次决议记入档案，含赞成/反对/弃权与理由
+  - 轮值制：议长/协调人轮值，避免权力固化
+  - 纠纷调解：设中立调解人，先调解后仲裁，不服可上诉议事会
+  - 少数意见：少数派意见记录在案，重大事项可设复议期
+  prerequisites:
+  - 社区成员名册
+  - 议事场所
+  - 记录工具
+  warnings:
+  - 防独裁：任何个人不得凌驾议事会，重大决策必须集体表决
+  - 少数意见必须记录，不得压制
+  - 议事过程透明公开，接受社区监督
+  - 紧急情况可授权指挥官临时决断，但事后须议事会追认
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: community/children/education
+  category: community
+  subcategory: children
+  priority: 3
+  title: 儿童教育与生存技能传承
+  summary: 儿童是社区延续的希望。按年龄段传授生存技能，兼顾安全教育、情感支持与任务参与，在保护童年的同时培养独立生存能力。
+  steps:
+  - 7-12岁基础：识别常见可食与有毒植物、取水与净水、生火、简易绳结、辨别方向
+  - 13岁以上进阶：基础急救、工具使用、导航、通信、防御意识
+  - 安全教育：危险识别（火、水、高处、陌生人）、不独自外出、紧急联络信号
+  - 情感支持：每日倾听、鼓励表达、保留游戏与故事时间
+  - 任务参与：按年龄分派轻量任务（取水、捡柴、照看幼童），培养责任感
+  - 教学方法：实践为主、游戏化、师徒制、火种知识库辅助
+  prerequisites:
+  - 稳定的成人指导者
+  - 安全的练习环境
+  - 火种知识库
+  warnings:
+  - 不灌输恐惧，以能力和信心取代恐慌
+  - 保持希望与童年尊严，避免让儿童过早接触暴力场景
+  - 任务不得妨碍基本休息与发育
+  - 保护童年，心理创伤比技能缺失更难修复
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: community/psychology/support
+  category: community
+  subcategory: psychology
+  priority: 3
+  title: 心理支持与创伤后应激识别
+  summary: 灾难情境下心理创伤不可避免。建立团体支持机制、识别崩溃信号、轮值倾听，是社区长期凝聚力的关键。
+  steps:
+  - 识别PTSD信号：失眠、易怒、麻木、闪回、过度警觉、回避社交
+  - 建立支持圈：每日15-30分钟围圈分享，鼓励表达不评判
+  - 仪式化治愈：固定纪念仪式、悼念逝者、标记重要节点
+  - 轮值倾听：排班指定倾听者，确保每个人都有倾诉对象
+  - 监测崩溃信号：自伤倾向、绝望言论、突然平静后躁动、孤立退缩
+  - 高危者一对一陪伴，移除可伤害物品，记录行为变化
+  prerequisites:
+  - 信任的社区关系
+  - 倾听者排班
+  - 火种记录行为变化
+  warnings:
+  - 严重创伤反应需专业心理干预，火种仅作辅助识别
+  - 防自杀，重点关注孤立、丧失亲人、表达绝望者，不间断陪伴
+  - 倾听者自身也会耗竭，需轮换和减压
+  - 不得强迫回忆创伤事件
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: defense/warning/system
+  category: defense
+  subcategory: warning
+  priority: 3
+  title: 社区自卫预警系统
+  summary: 建立多通道预警系统，确保社区在威胁出现时能快速响应。仅用于自卫预警，不授权先发制人。
+  steps:
+  - 哨点布设：在外围关键路径设观察哨，覆盖主要进入方向
+  - 信号链：声（哨、锣、号角）、光（手电、信号灯）、旗（颜色分级）多通道冗余
+  - 预警分级：白（正常）、黄（可疑）、红（确认威胁），各级响应预案
+  - 24小时轮值：至少双人值守，交接记录到火种
+  - 定期演练：每周一次预警演练，检验响应时效
+  - 信号确认：避免误报，二级确认后激活全社区响应
+  prerequisites:
+  - 通讯工具（哨、锣、旗、手电）
+  - 值守人员
+  - 火种记录系统
+  warnings:
+  - 仅用于社区自卫预警，不授权先发制人
+  - 预警系统仅用于合法自卫、适度反应、遵守所在国法律
+  - 误报会消耗社区精力，需严格确认流程
+  - 值守人员安全优先，发现优势威胁立即撤离而非接战
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: defense/shelter/hardening
+  category: defense
+  subcategory: shelter
+  priority: 3
+  title: 避难所加固与防御
+  summary: 加固避难所防止入侵，消除死角、保障紧急出口。仅用于合法自卫，不构筑攻击性工事。
+  steps:
+  - 门障与插销：外门加装横插销、门杠，单向开启
+  - 观察孔：在门或墙开设小观察孔，覆盖盲区
+  - 死角消除：清理外围灌木与杂物，移除可攀爬物
+  - 照明：关键通道保留低光照明，应急灯备用
+  - 火灾隐患排查：电线、明火、易燃物隔离，配置灭火器具
+  - 紧急出口：保留至少两条逃生路线，定期演练使用
+  prerequisites:
+  - 加固材料（木材、金属件）
+  - 基本工具
+  - 灭火器具
+  warnings:
+  - 遵守所在国法律，不构筑攻击性工事或陷阱
+  - 仅用于合法自卫、适度反应、不先发制人
+  - 加固不得堵塞消防通道和紧急出口
+  - 武力是最后手段，优先撤离和报警
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: defense/nonlethal/deterrent
+  category: defense
+  subcategory: nonlethal
+  priority: 3
+  title: 非致命威慑手段
+  summary: 使用噪声、光、障碍、警报等非致命手段威慑入侵，避免正面冲突。武力是最后手段。
+  steps:
+  - 噪声威慑：门口悬挂铃铛或罐头串、风铃、空罐警报
+  - 光威慑：探照灯、感应灯、强光手电照射
+  - 障碍：外围种植荆棘或灌木、浅壕沟、栅栏
+  - 警报：简易绊线警报（绳加铃）、火种联动提醒
+  - 看家犬：训练看家犬，预警与威慑兼具
+  - 分层布置：远、中、近三道威慑，延迟入侵、争取撤离时间
+  prerequisites:
+  - 简易材料（铃、罐、绳、灯）
+  - 看家犬（可选）
+  - 火种警报联动
+  warnings:
+  - 仅用于合法自卫、适度反应、不先发制人、遵守所在国法律
+  - 武力是最后手段，威慑失效立即撤离
+  - 不得设置可能致命的陷阱，如弹簧枪、深尖刺
+  - 威慑手段不得危及无辜路人
+  verification: expert_verified
+  source: pre_collapse
+  language: zh

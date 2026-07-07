@@ -244,3 +244,51 @@
   verification: expert_verified
   source: pre_collapse
   language: zh
+- id: weather/prediction/barometer
+  category: weather
+  subcategory: prediction
+  priority: 1
+  title: 气压计天气预测
+  summary: 气压变化是天气转折的先行指标。气压持续下降预示坏天气临近，上升预示天气转好。无现代气压计时可用简易装置观测趋势。
+  steps:
+  - 趋势判断：每小时记录气压，3小时内下降3hPa以上→恶劣天气将至；上升→天气转好
+  - 简易气压计：空瓶倒置浸入水盆，瓶口水面随气压变化升降（气压升→水降，气压降→水升）
+  - 结合风向：气压下降+风向转向→锋面过境，常有降水；气压稳定+持续东风→天气维持
+  - 结合云观测：气压下降+卷云/卷层云增多→12-24小时内可能降水
+  - 极端情况：气压急剧下降（>5hPa/3h）→强风暴或台风临近，立即避险
+  - 记录本地气压基线，连续趋势比单次读数更有价值
+  prerequisites:
+  - 气压计或简易装置
+  - 记录工具
+  - 时钟
+  warnings:
+  - 气压仅是参考，需结合风向、云、温度综合判断
+  - 简易气压计受温度影响，需避免阳光直射
+  - 极端天气来临时及时避险，不要依赖单一指标
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: weather/clouds/reading
+  category: weather
+  subcategory: clouds
+  priority: 1
+  title: 云识天气
+  summary: 云的形态和演变是短期天气预测最直观的依据。识别主要云类及其预示，可提前1-24小时判断天气走向。
+  steps:
+  - 卷云：丝缕状高空薄云→天气将变化（12-24小时）；增多变厚→锋面接近，可能降水
+  - 卷积云：小鱼鳞状高云→"鱼鳞天"常预示天气转坏
+  - 积雨云：高耸如花椰菜、顶部铁砧状→雷暴即将来临，伴有强风骤雨冰雹
+  - 层积云：灰白块片状覆盖天空→阴天或小雨，天气稳定但潮湿
+  - 层云：均匀灰幕状→毛毛雨或雾，能见度差
+  - 晴空积云：白天棉花团、傍晚消散→天气稳定良好
+  - 高层云/雨层云：灰暗厚幕遮日→持续性降水将至
+  prerequisites:
+  - 观察力
+  - 记录工具
+  warnings:
+  - 雷暴时远离高处、孤立大树、水面和金属物
+  - 山区云雾短时间内即可致灾，发现积雨云发展立即下山
+  - 单看一种云不够，要看云系演变趋势
+  verification: expert_verified
+  source: pre_collapse
+  language: zh

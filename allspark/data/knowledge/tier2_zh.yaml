@@ -256,3 +256,79 @@
   verification: expert_verified
   source: pre_collapse
   language: zh
+- id: weather/extreme/storm_response
+  category: weather
+  subcategory: extreme
+  priority: 2
+  title: 极端天气应对
+  summary: 雷暴、洪水、暴风是灾后常见致命天气。掌握每种场景的标准化避险动作，可在数秒内做出保命决策。
+  steps:
+  - 雷暴：立即蹲入低洼处，双脚并拢低头；远离金属、高处、孤立树、水面；不接触电器与电线
+  - 雷暴避险姿势：蹲下、双脚并拢、双手抱头、胸口离地——减小跨步电压与雷击目标
+  - 洪水：立即向高处转移；绝不涉水（水流速度与深度极具欺骗性）；驾车遇到洪水立即弃车向高处
+  - 山洪征兆：上游降雨、水位突涨、水变浑浊、漂杂物→数分钟内可能山洪
+  - 暴风：加固屋顶与门窗（绳索/重物压固）；转移到内侧房间或地下室；远离窗户与玻璃
+  - 龙卷风：躲入地下室或内侧小房间，护住头颈；室外则低洼处趴平
+  - 通用原则：提前观察预警，准备应急包，约定集合点与失联预案
+  prerequisites:
+  - 天气预警信息
+  - 应急包
+  - 避险路线
+  warnings:
+  - 洪水时不要躲在桥下或涵洞——水位上涨快且成为死亡陷阱
+  - 雷暴时不要使用有线电器、电话，远离金属管线与水
+  - 暴风后注意结构损坏、电线断裂、积水带电等次生危险
+  - 不要冒险涉水穿越未知水流，30cm水深即可冲倒成人
+  verification: expert_verified
+  source: pre_collapse
+  language: zh
+- id: medicine/public_health/sanitation
+  category: medicine
+  subcategory: public_health
+  priority: 2
+  title: 公共卫生与环境卫生
+  summary: 灾难环境下疾病传播比外伤更致命。系统管理排泄物、水源、垃圾与隔离，是社区公共卫生的基石。
+  steps:
+  - 排泄物处理：深埋厕所（距水源30m以上、覆盖0.5m以上土层），或堆肥厕所分离处理
+  - 水源保护：饮用水源划定隔离区，禁止洗涤与排污，设围栏与标识
+  - 疾病隔离：出现传染症状者立即单间隔离，专人照护，记录接触者
+  - 洗手：如厕后、接触患者后、处理食物前用肥皂或灰水洗手
+  - 垃圾处理：有机垃圾堆肥、无机垃圾焚烧或深埋，医疗废物单独焚烧
+  - 病媒控制：清除积水防蚊、食物密封防鼠、垃圾日清防蝇
+  prerequisites:
+  - 挖掘工具
+  - 隔离空间
+  - 肥皂或灰水等消毒替代品
+  warnings:
+  - 传染病爆发时立即隔离患者并追踪接触者，火种记录
+  - 严重情况立即寻求专业医疗
+  - 饮用水必须煮沸或过滤消毒
+  - 医疗废物不得与生活垃圾混放
+  verification: unverified
+  source: pre_collapse
+  language: zh
+- id: medicine/first_aid/burns
+  category: medicine
+  subcategory: first_aid
+  priority: 2
+  title: 烧烫伤急救
+  summary: 烧烫伤是常见应急伤害。正确处理能减轻损伤、避免感染。本条为急救常识，不涉及药物剂量。
+  steps:
+  - 冷却：立即用流动凉水冲洗伤处15-20分钟，降低深层组织损伤
+  - 冷却要点：不要用冰块直接接触以防冻伤叠加，不要涂抹牙膏、酱油、黄油等民间偏方
+  - 不刺破水泡：完整水泡是天然保护层，破溃水泡用干净纱布轻覆
+  - 覆盖：用干净无绒布或保鲜膜松松覆盖，减少感染和疼痛
+  - 评估严重度：面积大于手掌、面部或手或足或生殖器或关节、化学或电击烧伤，立即就医
+  - 化学烧伤：先用大量清水持续冲洗15分钟以上，再就医
+  prerequisites:
+  - 流动凉水
+  - 干净无绒布或保鲜膜
+  - 洁净环境
+  warnings:
+  - 大面积、面部、呼吸道烧伤危及生命，立即寻求专业医疗
+  - 严重情况立即寻求专业医疗
+  - 不要撕扯粘连在伤口的衣物，应剪开周围
+  - 不要涂抹任何偏方、油剂、香料，以免增加感染风险
+  verification: unverified
+  source: pre_collapse
+  language: zh
