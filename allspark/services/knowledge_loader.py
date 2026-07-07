@@ -68,20 +68,6 @@ def load_knowledge(tier: int = -1, language: str = "") -> list[KnowledgeEntry]:
             for d in raw_entries:
                 entries.append(_dict_to_entry(d))
 
-    # If requesting tier 0 with no language or "zh", also load en entries
-    # to maintain backward compatibility with the original behavior
-    if 0 in tiers_to_load and not language:
-        # Already loaded both zh and en for tier 0 since we iterate all langs
-        pass
-    elif 0 in tiers_to_load and language == "zh":
-        # Original behavior: tier 0 zh also loads en entries
-        en_file = _TIER_FILES.get(0, {}).get("en")
-        if en_file:
-            path = _DATA_DIR / en_file
-            raw_entries = _load_yaml(path)
-            for d in raw_entries:
-                entries.append(_dict_to_entry(d))
-
     return entries
 
 
