@@ -153,6 +153,7 @@
   - "Don't overload wire — it overheats and catches fire"
   - "Don't touch electrical gear with wet hands"
   - "Cut power before repairing"
+  - "Homemade fuses: copper wire has a high melting point (1085°C) — it glows red hot before melting, may ignite nearby combustibles, and its trip characteristic is unreliable; prefer low-melting-point alloy wire (tin/lead/bismuth) or proper fuses; if unavailable, fine iron wire is better than copper"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -206,6 +207,7 @@
   - "Weasels/snakes/stray cats are the main predators — predator-proof the coop"
   - "Don't feed moldy feed"
   - "Quarantine new birds for a week before mixing"
+  - "Salmonella: wash hands after contacting droppings; wear mask and gloves when handling sick/dead birds"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -234,6 +236,7 @@
   - "A damp pen causes hoof disease"
   - "Quarantine newly purchased animals"
   - "Boil goat milk before drinking"
+  - "Zoonoses: brucellosis, Q fever, leptospirosis; wash and disinfect after contact; wear mask and gloves when handling aborted kids/placentas"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -248,7 +251,7 @@
   - "Site: ample water, low ground, clay-rich soil"
   - "Build: 100-500m², 1.5-2m deep, 1:1.5 slopes"
   - "Seal: compact the bottom, line with clay or plastic film"
-  - "Prep: disinfect with quicklime 75kg/mu (≈112kg/ha), fill after 7 days"
+  - "Prep: disinfect with quicklime 75kg/mu (≈1125kg/ha), fill after 7 days"
   - "Stock: polyculture of carp, crucian carp, grass carp (4:3:3)"
   - "Feed: twice daily, 3-5% of body weight"
   - "Manage: exchange 1/3 water periodically; monitor clarity (30-40cm)"
@@ -262,6 +265,7 @@
   - "In hot weather aerate to prevent fish kills"
   - "Reinforce banks against escape in storms"
   - "Don't overfeed — leftover feed fouls the water"
+  - "Freshwater fish (especially cyprinids) may carry liver flukes and lung flukes — cook thoroughly; raw or undercooked consumption is prohibited"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -300,7 +304,7 @@
   summary: When professional care is unavailable, some procedures must be done by laypeople.
     This is a last resort, only when no other option exists.
   steps:
-  - "Debridement: irrigate the wound with boiled saline, remove debris and necrotic tissue"
+  - "Debridement: irrigate the wound with boiled saline (should be 0.9% normal saline, about 9g salt/L water; hypertonic saline damages tissue), remove debris and necrotic tissue"
   - "Suturing: boiled sterile needle and thread; interrupted stitches 1cm apart"
   - "Tooth extraction: loosen with sterile pliers, rock side to side, pull; bite gauze to stop bleeding"
   - "Abscess: sterilize, incise with a sterile blade, drain pus"
@@ -316,6 +320,7 @@
   - "Sterilize all instruments (boil 15+ minutes)"
   - "Watch closely for infection after: redness, heat, pus"
   - "Record every procedure for later medical reference"
+  - "Surgery without proper conditions carries major risk and ethical issues; administer tetanus toxoid after debridement"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -344,6 +349,7 @@
   - "Disconnect the antenna in thunderstorms to avoid lightning"
   - "Never transmit false distress signals"
   - "Follow basic etiquette; don't jam emergency frequencies"
+  - "In normal times, operating a ham station requires a license and compliance with local regulations; most countries (including FCC Part 97 and China's Amateur Radio Station Management Measures) prohibit encrypted transmissions on amateur bands; in a life-threatening emergency you may transmit on any frequency"
   verification: field_tested
   source: pre_collapse
   language: en
@@ -396,6 +402,7 @@
   - "Drill the defense plan so everyone knows the flow"
   - "Avoid over-militarizing — it strains community morale"
   - "AllSpark alerts assist but don't replace patrols"
+  - "This system is for community self-defense only; any use of force must be legal and proportionate; no offensive or preemptive action is authorized"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -449,6 +456,292 @@
   - "Enforcement must be fair — unfair enforcement is worse than none"
   - "Revise rules as the community grows"
   - "AllSpark can record and remind, but cannot enforce"
+  - "This framework is for emergency community self-governance, not professional legal advice; return to the formal legal system once conditions allow; must not be used to circumvent existing law"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: community/children/education/en
+  category: community
+  subcategory: children
+  priority: 3
+  title: Childhood Education and Survival Skill Transfer
+  summary: Children are the community's continuity. Teach survival skills by age band,
+    balance safety education, emotional support, and task participation, and protect
+    childhood while building self-reliance.
+  steps:
+  - 'Ages 7-12 basics: identify common edible and toxic plants, fetch and purify water, make fire, basic knots, orient'
+  - 'Ages 13+ advanced: basic first aid, tool use, navigation, communication, defense awareness'
+  - 'Safety education: hazard ID (fire, water, heights, strangers), never go out alone, emergency contact signals'
+  - 'Emotional support: daily listening, encourage expression, keep play and story time'
+  - 'Task participation: assign light tasks by age (water, firewood, minding younger kids) to build responsibility'
+  - 'Teaching method: hands-on, gamified, mentorship, AllSpark knowledge base assist'
+  prerequisites:
+  - Stable adult mentors
+  - Safe practice environment
+  - AllSpark knowledge base
+  warnings:
+  - Do not instill fear — replace panic with skill and confidence
+  - Keep hope and childhood dignity intact; shield children from violent scenes
+  - Tasks must not compromise rest and development
+  - 'Protect childhood: psychological trauma is harder to repair than missing skills'
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: community/psychology/support/en
+  category: community
+  subcategory: psychology
+  priority: 3
+  title: Psychological Support and PTSD Recognition
+  summary: Psychological trauma is unavoidable in disasters. Group support, breakdown-signal
+    monitoring, and rotating listeners are key to long-term cohesion.
+  steps:
+  - 'PTSD signals: insomnia, irritability, numbness, flashbacks, hypervigilance, social withdrawal'
+  - 'Support circle: 15-30 min daily sharing round, encourage expression without judgment'
+  - 'Ritualized healing: fixed memorial rites, mourn the dead, mark milestones'
+  - 'Rotating listeners: schedule designated listeners so everyone has someone to talk to'
+  - 'Monitor breakdown: self-harm risk, hopeless talk, sudden calm then agitation, isolation'
+  - 'High-risk individuals: one-on-one companionship, remove means of harm, log behavior changes'
+  prerequisites:
+  - Trusting community bonds
+  - Listener roster
+  - AllSpark behavior logging
+  warnings:
+  - Severe trauma needs professional psychological intervention; AllSpark only aids recognition
+  - 'Suicide prevention: watch isolated individuals, the bereaved, those expressing hopelessness — never leave them alone'
+  - Listeners burn out too — rotate and decompress
+  - Never force recollection of traumatic events
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: defense/warning/system/en
+  category: defense
+  subcategory: warning
+  priority: 3
+  title: Community Self-Defense Warning System
+  summary: Build a multi-channel warning system so the community can respond quickly
+    when threats appear. For self-defense warning only — does not authorize preemptive
+    action.
+  steps:
+  - 'Outposts: place observation posts on key outer approaches, covering main entry directions'
+  - 'Signal chain: sound (whistle, gong, horn), light (flashlight, signal lamp), flag (color-graded) — multi-channel redundancy'
+  - 'Warning levels: white (normal), yellow (suspicious), red (confirmed threat), each with a response plan'
+  - '24h roster: at least two-person watch, handover logged to AllSpark'
+  - 'Drills: weekly warning drill to test response time'
+  - 'Confirmation: avoid false alarms; activate community-wide response only after two-level confirmation'
+  prerequisites:
+  - Communication tools (whistle, gong, flag, flashlight)
+  - Watch personnel
+  - AllSpark logging system
+  warnings:
+  - For community self-defense warning only — does not authorize preemptive action
+  - Only for lawful self-defense, proportionate response, comply with local law
+  - False alarms drain community energy — strict confirmation required
+  - 'Watch safety first: withdraw rather than engage a superior threat'
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: defense/shelter/hardening/en
+  category: defense
+  subcategory: shelter
+  priority: 3
+  title: Shelter Hardening and Defense
+  summary: Harden the shelter against intrusion, eliminate blind spots, and keep emergency
+    exits clear. For lawful self-defense only — no offensive fortifications.
+  steps:
+  - 'Doors and bolts: add cross-bolts and bars to outer doors, single-direction opening'
+  - 'Observation holes: small peepholes in doors or walls covering blind spots'
+  - 'Eliminate blind spots: clear outer brush and clutter, remove climbable objects'
+  - 'Lighting: keep low-level lighting on key routes, emergency lamps as backup'
+  - 'Fire hazard check: isolate wiring, open flame, flammables; provide extinguishers'
+  - 'Emergency exits: keep at least two escape routes, drill them regularly'
+  prerequisites:
+  - Hardening materials (wood, metal hardware)
+  - Basic tools
+  - Fire extinguishers
+  warnings:
+  - Comply with local law — no offensive fortifications or traps
+  - Only for lawful self-defense, proportionate response, not preemptive
+  - Hardening must not block fire exits or emergency routes
+  - Force is the last resort — prioritize evacuation and alerting authorities
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: defense/nonlethal/deterrent/en
+  category: defense
+  subcategory: nonlethal
+  priority: 3
+  title: Non-Lethal Deterrents
+  summary: Use noise, light, obstacles, and alarms as non-lethal deterrents to avoid
+    direct confrontation. Force is the last resort.
+  steps:
+  - 'Noise: bells or can strings at doorways, wind chimes, empty-can alarms'
+  - 'Light: floodlights, motion lights, bright flashlights'
+  - 'Obstacles: thorn bushes or shrubs, shallow trenches, fences on the perimeter'
+  - 'Alarms: simple tripwire alarms (cord plus bell), AllSpark-linked alerts'
+  - 'Dogs: trained guard dogs for both warning and deterrence'
+  - 'Layering: far, mid, near three rings to delay intrusion and buy evacuation time'
+  prerequisites:
+  - Simple materials (bells, cans, cord, lights)
+  - Guard dog (optional)
+  - AllSpark alarm linkage
+  warnings:
+  - Only for lawful self-defense, proportionate response, not preemptive, comply with local law
+  - Force is the last resort — withdraw immediately if deterrence fails
+  - No lethal traps such as spring guns or deep punji stakes
+  - Deterrents must not endanger innocent passersby
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: communication/signals/visual/en
+  category: communication
+  subcategory: signals
+  priority: 3
+  title: Visual Distress Signals
+  summary: When radios fail, visual signals are the primary way to attract rescue. Knowing
+    the international visual-signal conventions lets you convey distress at long range.
+  steps:
+  - 'Smoke signal: by day, light a fire and add green/wet wood for white smoke; three separate columns = international distress (any signal in multiples of three = distress)'
+  - 'Mirror flash: aim a mirror or polished metal at the target and flash sunlight repeatedly; international mountain distress = six flashes per minute, pause one minute, repeat'
+  - 'Ground marks: in the open, lay out SOS, V (need help), X (need medical), → (direction) with stones/branches; letters at least 6 m long, high contrast'
+  - 'High-contrast cloth: tie orange/red/fluorescent cloth high and wave it; at night pair with a flashlight as a blinker'
+  - 'Fire signal: at night, three equal-spaced fires in a triangle = international distress'
+  - Keep a signal mirror handy — it doubles as a fire-starting magnifier
+  prerequisites:
+  - Signal mirror or reflective object
+  - Fire-making materials
+  - High-contrast items
+  warnings:
+  - 'Smoke signals risk wildfire; clear surrounding fuel and keep water on hand'
+  - 'Signal sites must be open and visible; avoid dense forest and canyons'
+  - 'Keep signaling until rescue is confirmed; do not stop too early'
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: communication/signals/audio/en
+  category: communication
+  subcategory: signals
+  priority: 3
+  title: Audio Distress Signals
+  summary: When sight is blocked or at night, sound is key to signaling for help. Standard
+    audio-signal conventions work in fog and dense forest.
+  steps:
+  - 'Whistle: three short blasts = distress (internationally recognized), pause and repeat; rescue reply = three blasts; whistles carry farther and use less effort than shouting'
+  - 'Tapping: three taps, pause, repeat; strike wood with a stick or metal — sound carries far'
+  - 'Horn/gunshot: three short blasts per group, repeat at one-minute intervals'
+  - 'Rhythm rule: any signal in multiples of three = distress; keep a steady rhythm for easy recognition'
+  - 'Shouting: last resort only — it drains energy and carries poorly; a low "hey" lasts longer than a scream'
+  - In fog, prefer sound — visual signals fail
+  prerequisites:
+  - Survival whistle
+  - Tapping object
+  warnings:
+  - 'Conserve energy: signal in timed sets (e.g., every 5-10 minutes) rather than continuously'
+  - 'Use sound first in fog or dense forest'
+  - 'Do not stop signaling until rescue is confirmed'
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: communication/low_tech/relay/en
+  category: communication
+  subcategory: low_tech
+  priority: 3
+  title: Low-Tech Communication Relay
+  summary: Without electronic communications, human-powered relays and simple tools can
+    keep information flowing between scattered settlements.
+  steps:
+  - 'Relay running: couriers carry oral/written messages station to station, swapping runners each leg'
+  - 'Post-station system: stations every 5-10 km with food, water, and backup runners; log time and signature at each'
+  - 'Homing pigeons: pick strong homing breeds, one-way return delivery; train from 5 km outward in stages; attach a small paper tube to the leg'
+  - 'Ground-mark chain: fixed marks at junctions (cairns, blazes, cloth) indicate direction, warnings, and status'
+  - 'Beacon/flag relay: signal towers or flag stations between hills use prearranged codes for short messages'
+  - 'Redundancy: send the same message via multiple channels (runner + pigeon + marks) so any one failure still gets through'
+  prerequisites:
+  - Courier manpower
+  - Station supplies
+  - Homing pigeons (optional)
+  warnings:
+  - 'Courier safety first; in wartime messages may be encrypted but balance against deliverability'
+  - 'Redundancy is critical — never rely on a single channel'
+  - 'Pigeons are one-way and vulnerable to predators/weather; never the sole means'
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: civilization/education/oral/en
+  category: civilization
+  subcategory: education
+  priority: 3
+  title: Oral Transmission System
+  summary: Without writing, oral transmission is the main way to pass on knowledge and
+    history. A systematic oral method greatly reduces information distortion.
+  steps:
+  - 'Elder recitation: skilled holders and elders regularly recount history, techniques, and lineages'
+  - 'Story-form memory: weave knowledge into stories, songs, and rhymes for easier recall and transmission'
+  - 'Regular gatherings: weekly or monthly assemblies for telling, as fixed ritual to reinforce memory'
+  - 'Age-graded teaching: children learn stories and basic skills; adults learn technical craft and decision-making'
+  - 'Multiple keepers: several people memorize the same content and cross-check each other'
+  - 'Ritual recitation: coming-of-age and festivals require reciting key content to reinforce transmission'
+  - 'Physical aids: use carvings, knots, and objects as memory aids (e.g., Inca quipu)'
+  prerequisites:
+  - Elders and skill holders
+  - Gathering place
+  - Fixed schedule
+  warnings:
+  - 'Record multiple versions and compare differences to prevent distortion'
+  - 'Critical techniques must pair with hands-on practice; pure oral loses detail'
+  - 'A keeper dying can lose knowledge — always back up with multiple people'
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: civilization/currency/barter/en
+  category: civilization
+  subcategory: currency
+  priority: 3
+  title: Barter and Commodity Money
+  summary: When currency collapses, barter is the basic form of trade. Establishing commodity
+    money and exchange ratios greatly improves efficiency.
+  steps:
+  - 'Commodity money: salt, tools, grain, medicine, tobacco/alcohol often serve as common equivalents; choose durable, widely useful, divisible goods'
+  - 'Exchange ratios: peg prices to salt or grain (e.g., 1 knife = 1 kg salt = 2 kg grain)'
+  - 'Credit records: keep ledgers or tally sticks for debts and dealings; settle periodically'
+  - 'Marketplace: fixed time and place for markets to match supply, demand, and safety'
+  - 'Verification and measure: standardize weights and measures (homemade scales/measures); agree on purity checks'
+  - 'Rules: voluntary, equivalent, counted on the spot; use a witness for valuable items'
+  prerequisites:
+  - Tradeable goods
+  - Measuring tools
+  - Ledger
+  warnings:
+  - 'Keep strategic reserves of rare goods (medicine, ammo, tools); do not trade all away'
+  - 'Prevent fraud: know common tricks (adulteration, short weight, fake purity)'
+  - 'Conduct valuable trades in public to avoid robbery'
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: civilization/governance/council/en
+  category: civilization
+  subcategory: governance
+  priority: 3
+  title: Council System
+  summary: Mid-size communities (30+ people) suit a council. Regular meetings, deliberative
+    voting, and rotation balance efficiency with fairness.
+  steps:
+  - 'Council composition: elect seats by population ratio (e.g., one per 10 people), including domain representatives'
+  - 'Regular meetings: fixed weekly or monthly sessions; agendas published in advance'
+  - 'Decision rules: routine matters by one-person-one-vote majority; major matters by two-thirds; survival matters seek consensus'
+  - 'Deliberation first: discuss fully and seek consensus; vote only as a last resort'
+  - 'Record resolutions: log each decision with for/against/abstain and reasons'
+  - 'Rotation: rotate the chair/coordinator to prevent power from consolidating'
+  - 'Dispute mediation: neutral mediators first mediate then arbitrate; appeals go to the council'
+  - 'Minority views: record minority opinions; major matters may have a reconsideration period'
+  prerequisites:
+  - Community roster
+  - Meeting place
+  - Recording tools
+  warnings:
+  - 'Prevent dictatorship: no individual outranks the council; major decisions need collective vote'
+  - 'Minority opinions must be recorded, never suppressed'
+  - 'Proceedings are transparent and open to community oversight'
+  - 'In emergencies a commander may decide temporarily, but the council must ratify afterward'
   verification: expert_verified
   source: pre_collapse
   language: en

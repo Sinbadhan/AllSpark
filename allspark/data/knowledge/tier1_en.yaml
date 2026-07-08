@@ -21,6 +21,7 @@
   - "Do not plant near industrial zones or roads — soil may contain heavy metals"
   - "Fresh manure must be composted for 6+ months before use"
   - "Planting the same crop repeatedly depletes the soil; practice crop rotation"
+  - "Apply wood ash in small, frequent doses; recheck pH regularly to avoid over-alkalization"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -36,7 +37,7 @@
   - "Bok choy: broadcast seeds, cover 0.5cm soil, keep moist, harvest in 25 days"
   - "Radish: sow at 10cm spacing, harvest roots in 30-40 days"
   - "Lettuce: broadcast or transplant seedlings, harvest outer leaves from 30 days"
-  - "Sweet potato: plant vine cuttings, harvest tubers in 60-90 days; leaves are also edible"
+  - "Sweet potato: plant vine cuttings, harvest tubers in 90-120 days; leaves are also edible"
   prerequisites:
   - "Seeds or seedlings"
   - "Soil"
@@ -69,6 +70,7 @@
   - "Humid weather is unsuitable for sun drying"
   - "Incomplete drying causes mold — better over-dry than under-dry"
   - "Keep smoking temperature below 60°C or you will cook, not dry, the food"
+  - "Wrap quicklime in cloth sachets and keep it physically separated from food; it releases intense heat on contact with water; avoid direct skin contact; never eat it"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -93,9 +95,10 @@
   - "Stirring tool"
   warnings:
   - "Lye is strongly corrosive — avoid skin and eye contact"
-  - "Work ventilated and wear protection when making soap"
+  - "Work ventilated and wear nitrile/rubber gloves + safety goggles + long sleeves + closed shoes when making soap"
   - "Under-saponified soap can burn skin; cure it fully"
   - "If lye contacts skin, rinse immediately with copious water"
+  - "Never use aluminum containers to hold lye or for saponification (use glass/ceramic/stainless steel/wooden containers); KOH reacts with aluminum to produce hydrogen, which is explosive"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -136,7 +139,7 @@
   - "Build a simple forge: mud/brick firebox with an air intake at the bottom"
   - "Use charcoal fuel (reaches 1000°C+)"
   - "Blow air with bellows or a fan to raise temperature"
-  - "Heat the iron in the forge to cherry red (about 800°C)"
+  - "Heat the iron in the forge to bright orange-red (about 900-1000°C)"
   - "Forge on an anvil — rough-shape first, then refine"
   - "Quench: plunge the hot workpiece into water or oil for hardness"
   - "Temper: reheat to 200-300°C and cool slowly to remove brittleness"
@@ -151,6 +154,8 @@
   - "Quenching throws steam and splatter — keep your distance"
   - "Tempering too hot loses hardness; too low leaves brittleness"
   - "When recycling scrap, distinguish iron from steel — steel hardens, iron does not"
+  - "Always wear safety goggles — hammering can chip off metal fragments"
+  - "When recycling scrap iron, remove the zinc coating or boost ventilation and wear a mask; zinc fumes cause metal fume fever"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -173,7 +178,7 @@
   warnings:
   - "Knots may slip when wet — use doubled knots at critical points"
   - "Check knots regularly for looseness"
-  - "For rescue, keep rope load under 1/5 of breaking strength"
+  - "For rescue, keep rope load under 1/10 of breaking strength"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -223,6 +228,7 @@
   - "Gasifiers produce carbon monoxide — use only in ventilated areas"
   - "The body gets extremely hot — keep flammables away"
   - "Clean ash regularly to maintain airflow"
+  - "Output gas contains combustible components (CO/H2/CH4); piping must be sealed and leak-free, no accumulation in enclosed spaces; clean tar regularly to prevent blockage; keep open flame away from the gas outlet"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -246,6 +252,58 @@
   - "Solar cooker focal point is extremely hot — beware burns and fire"
   - "Cloudy days and winter sharply reduce solar efficiency"
   - "Solar still output is limited — use as a supplementary water source only"
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: weather/prediction/barometer/en
+  category: weather
+  subcategory: prediction
+  priority: 1
+  title: Barometer Weather Prediction
+  summary: Air pressure trend is a leading indicator of weather shifts. Steadily falling
+    pressure signals worsening weather; rising pressure signals improvement. A simple
+    device can substitute for a modern barometer.
+  steps:
+  - 'Trend: log pressure hourly; a drop of more than 3 hPa in 3 hours → bad weather coming; a rise → clearing'
+  - 'Simple barometer: invert a bottle into a basin of water; the level inside rises as pressure falls and falls as pressure rises'
+  - 'Combine with wind: falling pressure + shifting wind → frontal passage, often with precipitation; steady pressure + steady east wind → weather holds'
+  - 'Combine with clouds: falling pressure + increasing cirrus/cirrostratus → precipitation likely within 12-24 hours'
+  - 'Extreme: a sharp drop (more than 5 hPa in 3 hours) → severe storm or typhoon approaching; seek shelter immediately'
+  - Record a local baseline; continuous trends matter more than single readings
+  prerequisites:
+  - Barometer or simple device
+  - Recording tool
+  - Clock
+  warnings:
+  - 'Pressure is only a guide; combine with wind, clouds, and temperature'
+  - 'Simple barometers are affected by temperature; keep out of direct sunlight'
+  - 'Seek shelter when extreme weather arrives; do not rely on a single indicator'
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: weather/clouds/reading/en
+  category: weather
+  subcategory: clouds
+  priority: 1
+  title: Reading Clouds for Weather
+  summary: Cloud form and evolution are the most intuitive basis for short-term forecasting.
+    Identifying major cloud types and what they signal lets you read weather 1-24
+    hours ahead.
+  steps:
+  - 'Cirrus: wispy thin high clouds → weather will change (12-24 hours); increasing and thickening → front approaching, possible precipitation'
+  - 'Cirrocumulus: small mackerel-scale high clouds → "mackerel sky" often signals worsening weather'
+  - 'Cumulonimbus: towering cauliflower with anvil top → thunderstorm imminent, with strong wind, heavy rain, and hail'
+  - 'Stratocumulus: gray-white blocks/sheets covering sky → overcast or light rain, stable but damp'
+  - 'Stratus: uniform gray veil → drizzle or fog, poor visibility'
+  - 'Fair-weather cumulus: daytime cotton puffs that dissolve by evening → stable, fair weather'
+  - 'Altostratus/Nimbostratus: dark thick veil blocking the sun → sustained precipitation coming'
+  prerequisites:
+  - Observation
+  - Recording tool
+  warnings:
+  - 'In thunderstorms stay away from high ground, isolated trees, water, and metal'
+  - 'Mountain clouds can turn deadly fast; descend immediately when cumulonimbus builds'
+  - 'One cloud type is not enough — read the trend of the whole cloud system'
   verification: expert_verified
   source: pre_collapse
   language: en

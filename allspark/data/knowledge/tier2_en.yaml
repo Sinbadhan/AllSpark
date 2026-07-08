@@ -11,7 +11,7 @@
   - "Layer: brown layer (dry leaves/straw/paper) → green layer (veg scraps/grass/manure) → thin soil"
   - "Brown-to-green ratio about 3:1; keep moist but not waterlogged"
   - "Turn the pile every 1-2 weeks to introduce air and speed decomposition"
-  - "Internal temp should reach 55-65°C (warm to the inserted hand)"
+  - "Internal temp should reach 55-65°C (too hot to hold for more than a few seconds; a thermometer is best)"
   - "Done in 2-6 months — dark brown, crumbly, soil-like"
   prerequisites:
   - "Organic waste"
@@ -34,7 +34,7 @@
   steps:
   - "Select the healthiest plants for seed, mark them to avoid accidental harvest"
   - "Wait until fruit is fully mature before collecting seed"
-  - "Wet seed (tomato/cucumber): scoop out, wash off pulp, dry"
+  - "Wet seed (tomato/cucumber): ferment the scooped seeds with their juice at room temp 2-4 days until the gel dissolves, then wash clean and dry"
   - "Dry seed (beans/grains): dry pods/ears on the plant, then thresh"
   - "Drying: air-dry in a cool ventilated spot 7-14 days to below 8% moisture"
   - "Storage: paper bags or sealed jars with desiccant, in a cool dry place"
@@ -73,6 +73,7 @@
   - "Plenty of water"
   warnings:
   - "Boiling lye needs ventilation and protection"
+  - "Do not use aluminum pots (lye corrodes aluminum and contaminates pulp); use iron/stainless-steel/enamelware; lye corrodes skin — rinse immediately on contact"
   - "Pulp concentration sets sheet thickness — thin when dilute, thick when concentrated"
   - "Avoid direct sun while drying to prevent warping"
   verification: expert_verified
@@ -86,7 +87,7 @@
   summary: Natural dyes color and mark. Different plants yield different hues — indigo
     (blue), madder (red), cork tree (yellow).
   steps:
-  - "Blue: ferment indigo plant leaves, add lye to make indigo"
+  - "Blue: ferment indigo plant leaves (Persicaria tinctoria / Strobilanthes cusia — Japanese indigo / woad), add lye to make indigo; reduce the insoluble indigo to soluble leuco form (traditionally with lime + reducing agent / fermentation), dye then oxidize in air to blue; indigo does not use the mordant process"
   - "Red: chop madder root, soak in hot water to extract alizarin"
   - "Yellow: hot-water extract of cork-tree bark/pomegranate peel/onion skins"
   - "Black: gallnuts (insect galls) with iron mordant"
@@ -114,6 +115,7 @@
   steps:
   - "Site: a stream with steady flow and 0.5-2m of head"
   - "Build the wheel: wooden disc 1-2m across, with buckets around the rim"
+  - "Type: 0.5m low head uses undershot (water strikes buckets at the bottom); overshot (water onto the top) only above 1.5m head"
   - "Mount the wheel on a horizontal shaft, buckets facing the flow"
   - "Connect the millstone: wheel shaft drives the upper stone via gears"
   - "Channel water: a flume directs water to the top of the wheel"
@@ -206,6 +208,7 @@
   - "Disconnect electrical lines in thunderstorms to avoid lightning strikes"
   - "Spinning blades are a cutting hazard — set a safety perimeter"
   - "Brake or lower blades above the design wind limit"
+  - "PVC blades grow brittle in winter and age — replace as needed; the throw zone is a 2× tower-height radius around the base"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -223,6 +226,7 @@
   - "Charge: manure + chopped straw + water, 8-10% solids"
   - "Start: add old biogas slurry or cow manure as inoculum, seal and ferment"
   - "Gas: production begins in 7-15 days; a blue flame means it's on spec"
+  - "Temperature: mesophilic fermentation optimum 25-38°C (ideally 35°C); below 15°C it nearly stops"
   - "Daily: feed daily, desludge periodically, keep pH 6.8-7.5"
   prerequisites:
   - "Building materials (brick/cement)"
@@ -233,6 +237,7 @@
   - "Never smoke or use open flame near the digester"
   - "Ventilate and post multiple watchers before entering for repair — the tank is oxygen-deficient and lethal"
   - "Output drops in cold weather — insulate in winter"
+  - "Gas-holder pressure is auto-regulated by the water-pressure chamber — never seal a dead volume; fit a flame arrestor at the output to prevent flashback"
   verification: expert_verified
   source: pre_collapse
   language: en
@@ -249,7 +254,8 @@
   - "Inflammation: honeysuckle (flower infusion), dandelion (whole-plant decoction)"
   - "Diarrhea: pomegranate peel (decoction), plantain (leaf decoction)"
   - "Parasites: mugwort (smoke/infusion), garlic (raw)"
-  - "Pain: yanhusuo (root decoction), chuansiong (root decoction)"
+  - "Pain: yanhusuo (root decoction), chuanxiong (root decoction)"
+  - "Dose: 3-9g dried herb per day for adults as decoction; do not decoct in an iron pot (tannin reaction); sanqi/bletilla powder is for superficial application only — never pack into deep wounds"
   prerequisites:
   - "Herb identification skill"
   - "Reference guide"
@@ -259,5 +265,86 @@
   - "Use herbs cautiously in pregnant women, children, and the frail"
   - "Herbs cannot replace professional care — emergency use only"
   verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: weather/extreme/storm_response/en
+  category: weather
+  subcategory: extreme
+  priority: 2
+  title: Extreme Weather Response
+  summary: Thunderstorms, floods, and high winds are common deadly weather after a
+    collapse. Standardized sheltering actions for each scenario let you make life-saving
+    decisions in seconds.
+  steps:
+  - 'Thunderstorm: crouch in a low spot immediately, feet together, head down; stay away from metal, high ground, isolated trees, and water; do not touch appliances or power lines'
+  - 'Lightning posture: crouch, feet together, hands on head, chest off the ground — reduces step voltage and target profile'
+  - 'Flood: move to high ground immediately; never wade (current speed and depth are deceptive); abandon a car in floodwater and head uphill'
+  - 'Flash-flood signs: upstream rain, sudden rise, muddy water, floating debris → flash flood within minutes'
+  - 'High wind: reinforce roof and doors/windows (ropes/weights); move to an interior room or basement; stay away from windows and glass'
+  - 'Tornado: shelter in a basement or small interior room, protect head and neck; outdoors, lie flat in a depression'
+  - 'General: monitor warnings early, prepare a go-bag, agree on a rally point and a lost-contact plan'
+  prerequisites:
+  - Weather warning information
+  - Go-bag
+  - Escape routes
+  warnings:
+  - 'Do not shelter under bridges or culverts in floods — water rises fast and they become death traps'
+  - 'In thunderstorms do not use wired appliances or phones; stay away from metal pipes and water'
+  - 'After high wind, watch for structural damage, downed power lines, and electrified standing water'
+  - 'Never wade across unknown currents — 30 cm of water can knock an adult down'
+  verification: expert_verified
+  source: pre_collapse
+  language: en
+- id: medicine/public_health/sanitation/en
+  category: medicine
+  subcategory: public_health
+  priority: 2
+  title: Public Health and Environmental Sanitation
+  summary: In disaster settings disease is deadlier than trauma. Systematic management
+    of excreta, water sources, waste, and isolation is the foundation of community
+    public health.
+  steps:
+  - 'Excreta: deep-pit latrines (30m+ from water, cover with 0.5m+ soil), or composting toilets with separation'
+  - 'Water source protection: zone off drinking water sources, no washing or sewage, fence and sign'
+  - 'Disease isolation: single-room isolation for anyone with infectious symptoms, dedicated caregiver, log contacts'
+  - 'Handwashing: after toileting, after patient contact, before food handling — use soap or ash water'
+  - 'Waste: compost organics, burn or bury inorganics, incinerate medical waste separately'
+  - 'Vector control: drain standing water against mosquitoes, seal food against rodents, daily trash removal against flies'
+  prerequisites:
+  - Digging tools
+  - Isolation space
+  - Soap or ash water and other disinfectant substitutes
+  warnings:
+  - On outbreak, isolate patients immediately and trace contacts; log to AllSpark
+  - Severe situations — seek professional medical care immediately
+  - Drinking water must be boiled or filtered and disinfected
+  - Medical waste must never be mixed with household waste
+  verification: unverified
+  source: pre_collapse
+  language: en
+- id: medicine/first_aid/burns/en
+  category: medicine
+  subcategory: first_aid
+  priority: 2
+  title: Burn and Scald First Aid
+  summary: Burns are a common emergency injury. Correct handling limits damage and
+    prevents infection. This entry is first-aid common sense only — no drug dosages.
+  steps:
+  - 'Cooling: immediately rinse the burn under cool running water for 15-20 minutes to reduce deep tissue damage'
+  - 'Cooling notes: do not apply ice directly (frostbite on top of burn); do not apply toothpaste, soy sauce, butter, or folk remedies'
+  - 'Blisters: do not pop them — intact blisters are a natural protective layer; cover broken blisters loosely with clean gauze'
+  - 'Cover: loosely cover with clean lint-free cloth or cling film to reduce infection and pain'
+  - 'Severity: area larger than a palm, face/hands/feet/genitals/joints, chemical or electrical burns — seek care immediately'
+  - 'Chemical burns: flush with copious water for 15+ minutes before seeking care'
+  prerequisites:
+  - Cool running water
+  - Clean lint-free cloth or cling film
+  - Clean environment
+  warnings:
+  - Large-area, facial, or airway burns are life-threatening — seek professional medical care immediately
+  - Severe situations — seek professional medical care immediately
+  - Do not tear clothing stuck to the wound — cut around it
+  - Do not apply any folk remedy, oil, or spice — they increase infection risk
+  verification: unverified
   source: pre_collapse
   language: en
