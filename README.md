@@ -255,7 +255,7 @@ AllSpark/
 │   ├── templates/                  # Web UI HTML templates
 │   └── docker/                     # Dockerfiles + docker-compose.yml
 │
-└── tests/                          # automated tests (count per `pytest tests/-q`; kept internal in public release)
+└── tests/                          # automated tests (tracked; count per `pytest tests -q`; runs on CI)
 ```
 
 ---
@@ -282,7 +282,7 @@ AllSpark/
 | Ruff lint | ✅ 0 errors |
 | mypy | ✅ CI-enforced, with historical typing debt isolated by error-code allowlist |
 | Packaging types | ✅ `py.typed` included |
-| Public repo hygiene | ✅ Internal docs, tests, runtime data, local models, and secrets ignored |
+| Public repo hygiene | ✅ Internal docs, runtime data, local models, and secrets ignored |
 
 ---
 

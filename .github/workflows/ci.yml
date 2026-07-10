@@ -30,10 +30,16 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Lint with ruff
-        run: ruff check allspark/
+        run: ruff check allspark/ tests/
 
       - name: Type check with mypy
         run: mypy allspark/ --ignore-missing-imports
+
+      - name: Run tests with pytest
+        # SHA-28: full suite is tracked in version control and gates merges
+        # across all supported Python versions. Hardware/live-model smoke
+        # tests auto-skip (gated behind ALLSPARK_LIVE_* env vars / importorskip).
+        run: pytest -q --tb=short
 
       - name: Module import smoke benchmark (advisory)
         # Soft budget: prints ::warning:: and stays green when import time
