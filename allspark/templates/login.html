@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>{{ t('web_login_title') }}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#0a0a0a; color:#e0e0e0; font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:16px; }
+  .card { background:#141414; border:1px solid #2a2a2a; border-radius:8px; padding:32px; width:380px; max-width:100%; }
+  h1 { color:#ff6b35; font-size:18px; margin:0 0 6px; letter-spacing:2px; font-weight:700; }
+  .sub { color:#888; font-size:12px; margin:0 0 24px; line-height:1.5; }
+  label { display:block; font-size:10px; color:#aaa; margin-bottom:6px; text-transform:uppercase; letter-spacing:1px; }
+  input { width:100%; background:#0a0a0a; border:1px solid #333; color:#e0e0e0; padding:11px; border-radius:4px; font-family:inherit; font-size:13px; }
+  input:focus { outline:none; border-color:#ff6b35; }
+  button { width:100%; margin-top:18px; background:#ff6b35; color:#0a0a0a; border:none; padding:11px; border-radius:4px; font-weight:700; cursor:pointer; font-family:inherit; font-size:13px; letter-spacing:1px; }
+  button:disabled { opacity:0.5; cursor:default; }
+  .err { color:#ff4444; font-size:12px; margin-top:12px; min-height:16px; }
+  .lock { color:#ffaa00; font-size:11px; margin-top:18px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>ALLSPARK</h1>
+  <p class="sub">{{ t('web_login_hint') }}</p>
+  <form id="login-form" autocomplete="on">
+    <label for="token">{{ t('web_login_token_label') }}</label>
+    <input type="password" id="token" name="token" autocomplete="current-password" required autofocus>
+    <button type="submit" id="login-btn">{{ t('web_login_submit') }}</button>
+    <div class="err" id="err"></div>
+  </form>
+  <div class="lock">{{ t('web_login_secure_note') }}</div>
+</div>
+<script>
+const I18N = {{ web_i18n | tojson }};
+function L(k){ return (I18N && I18N[k]) || k; }
+const form = document.getElementById('login-form');
+const btn = document.getElementById('login-btn');
+const err = document.getElementById('err');
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  err.textContent = '';
+  btn.disabled = true;
+  const token = document.getElementById('token').value;
+  try {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({token: token}),
+      credentials: 'same-origin'
+    });
+    if (r.ok) {
+      window.location.href = '/';
+    } else {
+      err.textContent = L('web_login_error');
+      btn.disabled = false;
+    }
+  } catch (ex) {
+    err.textContent = L('web_login_error');
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

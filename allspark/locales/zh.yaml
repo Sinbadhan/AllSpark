@@ -1235,6 +1235,12 @@ web_page_title_system: 系统监控
 web_page_title_executions: 任务执行
 web_page_title_config: 配置
 web_page_title_repository: 资料库
+web_login_title: ALLSPARK 登录
+web_login_hint: 请输入服务启动时打印的访问令牌
+web_login_token_label: 访问令牌
+web_login_submit: 登录
+web_login_error: 令牌无效，请重试
+web_login_secure_note: 令牌仅用于换取 httpOnly 会话 cookie，不会写入页面
 web_execute_task: 启动操作
 web_search_placeholder: 搜索...
 web_global_search_empty: 请输入搜索关键词

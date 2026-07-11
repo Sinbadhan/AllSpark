@@ -660,14 +660,66 @@ def test_init_complete_accepts_questionnaire_json_body():
             db.close()
 
 
-def test_bearer_token_middleware_protects_non_init_api():
-    """Non-loopback binding (token set) gates /api/* with Bearer auth (audit H3).
+def test_auth_cookie_and_one_time_bootstrap():
+    """SHA-142: token out of HTML, httpOnly cookie auth, one-time bootstrap.
 
-    - /api/init/* stays open (init wizard must work pre-auth)
-    - other /api/* return 401 without a valid Bearer token
-    - correct Bearer token passes the middleware
-    - HTML pages receive the token via api_token context for the fetch wrapper
+    - unauthed HTML -> redirect to /login; unauthed /api/* -> 401
+    - token never appears in any HTML (login page or dashboard)
+    - /api/auth/login exchanges the token for an httpOnly cookie
+    - init/complete is one-time: 410 once initialized (re-init hijack blocked)
     """
+    with TempDb() as path:
+        db = Database(path)
+        db.close()  # uninitialized
+
+        token = "test-secret-token-xyz"
+        client = TestClient(create_app(path, token=token))
+
+        # 1. Unauthed HTML redirects to /login (303).
+        r = client.get("/", follow_redirects=False)
+        assert r.status_code == 303, r.text
+        assert r.headers["location"] == "/login"
+
+        # 2. /login page is served and carries neither token nor the JS var.
+        html = client.get("/login").text
+        assert token not in html
+        assert "const ALLSPARK_TOKEN" not in html
+
+        # 3. Unauthed /api/* -> 401.
+        assert client.get("/api/status").status_code == 401
+
+        # 4. Wrong token rejected, no session established.
+        assert client.post("/api/auth/login", json={"token": "wrong"}).status_code == 401
+        assert client.get("/api/status").status_code == 401
+
+        # 5. Correct token -> 200 + cookie; subsequent /api/* no longer 401
+        #    (503 expected since the engine is not loaded pre-init).
+        r = client.post("/api/auth/login", json={"token": token})
+        assert r.status_code == 200, r.text
+        assert client.get("/api/status").status_code != 401
+
+        # 6. Bootstrap: init/complete works while not initialized (cookie-authed).
+        r = client.post("/api/init/complete", json={
+            "language": "zh", "survivor_name": "T", "skip_model": True,
+        })
+        assert r.status_code == 200, r.text
+
+        # 7. One-time: a second init/complete is rejected (410) even when authed.
+        r = client.post("/api/init/complete", json={
+            "language": "zh", "survivor_name": "T", "skip_model": True,
+        })
+        assert r.status_code == 410, r.text
+        assert r.json()["error"] == "bootstrap_closed"
+
+        # 8. Dashboard HTML after auth+init still contains no token.
+        html = client.get("/").text
+        assert token not in html
+        assert "const ALLSPARK_TOKEN" not in html
+
+
+def test_bearer_header_still_accepted_for_api_clients():
+    """SHA-142: Authorization: Bearer remains valid for programmatic API clients
+    (cookie alternative). Wrong token rejected."""
     with TempDb() as path:
         db = Database(path)
         try:
@@ -680,24 +732,35 @@ def test_bearer_token_middleware_protects_non_init_api():
         token = "test-secret-token-xyz"
         client = TestClient(create_app(path, token=token))
 
-        # /api/init/* is exempt — init wizard works before auth
-        assert client.get("/api/init/status").status_code == 200
-
-        # /api/status (non-init) requires the token
-        r = client.get("/api/status")
-        assert r.status_code == 401, r.text
-        assert r.json()["error"] == "unauthorized"
-
-        # Wrong token rejected
+        # Wrong token -> 401.
         r = client.get("/api/status", headers={"Authorization": "Bearer wrong"})
         assert r.status_code == 401, r.text
 
-        # Correct token passes the middleware (route may still 503 if the
-        # engine isn't fully loaded in this minimal fixture — the point is
-        # the middleware did not block)
+        # Correct Bearer passes the gate (route may 503 in this fixture; the
+        # point is the middleware did not block).
         r = client.get("/api/status", headers={"Authorization": f"Bearer {token}"})
         assert r.status_code != 401, r.text
 
-        # HTML pages inject the token so the browser fetch wrapper can use it
-        html = client.get("/").text
-        assert f'const ALLSPARK_TOKEN = "{token}"' in html
+        # No Bearer, no cookie -> 401.
+        assert client.get("/api/status").status_code == 401
+
+
+def test_loopback_no_token_allows_init_and_blocks_reinit():
+    """SHA-142: loopback (no token) keeps local trust but still enforces the
+    one-time bootstrap gate on init/complete."""
+    with TempDb() as path:
+        db = Database(path)
+        db.close()
+        client = TestClient(create_app(path))  # no token -> loopback
+
+        # First init succeeds.
+        r = client.post("/api/init/complete", json={
+            "language": "zh", "survivor_name": "T", "skip_model": True,
+        })
+        assert r.status_code == 200, r.text
+
+        # Second init blocked even on loopback.
+        r = client.post("/api/init/complete", json={
+            "language": "zh", "survivor_name": "T", "skip_model": True,
+        })
+        assert r.status_code == 410, r.text

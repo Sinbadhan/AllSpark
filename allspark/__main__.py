@@ -66,16 +66,17 @@ def main(argv: list[str] | None = None):
         if host == "0.0.0.0":
             logger.warning("Web UI is binding to 0.0.0.0; only do this on a trusted local network.")
 
-        # Non-loopback binding requires bearer-token auth on /api/* (audit H3).
-        # Auto-generate a token if none provided; the Web UI receives it via the
-        # HTML template and patches fetch to include the header automatically.
+        # Non-loopback binding requires auth on all HTML pages + /api/* (SHA-142).
+        # The token is printed once here and exchanged for an httpOnly cookie via
+        # the /login page; it is never embedded in HTML/DOM.
         web_token = None
         if host not in ("127.0.0.1", "localhost", "::1"):
             import secrets as _secrets
             web_token = args.web_token or _secrets.token_urlsafe(32)
             logger.warning(
-                "Bearer token auth ENABLED for /api/*. Token: %s "
-                "(pass via Authorization: Bearer <token>)", web_token,
+                "Auth ENABLED for Web UI (non-loopback). Token: %s "
+                "(open /login in the browser and enter it; token is never sent in HTML)",
+                web_token,
             )
 
         if _port_in_use(port, host):
