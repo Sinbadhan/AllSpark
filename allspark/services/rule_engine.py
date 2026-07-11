@@ -250,10 +250,10 @@ class RuleEngine:
             for w in warnings:
                 if w["level"] == "critical":
                     lines.append(f"🚨 {w['message']}")
-
-        for entry in entries:
+        if lines:
             lines.append("")
-            lines.append(self.knowledge.format_entry(entry))
+        # SHA-150: 1 main answer + 2 related links (not full-text concat).
+        lines.append(self.knowledge.format_answer(entries[:3]))
 
         return self.personality.format_response("\n".join(lines), add_greeting=True)
 
@@ -277,11 +277,10 @@ class RuleEngine:
         if self.knowledge:
             entries = self.knowledge.search(user_input, limit=3)
             if entries:
-                lines = []
-                for entry in entries:
-                    lines.append(self.knowledge.format_entry(entry))
-                    lines.append("")
-                return self.personality.format_response("\n".join(lines), add_greeting=True)
+                # SHA-150: 1 main answer + 2 related links (not full-text concat).
+                return self.personality.format_response(
+                    self.knowledge.format_answer(entries), add_greeting=True
+                )
 
         return self.personality.format_response(
             t("general_fallback", phase_suggestion=t(f"phase_fallback_{phase}")),

@@ -46,6 +46,8 @@ map_empty: 🗺️ Map is empty. Use 'map add' to add locations.
 no_knowledge: 'No knowledge entries found for ''{topic}''.
 
   Try other keywords, or type ''help'' to see all commands.'
+no_knowledge_match: No knowledge entry directly matches your question. Try rephrasing, or use "knowledge <keyword>" to search precisely.
+related_knowledge: Related Knowledge
 no_active_tasks: No active tasks.
 current_tasks_label: '📋 Current Tasks:'
 side_missions_label: '◇ Side Missions:'
