@@ -402,9 +402,9 @@ async function searchKnowledge() {
     '<div class="kb-entry" onclick="showKnowledge(\'' + e.id + '\')">' +
     '<div class="entry-title">' + escHtml(e.title) + '</div>' +
     '<div class="entry-meta">' + I18N.web_kb_meta_tier_fmt
-        .replace('{tier}', e.priority)
-        .replace('{category}', e.category)
-        .replace('{subcategory}', e.subcategory) + '</div>' +
+        .replace('{tier}', escHtml(String(e.priority)))
+        .replace('{category}', escHtml(e.category || ''))
+        .replace('{subcategory}', escHtml(e.subcategory || '')) + '</div>' +
     '<div class="entry-summary">' + escHtml(I18N.web_kb_summary_short_fmt.replace('{summary}', (e.summary || "").substring(0, 100))) + '</div></div>'
   ).join("");
 }
@@ -424,11 +424,11 @@ async function showKnowledge(id) {
     html += '<div class="section-label warn">' + I18N.web_warnings + '</div>' + entry.warnings.map(w => '<div class="text-warn text-sm">· ' + escHtml(w) + '</div>').join("");
   }
   html += '<div class="kb-meta">' + I18N.web_kb_meta_full_fmt
-      .replace('{tier}', entry.priority)
-      .replace('{category}', entry.category)
-      .replace('{subcategory}', entry.subcategory)
-      .replace('{verification}', entry.verification)
-      .replace('{source}', entry.source) + '</div></div>';
+      .replace('{tier}', escHtml(String(entry.priority)))
+      .replace('{category}', escHtml(entry.category || ''))
+      .replace('{subcategory}', escHtml(entry.subcategory || ''))
+      .replace('{verification}', escHtml(entry.verification || ''))
+      .replace('{source}', escHtml(entry.source || '')) + '</div></div>';
   container.innerHTML = html;
 }
 

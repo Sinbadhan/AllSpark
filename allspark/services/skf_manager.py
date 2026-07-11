@@ -1,6 +1,7 @@
 import hashlib
 import json
 import logging
+import re
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -20,6 +21,36 @@ SKF_LOCAL_DATA = "local_data.json"
 
 def _generate_spark_id() -> str:
     return f"spark-{uuid.uuid4().hex[:4]}-{uuid.uuid4().hex[:4]}"
+
+
+# SHA-147: SKF packages are untrusted input. These metadata fields are rendered
+# into Web pages (Repository/Dashboard) and must never carry HTML/JS
+# metacharacters. Strip them at import time as defense-in-depth alongside
+# output-side escaping (escHtml) in the templates.
+_HTML_META_RE = re.compile(r'[<>"\'`&]')
+_FIELD_MAXLEN = {
+    "id": 128,
+    "category": 64,
+    "subcategory": 64,
+    "verification": 32,
+    "source": 64,
+}
+
+
+def _sanitize_kf_field(value, field: str, default: str = "") -> str:
+    """Coerce, strip HTML metacharacters, and truncate an untrusted SKF field.
+
+    Returns ``default`` when the value is missing/empty after sanitization.
+    """
+    if value is None:
+        return default
+    if not isinstance(value, str):
+        value = str(value)
+    value = _HTML_META_RE.sub("", value).strip()
+    max_len = _FIELD_MAXLEN.get(field, 128)
+    if len(value) > max_len:
+        value = value[:max_len]
+    return value or default
 
 
 def _checksum(data: str) -> str:
@@ -196,17 +227,17 @@ class SKFPackage:
                 for item in knowledge_data:
                     content = item.get("content", {})
                     entry = KnowledgeEntry(
-                        id=item["id"],
-                        category=item.get("category", "uncategorized"),
-                        subcategory=item.get("subcategory", ""),
+                        id=_sanitize_kf_field(item.get("id"), "id", _generate_spark_id()),
+                        category=_sanitize_kf_field(item.get("category"), "category", "uncategorized"),
+                        subcategory=_sanitize_kf_field(item.get("subcategory"), "subcategory", ""),
                         priority=item.get("priority", 3),
                         title=item.get("title", ""),
                         summary=content.get("summary", ""),
                         steps=content.get("steps", []),
                         prerequisites=content.get("prerequisites", []),
                         warnings=content.get("warnings", []),
-                        verification=item.get("verification", "unverified"),
-                        source=item.get("source", "other_spark"),
+                        verification=_sanitize_kf_field(item.get("verification"), "verification", "unverified"),
+                        source=_sanitize_kf_field(item.get("source"), "source", "other_spark"),
                         version=item.get("version", 1),
                         language=item.get("language", "zh"),
                     )
