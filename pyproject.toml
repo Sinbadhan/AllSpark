@@ -7,7 +7,8 @@ name = "allspark"
 version = "1.0.3"
 description = "火种 AllSpark — 离线人工智能生存系统"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [
     { name = "AllSpark contributors" },
 ]
@@ -17,7 +18,6 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
-    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -29,7 +29,6 @@ dependencies = [
     # (e.g. starlette 1.x / fastapi pin drift). Audit L8.
     "pyyaml>=6.0,<7",
     "rich>=13.0,<16",
-    "prompt-toolkit>=3.0,<4",
     "jieba>=0.42,<1",
     "fastapi>=0.100,<1",
     "uvicorn>=0.20,<1",
