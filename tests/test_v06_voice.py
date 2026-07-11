@@ -1,4 +1,5 @@
 
+from allspark.core.i18n import set_language
 from allspark.services.voice import VoiceManager
 
 
@@ -16,6 +17,9 @@ class TestVoiceManager:
         assert "语音" in output or "Voice" in output
 
     def test_transcribe_without_model(self):
+        # These assertions check English message substrings; pin the language so
+        # the test does not depend on whatever a prior test left in the global.
+        set_language("en")
         vm = VoiceManager()
         result = vm.transcribe("/nonexistent/audio.wav")
         assert result["status"] == "error"
@@ -27,6 +31,7 @@ class TestVoiceManager:
         assert result["status"] == "error"
 
     def test_speak_without_tts(self):
+        set_language("en")
         vm = VoiceManager()
         result = vm.speak("test")
         if result["status"] == "error":

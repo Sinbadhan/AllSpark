@@ -45,6 +45,8 @@ map_empty: 🗺️ 地图为空。使用 'map add' 命令添加地点。
 no_knowledge: '知识库中暂无关于「{topic}」的条目。
 
   你可以尝试其他关键词，或使用 ''帮助'' 查看所有可用命令。'
+no_knowledge_match: 未能找到与你的问题直接匹配的知识条目。可以换一种问法，或用「知识 <关键词>」精确检索。
+related_knowledge: 相关知识
 no_active_tasks: 暂无活跃任务。
 help_title: 🔥 火种 AllSpark — 离线人工智能生存系统
 help_commands: 可用命令：
@@ -695,7 +697,7 @@ help_voice_recognize: '  语音 识别 [文件]            — 语音转文字'
 help_voice_speak: '  语音 说话 <文本>            — 语音合成'
 help_voice_diary: '  语音 日记                   — 语音日记'
 intent_keywords_water: 水 净水 水源 饮水
-intent_keywords_fire: 火 生火 点火 取暖 燃料
+intent_keywords_fire: 火 生火 点火 取暖 燃料 取火
 intent_keywords_food: 食物 可食用 狩猎 捕鱼 觅食
 intent_keywords_shelter: 庇护所 避难所 遮蔽 帐篷 搭建
 intent_keywords_medical: 急救 医疗 伤口 止血 CPR 受伤

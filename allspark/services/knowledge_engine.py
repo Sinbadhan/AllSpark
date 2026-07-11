@@ -74,6 +74,25 @@ class KnowledgeEngine:
         lines.append(f"  {t('verification')}: {entry.verification} | {t('source')}: {entry.source}")
         return "\n".join(lines)
 
+    def format_answer(self, entries: list) -> str:
+        """SHA-150: render 1 main answer (full) + up to 2 related links.
+
+        Replaces concatenating multiple full entries, which buried key actions
+        under a wall of text in both CLI and Web chat. The main entry already
+        carries source + verification level via format_entry; related entries
+        are shown as title+id links only.
+        """
+        if not entries:
+            return t("no_knowledge_match")
+        lines = [self.format_entry(entries[0])]
+        related = entries[1:3]
+        if related:
+            lines.append("")
+            lines.append(t("related_knowledge"))
+            for e in related:
+                lines.append(f"  • [{e.id}] {e.title}")
+        return "\n".join(lines)
+
     def get_relevant_knowledge(self, intent: str, resources: list = None) -> list:
         entries = self.search_by_language(intent, limit=5)
         if not entries and resources:

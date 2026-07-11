@@ -436,30 +436,47 @@ class Database:
         seen_ids = set()
         lang_clause = " AND k.language=?" if language else ""
         lang_params = [language] if language else []
+        fts_rows = []
         try:
             fts_query = tokenize_query(query)
             if fts_query:
-                rows = self.conn.execute(
-                    f"""SELECT k.* FROM knowledge k
-                       WHERE k.id IN (
-                           SELECT id FROM knowledge_fts WHERE knowledge_fts MATCH ?
-                       ){lang_clause}
-                       ORDER BY
-                           CASE
-                               WHEN k.title LIKE ? THEN 0
-                               WHEN k.summary LIKE ? THEN 1
-                               ELSE 2
-                           END,
-                           k.priority
-                       LIMIT ?""",
-                    [fts_query, *lang_params, f"%{query}%", f"%{query}%", limit]
+                # SHA-150: bm25 relevance (title/category weighted high) instead
+                # of priority. The old LIKE %query% ordering never matched
+                # Chinese substrings, so results fell back to priority order and
+                # surfaced 伤口处理 before 煮沸净水法 for "如何安全净水". Fetch wider
+                # than `limit` then re-rank so title-token matches surface above
+                # long broad entries that merely mention the terms in their body.
+                # knowledge_fts column order: (id, title, summary, steps,
+                # category, subcategory); bm25 weights follow the same order.
+                fetch_n = max(limit * 4, limit + 10)
+                fts_rows = self.conn.execute(
+                    f"""SELECT k.* FROM knowledge_fts
+                        JOIN knowledge k ON k.id = knowledge_fts.id
+                        WHERE knowledge_fts MATCH ?{lang_clause}
+                        ORDER BY bm25(knowledge_fts, 0, 10.0, 3.0, 1.0, 4.0, 2.0)
+                        LIMIT ?""",
+                    [fts_query, *lang_params, fetch_n]
                 ).fetchall()
-                for r in rows:
-                    if r["id"] not in seen_ids:
-                        seen_ids.add(r["id"])
-                        results.append(r)
         except Exception as e:
             logger.warning("FTS query failed, falling back to LIKE: %s", e)
+
+        # Re-rank: entries whose title contains a query term (len>=2) rank first.
+        # Stable sort preserves bm25 order within each group, so a title match
+        # (e.g. 取火 in 打火石取火法) beats a body-only mention in a long broad
+        # entry (e.g. 儿童教育 mentioning 生火 in its summary). Substring (not
+        # token-equal) is used because jieba does not always segment the query
+        # and the title the same way (e.g. 打火石取火法 has no standalone 取火
+        # token). Case-insensitive so en "fire" matches title "Fire".
+        query_terms = [t.lower() for t in tokenize(query).split() if len(t) >= 2] if query else []
+        if query_terms:
+            fts_rows = sorted(
+                fts_rows,
+                key=lambda r: 0 if any(qt in r["title"].lower() for qt in query_terms) else 1,
+            )
+        for r in fts_rows:
+            if r["id"] not in seen_ids:
+                seen_ids.add(r["id"])
+                results.append(r)
 
         if len(results) < limit:
             keywords = query.split() or [query]
