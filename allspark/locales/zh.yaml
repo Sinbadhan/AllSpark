@@ -1236,6 +1236,8 @@ web_page_title_dashboard: 仪表盘
 web_page_title_system: 系统监控
 web_page_title_executions: 任务执行
 web_page_title_config: 配置
+web_mobile_menu_open: 打开菜单
+web_mobile_menu_close: 关闭菜单
 web_page_title_repository: 资料库
 web_login_title: ALLSPARK 登录
 web_login_hint: 请输入服务启动时打印的访问令牌
