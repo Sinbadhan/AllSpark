@@ -1514,6 +1514,12 @@ web_weather_pressure: 气压（hPa）
 web_weather_set_pressure: 手动设定气压
 web_weather_done: 已更新
 web_weather_forecast: 12 小时预报
+web_weather_temp: 温度
+web_weather_pressure_trend: 气压趋势
+web_weather_humidity: 湿度
+web_weather_light: 光照
+web_weather_no_data: 暂无数据
+web_weather_no_sensors: 无传感器数据（手动输入气压以预测）
 web_environment_title: 环境评估
 web_environment_loading: 评估中…
 web_environment_climate: 气候
@@ -1647,6 +1653,9 @@ web_repo_download_btn: 下载
 web_system_integrity_stable: 稳定
 web_system_integrity_degraded: 退化
 web_system_integrity_critical: 危急
+web_system_integrity_healthy: 健康
+web_system_integrity_unavailable: 不可用
+web_system_integrity_unknown: 未知
 web_system_module_loaded: 已加载
 web_system_module_available: 可用
 web_system_module_disabled: 已禁用

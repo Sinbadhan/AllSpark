@@ -234,19 +234,23 @@ async function refreshSystem() {
 
     const warningCount = (data.warnings || []).length;
     const errorCount = (data.warnings || []).filter(w => w.level === "critical").length;
-    const integrity = Math.max(0, 100 - errorCount * 10 - warningCount * 2);
-    document.getElementById("integrity-value").textContent = integrity.toFixed(0) + "%";
+    // SHA-149: integrity comes from /api/system/health (factors in LLM/modules,
+    // not just warning count) so an unloaded LLM or unsupported modules never
+    // show 100% / "stable".
+    const health = await api("/api/system/health");
+    const score = (health && typeof health.score === "number") ? health.score : null;
+    const state = (health && health.state) || "unknown";
+    document.getElementById("integrity-value").textContent = (score === null) ? "--" : score.toFixed(0) + "%";
     const intStatus = document.getElementById("integrity-status");
-    if (integrity > 90) {
-      intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">check_circle</span> ' + I18N.web_system_integrity_stable;
-      intStatus.style.color = "var(--success)";
-    } else if (integrity > 60) {
-      intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">warning</span> ' + I18N.web_system_integrity_degraded;
-      intStatus.style.color = "var(--warning)";
-    } else {
-      intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> ' + I18N.web_system_integrity_critical;
-      intStatus.style.color = "var(--critical)";
-    }
+    const stateMap = {
+      healthy: {icon: "check_circle", color: "var(--success)", label: I18N.web_system_integrity_healthy},
+      degraded: {icon: "warning", color: "var(--warning)", label: I18N.web_system_integrity_degraded},
+      unavailable: {icon: "error", color: "var(--critical)", label: I18N.web_system_integrity_unavailable},
+      unknown: {icon: "help", color: "var(--secondary)", label: I18N.web_system_integrity_unknown},
+    };
+    const s = stateMap[state] || stateMap.unknown;
+    intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">' + s.icon + '</span> ' + s.label;
+    intStatus.style.color = s.color;
     document.getElementById("error-count").textContent = I18N.web_system_errors + ": " + errorCount;
     document.getElementById("warning-count").textContent = I18N.web_system_warnings + ": " + warningCount;
 
@@ -572,16 +576,38 @@ refreshComms();
 
 /* === Weather === */
 async function refreshWeather() {
+  const curEl = document.getElementById("weather-current");
+  const fcEl = document.getElementById("weather-forecast");
   try {
     const data = await api("/api/weather");
     const cur = data.current || {};
-    document.getElementById("weather-current").textContent =
-      Object.keys(cur).map(k => k + ": " + cur[k]).join("  ·  ");
+    // SHA-149: render known fields with labels, skip null/empty; never dump
+    // raw keys or null values (old code showed "pressure_hpa: null · ...").
+    const fields = [
+      ["temperature_c", I18N.web_weather_temp],
+      ["pressure_hpa", I18N.web_weather_pressure],
+      ["pressure_trend", I18N.web_weather_pressure_trend],
+      ["humidity_pct", I18N.web_weather_humidity],
+      ["light_level", I18N.web_weather_light],
+    ];
+    const parts = [];
+    for (const [k, label] of fields) {
+      const v = cur[k];
+      if (v !== null && v !== undefined && v !== "") {
+        parts.push(label + ": " + v);
+      }
+    }
+    curEl.textContent = parts.length ? parts.join("  ·  ") : I18N.web_weather_no_sensors;
     const fc = data.forecast || {};
-    const summary = fc.summary || fc.description || JSON.stringify(fc);
-    document.getElementById("weather-forecast").innerHTML =
-      "<strong>{{ t('web_weather_forecast') }}:</strong> " + escHtml(summary);
-  } catch(e) { document.getElementById("weather-current").textContent = String(e); }
+    const hasData = fc.forecast && fc.forecast !== "no_data" && fc.forecast !== "unknown";
+    const advice = fc.advice || "";
+    fcEl.innerHTML = "<strong>" + I18N.web_weather_forecast + ":</strong> " +
+      (hasData ? escHtml(fc.forecast) : '<span class="text-secondary">' + I18N.web_weather_no_data + '</span>') +
+      (advice ? '<div class="text-secondary" style="font-size:11px;margin-top:2px;">' + escHtml(advice) + '</div>' : '');
+  } catch(e) {
+    curEl.textContent = I18N.web_weather_no_data;
+    fcEl.innerHTML = "";
+  }
 }
 async function setPressure() {
   const hpa = parseFloat(document.getElementById("weather-pressure").value);
