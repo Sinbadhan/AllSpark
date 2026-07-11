@@ -510,7 +510,7 @@ table { border-collapse: collapse; width: 100%; }
       <p>{{ t('web_kernel_version', version=version) }}</p>
     </div>
   </div>
-  <button class="exec-btn" onclick="location.href='/'">
+  <button class="exec-btn" onclick="location.href='/executions'">
     <span class="material-symbols-outlined" style="font-size:16px;">play_arrow</span> {{ t('web_execute_task') }}
   </button>
   <nav>
@@ -520,11 +520,6 @@ table { border-collapse: collapse; width: 100%; }
     <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined">settings_input_component</span> {{ t('web_nav_config') }}</a>
     <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined">folder_open</span> {{ t('web_nav_repository') }}</a>
   </nav>
-  <div class="sidebar-footer">
-    <a href="#" style="display:flex;align-items:center;gap:12px;padding:8px 12px;color:var(--secondary);border-radius:var(--radius);transition:all 0.15s;">
-      <span class="material-symbols-outlined">help</span> {{ t('web_nav_docs') }}
-    </a>
-  </div>
 </div>
 
 <!-- Main Content Wrapper -->
@@ -548,7 +543,6 @@ table { border-collapse: collapse; width: 100%; }
       <button class="icon-btn" id="about-btn" title="{{ t('web_about_title') }}" aria-label="{{ t('web_about_title') }}" onclick="openAbout()">
         <span class="material-symbols-outlined" aria-hidden="true">info</span>
       </button>
-      <button class="icon-btn" title="{{ t('web_page_title_config') }}" aria-label="{{ t('web_page_title_config') }}" onclick="location.href='/config'"><span class="material-symbols-outlined" aria-hidden="true">settings</span></button>
     </div>
   </header>
 

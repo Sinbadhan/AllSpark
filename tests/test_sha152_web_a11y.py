@@ -63,7 +63,8 @@ class TestBaseA11y:
         assert 'aria-label="{{ t(\'web_notifications_title\') }}"' in t
         assert 'aria-label="{{ t(\'web_lang_switch_label\') }}"' in t
         assert 'aria-label="{{ t(\'web_about_title\') }}"' in t
-        assert 'aria-label="{{ t(\'web_page_title_config\') }}"' in t
+        # SHA-156: the redundant settings icon (-> /config, dup of the nav
+        # link) was removed; /config is reached via the nav link on all platforms.
 
     def test_icon_glyphs_are_aria_hidden(self):
         t = _read("base.html")
