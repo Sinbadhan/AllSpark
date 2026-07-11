@@ -11,9 +11,6 @@ CLAUDE.md
 *.backup
 *.orig
 
-# Tests (not for public repo)
-tests/
-
 # Python
 __pycache__/
 *.py[cod]

@@ -41,6 +41,9 @@ dev = [
     "pytest>=7.0,<10",
     "ruff>=0.4,<1",
     "mypy>=1.8,<3",
+    # starlette 1.x TestClient requires httpx2 (httpx is deprecated; SHA-145).
+    # Declared so CI fresh installs can collect the Web/TestClient test modules.
+    "httpx2>=0.2,<3",
 ]
 rag = [
     "sentence-transformers>=2.7",
