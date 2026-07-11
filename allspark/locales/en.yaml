@@ -1399,6 +1399,18 @@ web_config_output_console: Output Console
 web_config_ready: Configuration viewer ready.
 web_config_awaiting: Select a configuration to view.
 web_config_disabled_note: This view is read-only; validate and save are disabled.
+web_config_section_identity: Identity
+web_config_version: Version
+web_config_language: Language
+web_config_license: License
+web_config_homepage: Homepage
+web_config_section_runtime: Runtime
+web_config_health: Health
+web_config_llm: LLM
+web_config_hw_tier: Hardware tier
+web_config_section_flags: Feature flags
+web_config_llm_loaded: loaded
+web_config_llm_unloaded: not loaded
 web_repository_title: Repository
 web_repository_subtitle: Knowledge, experience, models and SKF packages
 web_repository_files: Files
