@@ -1361,6 +1361,20 @@ web_repository_select_section: 请从左侧选择一项
 web_repository_no_knowledge: 没有知识条目
 web_repository_no_experience: 没有经验记录
 web_repository_skf_note: SKF 知识包导入/导出在 Web UI 中暂未开放，请使用 CLI。
+web_repo_search: 搜索标题/摘要
+web_repo_category: 分类
+web_repo_tier: 层级
+web_repo_verification: 验证
+web_repo_language: 语言
+web_repo_bilingual: 双语
+web_repo_all: 全部
+web_repo_page: 第 {p} / {n} 页
+web_repo_prev: 上一页
+web_repo_next: 下一页
+web_repo_no_match: 无匹配条目
+web_repo_results: 共 {n} 条
+web_repo_detail_title: 知识详情
+web_repo_close: 关闭
 web_repository_export_disabled: SKF 导出尚未在 Web UI 中提供，请使用 CLI。
 web_repository_import_disabled: SKF 导入尚未在 Web UI 中提供，请使用 CLI。
 web_footer_resources: 资源
@@ -1568,6 +1582,8 @@ web_th_id: ID
 web_th_title: 标题
 web_th_category: 分类
 web_th_tier: 等级
+web_th_verification: 验证
+web_th_source: 来源
 web_th_label: 标签
 web_th_size: 大小
 web_th_when: 时间

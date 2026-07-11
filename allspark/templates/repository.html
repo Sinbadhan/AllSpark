@@ -28,8 +28,9 @@
       <h3 class="text-sm font-semibold text-on-surface flex items-center gap-1">
         <span class="material-symbols-outlined text-primary text-sm">snippet_folder</span> {{ t('web_repository_files') }}
       </h3>
+      <button class="md:hidden icon-btn" aria-label="{{ t('web_mobile_menu_open') }}" onclick="document.getElementById('file-tree').classList.toggle('hidden')"><span class="material-symbols-outlined" aria-hidden="true">menu</span></button>
     </div>
-    <ul class="text-sm p-1 flex-1 overflow-y-auto" id="file-tree">
+    <ul class="text-sm p-1 flex-1 overflow-y-auto hidden md:block" id="file-tree">
       <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors" onclick="showSection('knowledge')">
         <span class="material-symbols-outlined text-sm">folder</span> /knowledge
       </li>
@@ -90,6 +91,22 @@ const REPO_I18N = {
   no_knowledge: "{{ t('web_repository_no_knowledge') }}",
   no_experience: "{{ t('web_repository_no_experience') }}",
   skf_note: "{{ t('web_repository_skf_note') }}",
+  search: "{{ t('web_repo_search') }}",
+  category: "{{ t('web_repo_category') }}",
+  tier: "{{ t('web_repo_tier') }}",
+  verification: "{{ t('web_repo_verification') }}",
+  language: "{{ t('web_repo_language') }}",
+  bilingual: "{{ t('web_repo_bilingual') }}",
+  all: "{{ t('web_repo_all') }}",
+  prev: "{{ t('web_repo_prev') }}",
+  next: "{{ t('web_repo_next') }}",
+  no_match: "{{ t('web_repo_no_match') }}",
+  detail_title: "{{ t('web_repo_detail_title') }}",
+  close: "{{ t('web_repo_close') }}",
+  steps: "{{ t('web_steps') }}",
+  warnings: "{{ t('web_warnings') }}",
+  verification_label: "{{ t('web_th_verification') }}",
+  source: "{{ t('web_th_source') }}",
 };
 const SKF_I18N = {
   path_hint: "{{ t('web_skf_path_placeholder') }}",
@@ -340,39 +357,149 @@ async function addMember() {
   } catch(e) { notify(e); }
 }
 
+let _repoEl = null;
+let _repoEntries = [];
+let _repoFilters = { q: "", category: "", tier: "", verification: "", lang: "zh" };
+let _repoPage = 1;
+const _repoPageSize = 20;
+
+function _repoCurrentLang() {
+  try { return LANG || "zh"; } catch (e) { return "zh"; }
+}
+
+function _repoSelect(options, current, allLabel) {
+  return [`<option value="">${escHtml(allLabel)}</option>`]
+    .concat(options.map(v => `<option value="${escHtml(String(v))}"${String(v) === current ? ' selected' : ''}>${escHtml(String(v))}</option>`))
+    .join("");
+}
+
 async function loadKnowledgeTable(el) {
+  _repoEl = el;
   const cats = await api("/api/knowledge/categories");
   if (!cats.length) {
     el.innerHTML = '<div class="text-secondary text-sm p-4 text-center">' + REPO_I18N.no_knowledge + '</div>';
     return;
   }
-
-  let allEntries = [];
+  _repoEntries = [];
   for (const cat of cats) {
     const entries = await api(`/api/knowledge/category/${cat.category}`);
-    // /api/knowledge/category returns {id,title,summary,priority} without the
-    // category field, so tag it back on to avoid a missing-value cell (SHA-55).
-    allEntries = allEntries.concat(entries.map(e => ({ ...e, category: cat.category })));
+    _repoEntries = _repoEntries.concat(entries);
   }
+  // SHA-153: default to current language; user can switch to bilingual.
+  _repoFilters = { q: "", category: "", tier: "", verification: "", lang: _repoCurrentLang() };
+  _repoPage = 1;
+  _repoRender();
+}
 
-  el.innerHTML = `<table class="w-full text-left border-collapse min-w-[600px]">
-    <thead class="sticky top-0 bg-surface-container-high border-b border-surface-container-high z-10">
+function _repoRender() {
+  const el = _repoEl;
+  if (!el) return;
+  const f = _repoFilters;
+  const filtered = _repoEntries.filter(e => {
+    if (f.lang !== "all" && e.language && e.language !== f.lang) return false;
+    if (f.category && e.category !== f.category) return false;
+    if (f.tier && String(e.priority) !== f.tier) return false;
+    if (f.verification && e.verification !== f.verification) return false;
+    if (f.q) {
+      const q = f.q.toLowerCase();
+      if (!(e.title || "").toLowerCase().includes(q) && !(e.summary || "").toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  const totalPages = Math.max(1, Math.ceil(filtered.length / _repoPageSize));
+  if (_repoPage > totalPages) _repoPage = totalPages;
+  const start = (_repoPage - 1) * _repoPageSize;
+  const pageItems = filtered.slice(start, start + _repoPageSize);
+  const categories = [...new Set(_repoEntries.map(e => e.category))].sort();
+  const tiers = [...new Set(_repoEntries.map(e => String(e.priority)))].sort();
+  const verifs = [...new Set(_repoEntries.map(e => e.verification).filter(Boolean))].sort();
+  const selStyle = "background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 8px;border-radius:4px;font-size:12px;";
+  const inpStyle = selStyle + "flex:1;min-width:140px;";
+  const bar = `
+    <div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border-bottom:1px solid var(--surface-container-high);position:sticky;top:0;background:var(--surface);z-index:10;">
+      <input id="repo-search" placeholder="${escHtml(REPO_I18N.search)}" value="${escHtml(f.q)}" style="${inpStyle}"/>
+      <select id="repo-f-cat" style="${selStyle}">${_repoSelect(categories, f.category, REPO_I18N.category)}</select>
+      <select id="repo-f-tier" style="${selStyle}">${_repoSelect(tiers, f.tier, REPO_I18N.tier)}</select>
+      <select id="repo-f-ver" style="${selStyle}">${_repoSelect(verifs, f.verification, REPO_I18N.verification)}</select>
+      <select id="repo-f-lang" style="${selStyle}">
+        <option value="${_repoCurrentLang()}"${f.lang === _repoCurrentLang() ? ' selected' : ''}>${escHtml(_repoCurrentLang())}</option>
+        <option value="all"${f.lang === 'all' ? ' selected' : ''}>${escHtml(REPO_I18N.bilingual)}</option>
+      </select>
+    </div>`;
+  const rows = pageItems.length ? pageItems.map(e => `
+    <tr class="hover:bg-surface-variant transition-colors border-b border-surface-container-high" style="cursor:pointer;" onclick="openRepoDetail('${escHtml(e.id)}')">
+      <td class="p-3"><span class="text-primary hover:underline font-mono text-xs" title="${escHtml(e.id)}">${escHtml(e.id)}</span></td>
+      <td class="p-3 text-on-surface">${escHtml(e.title)}</td>
+      <td class="p-3 text-secondary">${escHtml(e.category)}</td>
+      <td class="p-3 text-secondary">${escHtml(String(e.verification || ""))}</td>
+      <td class="p-3 text-secondary text-right">${escHtml(String(e.priority))}</td>
+    </tr>`).join("") : `<tr><td colspan="5" class="p-4 text-center text-secondary">${escHtml(REPO_I18N.no_match)}</td></tr>`;
+  const pager = `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-top:1px solid var(--surface-container-high);font-size:12px;color:var(--secondary);">
+      <span>${escHtml(REPO_I18N.results.replace('{n}', String(filtered.length)))}</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="action-btn action-outline" style="padding:3px 10px;font-size:11px;"${_repoPage <= 1 ? ' disabled' : ''} onclick="_repoGo(${_repoPage - 1})">${escHtml(REPO_I18N.prev)}</button>
+        <span style="padding:3px 8px;">${_repoPage} / ${totalPages}</span>
+        <button class="action-btn action-outline" style="padding:3px 10px;font-size:11px;"${_repoPage >= totalPages ? ' disabled' : ''} onclick="_repoGo(${_repoPage + 1})">${escHtml(REPO_I18N.next)}</button>
+      </div>
+    </div>`;
+  el.innerHTML = bar + `<table class="w-full text-left border-collapse min-w-[600px]">
+    <thead class="bg-surface-container-high border-b border-surface-container-high">
       <tr>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_id}</th>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_title}</th>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_category}</th>
+        <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${escHtml(REPO_I18N.verification)}</th>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_tier}</th>
       </tr>
     </thead>
-    <tbody class="text-sm">${allEntries.map(e => `
-      <tr class="hover:bg-surface-variant transition-colors border-b border-surface-container-high">
-        <td class="p-3"><span class="text-primary hover:underline font-mono text-xs">${escHtml((e.id || "").substring(0, 8))}</span></td>
-        <td class="p-3 text-on-surface">${escHtml(e.title)}</td>
-        <td class="p-3 text-secondary">${escHtml(e.category)}</td>
-        <td class="p-3 text-secondary text-right">${escHtml(String(e.priority))}</td>
-      </tr>
-    `).join("")}</tbody></table>`;
+    <tbody class="text-sm">${rows}</tbody></table>` + pager;
+  const si = document.getElementById("repo-search");
+  if (si) si.oninput = () => { _repoFilters.q = si.value; _repoPage = 1; _repoRender(); };
+  const bind = (id, key) => {
+    const s = document.getElementById(id);
+    if (s) s.onchange = () => { _repoFilters[key] = s.value; _repoPage = 1; _repoRender(); };
+  };
+  bind("repo-f-cat", "category");
+  bind("repo-f-tier", "tier");
+  bind("repo-f-ver", "verification");
+  bind("repo-f-lang", "lang");
 }
+
+function _repoGo(p) { _repoPage = p; _repoRender(); }
+
+async function openRepoDetail(id) {
+  let modal = document.getElementById("repo-detail-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "repo-detail-modal";
+    modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
+    document.body.appendChild(modal);
+    modal.addEventListener("click", e => { if (e.target === modal) closeRepoDetail(); });
+    modal.addEventListener("keydown", e => { if (e.key === "Escape") closeRepoDetail(); });
+  }
+  modal.innerHTML = `<div style="color:var(--secondary);">${escHtml(REPO_I18N.detail_title)}…</div>`;
+  modal.style.display = "flex";
+  try {
+    const e = await api("/api/knowledge/" + encodeURIComponent(id));
+    const steps = (e.steps || []).map(s => `<li>${escHtml(s)}</li>`).join("");
+    const warns = (e.warnings || []).map(w => `<div class="text-warn text-sm">· ${escHtml(w)}</div>`).join("");
+    modal.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-labelledby="repo-detail-title" style="max-width:520px;width:92%;max-height:80vh;overflow:auto;padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h3 id="repo-detail-title" style="margin:0;font-size:16px;color:var(--primary-container);">${escHtml(e.title)}</h3>
+        <button class="icon-btn" aria-label="${escHtml(REPO_I18N.close)}" onclick="closeRepoDetail()"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      </div>
+      <div class="text-sm text-secondary" style="margin-bottom:8px;">${escHtml(e.category)} / ${escHtml(e.subcategory || "")} · ${escHtml(e.id)}</div>
+      <p class="text-sm" style="margin-bottom:10px;">${escHtml(e.summary)}</p>
+      ${steps ? `<div class="text-xs text-secondary uppercase tracking-wider" style="margin-bottom:4px;">${escHtml(REPO_I18N.steps)}</div><ol style="list-style:decimal inside;font-size:13px;margin-bottom:10px;">${steps}</ol>` : ""}
+      ${warns ? `<div class="text-xs text-secondary uppercase tracking-wider" style="margin-bottom:4px;">${escHtml(REPO_I18N.warnings)}</div>${warns}` : ""}
+      <div class="text-xs text-secondary" style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">${escHtml(REPO_I18N.verification_label)}: ${escHtml(e.verification || "")} · ${escHtml(REPO_I18N.source)}: ${escHtml(e.source || "")}</div>
+    </div>`;
+  } catch (ex) {
+    modal.innerHTML = `<div class="card" role="dialog" aria-modal="true" style="max-width:380px;width:90%;padding:20px;"><p class="text-sm">${escHtml(String(ex))}</p><button class="action-btn action-outline" style="margin-top:10px;" onclick="closeRepoDetail()">${escHtml(REPO_I18N.close)}</button></div>`;
+  }
+}
+function closeRepoDetail() { const m = document.getElementById("repo-detail-modal"); if (m) m.style.display = "none"; }
 
 async function loadExperienceTable(el) {
   const data = await api("/api/experience?limit=50");
