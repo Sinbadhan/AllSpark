@@ -1299,6 +1299,8 @@ web_page_title_dashboard: Dashboard
 web_page_title_system: System Monitor
 web_page_title_executions: Executions
 web_page_title_config: Config
+web_mobile_menu_open: Open menu
+web_mobile_menu_close: Close menu
 web_page_title_repository: Repository
 web_login_title: ALLSPARK Login
 web_login_hint: Enter the access token printed at server startup.

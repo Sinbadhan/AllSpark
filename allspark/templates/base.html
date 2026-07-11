@@ -480,16 +480,16 @@ table { border-collapse: collapse; width: 100%; }
 <!-- Mobile TopBar -->
 <div class="mobile-topbar">
   <div style="font-size:20px;font-weight:700;color:var(--primary-container);letter-spacing:-0.02em;">ALLSPARK</div>
-  <button onclick="document.getElementById('mobile-nav').classList.toggle('open')" style="color:var(--primary-container);">
-    <span class="material-symbols-outlined">menu</span>
+  <button onclick="document.getElementById('mobile-nav').classList.toggle('open')" style="color:var(--primary-container);" aria-label="{{ t('web_mobile_menu_open') }}">
+    <span class="material-symbols-outlined" aria-hidden="true">menu</span>
   </button>
 </div>
 
 <!-- Mobile Nav Overlay -->
 <div id="mobile-nav" class="mobile-nav-overlay">
   <div style="display:flex;justify-content:flex-end;padding:12px;">
-    <button onclick="document.getElementById('mobile-nav').classList.toggle('open')" style="color:var(--primary-container);">
-      <span class="material-symbols-outlined">close</span>
+    <button onclick="document.getElementById('mobile-nav').classList.toggle('open')" style="color:var(--primary-container);" aria-label="{{ t('web_mobile_menu_close') }}">
+      <span class="material-symbols-outlined" aria-hidden="true">close</span>
     </button>
   </div>
   <nav>
@@ -541,14 +541,14 @@ table { border-collapse: collapse; width: 100%; }
         <input placeholder="{{ t('web_search_placeholder') }}" type="text" id="global-search"/>
         <span class="material-symbols-outlined" style="color:var(--on-surface-variant);font-size:18px;">search</span>
       </div>
-      <button class="icon-btn" id="notifications-btn" title="{{ t('web_notifications_title') }}" onclick="showNotifications()"><span class="material-symbols-outlined">notifications</span></button>
-      <button class="icon-btn" id="lang-toggle-btn" title="{{ t('web_lang_switch_label') }}" onclick="toggleLanguage()">
-        <span class="material-symbols-outlined">translate</span>
+      <button class="icon-btn" id="notifications-btn" title="{{ t('web_notifications_title') }}" aria-label="{{ t('web_notifications_title') }}" onclick="showNotifications()"><span class="material-symbols-outlined" aria-hidden="true">notifications</span></button>
+      <button class="icon-btn" id="lang-toggle-btn" title="{{ t('web_lang_switch_label') }}" aria-label="{{ t('web_lang_switch_label') }}" onclick="toggleLanguage()">
+        <span class="material-symbols-outlined" aria-hidden="true">translate</span>
       </button>
-      <button class="icon-btn" id="about-btn" title="{{ t('web_about_title') }}" onclick="openAbout()">
-        <span class="material-symbols-outlined">info</span>
+      <button class="icon-btn" id="about-btn" title="{{ t('web_about_title') }}" aria-label="{{ t('web_about_title') }}" onclick="openAbout()">
+        <span class="material-symbols-outlined" aria-hidden="true">info</span>
       </button>
-      <button class="icon-btn" onclick="location.href='/config'"><span class="material-symbols-outlined">settings</span></button>
+      <button class="icon-btn" title="{{ t('web_page_title_config') }}" aria-label="{{ t('web_page_title_config') }}" onclick="location.href='/config'"><span class="material-symbols-outlined" aria-hidden="true">settings</span></button>
     </div>
   </header>
 

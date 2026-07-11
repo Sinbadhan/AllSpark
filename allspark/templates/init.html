@@ -102,7 +102,7 @@ input { font-family: inherit; }
 .lang-btn {
   flex: 1; padding: 16px; border: 2px solid var(--border); border-radius: var(--radius-lg);
   background: var(--bg); color: var(--on-surface); cursor: pointer; text-align: center;
-  transition: all 0.15s;
+  transition: all 0.15s; font: inherit;
 }
 .lang-btn:hover { border-color: var(--primary-container); }
 .lang-btn.selected { border-color: var(--primary-container); background: rgba(255,107,53,0.1); }
@@ -167,7 +167,7 @@ input { font-family: inherit; }
 .q-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .q-chip {
   padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 11px;
-  color: var(--on-surface-variant); cursor: pointer; transition: all 0.15s; background: var(--bg);
+  color: var(--on-surface-variant); cursor: pointer; transition: all 0.15s; background: var(--bg); font: inherit;
 }
 .q-chip:hover { border-color: var(--primary-container); }
 .q-chip.selected { border-color: var(--primary-container); background: rgba(255,107,53,0.12); color: var(--primary-container); }
@@ -211,14 +211,14 @@ input { font-family: inherit; }
     <div class="step hidden" id="step-2">
       <h2><span class="material-symbols-outlined">language</span> <span data-i18n="web_init_lang_select">Language</span></h2>
       <div class="lang-grid">
-        <div class="lang-btn" onclick="selectLang('zh', this)" id="lang-zh">
+        <button type="button" class="lang-btn" onclick="selectLang('zh', this)" id="lang-zh" aria-pressed="false">
           <div class="lang-name">中文</div>
           <div class="lang-sub">Chinese</div>
-        </div>
-        <div class="lang-btn" onclick="selectLang('en', this)" id="lang-en">
+        </button>
+        <button type="button" class="lang-btn" onclick="selectLang('en', this)" id="lang-en" aria-pressed="false">
           <div class="lang-name">English</div>
           <div class="lang-sub">English</div>
-        </div>
+        </button>
       </div>
       <div class="step-footer">
         <button onclick="goStep(1)" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
@@ -471,8 +471,9 @@ async function loadHardware() {
 
 function selectLang(lang, el) {
   selectedLang = lang;
-  document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("selected"));
+  document.querySelectorAll(".lang-btn").forEach(b => { b.classList.remove("selected"); b.setAttribute("aria-pressed", "false"); });
   el.classList.add("selected");
+  el.setAttribute("aria-pressed", "true");
   document.getElementById("btn-step2-next").disabled = false;
   applyI18n();
 }
@@ -599,7 +600,8 @@ function renderQuestionnaire() {
   function chipField(id, opts, labelKey, selected) {
     const chips = opts.map(o => {
       const on = selected.has(o.key) ? ' selected' : '';
-      return '<span class="q-chip' + on + '" data-key="' + o.key + '" onclick="toggleChip(this,\'' + id + '\')">' + escQ(qLabel(o)) + '</span>';
+      const pressed = selected.has(o.key) ? 'true' : 'false';
+      return '<button type="button" class="q-chip' + on + '" data-key="' + o.key + '" aria-pressed="' + pressed + '" onclick="toggleChip(this,\'' + id + '\')">' + escQ(qLabel(o)) + '</button>';
     }).join("");
     return '<div class="q-field"><div class="q-label">' + i18n(labelKey) + optional + '</div><div class="q-chips" id="' + id + '">' + chips + '</div></div>';
   }
@@ -621,8 +623,8 @@ function escQ(s) {
 function toggleChip(el, id) {
   const key = el.getAttribute("data-key");
   const set = id === "q-threats" ? selectedThreats : selectedSkills;
-  if (set.has(key)) { set.delete(key); el.classList.remove("selected"); }
-  else { set.add(key); el.classList.add("selected"); }
+  if (set.has(key)) { set.delete(key); el.classList.remove("selected"); el.setAttribute("aria-pressed", "false"); }
+  else { set.add(key); el.classList.add("selected"); el.setAttribute("aria-pressed", "true"); }
 }
 
 async function completeInit() {

@@ -355,7 +355,7 @@ async function refreshDashboard() {
     const remainingText = hasEstimate
       ? I18N.web_remaining_hours_fmt.replace('{h}', Math.round(r.remaining_hours))
       : I18N.web_remaining_unknown;
-    return '<div class="resource-card span-4">' +
+    return '<div class="resource-card span-4" role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',' + (r.amount||0) + ',' + (r.daily_consumption||0) + ',' + (r.daily_intake||0) + ')" onkeydown="' + keyAction + '">' +
       '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + r.amount + r.unit + ' ' + editBtn + '</span></div>' +
       '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + statusColor + '"></div></div>' +
       '<div class="card-status">' + statusText + '</div>' +
@@ -570,13 +570,13 @@ function openResourceEdit(rtype, amount, consumption, intake) {
     modal.id = "res-edit-modal";
     modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
     modal.innerHTML = `
-      <div class="card" style="max-width:380px;width:90%;padding:20px;">
+      <div class="card" role="dialog" aria-modal="true" aria-labelledby="res-edit-title" style="max-width:380px;width:90%;padding:20px;">
         <h3 id="res-edit-title" style="margin:0 0 12px;">${RES_I18N.edit_label}</h3>
-        <label style="font-size:12px;color:var(--secondary);">${RES_I18N.amount}</label>
+        <label for="res-edit-amount" style="font-size:12px;color:var(--secondary);">${RES_I18N.amount}</label>
         <input id="res-edit-amount" type="number" step="any" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;margin:4px 0 10px;border-radius:4px;"/>
-        <label style="font-size:12px;color:var(--secondary);">${RES_I18N.consumption}</label>
+        <label for="res-edit-consumption" style="font-size:12px;color:var(--secondary);">${RES_I18N.consumption}</label>
         <input id="res-edit-consumption" type="number" step="any" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;margin:4px 0 10px;border-radius:4px;"/>
-        <label style="font-size:12px;color:var(--secondary);">${RES_I18N.intake}</label>
+        <label for="res-edit-intake" style="font-size:12px;color:var(--secondary);">${RES_I18N.intake}</label>
         <input id="res-edit-intake" type="number" step="any" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;margin:4px 0 10px;border-radius:4px;"/>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
           <button class="action-btn action-outline" onclick="closeResEdit()">${RES_I18N.cancel}</button>
@@ -584,6 +584,7 @@ function openResourceEdit(rtype, amount, consumption, intake) {
         </div>
       </div>`;
     modal.addEventListener("click", e => { if (e.target === modal) closeResEdit(); });
+    modal.addEventListener("keydown", e => { if (e.key === "Escape") closeResEdit(); });
     document.body.appendChild(modal);
   }
   const title = resourceLabel(rtype);
@@ -593,6 +594,7 @@ function openResourceEdit(rtype, amount, consumption, intake) {
   document.getElementById("res-edit-intake").value = intake;
   document.getElementById("res-edit-save").onclick = () => saveResource(rtype);
   modal.style.display = "flex";
+  document.getElementById("res-edit-amount").focus();
 }
 function closeResEdit() { const m = document.getElementById("res-edit-modal"); if (m) m.style.display = "none"; }
 async function saveResource(rtype) {
