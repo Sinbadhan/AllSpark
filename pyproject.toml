@@ -33,6 +33,10 @@ dependencies = [
     "fastapi>=0.100,<1",
     "uvicorn>=0.20,<1",
     "jinja2>=3.1,<4",
+    # SHA-157: model_registry reads models.yaml via tomllib (stdlib 3.11+) and
+    # falls back to tomli on Python 3.10. Declared as a conditional runtime dep
+    # so a clean wheel install on 3.10 can import allspark / run the CLI.
+    "tomli>=2.0,<3; python_version < '3.11'",
 ]
 
 [project.optional-dependencies]
