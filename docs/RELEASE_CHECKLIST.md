@@ -18,7 +18,9 @@ Check and update these together:
 - `README_CN.md`
 - `CHANGELOG.md`
 
-Do not bump from `0.7.0` to `1.0.0` unless the maintainer explicitly approves the release scope.
+Version bumps follow semantic versioning. The project is on the 1.0.x line;
+do not bump to a new minor/major unless the maintainer explicitly approves the
+release scope and the audit gate (SHA-158) is green.
 
 ## 3. Run local quality checks
 
