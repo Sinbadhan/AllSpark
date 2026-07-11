@@ -366,10 +366,10 @@ async function loadKnowledgeTable(el) {
     </thead>
     <tbody class="text-sm">${allEntries.map(e => `
       <tr class="hover:bg-surface-variant transition-colors border-b border-surface-container-high">
-        <td class="p-3"><span class="text-primary hover:underline font-mono text-xs">${e.id.substring(0, 8)}</span></td>
+        <td class="p-3"><span class="text-primary hover:underline font-mono text-xs">${escHtml((e.id || "").substring(0, 8))}</span></td>
         <td class="p-3 text-on-surface">${escHtml(e.title)}</td>
-        <td class="p-3 text-secondary">${e.category}</td>
-        <td class="p-3 text-secondary text-right">${e.priority}</td>
+        <td class="p-3 text-secondary">${escHtml(e.category)}</td>
+        <td class="p-3 text-secondary text-right">${escHtml(String(e.priority))}</td>
       </tr>
     `).join("")}</tbody></table>`;
 }
