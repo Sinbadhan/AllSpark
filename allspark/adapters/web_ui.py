@@ -1,9 +1,10 @@
+import hmac
 import urllib.request
 from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from jinja2 import Environment, FileSystemLoader
 
 from allspark import __version__
@@ -26,10 +27,37 @@ TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 _jinja_env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)), autoescape=True)
 
 
-# Bearer token for /api/* when the Web UI binds non-loopback (audit H3).
-# Set by create_app(); read by _render_template to inject into the HTML so the
-# browser-side fetch wrapper can add the Authorization header automatically.
+# Auth token gating HTML pages + /api/* when the Web UI binds non-loopback
+# (audit H3 / SHA-142). Set by create_app(). The token is NEVER injected into
+# HTML/DOM; the browser authenticates via an httpOnly cookie issued by
+# /api/auth/login (or the init/complete bootstrap step). API clients may still
+# use an Authorization: Bearer header.
 _WEB_TOKEN: Optional[str] = None
+_AUTH_COOKIE = "allspark_session"
+
+
+def _is_authed(request: Request) -> bool:
+    """True if the request carries the auth cookie or a valid Bearer header.
+
+    Only called when ``_WEB_TOKEN`` is set (non-loopback); the middleware
+    short-circuits loopback/no-token mode before reaching here.
+    """
+    token = _WEB_TOKEN
+    if not token:
+        return False
+    cookie = request.cookies.get(_AUTH_COOKIE)
+    if cookie and hmac.compare_digest(cookie, token):
+        return True
+    auth = request.headers.get("authorization", "")
+    return auth == f"Bearer {token}"
+
+
+def _set_auth_cookie(response, token: str):
+    """Stamp the httpOnly session cookie on a response (SHA-142)."""
+    response.set_cookie(
+        _AUTH_COOKIE, token, httponly=True, samesite="strict", secure=False, path="/"
+    )
+    return response
 
 
 def _render_template(name: str, **context) -> str:
@@ -38,7 +66,6 @@ def _render_template(name: str, **context) -> str:
     lang = get_language()
     context.setdefault("lang", lang)
     context.setdefault("version", __version__)
-    context.setdefault("api_token", _WEB_TOKEN or "")
     # Inject all web_ prefixed i18n keys as window.I18N for JS-side usage
     web_i18n = {
         k: v for k, v in MESSAGES.get(lang, {}).items()
@@ -68,25 +95,46 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.state.web_token = token
 
-    # Bearer-token gate for /api/* when bound non-loopback (audit H3).
-    # /api/init/* stays open so the init wizard can bootstrap before auth.
-    if token:
-        @app.middleware("http")
-        async def enforce_bearer_token(request: Request, call_next):
-            path = request.url.path
-            if path.startswith("/api/") and not path.startswith("/api/init/"):
-                auth = request.headers.get("authorization", "")
-                if auth != f"Bearer {token}":
-                    return JSONResponse(
-                        status_code=401,
-                        content={
-                            "status": "error",
-                            "error": "unauthorized",
-                            "detail": "Bearer token required for non-loopback binding",
-                            "next_action": "Add 'Authorization: Bearer <token>' header",
-                        },
-                    )
+    # Auth gate (audit H3 / SHA-142). Loopback (no token) = local trust; only
+    # the one-time bootstrap gate applies. Non-loopback (token set) = every HTML
+    # page and /api/* endpoint requires the httpOnly auth cookie (set by
+    # /api/auth/login or the init/complete bootstrap) or a Bearer header. The
+    # token never enters HTML/DOM. /api/init/complete is one-time (410 once
+    # initialized) so an attacker cannot re-init/overwrite the system.
+    @app.middleware("http")
+    async def enforce_auth(request: Request, call_next):
+        path = request.url.path
+        # One-time bootstrap: re-init forbidden once initialized.
+        if path == "/api/init/complete" and app.state.initialized:
+            return JSONResponse(
+                status_code=410,
+                content={
+                    "status": "error",
+                    "error": "bootstrap_closed",
+                    "detail": "Instance already initialized; reset required to re-initialize",
+                    "next_action": "",
+                },
+            )
+        # Loopback / no-token mode: local trust.
+        if not _WEB_TOKEN:
             return await call_next(request)
+        # Public endpoints: login page + auth endpoints.
+        if path in ("/login", "/api/auth/login", "/api/auth/logout"):
+            return await call_next(request)
+        # Everything else requires auth (cookie or Bearer).
+        if not _is_authed(request):
+            if path.startswith("/api/"):
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        "status": "error",
+                        "error": "unauthorized",
+                        "detail": "Authentication required",
+                        "next_action": 'POST /api/auth/login with {"token": "<token>"}',
+                    },
+                )
+            return RedirectResponse("/login", status_code=303)
+        return await call_next(request)
 
     db = Database(Path(db_path) if db_path else None)
     init_language(db)
@@ -129,6 +177,42 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
         if not app.state.initialized:
             return _render_template("init.html")
         return _render_template("repository.html", page_title=t("web_page_title_repository"))
+
+    @app.get("/login", response_class=HTMLResponse)
+    async def login_page():
+        # SHA-142: standalone login page (no base.html - pre-auth). The token
+        # is never rendered here; the user pastes it and we exchange it for an
+        # httpOnly cookie via /api/auth/login.
+        return _render_template("login.html", page_title=t("web_login_title"))
+
+    @app.post("/api/auth/login")
+    async def auth_login(request: Request):
+        token = _WEB_TOKEN
+        body: dict = {}
+        try:
+            parsed = await request.json()
+            if isinstance(parsed, dict):
+                body = parsed
+        except Exception:
+            body = {}
+        submitted = body.get("token") or ""
+        if not isinstance(submitted, str) or not submitted:
+            return JSONResponse(
+                status_code=401,
+                content={"status": "error", "error": "unauthorized", "detail": "token required"},
+            )
+        if not token or not hmac.compare_digest(submitted, token):
+            return JSONResponse(
+                status_code=401,
+                content={"status": "error", "error": "unauthorized", "detail": "invalid token"},
+            )
+        return _set_auth_cookie(JSONResponse(content={"status": "ok"}), token)
+
+    @app.post("/api/auth/logout")
+    async def auth_logout():
+        resp = JSONResponse(content={"status": "ok"})
+        resp.delete_cookie(_AUTH_COOKIE, path="/")
+        return resp
 
     # Init API routes
     _register_init_routes(app)
@@ -399,4 +483,10 @@ def _register_init_routes(app):
         app.state.initialized = True
         _load_engine(app)
 
-        return {"status": "ok"}
+        # SHA-142: bootstrap completes -> issue the auth cookie so the wizard
+        # operator transitions into an authenticated session without re-entering
+        # the token. No-op in loopback/no-token mode.
+        resp = JSONResponse(content={"status": "ok"})
+        if _WEB_TOKEN:
+            _set_auth_cookie(resp, _WEB_TOKEN)
+        return resp
