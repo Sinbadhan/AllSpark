@@ -1579,6 +1579,12 @@ web_weather_pressure: Pressure (hPa)
 web_weather_set_pressure: Set manual pressure
 web_weather_done: Updated
 web_weather_forecast: 12-hour forecast
+web_weather_temp: Temp
+web_weather_pressure_trend: Pressure trend
+web_weather_humidity: Humidity
+web_weather_light: Light
+web_weather_no_data: No data
+web_weather_no_sensors: No sensor data (enter pressure manually to forecast)
 web_environment_title: Environment assessment
 web_environment_loading: Assessing…
 web_environment_climate: Climate
@@ -1712,6 +1718,9 @@ web_repo_download_btn: DOWNLOAD
 web_system_integrity_stable: STABLE
 web_system_integrity_degraded: DEGRADED
 web_system_integrity_critical: CRITICAL
+web_system_integrity_healthy: Healthy
+web_system_integrity_unavailable: Unavailable
+web_system_integrity_unknown: Unknown
 web_system_module_loaded: loaded
 web_system_module_available: available
 web_system_module_disabled: disabled

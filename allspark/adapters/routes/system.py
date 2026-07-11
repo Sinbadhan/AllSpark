@@ -34,6 +34,57 @@ def register_system_routes(app, check):
             "homepage": "https://github.com/Sinbadhan/AllSpark",
         }
 
+    # ---------------- Health / integrity (SHA-149) ----------------
+
+    @app.get("/api/system/health")
+    async def system_health():
+        """Honest integrity score + state.
+
+        Factors in core capabilities (LLM loaded, module support, warnings),
+        not just error/warning count, so an unloaded LLM or unsupported
+        modules never display 100% / "stable". State is one of
+        healthy / degraded / unavailable (unknown is client-side, on fetch
+        failure).
+        """
+        container, db = check()
+        registry = container.get("registry")
+        modules = registry.format_status_dict() if registry else []
+        llm = container.get("llm")
+        llm_status = llm.get_status() if llm else {}
+        resource_mgr = container.get("resource_manager")
+        warnings = resource_mgr.check_warnings() if resource_mgr else []
+
+        loaded = sum(1 for m in modules if m.get("status") == "loaded")
+        unsupported = sum(1 for m in modules if m.get("status") == "unsupported")
+        critical = sum(1 for w in warnings if w.get("level") == "critical")
+        llm_loaded = bool(llm_status.get("loaded"))
+
+        score = 100
+        if not llm_loaded:
+            score -= 15
+        score -= min(unsupported * 3, 15)
+        score -= critical * 10
+        score -= max(0, len(warnings) - critical) * 2
+        score = max(0, min(100, score))
+
+        if not llm_loaded or critical > 0 or unsupported > 0 or len(warnings) > 0:
+            state = "degraded" if score >= 50 else "unavailable"
+        else:
+            state = "healthy"
+
+        return {
+            "score": score,
+            "state": state,
+            "factors": {
+                "llm_loaded": llm_loaded,
+                "modules_total": len(modules),
+                "modules_loaded": loaded,
+                "modules_unsupported": unsupported,
+                "critical_count": critical,
+                "warning_count": len(warnings),
+            },
+        }
+
     # ---------------- Language ----------------
 
     @app.post("/api/system/language")
