@@ -17,15 +17,15 @@ removable storage.
 | `python3 -m mypy allspark/ --ignore-missing-imports` | ready | `check_untyped_defs = true` is enabled in `pyproject.toml`. |
 | `python3 -m ruff check allspark/ tests/` | ready | Static style gate. |
 | `python3 scripts/bench_import.py --check` | ready | Current target is the 600 ms soft gate. |
-| `python3 -m pytest tests/ -q` | ready on local/CI | Expected unrestricted/local line: 616 passed + 6 skipped. Current restricted sandbox line: 614 passed + 8 skipped. |
-| `python3 tests/regression/run_all.py` | ready with environment marker | If localhost TCP bind is forbidden, affected suites report `environment_blocked` instead of a product failure. |
+| `python3 -m pytest tests/ -q` | ready on local/CI | The full `tests/` tree is tracked (SHA-28); CI reproduces the complete suite with a coverage gate (SHA-151). Exact count: see `pytest tests/ -q` / CI output. |
+| `python3 tests/regression/run_all.py` | ready (loopback) | Completes exit 0 on an unrestricted local shell; no `environment_blocked` rows (loopback TCP/uvicorn is no longer blocked). |
 
 ## Real-World Matrix
 
 | Area | Status | Required environment | Validation target |
 | --- | --- | --- | --- |
-| Spark Network TCP exchange | blocked_by_sandbox | Local shell/CI allowing `127.0.0.1` TCP bind | Two-node request/exchange and knowledge transfer complete without skip. |
-| Web regression harness | blocked_by_sandbox | Local shell/CI allowing uvicorn on loopback | `tests/regression/run_all.py` completes all suites without `environment_blocked`. |
+| Spark Network TCP exchange | ready (loopback) | Local shell/CI allowing `127.0.0.1` TCP bind | Two-node request/exchange and knowledge transfer complete on local loopback. |
+| Web regression harness | ready (loopback) | Local shell/CI allowing uvicorn on loopback | `tests/regression/run_all.py` completes all suites exit 0, no `environment_blocked`. |
 | Docker graceful deployment | not_run | Host with Docker daemon | `DockerManager` detects daemon, starts/stops configured services, and preserves PROCESS fallback. |
 | Local LLM runtime | not_run | Machine with target GGUF model and llama-cpp-python backend | Model discovery, load, inference, timeout, and degraded no-model path. |
 | GPU acceleration | blocked_by_hardware | CUDA/Metal-capable host matching supported backend | Feature detection and model tier recommendation match hardware profile. |

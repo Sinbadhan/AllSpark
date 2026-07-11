@@ -6,7 +6,8 @@ AllSpark is offline-first software for local survival decision support. Security
 
 | Version | Supported |
 |---------|-----------|
-| 0.7.x | Yes |
+| 1.0.x | Yes |
+| 0.7.x | Yes (maintenance) |
 | Older versions | No |
 
 ## Reporting a vulnerability

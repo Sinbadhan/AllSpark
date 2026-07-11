@@ -16,7 +16,7 @@ pip install -e ".[dev]"
 allspark                          # 入口，等同 python -m allspark
 
 # 测试
-pytest tests/ -q                  # 全量测试；本机/CI 预期 617 passed + 6 skipped
+pytest tests/ -q                  # 全量测试；CI 复现完整 tracked tests（以 `pytest tests/ -q` / CI 实际输出为准）
 pytest tests/test_container.py    # 单个测试文件
 pytest -k "test_register"         # 按名匹配
 python3 tests/regression/run_all.py  # 脚本化回归；受限 sandbox 会显式标记 environment_blocked
@@ -99,7 +99,7 @@ allspark/
 ## 当前状态（v1.0.3）
 
 - v1.0.3 稳定性收敛已完成，P1 类型债与 Web/回归高优先级问题已闭环
-- 623 项测试已收集；本机/CI 口径预期 617 passed + 6 skipped；受限 sandbox 当前口径 614 passed + 8 skipped，本地 TCP 网络项会显式 skip 或 regression `environment_blocked`
+- 完整 tracked tests 已收集（以 `pytest tests/ -q` / CI 实际输出为准；CI 复现，SHA-28；覆盖率门禁 60% floor + 收集数门禁，SHA-151）
 - Ruff lint 0 errors
 - mypy 0 errors，`check_untyped_defs = true` 已启用
 - `scripts/bench_import.py --check` 当前低于 600ms 门槛

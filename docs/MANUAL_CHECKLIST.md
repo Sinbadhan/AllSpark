@@ -6,10 +6,12 @@
 > any minor or major release; record results in the release PR.
 > **Tracks:** SHA-36
 
-CI on GitHub runs `ruff` + `mypy` + `python scripts/bench_import.py
---check` on Python 3.10/3.11/3.12. The `tests/` tree is gitignored
-(internal-only, see SHA-28); contributors should run it locally with
-`pytest tests/ -q`. Everything else lives here.
+CI on GitHub runs `ruff` + `mypy` + `pytest` (with a `--cov-fail-under` coverage
+gate and a test-collection count gate) on Python 3.10/3.11/3.12. The full
+`tests/` tree is tracked in version control (SHA-28), so CI reproduces the
+complete suite. This checklist covers what automated tests cannot: live LLM,
+voice/vision hardware, cross-node spark networking, Docker elastic deployment,
+and long-running schedulers.
 
 ---
 

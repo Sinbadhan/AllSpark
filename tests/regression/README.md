@@ -6,7 +6,7 @@
 
 这套脚手架是**面向人的探索性回归**，不是 CI 阻断器。它跑完后产出 JSONL + Markdown 给人 triage，而不是返回 0/1 的 pass/fail。一旦某个 bug 修完，把对应的具体检查从这里**毕业**到 `tests/test_*.py` 的真实 pytest 用例 —— 这是分层的：
 
-- **pytest（当前 v1.0.3 口径：612 passed + 6 skipped）** = 单元/集成回归，每次提交都跑、必须绿
+- **pytest（CI 复现完整 tracked tests，SHA-28；以 `pytest tests/ -q` 实际输出为准）** = 单元/集成回归，每次提交都跑、必须绿
 - **regression suites（本目录）** = e2e/UX 回归，发版前手动跑、给人看
 
 ## 何时跑
