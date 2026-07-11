@@ -17,7 +17,7 @@
   - 煮沸不能去除化学污染物
   - 水必须完全沸腾，小泡不算
   - 冷却时注意不要被二次污染
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/water/purification/filter
@@ -40,7 +40,7 @@
   - 简易过滤不能完全杀菌，必须煮沸后再饮用
   - 木炭需冷却后使用，热的木炭无效
   - 定期更换过滤材料
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/water/finding/surface
@@ -62,7 +62,7 @@
   - 死水（不流动的水）风险更高，必须净化后饮用
   - 水色异常（绿/黄/白浊）需特别处理
   - 工业区附近的水可能有化学污染，煮沸无法去除
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/water/finding/plant
@@ -83,7 +83,7 @@
   - 不确定的植物汁液可能有毒
   - 白色乳汁植物通常有毒，避免使用
   - 从植物获取的水量有限，不能作为唯一水源
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/water/finding/rain
@@ -105,7 +105,7 @@
   - 酸雨区域雨水可能有化学污染
   - 收集容器必须干净
   - 雨后尽快收集，不要让水滞留过久
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/fire/methods/flint
@@ -129,7 +129,7 @@
   - 保持引火物绝对干燥
   - 刮擦方向远离自己
   - 风大时注意用身体挡风
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/fire/methods/bow_drill
@@ -156,7 +156,7 @@
   - 底板用软木（杨树/柳树/雪松），钻杆用硬木或同类
   - 此方法需要练习，首次可能需要1小时以上
   - 注意不要让轴承石过热烫伤手
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/fire/methods/battery
@@ -181,7 +181,7 @@
   - 操作时远离面部
   - 钢丝棉燃烧速度快，动作要快
   - 电池取火是一次性的，确保有把握再尝试
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/fire/fuel/types
@@ -203,7 +203,7 @@
   - 塑料和化学品燃烧可能产生有毒气体，在通风处使用
   - 湿柴会产生大量烟雾，尽量找干柴
   - 不要在密闭空间内生火——一氧化碳中毒致命
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/fire/building/types
@@ -226,7 +226,7 @@
   - 风大时选择避风处或挖坑生火
   - 睡前确保火已完全熄灭或用石头围好
   - 永远不要在帐篷内生火
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/food/plants/edible_common
@@ -250,7 +250,7 @@
   - 蘑菇：除非100%确定，否则绝对不要食用
   - 城市区域的植物可能受化学污染
   - 首次食用任何新植物只吃少量，等6-8小时观察反应
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/food/plants/universal_test
@@ -277,7 +277,7 @@
   - 如出现任何不适立即停止并催吐
   - 儿童和病人不要食用未确认的植物
   - 此测试并非100%可靠，某些致命毒素（如毒芹碱、乌头碱）有延迟发作，仅作为最后手段
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/food/hunting/traps
@@ -305,7 +305,7 @@
   - 定期检查陷阱，避免猎物被其他捕食者抢走
   - 陷阱可能伤人，做好标记
   - 食用野生动物必须彻底煮熟
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/food/fishing/basic
@@ -326,7 +326,7 @@
   - 所有淡水鱼必须彻底煮熟以杀灭寄生虫
   - 避免食用颜色异常或畸形鱼
   - 某些热带鱼种有河豚毒素，确认安全后再食用
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/food/preservation/drying
@@ -352,7 +352,7 @@
   - 肉干必须完全干燥，否则会发霉
   - 雨天不要在户外晾晒
   - 干燥保存的食物食用前最好重新加热
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/shelter/natural/lean_to
@@ -378,7 +378,7 @@
   - 不要在枯树下搭建（树枝可能掉落）
   - 庇护所不宜过大，小空间更易保暖
   - 地面一定要铺隔离层，防止体温流失
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/shelter/natural/debris_hut
@@ -403,7 +403,7 @@
   - 落叶厚度是关键，太薄无法保温；寒冷环境应加厚至60cm以上
   - 定期补充被风吹散的落叶
   - 注意通风，不要完全密封
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/shelter/urban/ruins
@@ -428,7 +428,7 @@
   - 废墟中可能有残留化学品，戴手套操作
   - 不要使用电梯，不要在有燃气味的地方生火
   - 密闭或通风不良空间生火会产生一氧化碳，即使无燃气味也可能致命，必须保证通风
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/medical/bleeding
@@ -455,7 +455,7 @@
   - 必须记录止血带使用时间，超时可能导致截肢
   - 不要用铁丝/细绳做止血带（会切伤组织）
   - 内出血（腹部肿胀、呕血）无法在野外处理，需立即寻找医疗
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/medical/cpr
@@ -484,7 +484,7 @@
   - 按压位置过低会折断肋骨或损伤肝脏
   - 如只有你一人，以胸外按压为主（免人工呼吸也可）
   - 不要因为害怕做错而犹豫，做不完美的CPR也比不做强
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/medical/wound_care
@@ -510,7 +510,7 @@
   - 动物咬伤必须彻底清洗，感染风险极高
   - 如出现红线从伤口向心脏方向延伸（淋巴管炎），这是严重感染征兆
   - 破伤风：锈钉/土壤污染的伤口需考虑破伤风风险
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/medical/hypothermia
@@ -540,7 +540,7 @@
   - 不要给失去意识的人喂水或饮酒
   - 失温者可能看起来死了但仍有微弱生命迹象，不要放弃
   - 复温过快可能导致心律失常
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: survival/medical/fracture
@@ -570,6 +570,6 @@
   - 固定后如手指/脚趾变紫/麻木，松开重新固定（过紧）
   - 开放性骨折感染风险极高
   - 骨盆/脊柱骨折不要随意移动患者
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh

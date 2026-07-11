@@ -271,8 +271,14 @@ class KnowledgeVerifier:
 
         if has_conflicts:
             level = VerificationLevel.CONFLICT
-        elif source_trust == "high" and has_support:
+        elif source_trust == "high" and has_support and entry.is_signed_off():
             level = VerificationLevel.EXPERT_VERIFIED
+        elif source_trust == "high" and has_support:
+            # High-trust + cross-ref support but no auditable expert signoff
+            # (SHA-148): field_tested, not expert_verified. expert_verified now
+            # requires a populated reviewer + signoff_version pinned to the
+            # entry's content_hash (see KnowledgeEntry.is_signed_off).
+            level = VerificationLevel.FIELD_TESTED
         elif source_trust == "high":
             level = VerificationLevel.PARTIALLY_VERIFIED
         elif source_trust == "moderate" and has_support:

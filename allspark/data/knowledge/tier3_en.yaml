@@ -21,7 +21,7 @@
   - "Over-concentration of power causes bad decisions and resentment"
   - "Pure democracy is too slow in a crisis — balance is needed"
   - "Review the structure every 2-4 weeks and adjust as needed"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: community/conflict/resolution/en
@@ -46,7 +46,7 @@
   - "Ignoring small conflicts leads to big blowups"
   - "The mediator must be neutral, not a party to the conflict"
   - "AllSpark's advice is a reference, not an order"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: community/education/system/en
@@ -71,7 +71,7 @@
   - "Never let any critical skill rest with only one person"
   - "Theory must pair with practice — armchair knowledge is lethal in a disaster"
   - "Children's education must not stop — they are the future of civilization"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: engineering/blacksmithing/basics/en
@@ -154,7 +154,7 @@
   - "Don't touch electrical gear with wet hands"
   - "Cut power before repairing"
   - "Homemade fuses: copper wire has a high melting point (1085°C) — it glows red hot before melting, may ignite nearby combustibles, and its trip characteristic is unreliable; prefer low-melting-point alloy wire (tin/lead/bismuth) or proper fuses; if unavailable, fine iron wire is better than copper"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: engineering/masonry/basics/en
@@ -180,7 +180,7 @@
   - "Don't cut holes in load-bearing walls freely"
   - "In seismic zones add ring beams and tie columns"
   - "Work safely at height — prevent falls"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: agriculture/livestock/chicken/en
@@ -208,7 +208,7 @@
   - "Don't feed moldy feed"
   - "Quarantine new birds for a week before mixing"
   - "Salmonella: wash hands after contacting droppings; wear mask and gloves when handling sick/dead birds"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: agriculture/livestock/goat/en
@@ -237,7 +237,7 @@
   - "Quarantine newly purchased animals"
   - "Boil goat milk before drinking"
   - "Zoonoses: brucellosis, Q fever, leptospirosis; wash and disinfect after contact; wear mask and gloves when handling aborted kids/placentas"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: agriculture/aquaculture/fish_pond/en
@@ -266,7 +266,7 @@
   - "Reinforce banks against escape in storms"
   - "Don't overfeed — leftover feed fouls the water"
   - "Freshwater fish (especially cyprinids) may carry liver flukes and lung flukes — cook thoroughly; raw or undercooked consumption is prohibited"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: medicine/herbal/pharmacopoeia/en
@@ -293,7 +293,7 @@
   - "Most herbs are contraindicated in pregnancy, especially blood-activating ones"
   - "Herb dosing is imprecise — start small"
   - "For serious illness, seek professional care first"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: medicine/surgery/basic/en
@@ -321,7 +321,7 @@
   - "Watch closely for infection after: redness, heat, pus"
   - "Record every procedure for later medical reference"
   - "Surgery without proper conditions carries major risk and ethical issues; administer tetanus toxoid after debridement"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: communication/radio/ham/en
@@ -374,7 +374,7 @@
   - "Use SOS only in a genuine emergency"
   - "Listen before transmitting — don't interfere with others"
   - "Don't practice on emergency frequencies"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: defense/perimeter/design/en
@@ -403,7 +403,7 @@
   - "Avoid over-militarizing — it strains community morale"
   - "AllSpark alerts assist but don't replace patrols"
   - "This system is for community self-defense only; any use of force must be legal and proportionate; no offensive or preemptive action is authorized"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: civilization/record/archives/en
@@ -429,7 +429,7 @@
   - "Paper archives fear fire and water — store safely"
   - "Don't rely on digital alone — EMP/hardware failure can lose it"
   - "Oral tradition fades across generations — pair it with written records"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: civilization/law/basic/en
@@ -457,7 +457,7 @@
   - "Revise rules as the community grows"
   - "AllSpark can record and remind, but cannot enforce"
   - "This framework is for emergency community self-governance, not professional legal advice; return to the formal legal system once conditions allow; must not be used to circumvent existing law"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: community/children/education/en
@@ -484,7 +484,7 @@
   - Keep hope and childhood dignity intact; shield children from violent scenes
   - Tasks must not compromise rest and development
   - 'Protect childhood: psychological trauma is harder to repair than missing skills'
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: community/psychology/support/en
@@ -510,7 +510,7 @@
   - 'Suicide prevention: watch isolated individuals, the bereaved, those expressing hopelessness — never leave them alone'
   - Listeners burn out too — rotate and decompress
   - Never force recollection of traumatic events
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: defense/warning/system/en
@@ -537,7 +537,7 @@
   - Only for lawful self-defense, proportionate response, comply with local law
   - False alarms drain community energy — strict confirmation required
   - 'Watch safety first: withdraw rather than engage a superior threat'
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: defense/shelter/hardening/en
@@ -563,7 +563,7 @@
   - Only for lawful self-defense, proportionate response, not preemptive
   - Hardening must not block fire exits or emergency routes
   - Force is the last resort — prioritize evacuation and alerting authorities
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: defense/nonlethal/deterrent/en
@@ -589,7 +589,7 @@
   - Force is the last resort — withdraw immediately if deterrence fails
   - No lethal traps such as spring guns or deep punji stakes
   - Deterrents must not endanger innocent passersby
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: communication/signals/visual/en
@@ -614,7 +614,7 @@
   - 'Smoke signals risk wildfire; clear surrounding fuel and keep water on hand'
   - 'Signal sites must be open and visible; avoid dense forest and canyons'
   - 'Keep signaling until rescue is confirmed; do not stop too early'
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: communication/signals/audio/en
@@ -638,7 +638,7 @@
   - 'Conserve energy: signal in timed sets (e.g., every 5-10 minutes) rather than continuously'
   - 'Use sound first in fog or dense forest'
   - 'Do not stop signaling until rescue is confirmed'
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: communication/low_tech/relay/en
@@ -663,7 +663,7 @@
   - 'Courier safety first; in wartime messages may be encrypted but balance against deliverability'
   - 'Redundancy is critical — never rely on a single channel'
   - 'Pigeons are one-way and vulnerable to predators/weather; never the sole means'
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: civilization/education/oral/en
@@ -689,7 +689,7 @@
   - 'Record multiple versions and compare differences to prevent distortion'
   - 'Critical techniques must pair with hands-on practice; pure oral loses detail'
   - 'A keeper dying can lose knowledge — always back up with multiple people'
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: civilization/currency/barter/en
@@ -714,7 +714,7 @@
   - 'Keep strategic reserves of rare goods (medicine, ammo, tools); do not trade all away'
   - 'Prevent fraud: know common tricks (adulteration, short weight, fake purity)'
   - 'Conduct valuable trades in public to avoid robbery'
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: civilization/governance/council/en
@@ -742,6 +742,6 @@
   - 'Minority opinions must be recorded, never suppressed'
   - 'Proceedings are transparent and open to community oversight'
   - 'In emergencies a commander may decide temporarily, but the council must ratify afterward'
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en

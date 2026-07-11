@@ -19,7 +19,7 @@
   - 不要放入肉类、油脂、病株——会招虫和传播病害
   - 堆肥温度不足55°C无法杀灭病原体和杂草种子
   - 猫狗粪便可能含寄生虫，不建议使用
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: agriculture/seed_saving/techniques
@@ -44,7 +44,7 @@
   - 杂交种子（F1）后代性状分离，优先保存自交品种
   - 种子含水量过高会导致霉变
   - 不同品种的十字花科植物会互相杂交，需隔离种植
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: chemistry/paper/making
@@ -72,7 +72,7 @@
   - 禁用铝锅（碱液腐蚀铝并污染纸浆），使用铁/不锈钢/搪瓷器皿；碱液腐蚀皮肤，接触立即冲洗
   - 纸浆浓度影响纸张厚度——稀则薄、浓则厚
   - 干燥时避免阳光直射，防止纸张翘曲
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: chemistry/dye/natural
@@ -97,7 +97,7 @@
   - 某些染料植物有毒，操作后洗手
   - 铁媒染剂会使颜色变暗，注意用量
   - 天然染色色牢度不如化学染料，需要多次浸染加深
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: mechanical/watermill/simple
@@ -123,7 +123,7 @@
   - 洪水可能冲毁水轮，雨季注意加固
   - 木制轴承需要经常润滑（动物油脂/石墨）
   - 磨石碎裂有飞出危险，周围设防护
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: mechanical/bicycle_generator
@@ -149,7 +149,7 @@
   - 发电机电压不稳定，必须接稳压器后再接设备
   - 铅酸电池充电时产生氢气，保持通风远离明火
   - 长时间骑行发电非常消耗体力，不适合体弱者
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: weather/shelter/climate_design
@@ -172,7 +172,7 @@
   - 选址避开洪水线、滑坡体和风口
   - 烟道/壁炉必须正确排烟——一氧化碳无声致命
   - 土坯建筑在地震带需要加固（竹筋/木框架）
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: energy/wind/basic_turbine
@@ -200,7 +200,7 @@
   - 旋转叶片有切割危险，设置安全距离
   - 风速超过设计极限时必须刹车或放倒叶片
   - PVC叶片冬季脆化、老化需更换；塔基2倍塔高半径内为抛射危险区
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: energy/biogas/digester
@@ -228,7 +228,7 @@
   - 下池检修必须先通风，多人监护——沼气池内缺氧致命
   - 冬季低温产气量下降，需保温措施
   - 储气间压力由水压间自动调节，严禁密封死腔；输出端应装阻火器防回火
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: medicine/herbal/common
@@ -253,7 +253,7 @@
   - 草药剂量难以精确控制，从小剂量开始
   - 孕妇、儿童、体弱者慎用草药
   - 草药不能替代专业医疗，仅作应急使用
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: weather/extreme/storm_response
@@ -279,7 +279,7 @@
   - 雷暴时不要使用有线电器、电话，远离金属管线与水
   - 暴风后注意结构损坏、电线断裂、积水带电等次生危险
   - 不要冒险涉水穿越未知水流，30cm水深即可冲倒成人
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: medicine/public_health/sanitation
