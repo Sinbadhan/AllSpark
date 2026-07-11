@@ -1336,6 +1336,18 @@ web_config_output_console: 输出窗口
 web_config_ready: 配置查看器已就绪。
 web_config_awaiting: 请选择需要查看的配置项。
 web_config_disabled_note: 当前为只读视图，保存与校验已禁用。
+web_config_section_identity: 身份与版本
+web_config_version: 版本
+web_config_language: 语言
+web_config_license: 许可证
+web_config_homepage: 主页
+web_config_section_runtime: 运行时
+web_config_health: 健康度
+web_config_llm: LLM
+web_config_hw_tier: 硬件档位
+web_config_section_flags: 功能开关
+web_config_llm_loaded: 已加载
+web_config_llm_unloaded: 未加载
 web_repository_title: 资料库
 web_repository_subtitle: 知识、经验、模型与 SKF 包概览
 web_repository_files: 文件
