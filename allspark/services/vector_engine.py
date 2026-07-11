@@ -43,7 +43,7 @@ class VectorEngine(BaseService):
             self._model = SentenceTransformer("all-MiniLM-L6-v2")
             self._available = True
         except Exception as e:
-            logger.info("VectorEngine unavailable, falling back to FTS5: %s", e)
+            logger.debug("VectorEngine unavailable, falling back to FTS5: %s", e)
             self._available = False
 
     def is_available(self) -> bool:
