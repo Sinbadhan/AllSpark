@@ -18,7 +18,7 @@
   - Boiling does NOT remove chemical contaminants
   - Water must be at a full rolling boil — small bubbles don't count
   - Prevent recontamination while cooling
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/water/finding/surface/en
@@ -42,7 +42,7 @@
   - Standing water (non-flowing) is higher risk — must purify before drinking
   - Unusual water color (green/yellow/cloudy) requires special treatment
   - Water near industrial areas may have chemical contamination (boiling cannot remove it)
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/water/purification/filter/en
@@ -67,7 +67,7 @@
   - Simple filtration cannot fully sterilize — always boil after filtering
   - Charcoal must be cool before use
   - Replace filter materials regularly
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/fire/methods/flint/en
@@ -92,7 +92,7 @@
   - Keep tinder absolutely dry
   - Strike away from your body
   - Shield from wind with your body
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/fire/methods/bow_drill/en
@@ -120,7 +120,7 @@
   - 'Hearth board: softwood (poplar/willow/cedar), drill: hardwood or same species'
   - This method requires practice — first attempt may take over an hour
   - Beware of bearing block overheating and burning your hand
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/food/plants/edible_common/en
@@ -146,7 +146,7 @@
   - NEVER eat mushrooms unless 100% certain
   - Plants in urban areas may have chemical contamination
   - When eating any new plant, eat only a small amount and wait 6-8 hours
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/shelter/natural/lean_to/en
@@ -173,7 +173,7 @@
   - Don't build under dead trees
   - Shelter should not be too large — small spaces retain heat better
   - Ground MUST have insulation layer
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/medical/bleeding/en
@@ -201,7 +201,7 @@
   - Record tourniquet time — over-limit may require amputation
   - Do NOT use wire/thin string as tourniquet
   - Internal bleeding (abdominal swelling, vomiting blood) cannot be treated in the field — seek medical care immediately
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/medical/cpr/en
@@ -227,7 +227,7 @@
   - Pressing too low can break ribs or damage liver
   - If alone, focus on chest compressions
   - Imperfect CPR is better than no CPR
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/medical/hypothermia/en
@@ -258,7 +258,7 @@
   - Do NOT give water or alcohol to unconscious person
   - Person may appear dead but still have vital signs — do NOT give up
   - Rapid rewarming may cause cardiac arrhythmia
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/water/finding/plant/en
@@ -280,7 +280,7 @@
   - Sap from unknown plants may be toxic
   - Plants with white milky sap are usually poisonous — avoid them
   - Plant-sourced water is limited — cannot be the only water source
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/water/finding/rain/en
@@ -303,7 +303,7 @@
   - In acid-rain regions, rainwater may carry chemical contamination
   - Collection containers must be clean
   - Collect promptly — do not let water sit stagnant
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/fire/methods/battery/en
@@ -330,7 +330,7 @@
   - Keep away from your face while operating
   - Steel wool burns fast — act quickly
   - Battery fire is one-shot — only attempt when confident
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/fire/fuel/types/en
@@ -353,7 +353,7 @@
   - Plastic and chemicals produce toxic gases — use only in ventilated areas
   - Wet wood produces heavy smoke — seek dry wood when possible
   - NEVER make fire in enclosed spaces — carbon monoxide is lethal
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/fire/building/types/en
@@ -377,7 +377,7 @@
   - In high wind, find shelter or dig a pit
   - Before sleep, ensure fire is fully out or ringed with stones
   - NEVER make fire inside a tent
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/food/plants/universal_test/en
@@ -405,7 +405,7 @@
   - If any discomfort occurs, stop immediately and induce vomiting
   - Children and the sick should not eat unconfirmed plants
   - This test is NOT 100% reliable — some deadly toxins (cicutoxin, aconitine) have delayed onset; use only as a last resort
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/food/hunting/traps/en
@@ -434,7 +434,7 @@
   - Check traps regularly — prey may be taken by other predators
   - Traps can injure people — mark them clearly
   - Wild game must be thoroughly cooked
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/food/fishing/basic/en
@@ -456,7 +456,7 @@
   - All freshwater fish must be thoroughly cooked to kill parasites
   - Avoid fish with abnormal color or deformities
   - Some tropical species carry tetrodotoxin — confirm safety before eating
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/food/preservation/drying/en
@@ -483,7 +483,7 @@
   - Jerky must be fully dry or it will mold
   - Do not sun-dry outdoors on rainy days
   - Reheat dried food before eating if possible
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/shelter/natural/debris_hut/en
@@ -509,7 +509,7 @@
   - Leaf thickness is critical — too thin will not insulate; in cold climates, double to 60cm+
   - Replenish scattered leaves regularly
   - Keep some ventilation — do not fully seal
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/shelter/urban/ruins/en
@@ -535,7 +535,7 @@
   - Ruins may contain residual chemicals — wear gloves
   - Do NOT use elevators; do NOT make fire where gas is present
   - Fire in enclosed or poorly ventilated spaces produces carbon monoxide — lethal even without gas smell; ensure ventilation
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/medical/wound_care/en
@@ -562,7 +562,7 @@
   - Animal bites must be flushed thoroughly — very high infection risk
   - A red streak extending from the wound toward the heart (lymphangitis) signals serious infection
   - Tetanus — wounds from rusty nails or soil contamination carry tetanus risk
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: survival/medical/fracture/en
@@ -593,6 +593,6 @@
   - If fingers or toes turn purple or go numb after splinting, loosen and re-fix (too tight)
   - Open fractures carry very high infection risk
   - Do NOT move patients with pelvic or spinal fractures casually
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en

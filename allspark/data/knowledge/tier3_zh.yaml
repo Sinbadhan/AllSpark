@@ -19,7 +19,7 @@
   - 权力过度集中会导致决策失误和群体不满
   - 完全民主在危机中效率过低，需要平衡
   - 定期（每2-4周）评估架构是否需要调整
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: community/conflict/resolution
@@ -43,7 +43,7 @@
   - 忽视小冲突会导致大爆发
   - 调解人必须中立，不能是冲突当事方
   - 火种的建议是参考，不是命令
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: community/education/system
@@ -67,7 +67,7 @@
   - 不要让任何关键技能只掌握在一个人手中
   - 理论必须配合实践，纸上谈兵在灾难中致命
   - 儿童教育不能中断，他们是文明的未来
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: engineering/blacksmithing/basics
@@ -147,7 +147,7 @@
   - 湿手不要触碰电气设备
   - 维修前必须断电
   - 自制保险丝：铜丝熔点高（1085°C），过载时先发红发热才熔断，可能引燃周围可燃物且熔断特性不可靠；优先用低熔点合金丝（锡/铅/铋）或专用保险丝，无条件可用细铁丝（优于铜丝）
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: engineering/masonry/basics
@@ -172,7 +172,7 @@
   - 承重墙不能随意开洞
   - 地震区必须增加圈梁和构造柱
   - 高处作业注意安全，防止坠落
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: agriculture/livestock/chicken
@@ -199,7 +199,7 @@
   - 不要给鸡喂发霉饲料
   - 新引入的鸡必须隔离观察一周
   - 沙门氏菌：接触禽粪后洗手，处理病死禽时戴口罩手套
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: agriculture/livestock/goat
@@ -227,7 +227,7 @@
   - 新购入羊只必须隔离检疫
   - 山羊奶需煮沸后饮用
   - 人畜共患病：布鲁氏菌病、Q热、钩端螺旋体病；接触后洗手消毒，处理流产羊/胎盘时戴口罩手套
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: agriculture/aquaculture/fish_pond
@@ -255,7 +255,7 @@
   - 暴雨时注意防逃，加固塘埂
   - 不要过量投喂，残饵会败坏水质
   - 淡水鱼（尤其鲤科）可能携带肝吸虫、并殖吸虫，必须彻底煮熟食用，禁止生食或半生食
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: medicine/herbal/pharmacopoeia
@@ -281,7 +281,7 @@
   - 孕妇禁用多数草药，特别是活血化瘀类
   - 草药剂量不精确，从小剂量开始
   - 严重疾病优先寻求专业医疗
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: medicine/surgery/basic
@@ -308,7 +308,7 @@
   - 术后密切观察感染迹象：红肿、发热、化脓
   - 记录所有操作，供后续医疗参考
   - 无条件手术风险与伦理问题突出；清创后应接种破伤风类毒素
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: communication/radio/ham
@@ -360,7 +360,7 @@
   - SOS仅用于真正紧急情况
   - 发送前先监听频率，避免干扰他人
   - 练习时不要在紧急频率上发送
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: defense/perimeter/design
@@ -388,7 +388,7 @@
   - 避免过度军事化导致社区氛围紧张
   - 火种预警是辅助，不能替代人工巡逻
   - 本体系仅用于社区自卫防御，任何武力使用须合法且适度，不授权进攻或先发制人行动
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: civilization/record/archives
@@ -413,7 +413,7 @@
   - 纸质档案怕火怕水，存储位置必须安全
   - 不要只依赖数字存储，电磁脉冲/硬件故障可能导致丢失
   - 口头传承会随代际衰减，必须配合文字记录
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: civilization/law/basic
@@ -440,7 +440,7 @@
   - 法规应随社区发展定期修订
   - 火种可以记录和提醒法规，但不能强制执行
   - 本框架为应急社区自治规则，非专业法律意见；条件恢复时应回归正式法律体系；不得用于规避既有法律
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: communication/signals/visual
@@ -464,7 +464,7 @@
   - 烟雾信号须注意防火，清除周围可燃物并备水
   - 信号位置必须开阔可见，避开密林峡谷
   - 持续发出信号直到确认救援收到，不要过早停止
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: communication/signals/audio
@@ -487,7 +487,7 @@
   - 节省体力，定时发信号（如每5-10分钟一组）而非连续
   - 雾天/密林优先用声信号
   - 不要在救援未确认前停止发信号
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: communication/low_tech/relay
@@ -511,7 +511,7 @@
   - 信使安全优先，战乱时信息可加密但需平衡可送达性
   - 信息冗余是关键——不要依赖单一通道
   - 信鸽单程且易受天敌/天气影响，不可作唯一手段
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: civilization/education/oral
@@ -536,7 +536,7 @@
   - 记录多种版本，比对差异，防止信息失真
   - 关键技术必须配合实践操作，纯口述易丢细节
   - 传承人意外死亡会丢失知识，必须多人备份
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: civilization/currency/barter
@@ -560,7 +560,7 @@
   - 稀有物资（药品/弹药/工具）须留战略储备，不可全部交换
   - 防欺诈：熟悉常见作伪（掺假、缺秤、假冒成色）
   - 贵重交换在公开场所进行，避免被劫
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: civilization/governance/council
@@ -587,7 +587,7 @@
   - 少数意见必须记录，不得压制
   - 议事过程透明公开，接受社区监督
   - 紧急情况可授权指挥官临时决断，但事后须议事会追认
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: community/children/education
@@ -612,7 +612,7 @@
   - 保持希望与童年尊严，避免让儿童过早接触暴力场景
   - 任务不得妨碍基本休息与发育
   - 保护童年，心理创伤比技能缺失更难修复
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: community/psychology/support
@@ -637,7 +637,7 @@
   - 防自杀，重点关注孤立、丧失亲人、表达绝望者，不间断陪伴
   - 倾听者自身也会耗竭，需轮换和减压
   - 不得强迫回忆创伤事件
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: defense/warning/system
@@ -662,7 +662,7 @@
   - 预警系统仅用于合法自卫、适度反应、遵守所在国法律
   - 误报会消耗社区精力，需严格确认流程
   - 值守人员安全优先，发现优势威胁立即撤离而非接战
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: defense/shelter/hardening
@@ -687,7 +687,7 @@
   - 仅用于合法自卫、适度反应、不先发制人
   - 加固不得堵塞消防通道和紧急出口
   - 武力是最后手段，优先撤离和报警
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: defense/nonlethal/deterrent
@@ -712,6 +712,6 @@
   - 武力是最后手段，威慑失效立即撤离
   - 不得设置可能致命的陷阱，如弹簧枪、深尖刺
   - 威慑手段不得危及无辜路人
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh

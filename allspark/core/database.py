@@ -31,7 +31,13 @@ class Database:
             warnings=json.loads(r["warnings"]),
             verification=r["verification"],
             source=r["source"], version=r["version"],
-            language=r["language"] if "language" in r.keys() else "zh"
+            language=r["language"] if "language" in r.keys() else "zh",
+            reviewer=r["reviewer"] if "reviewer" in r.keys() else "",
+            qualification=r["qualification"] if "qualification" in r.keys() else "",
+            review_date=r["review_date"] if "review_date" in r.keys() else "",
+            citation=r["citation"] if "citation" in r.keys() else "",
+            content_hash=r["content_hash"] if "content_hash" in r.keys() else "",
+            signoff_version=r["signoff_version"] if "signoff_version" in r.keys() else 0,
         )
 
     def __init__(self, db_path: Optional[Path] = None):
@@ -82,7 +88,13 @@ class Database:
                 verification TEXT DEFAULT 'unverified',
                 source TEXT DEFAULT 'pre_collapse',
                 version INTEGER DEFAULT 1,
-                language TEXT DEFAULT 'zh'
+                language TEXT DEFAULT 'zh',
+                reviewer TEXT DEFAULT '',
+                qualification TEXT DEFAULT '',
+                review_date TEXT DEFAULT '',
+                citation TEXT DEFAULT '',
+                content_hash TEXT DEFAULT '',
+                signoff_version INTEGER DEFAULT 0
             );
 
             CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_fts USING fts5(
@@ -284,6 +296,21 @@ class Database:
             cur.execute("ALTER TABLE knowledge ADD COLUMN language TEXT DEFAULT 'zh'")
             self.conn.commit()
 
+        # SHA-148: auditable expert-signoff columns on the knowledge table.
+        for col, ctype in [
+            ("reviewer", "TEXT DEFAULT ''"),
+            ("qualification", "TEXT DEFAULT ''"),
+            ("review_date", "TEXT DEFAULT ''"),
+            ("citation", "TEXT DEFAULT ''"),
+            ("content_hash", "TEXT DEFAULT ''"),
+            ("signoff_version", "INTEGER DEFAULT 0"),
+        ]:
+            try:
+                cur.execute(f"SELECT {col} FROM knowledge LIMIT 1")
+            except sqlite3.OperationalError:
+                cur.execute(f"ALTER TABLE knowledge ADD COLUMN {col} {ctype}")
+                self.conn.commit()
+
         for col, ctype in [
             ("latitude", "REAL DEFAULT 0"),
             ("longitude", "REAL DEFAULT 0"),
@@ -373,10 +400,17 @@ class Database:
         prereq_json = json.dumps(k.prerequisites, ensure_ascii=False)
         warn_json = json.dumps(k.warnings, ensure_ascii=False)
         self.conn.execute(
-            "INSERT OR REPLACE INTO knowledge VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            """INSERT OR REPLACE INTO knowledge
+               (id, category, subcategory, priority, title, summary, steps,
+                prerequisites, warnings, verification, source, version,
+                language, reviewer, qualification, review_date, citation,
+                content_hash, signoff_version)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (k.id, k.category, k.subcategory, k.priority, k.title,
              k.summary, steps_json, prereq_json, warn_json,
-             k.verification, k.source, k.version, k.language)
+             k.verification, k.source, k.version, k.language,
+             k.reviewer, k.qualification, k.review_date, k.citation,
+             k.content_hash, k.signoff_version)
         )
         self.conn.execute(
             "DELETE FROM knowledge_fts WHERE id=?", (k.id,)

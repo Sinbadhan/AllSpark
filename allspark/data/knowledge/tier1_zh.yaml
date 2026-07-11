@@ -20,7 +20,7 @@
   - 新鲜粪便必须堆肥6个月以上才能使用
   - 连续种植同一作物会导致土壤贫瘠，需轮作
   - 草木灰少量多次，定期复测 pH，避免过度碱化
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: agriculture/crops/fast_growing
@@ -43,7 +43,7 @@
   - 豆芽生产需注意通风，密闭潮湿易滋生细菌
   - 不要食用发霉或变色的豆芽
   - 野生种子可能不适应当地气候，优先使用本地品种
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: agriculture/preservation/drying
@@ -67,7 +67,7 @@
   - 干燥不彻底会导致霉变，宁可过干不可欠干
   - 烟熏温度不要超过60°C，否则会烤熟而非干燥
   - 生石灰须用布袋分包与食物物理分隔，遇水剧烈放热，避免皮肤直接接触，严禁食用
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: chemistry/soap/making
@@ -94,7 +94,7 @@
   - 未充分皂化的肥皂可能灼伤皮肤，需充分晾置
   - 如皮肤接触碱液，立即用大量清水冲洗
   - 禁止使用铝制容器盛装碱液或进行皂化反应（改用玻璃/陶瓷/不锈钢/木制容器），KOH 与铝反应产氢易爆
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: chemistry/charcoal/production
@@ -119,7 +119,7 @@
   - 烧炭过程产生一氧化碳，必须在室外进行
   - 不要在密闭空间或帐篷内烧炭——一氧化碳中毒致命
   - 封窑前确认不再有明火，否则开窑会复燃
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: mechanical/tools/blacksmithing_basic
@@ -149,7 +149,7 @@
   - 废铁回收时注意区分铁和钢——钢能淬硬，铁不能
   - 必须佩戴护目镜，锤击可能崩出金属碎片
   - 回收废铁时去除镀锌层或加强通风并戴口罩，锌烟致金属烟热
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: mechanical/rope_knots/essential
@@ -171,7 +171,7 @@
   - 绳结在潮湿时可能滑动，关键部位使用双重结
   - 定期检查绳结是否松动
   - 救援时绳索承重不超过破断力的1/10
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: weather/observation/basics
@@ -194,7 +194,7 @@
   - 山区天气变化极快，不要只看当前天气做远行决定
   - 雷暴时远离高地、孤立大树和水面
   - 洪涝风险区域注意上游天气
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: energy/fire/charcoal_gasifier
@@ -219,7 +219,7 @@
   - 炉体温度极高，周围不得有易燃物
   - 定期清理灰烬保持气流畅通
   - 产气含可燃成分（CO/H2/CH4），管路须密封无泄漏，禁止在密闭空间积聚；定期清理焦油防堵；气体出口严禁明火靠近
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: energy/solar/thermal_basic
@@ -241,7 +241,7 @@
   - 太阳灶焦点温度极高，注意烫伤和火灾
   - 阴天和冬季太阳能效率大幅降低
   - 太阳能蒸馏产水量有限，仅作补充水源
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: weather/prediction/barometer
@@ -265,7 +265,7 @@
   - 气压仅是参考，需结合风向、云、温度综合判断
   - 简易气压计受温度影响，需避免阳光直射
   - 极端天气来临时及时避险，不要依赖单一指标
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh
 - id: weather/clouds/reading
@@ -289,6 +289,6 @@
   - 雷暴时远离高处、孤立大树、水面和金属物
   - 山区云雾短时间内即可致灾，发现积雨云发展立即下山
   - 单看一种云不够，要看云系演变趋势
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: zh

@@ -1,3 +1,5 @@
+import hashlib
+import json
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -188,6 +190,44 @@ class KnowledgeEntry:
     source: str = "pre_collapse"
     version: int = 1
     language: str = "zh"
+    # SHA-148: auditable expert signoff. Empty/0 by default = "no formal
+    # signoff". ``expert_verified`` must never be assigned without a populated
+    # reviewer + signoff_version whose content_hash still matches the entry
+    # content (see is_signed_off / compute_content_hash).
+    reviewer: str = ""
+    qualification: str = ""
+    review_date: str = ""
+    citation: str = ""
+    content_hash: str = ""
+    signoff_version: int = 0
+
+    def is_signed_off(self) -> bool:
+        """True only when a named expert has signed off AND the content is
+        unchanged since signing (SHA-148). An entry without a reviewer, or one
+        whose content drifted from the pinned hash, is NOT signed off and must
+        not be labeled ``expert_verified``."""
+        return (
+            bool(self.reviewer)
+            and self.signoff_version > 0
+            and bool(self.content_hash)
+            and self.content_hash == compute_content_hash(self)
+        )
+
+
+def compute_content_hash(entry: "KnowledgeEntry") -> str:
+    """SHA-256 of an entry's content fields (SHA-148 signoff pin).
+
+    Signoff fields are excluded so signing does not change the hash. Editing
+    any content field invalidates a signoff pinned to the old hash.
+    """
+    parts = [
+        entry.id, entry.category, entry.subcategory, str(entry.priority),
+        entry.title, entry.summary,
+        json.dumps(entry.steps, ensure_ascii=False, sort_keys=True),
+        json.dumps(entry.prerequisites, ensure_ascii=False, sort_keys=True),
+        json.dumps(entry.warnings, ensure_ascii=False, sort_keys=True),
+    ]
+    return "sha256:" + hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
 
 
 @dataclass

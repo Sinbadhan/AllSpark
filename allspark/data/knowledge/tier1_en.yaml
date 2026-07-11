@@ -22,7 +22,7 @@
   - "Fresh manure must be composted for 6+ months before use"
   - "Planting the same crop repeatedly depletes the soil; practice crop rotation"
   - "Apply wood ash in small, frequent doses; recheck pH regularly to avoid over-alkalization"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: agriculture/crops/fast_growing/en
@@ -46,7 +46,7 @@
   - "Bean sprout production needs ventilation; damp enclosed spaces breed bacteria"
   - "Do not eat moldy or discolored sprouts"
   - "Wild seeds may not suit the local climate; prefer local varieties"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: agriculture/preservation/drying/en
@@ -71,7 +71,7 @@
   - "Incomplete drying causes mold — better over-dry than under-dry"
   - "Keep smoking temperature below 60°C or you will cook, not dry, the food"
   - "Wrap quicklime in cloth sachets and keep it physically separated from food; it releases intense heat on contact with water; avoid direct skin contact; never eat it"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: chemistry/soap/making/en
@@ -99,7 +99,7 @@
   - "Under-saponified soap can burn skin; cure it fully"
   - "If lye contacts skin, rinse immediately with copious water"
   - "Never use aluminum containers to hold lye or for saponification (use glass/ceramic/stainless steel/wooden containers); KOH reacts with aluminum to produce hydrogen, which is explosive"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: chemistry/charcoal/production/en
@@ -125,7 +125,7 @@
   - "Charcoal burning produces carbon monoxide — do it outdoors only"
   - "Never burn charcoal in an enclosed space or tent — CO poisoning is lethal"
   - "Confirm no open flame remains before sealing, or it will reignite when opened"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: mechanical/tools/blacksmithing_basic/en
@@ -156,7 +156,7 @@
   - "When recycling scrap, distinguish iron from steel — steel hardens, iron does not"
   - "Always wear safety goggles — hammering can chip off metal fragments"
   - "When recycling scrap iron, remove the zinc coating or boost ventilation and wear a mask; zinc fumes cause metal fume fever"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: mechanical/rope_knots/essential/en
@@ -179,7 +179,7 @@
   - "Knots may slip when wet — use doubled knots at critical points"
   - "Check knots regularly for looseness"
   - "For rescue, keep rope load under 1/10 of breaking strength"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: weather/observation/basics/en
@@ -203,7 +203,7 @@
   - "Mountain weather changes very fast — don't plan trips on current conditions alone"
   - "In thunderstorms stay away from high ground, isolated trees, and water"
   - "In flood-prone areas, watch upstream weather"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: energy/fire/charcoal_gasifier/en
@@ -229,7 +229,7 @@
   - "The body gets extremely hot — keep flammables away"
   - "Clean ash regularly to maintain airflow"
   - "Output gas contains combustible components (CO/H2/CH4); piping must be sealed and leak-free, no accumulation in enclosed spaces; clean tar regularly to prevent blockage; keep open flame away from the gas outlet"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: energy/solar/thermal_basic/en
@@ -252,7 +252,7 @@
   - "Solar cooker focal point is extremely hot — beware burns and fire"
   - "Cloudy days and winter sharply reduce solar efficiency"
   - "Solar still output is limited — use as a supplementary water source only"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: weather/prediction/barometer/en
@@ -278,7 +278,7 @@
   - 'Pressure is only a guide; combine with wind, clouds, and temperature'
   - 'Simple barometers are affected by temperature; keep out of direct sunlight'
   - 'Seek shelter when extreme weather arrives; do not rely on a single indicator'
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: weather/clouds/reading/en
@@ -304,6 +304,6 @@
   - 'In thunderstorms stay away from high ground, isolated trees, water, and metal'
   - 'Mountain clouds can turn deadly fast; descend immediately when cumulonimbus builds'
   - 'One cloud type is not enough — read the trend of the whole cloud system'
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en

@@ -21,7 +21,7 @@
   - "Do not add meat, oil, or diseased plants — they attract pests and spread disease"
   - "Below 55°C the pile won't kill pathogens and weed seeds"
   - "Cat/dog feces may carry parasites — avoid"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: agriculture/seed_saving/techniques/en
@@ -47,7 +47,7 @@
   - "Hybrid (F1) seed segregates in offspring — prefer open-pollinated varieties"
   - "Excess moisture causes mold"
   - "Different brassica varieties cross-pollinate — isolate them"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: chemistry/paper/making/en
@@ -76,7 +76,7 @@
   - "Do not use aluminum pots (lye corrodes aluminum and contaminates pulp); use iron/stainless-steel/enamelware; lye corrodes skin — rinse immediately on contact"
   - "Pulp concentration sets sheet thickness — thin when dilute, thick when concentrated"
   - "Avoid direct sun while drying to prevent warping"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: chemistry/dye/natural/en
@@ -102,7 +102,7 @@
   - "Some dye plants are toxic — wash hands after handling"
   - "Iron mordant darkens color — mind the amount"
   - "Natural dyes have lower colorfastness than chemical dyes — re-dip to deepen"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: mechanical/watermill/simple/en
@@ -129,7 +129,7 @@
   - "Floods can destroy the wheel — reinforce before rainy season"
   - "Wooden bearings need frequent lubrication (animal fat/graphite)"
   - "Shattered millstones can fly out — set up guards"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: mechanical/bicycle_generator/en
@@ -156,7 +156,7 @@
   - "Generator voltage is unstable — always regulate before connecting devices"
   - "Lead-acid batteries emit hydrogen while charging — ventilate, keep away from flame"
   - "Long pedaling sessions are exhausting — not for the frail"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: weather/shelter/climate_design/en
@@ -180,7 +180,7 @@
   - "Site above the flood line, away from landslide slopes and wind funnels"
   - "Flues/fireplaces must vent correctly — carbon monoxide is silently lethal"
   - "Adobe buildings in seismic zones need reinforcement (bamboo/wood frame)"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: energy/wind/basic_turbine/en
@@ -209,7 +209,7 @@
   - "Spinning blades are a cutting hazard — set a safety perimeter"
   - "Brake or lower blades above the design wind limit"
   - "PVC blades grow brittle in winter and age — replace as needed; the throw zone is a 2× tower-height radius around the base"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: energy/biogas/digester/en
@@ -238,7 +238,7 @@
   - "Ventilate and post multiple watchers before entering for repair — the tank is oxygen-deficient and lethal"
   - "Output drops in cold weather — insulate in winter"
   - "Gas-holder pressure is auto-regulated by the water-pressure chamber — never seal a dead volume; fit a flame arrestor at the output to prevent flashback"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: medicine/herbal/common/en
@@ -264,7 +264,7 @@
   - "Herb dosing is imprecise — start small"
   - "Use herbs cautiously in pregnant women, children, and the frail"
   - "Herbs cannot replace professional care — emergency use only"
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: weather/extreme/storm_response/en
@@ -292,7 +292,7 @@
   - 'In thunderstorms do not use wired appliances or phones; stay away from metal pipes and water'
   - 'After high wind, watch for structural damage, downed power lines, and electrified standing water'
   - 'Never wade across unknown currents — 30 cm of water can knock an adult down'
-  verification: expert_verified
+  verification: field_tested
   source: pre_collapse
   language: en
 - id: medicine/public_health/sanitation/en

@@ -30,7 +30,7 @@ def _load_yaml(path: Path) -> list[dict]:
 
 def _dict_to_entry(d: dict) -> KnowledgeEntry:
     """Convert a dict to a KnowledgeEntry."""
-    return KnowledgeEntry(
+    entry = KnowledgeEntry(
         id=d["id"],
         category=d["category"],
         subcategory=d["subcategory"],
@@ -43,7 +43,24 @@ def _dict_to_entry(d: dict) -> KnowledgeEntry:
         verification=d.get("verification", "unverified"),
         source=d.get("source", "pre_collapse"),
         language=d.get("language", "zh"),
+        # SHA-148: auditable signoff fields (all empty/0 by default).
+        reviewer=d.get("reviewer", ""),
+        qualification=d.get("qualification", ""),
+        review_date=d.get("review_date", ""),
+        citation=d.get("citation", ""),
+        content_hash=d.get("content_hash", ""),
+        signoff_version=d.get("signoff_version", 0),
     )
+    # SHA-148: expert_verified is a signed-off claim. A YAML entry that claims
+    # expert_verified without a valid (reviewer + version + content-pinned)
+    # signoff is downgraded to field_tested so the label is never overstated.
+    if entry.verification == "expert_verified" and not entry.is_signed_off():
+        logger.warning(
+            "Knowledge %s claims expert_verified without valid signoff; "
+            "downgrading to field_tested", entry.id,
+        )
+        entry.verification = "field_tested"
+    return entry
 
 
 def load_knowledge(tier: int = -1, language: str = "") -> list[KnowledgeEntry]:
