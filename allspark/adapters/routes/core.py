@@ -146,6 +146,10 @@ def register_core_routes(app, check):
                     "title": e.title,
                     "summary": e.summary,
                     "priority": e.priority,
+                    "category": e.category,
+                    "subcategory": e.subcategory,
+                    "verification": e.verification,
+                    "language": e.language,
                 }
                 for e in entries
             ]

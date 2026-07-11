@@ -1412,6 +1412,20 @@ web_repository_select_section: Select a section on the left
 web_repository_no_knowledge: No knowledge entries
 web_repository_no_experience: No experience records
 web_repository_skf_note: SKF package import/export is not yet available in the Web UI; use the CLI.
+web_repo_search: Search title/summary
+web_repo_category: Category
+web_repo_tier: Tier
+web_repo_verification: Verification
+web_repo_language: Language
+web_repo_bilingual: Bilingual
+web_repo_all: All
+web_repo_page: Page {p} / {n}
+web_repo_prev: Previous
+web_repo_next: Next
+web_repo_no_match: No matching entries
+web_repo_results: "{n} entries"
+web_repo_detail_title: Knowledge detail
+web_repo_close: Close
 web_repository_export_disabled: SKF export is not available in the Web UI; use the CLI.
 web_repository_import_disabled: SKF import is not available in the Web UI; use the CLI.
 web_footer_resources: Resources
@@ -1619,6 +1633,8 @@ web_th_id: ID
 web_th_title: TITLE
 web_th_category: CATEGORY
 web_th_tier: TIER
+web_th_verification: Verification
+web_th_source: Source
 web_th_label: LABEL
 web_th_size: SIZE
 web_th_when: WHEN
