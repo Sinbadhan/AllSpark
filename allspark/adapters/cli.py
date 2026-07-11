@@ -10,7 +10,7 @@ from allspark.bootstrap import ApplicationBootstrap
 from allspark.commands.dispatcher import CommandDispatcher
 from allspark.container import ServiceContainer
 from allspark.core.database import Database
-from allspark.core.i18n import init_language, mark, t
+from allspark.core.i18n import init_language, mark, render, t
 from allspark.core.models import OperatingMode
 from allspark.services.rule_engine import RuleEngine
 
@@ -157,7 +157,7 @@ class SparkCLI:
                     console.print(f"[green]{t('goals_auto_generated', count=len(goals))}[/]")
                     for g in goals[:3]:
                         icon = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🟢"}.get(g.priority, "⚪")
-                        console.print(f"  {icon} [{g.category}] {g.title}")
+                        console.print(f"  {icon} [{g.category}] {render(g.title)}")
                     if len(goals) > 3:
                         console.print(f"  {t('goals_and_more', count=len(goals) - 3)}")
                 else:

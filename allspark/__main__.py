@@ -17,6 +17,11 @@ def _configure_logging() -> None:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
     )
+    # SHA-155: suppress noisy third-party dependency logs on the interactive
+    # first screen. jieba prints "Building prefix dict / Loading model" on every
+    # cold start; that is expected degradation, not a user-facing status.
+    for noisy in ("jieba", "jieba.dt", "jieba.posseg"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
 def _port_in_use(port: int, host: str = "127.0.0.1") -> bool:
