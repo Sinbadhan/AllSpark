@@ -6,17 +6,23 @@ Usage:
     python scripts/bench_import.py --check --hard-fail
                                               # also exit 1 when budget is overrun
 
-`--check` honours `IMPORT_BUDGET_MS` (env var, default 600 ms) as the
-total-import-time soft ceiling. `--check` alone is *advisory*: it prints
-a GitHub Actions `::warning::` line and exits 0 so CI stays green.
-`--hard-fail` flips the same overrun into exit 1; reserved for v1.2+ when
+Two metrics are reported (SHA-144):
+  - "sum of means": per-module import micro-benchmark (sum of each module's
+    mean import time; excludes shared interpreter overhead). Budget:
+    IMPORT_BUDGET_MS (default 600 ms).
+  - "wall-clock": end-to-end cold-start SLO (what the user perceives when
+    importing every module in sequence). Budget: IMPORT_WALL_BUDGET_MS
+    (default 2000 ms).
+
+`--check` enforces BOTH budgets. `--check` alone is *advisory*: it prints a
+GitHub Actions `::warning::` line per exceeded budget and exits 0 so CI stays
+green. `--hard-fail` flips any overrun into exit 1; reserved for v1.2+ when
 the team is ready to enforce the budget hard.
 
-Why a soft budget? Bench numbers depend on hardware (a slow CI runner
-can blow a tight threshold without anything regressing in code). A
-generous default + warn-only mode lets us track drift without breaking
-unrelated PRs. Tighten by lowering `IMPORT_BUDGET_MS`, or graduate to
-hard-fail once the floor is stable.
+Why soft budgets? Bench numbers depend on hardware (a slow CI runner can blow
+a tight threshold without anything regressing in code). Generous defaults +
+warn-only mode let us track drift without breaking unrelated PRs. Tighten by
+lowering the env vars, or graduate to --hard-fail once the floor is stable.
 
 This script must stay free of allspark.* imports until *inside* the
 benchmark loop — otherwise the first measurement is contaminated.
@@ -60,6 +66,7 @@ MODULES = [
 WARMUP = 1
 RUNS = 3
 DEFAULT_BUDGET_MS = 600.0
+DEFAULT_WALL_BUDGET_MS = 2000.0
 
 
 def benchmark_import(module_name: str) -> dict:
@@ -131,23 +138,35 @@ def main() -> int:
 
     total_mean = sum(r["mean_ms"] for r in results)
     slowest = max(results, key=lambda r: r["mean_ms"])
-    print(f"Total import time (sum of means): {total_mean:.1f}ms")
+    wall_ms = total_elapsed * 1000
+    # SHA-144: report two distinct metrics - per-module micro-benchmark vs
+    # end-to-end cold-start SLO. The old check compared only the sum-of-means
+    # (which excludes interpreter/environment overhead) against the budget, so
+    # a 1567ms wall-clock cold start still passed a 600ms "Within budget".
+    print(f"Module import micro-benchmark (sum of means): {total_mean:.1f}ms")
     print(f"Slowest module: {slowest['module']} ({slowest['mean_ms']:.2f}ms)")
-    print(f"Wall-clock total: {total_elapsed * 1000:.1f}ms")
+    print(f"Cold-start wall-clock SLO: {wall_ms:.1f}ms")
 
     if not args.check:
         return 0
 
-    print(f"Budget: {budget_ms:.0f}ms (set IMPORT_BUDGET_MS to override)")
+    wall_budget_ms = float(os.environ.get("IMPORT_WALL_BUDGET_MS", DEFAULT_WALL_BUDGET_MS))
+    print(f"Budgets: sum-of-means {budget_ms:.0f}ms (IMPORT_BUDGET_MS), "
+          f"wall-clock {wall_budget_ms:.0f}ms (IMPORT_WALL_BUDGET_MS)")
+    exceeded = []
     if total_mean > budget_ms:
-        msg = (
-            f"import-time budget exceeded: {total_mean:.1f}ms > {budget_ms:.0f}ms; "
-            f"slowest = {slowest['module']} ({slowest['mean_ms']:.2f}ms)"
+        exceeded.append(
+            f"sum-of-means {total_mean:.1f}ms > {budget_ms:.0f}ms "
+            f"(slowest={slowest['module']} {slowest['mean_ms']:.2f}ms)"
         )
-        # GitHub Actions consumes ::warning:: lines and surfaces them on the run.
-        print(f"::warning::{msg}")
+    if wall_ms > wall_budget_ms:
+        exceeded.append(f"wall-clock {wall_ms:.1f}ms > {wall_budget_ms:.0f}ms")
+    if exceeded:
+        for msg in exceeded:
+            # GitHub Actions consumes ::warning:: lines and surfaces them on the run.
+            print(f"::warning::import budget exceeded: {msg}")
         return 1 if args.hard_fail else 0
-    print(f"Within budget ({total_mean:.1f}ms ≤ {budget_ms:.0f}ms).")
+    print(f"Within budgets (sum-of-means {total_mean:.1f}ms, wall-clock {wall_ms:.1f}ms).")
     return 0
 
 
