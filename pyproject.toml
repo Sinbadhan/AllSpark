@@ -44,6 +44,8 @@ dev = [
     # starlette 1.x TestClient requires httpx2 (httpx is deprecated; SHA-145).
     # Declared so CI fresh installs can collect the Web/TestClient test modules.
     "httpx2>=0.2,<3",
+    # Coverage gate (SHA-151): per-module reporting + fail-under floor in CI.
+    "pytest-cov>=4.0,<7",
 ]
 rag = [
     "sentence-transformers>=2.7",
