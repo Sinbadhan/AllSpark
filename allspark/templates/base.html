@@ -285,6 +285,21 @@ table { border-collapse: collapse; width: 100%; }
   .main-content { padding: 16px; margin-top: var(--topbar-h); }
   .main-wrapper { margin-left: var(--sidebar-w); }
   .footer { left: var(--sidebar-w); }
+  /* SHA-153: Tailwind md: responsive utilities. The project has no Tailwind
+     build, so md:-prefixed classes must be defined locally to actually switch
+     at >=768px (without this, `hidden md:block` stays hidden on desktop and
+     `md:hidden` stays visible - the Repository file tree / toggle button were
+     broken). */
+  .md\:flex-row { flex-direction: row !important; }
+  .md\:block { display: block !important; }
+  .md\:hidden { display: none !important; }
+  .md\:w-64 { width: 16rem !important; }
+  .md\:w-auto { width: auto !important; }
+  .md\:col-span-2 { grid-column: span 2 / span 2 !important; }
+  .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .md\:items-end { align-items: flex-end !important; }
 }
 @media (max-width: 767px) {
   .sidebar { display: none; }
