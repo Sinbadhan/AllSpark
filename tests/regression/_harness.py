@@ -198,6 +198,24 @@ class Recorder:
         return out
 
 
+
+# ---------------------------------------------------------------------------
+# SHA-60: blocking-flag detection. A suite whose records carry any blocking
+# flag must return non-zero so run_all fails (no false green). Flags marked
+# here indicate a real regression; ``degraded_allowlisted`` (expected graceful
+# degradation) and informational flags (``boundary_pass``, ``environment_blocked``)
+# are NOT blocking.
+# ---------------------------------------------------------------------------
+BLOCKING_FLAGS = frozenset({
+    "transport_error", "5xx", "4xx_unexpected", "ok_unexpected",
+    "i18n_leak", "json_error",
+})
+
+
+def blocking_records(records: list[CallRecord]) -> list[CallRecord]:
+    """Return records carrying any blocking flag (SHA-60)."""
+    return [r for r in records if any(f in BLOCKING_FLAGS for f in r.flags)]
+
 # ---------------------------------------------------------------------------
 # HTTP probe — wraps httpx with auto-recording + flag extraction.
 # ---------------------------------------------------------------------------

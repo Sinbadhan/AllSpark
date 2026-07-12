@@ -48,6 +48,7 @@ from tests.regression._harness import (
     REPORTS_DIR,
     CallRecord,
     Recorder,
+    blocking_records,
     http_probe,
     render_summary,
     web_server,
@@ -228,6 +229,14 @@ def main() -> int:
     print(f"\n{summary}")
     print(f"\nresults: {jsonl}")
     print(f"summary: {REPORTS_DIR / 'web_api.md'}")
+    # SHA-60: blocking flags (transport_error / non-allowlist 5xx / 4xx / etc.)
+    # must fail the suite so run_all cannot false-green.
+    blocking = blocking_records(recorder.records)
+    if blocking:
+        print(f"\n!! {len(blocking)} blocking record(s) - suite FAILS")
+        for r in blocking:
+            print(f"   {r.label}: {r.flags}")
+        return 1
     return 0
 
 

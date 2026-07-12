@@ -33,6 +33,7 @@ from tests.regression._harness import (
     REPORTS_DIR,
     CallRecord,
     Recorder,
+    blocking_records,
     render_summary,
     seed_initialized_db,
     web_server,
@@ -136,6 +137,12 @@ def main() -> int:
     print(f"\n{recorder.summary()}")
     print(f"\nresults: {jsonl}")
     print(f"snapshots: {out_dir}")
+    blocking = blocking_records(recorder.records)
+    if blocking:
+        print(f"\n!! {len(blocking)} blocking record(s) - suite FAILS")
+        for r in blocking:
+            print(f"   {r.label}: {r.flags}")
+        return 1
     return 0
 
 
