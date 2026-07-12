@@ -6,6 +6,57 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+### Audit remediation (SHA-158, 2026-07-11)
+
+Full publish-readiness audit (SHA-158) remediation - 15 issues closed across
+security, quality, UX, and packaging. Audit baseline Off track -> only
+real-hardware verification (SHA-33) remains.
+
+**Security (P0):**
+- SHA-142: Web auth boundary - token moved out of HTML to httpOnly+SameSite
+  cookie; `/login` + `/api/auth/login`; one-time bootstrap (init/complete 410
+  after init); middleware always on (loopback local trust, non-loopback gated).
+- SHA-147: SKF persistent XSS - input sanitization (`_sanitize_kf_field`) +
+  output escaping (escHtml) on knowledge metadata fields.
+- SHA-148: Knowledge `expert_verified` signoff schema (reviewer/qualification/
+  date/citation/content_hash/signoff_version) + content-hash invalidation;
+  142 entries downgraded to field_tested; loader + verifier gating.
+- SHA-28: Full test suite tracked in VCS + CI pytest (was gitignored, 55 tests
+  -> 730 tracked); CI coverage gate + collection-count gate.
+
+**Quality (P1):**
+- SHA-150: NL survival Q&A - FTS5 bm25 + title-substring re-rank; 1 main
+  answer + 2 related links (not full-text concat); 50+ golden set.
+- SHA-149: System health score factors in core capabilities (LLM/modules);
+  weather structured rendering (no raw JSON/null).
+- SHA-151: Coverage gate (`--cov-fail-under=60`) + collection-count gate;
+  init_wizard critical-path tests (10% -> 20%).
+- SHA-152: Web a11y - button semantics (lang cards/chips), modal dialog
+  role/Esc/focus, icon aria-labels.
+
+**UX (P2):**
+- SHA-153: Repository browser - search/category/tier/verification/language
+  filter + pagination + row detail modal + full ID tooltip.
+- SHA-154: Config page - real read-only view (about+health APIs); removed
+  hardcoded configTemplates/SAVED editor chrome.
+- SHA-155: CLI cold-start - `render(g.title)` (no marker leak); jieba/
+  VectorEngine log noise suppressed.
+- SHA-143: Doc/version/CI consistency (single source = CI output) +
+  `test_doc_consistency` guard.
+
+**Packaging/hygiene (P3):**
+- SHA-144: bench_import - dual metric (sum-of-means micro-bench + wall-clock
+  SLO) with independent budgets; `--hard-fail` on either.
+- SHA-156: Web dead-entry cleanup (exec-btn -> /executions; removed dead docs
+  link; dedup settings icon).
+- SHA-157: Package metadata - PEP 639 license; removed deprecated classifier;
+  removed unused prompt-toolkit; MANIFEST `*.j2` fix; Python 3.10 `tomli`
+  conditional dep; CI clean-wheel smoke matrix (3.10/3.11/3.12).
+- SHA-145: Starlette/httpx2 deprecation warning cleared (httpx2 declared).
+
+Remaining: SHA-33 real-hardware verification (RPi/sensors/LLM/Docker/multi-node)
+- needs physical hardware, cannot be mocked/skipped.
+
 ### Security
 - **H1**: Fixed `KnowledgeSigner._derive_key` bug — `getattr(self.db, "_db_path")`
   referenced a non-existent attribute (actual: `db_path`), so every installation
