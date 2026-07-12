@@ -1383,6 +1383,8 @@ web_footer_mode: 模式
 web_footer_status_label: 状态
 web_footer_status_alert: 告警
 web_footer_status_nominal: 正常
+web_footer_status_degraded: 退化
+web_footer_status_unavailable: 不可用
 
 # === Web UI v1.1 — Stage 1: Platform basics ===
 web_lang_switch_label: 切换语言

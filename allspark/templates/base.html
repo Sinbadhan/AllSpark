@@ -580,6 +580,8 @@ const FOOTER_I18N = {
   status_label: "{{ t('web_footer_status_label') }}",
   status_alert: "{{ t('web_footer_status_alert') }}",
   status_nominal: "{{ t('web_footer_status_nominal') }}",
+  status_degraded: "{{ t('web_footer_status_degraded') }}",
+  status_unavailable: "{{ t('web_footer_status_unavailable') }}",
 };
 const GLOBAL_I18N = {
   search_empty: "{{ t('web_global_search_empty') }}",
@@ -709,12 +711,26 @@ function promptDialog(title, opts) {
 }
 async function updateFooter() {
   try {
-    const data = await api("/api/status");
+    // SHA-177: footer status must match /api/system/health (which factors in
+    // LLM/modules/critical), not just resource warnings - otherwise the global
+    // footer shows "正常" while the System card shows degraded.
+    const [data, health] = await Promise.all([api("/api/status"), api("/api/system/health").catch(() => null)]);
     const res = data.resources || [];
     document.getElementById("footer-resources").textContent =
       FOOTER_I18N.resources + ": " + res.length + " | " + FOOTER_I18N.phase + " " + data.phase + " | " + FOOTER_I18N.mode + ": " + data.mode;
-    document.getElementById("footer-status").textContent =
-      FOOTER_I18N.status_label + ": " + (data.warnings && data.warnings.length > 0 ? FOOTER_I18N.status_alert : FOOTER_I18N.status_nominal);
+    let statusText;
+    const state = health && health.state;
+    if (state === "degraded") {
+      statusText = FOOTER_I18N.status_degraded;
+    } else if (state === "unavailable") {
+      statusText = FOOTER_I18N.status_unavailable;
+    } else if (state === "healthy") {
+      statusText = (data.warnings && data.warnings.length > 0) ? FOOTER_I18N.status_alert : FOOTER_I18N.status_nominal;
+    } else {
+      // health unknown (e.g. init page / fetch failed): fall back to warnings.
+      statusText = (data.warnings && data.warnings.length > 0) ? FOOTER_I18N.status_alert : FOOTER_I18N.status_nominal;
+    }
+    document.getElementById("footer-status").textContent = FOOTER_I18N.status_label + ": " + statusText;
   } catch(e) {}
 }
 updateFooter();

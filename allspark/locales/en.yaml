@@ -1446,6 +1446,8 @@ web_footer_mode: Mode
 web_footer_status_label: Status
 web_footer_status_alert: ALERT
 web_footer_status_nominal: nominal
+web_footer_status_degraded: degraded
+web_footer_status_unavailable: unavailable
 
 # === Web UI v1.1 — Stage 1: Platform basics ===
 web_lang_switch_label: Switch language
