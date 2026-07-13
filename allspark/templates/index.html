@@ -601,9 +601,30 @@ function openResourceEdit(rtype, amount, consumption, intake) {
   document.getElementById("res-edit-intake").value = intake;
   document.getElementById("res-edit-save").onclick = () => saveResource(rtype);
   modal.style.display = "flex";
+  // SHA-152: focus management - save trigger, focus first input, trap Tab.
+  modal._previouslyFocused = document.activeElement;
   document.getElementById("res-edit-amount").focus();
+  if (!modal._focusTrap) {
+    modal._focusTrap = (e) => {
+      if (e.key !== "Tab" || modal.style.display !== "flex") return;
+      const focusable = modal.querySelectorAll("input, button, [tabindex]:not([tabindex='-1'])");
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    modal.addEventListener("keydown", modal._focusTrap);
+  }
 }
-function closeResEdit() { const m = document.getElementById("res-edit-modal"); if (m) m.style.display = "none"; }
+function closeResEdit() {
+  const m = document.getElementById("res-edit-modal");
+  if (m) m.style.display = "none";
+  // SHA-152: restore focus to the element that opened the modal.
+  if (m && m._previouslyFocused && typeof m._previouslyFocused.focus === "function") {
+    m._previouslyFocused.focus();
+    m._previouslyFocused = null;
+  }
+}
 async function saveResource(rtype) {
   const amount = parseFloat(document.getElementById("res-edit-amount").value);
   const consumption = parseFloat(document.getElementById("res-edit-consumption").value);
