@@ -88,9 +88,9 @@ class TestDockerCommand:
         from allspark.commands.docker import DockerCommand
         docker_mgr = MagicMock()
         docker_mgr.get_status.return_value = {
-            "mode": "process",
+            "deploy_mode": "process",
             "available": False,
-            "containers": [],
+            "services": {},
         }
         container.register("docker_manager", docker_mgr)
         cmd = DockerCommand(container)
