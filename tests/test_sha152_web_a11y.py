@@ -56,6 +56,13 @@ class TestIndexA11y:
         assert "Escape" in t  # Esc closes modal
         assert 'getElementById("res-edit-amount").focus()' in t  # focus on open
 
+    def test_modal_focus_trap_and_restore(self):
+        t = _read("index.html")
+        # SHA-152: focus trap (Tab cycles within modal) + restore on close.
+        assert "_focusTrap" in t
+        assert "_previouslyFocused" in t
+        assert "_previouslyFocused.focus" in t  # restore on close
+
 
 class TestBaseA11y:
     def test_icon_buttons_have_aria_labels(self):
