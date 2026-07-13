@@ -399,7 +399,7 @@ async function searchKnowledge() {
   document.getElementById("knowledge-detail").style.display = "none";
   if (!results.length) { container.innerHTML = '<div class="text-secondary text-sm p-4 text-center">' + I18N.web_no_results + '</div>'; return; }
   container.innerHTML = results.map(e =>
-    '<div class="kb-entry" onclick="showKnowledge(\'' + e.id + '\')">' +
+    '<div class="kb-entry" tabindex="0" data-kid="' + escHtml(e.id) + '">' +
     '<div class="entry-title">' + escHtml(e.title) + '</div>' +
     '<div class="entry-meta">' + I18N.web_kb_meta_tier_fmt
         .replace('{tier}', escHtml(String(e.priority)))
@@ -407,6 +407,13 @@ async function searchKnowledge() {
         .replace('{subcategory}', escHtml(e.subcategory || '')) + '</div>' +
     '<div class="entry-summary">' + escHtml(I18N.web_kb_summary_short_fmt.replace('{summary}', (e.summary || "").substring(0, 100))) + '</div></div>'
   ).join("");
+  // SHA-147: event delegation instead of inline onclick (avoid JS-string-context
+  // injection from entry IDs). Click or Enter on a .kb-entry opens its detail.
+  container.querySelectorAll(".kb-entry").forEach(el => {
+    const kid = el.getAttribute("data-kid");
+    el.addEventListener("click", () => showKnowledge(kid));
+    el.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); showKnowledge(kid); } });
+  });
 }
 
 async function showKnowledge(id) {

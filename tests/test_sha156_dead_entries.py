@@ -2,7 +2,7 @@
 
 "启动操作" must target the task center (/executions), not the dashboard root;
 the dead `href="#"` docs link and the redundant settings icon (-> /config, dup
-of the nav link) are removed.
+of the nav link) are removed. Mobile nav has a global search entry (desktop parity).
 """
 from pathlib import Path
 
@@ -26,3 +26,9 @@ class TestDeadEntries:
         t = _read("base.html")
         # SHA-156: settings icon (-> /config) removed; /config reached via nav.
         assert "location.href='/config'" not in t
+
+    def test_mobile_global_search_exists(self):
+        t = _read("base.html")
+        # SHA-156: mobile nav must have a global search entry (desktop topbar parity).
+        assert "mobile-global-search" in t
+        assert "mobileSearch" in t  # JS binding

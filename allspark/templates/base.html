@@ -507,6 +507,10 @@ table { border-collapse: collapse; width: 100%; }
       <span class="material-symbols-outlined" aria-hidden="true">close</span>
     </button>
   </div>
+  <!-- SHA-156: mobile global search (desktop has it in topbar; mobile parity) -->
+  <div style="padding:0 12px 8px;">
+    <input type="text" id="mobile-global-search" placeholder="{{ t('web_search_placeholder') }}" aria-label="{{ t('web_search_placeholder') }}" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:8px 10px;border-radius:4px;font-size:13px;"/>
+  </div>
   <nav>
     <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined">dashboard</span> {{ t('web_nav_dashboard') }}</a>
     <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined">terminal</span> {{ t('web_nav_system') }}</a>
@@ -792,6 +796,17 @@ window.addEventListener("load", () => {
   if (search) {
     search.addEventListener("keydown", e => {
       if (e.key === "Enter") runGlobalSearch(search.value);
+    });
+  }
+  // SHA-156: mobile global search (parity with desktop topbar).
+  const mobileSearch = document.getElementById("mobile-global-search");
+  if (mobileSearch) {
+    mobileSearch.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        runGlobalSearch(mobileSearch.value);
+        const nav = document.getElementById("mobile-nav");
+        if (nav) nav.classList.remove("open");
+      }
     });
   }
   const pending = new URLSearchParams(location.search).get("q");

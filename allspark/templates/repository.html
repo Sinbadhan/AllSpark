@@ -427,7 +427,7 @@ function _repoRender() {
       </select>
     </div>`;
   const rows = pageItems.length ? pageItems.map(e => `
-    <tr class="hover:bg-surface-variant transition-colors border-b border-surface-container-high" style="cursor:pointer;" onclick="openRepoDetail('${escHtml(e.id)}')">
+    <tr class="hover:bg-surface-variant transition-colors border-b border-surface-container-high" style="cursor:pointer;" tabindex="0" data-kid="${escHtml(e.id)}">
       <td class="p-3"><span class="text-primary hover:underline font-mono text-xs" title="${escHtml(e.id)}">${escHtml(e.id)}</span></td>
       <td class="p-3 text-on-surface">${escHtml(e.title)}</td>
       <td class="p-3 text-secondary">${escHtml(e.category)}</td>
@@ -464,6 +464,13 @@ function _repoRender() {
   bind("repo-f-tier", "tier");
   bind("repo-f-ver", "verification");
   bind("repo-f-lang", "lang");
+  // SHA-147: event delegation instead of inline onclick on rows (avoid
+  // JS-string-context injection from entry IDs). Click or Enter opens detail.
+  el.querySelectorAll("tr[data-kid]").forEach(tr => {
+    const kid = tr.getAttribute("data-kid");
+    tr.addEventListener("click", () => openRepoDetail(kid));
+    tr.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); openRepoDetail(kid); } });
+  });
 }
 
 function _repoGo(p) { _repoPage = p; _repoRender(); }
