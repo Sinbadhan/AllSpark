@@ -43,7 +43,7 @@ jobs:
         # low-coverage domains are visible (not hidden behind the total), and
         # --cov-fail-under prevents total coverage from regressing below the
         # ratcheted floor (raise over time as critical-path tests land).
-        run: pytest -q --tb=short --cov=allspark --cov-report=term-missing --cov-fail-under=60
+        run: pytest -q --tb=short --cov=allspark --cov-report=term-missing --cov-fail-under=62
 
       - name: Test collection count gate
         # SHA-151: ensure the suite isn't silently shrinking (removing tests
