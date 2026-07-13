@@ -3,9 +3,7 @@
 Raises coverage on comms.py (10% -> higher) and docker.py (14% -> higher)
 by exercising NetworkCommand/VisionCommand/DockerCommand execute() paths.
 """
-import tempfile
-from io import StringIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -20,23 +18,27 @@ def container(tmp_path):
     db = Database(tmp_path / "test.db")
     db.mark_initialized()
     c = ServiceContainer(db)
-    # Mock spark_network
+    # Mock spark_network with correct method names + return shapes.
     net = MagicMock()
     net.get_status.return_value = {
         "spark_id": "test-spark",
         "running": True,
         "channels": {"tcp": True, "udp": False},
         "known_nodes": 1,
-        "nodes": [{"name": "node-1", "knowledge_count": 5, "status": "online"}],
+        "nodes": [{"display_name": "node-1", "knowledge_count": 5, "status": "online"}],
     }
-    net.start.return_value = {"status": "ok"}
-    net.stop.return_value = {"status": "ok"}
-    net.discover.return_value = {"found": 0, "nodes": []}
+    net.start_discovery.return_value = {"status": "started", "spark_id": "test-spark"}
+    net.stop_discovery.return_value = {"status": "stopped", "nodes_found": 1}
+    net.detect_channels.return_value = {"lan": {"available": False}, "tcp": {"available": True}}
     c.register("spark_network", net)
     # Mock LLM
     llm = MagicMock()
     llm.available = False
     c.register("llm", llm)
+    # Mock vision
+    vision = MagicMock()
+    vision.get_status.return_value = {"available": False, "multimodal": False, "llm_model": None}
+    c.register("vision", vision)
     yield c
     db.close()
 
@@ -54,30 +56,30 @@ class TestNetworkCommand:
         cmd = NetworkCommand(container)
         cmd.console = MagicMock()
         cmd.execute(["start"])
-        container.get("spark_network").start.assert_called_once()
+        container.get("spark_network").start_discovery.assert_called_once()
 
     def test_stop(self, container):
         set_language("en")
         cmd = NetworkCommand(container)
         cmd.console = MagicMock()
         cmd.execute(["stop"])
-        container.get("spark_network").stop.assert_called_once()
+        container.get("spark_network").stop_discovery.assert_called_once()
 
-    def test_discover(self, container):
+    def test_scan(self, container):
         set_language("en")
         cmd = NetworkCommand(container)
         cmd.console = MagicMock()
-        cmd.execute(["discover"])
-        container.get("spark_network").discover.assert_called_once()
+        cmd.execute(["scan"])
+        container.get("spark_network").detect_channels.assert_called_once()
 
 
 class TestVisionCommand:
-    def test_status_no_camera(self, container):
+    def test_status(self, container):
         set_language("en")
         cmd = VisionCommand(container)
         cmd.console = MagicMock()
-        # VisionCommand with no vision service should not crash.
         cmd.execute([])
+        container.get("vision").get_status.assert_called_once()
 
 
 class TestDockerCommand:
@@ -86,9 +88,9 @@ class TestDockerCommand:
         from allspark.commands.docker import DockerCommand
         docker_mgr = MagicMock()
         docker_mgr.get_status.return_value = {
-            "mode": "PROCESS",
+            "deploy_mode": "process",
             "available": False,
-            "containers": [],
+            "services": {},
         }
         container.register("docker_manager", docker_mgr)
         cmd = DockerCommand(container)
