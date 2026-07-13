@@ -29,26 +29,29 @@ import sys
 from typing import Any
 
 # Critical-path modules per SHA-151 acceptance plus other high-risk
-# low-coverage modules. Floors are BRANCH coverage %, ratcheted to the
-# 2026-07-13 measured levels on main (e44b1c5). Raise as targeted tests
-# land; never lower without explicit re-scoping of the SHA-151 acceptance.
+# low-coverage modules. Floors are BRANCH coverage %, ratcheted to the measured
+# levels after the Phase B coverage push (2026-07-13, branch sha-151/coverage-
+# gate-real). Raise as targeted tests land; never lower without explicit
+# re-scoping of the SHA-151 acceptance. Modules still below the 90% acceptance
+# (init/auth/SKF/backup) keep their low floor as a non-regression ratchet
+# until follow-up rounds raise their coverage.
 DEFAULT_BRANCH_FLOORS = {
     # --- critical path (acceptance: >=90% branch) ---
-    "allspark/adapters/init_wizard.py": 17,            # init
-    "allspark/adapters/web_ui.py": 48,                 # auth
-    "allspark/services/skf_manager.py": 48,            # SKF
-    "allspark/services/knowledge_loader.py": 91,       # import (already >=90)
-    "allspark/services/reset_manager.py": 88,          # reset
-    "allspark/infrastructure/data_preservation.py": 36,  # backup
-    "allspark/services/knowledge_engine.py": 58,       # search
-    "allspark/services/resource_manager.py": 68,       # resource
+    "allspark/adapters/init_wizard.py": 17,            # init (17.4% -> deferred)
+    "allspark/adapters/web_ui.py": 48,                 # auth (48.5% -> deferred)
+    "allspark/services/skf_manager.py": 48,            # SKF (48.9% -> deferred)
+    "allspark/services/knowledge_loader.py": 100,      # import (91.7% -> 100%)
+    "allspark/services/reset_manager.py": 94,          # reset (88.9% -> 94.4%)
+    "allspark/infrastructure/data_preservation.py": 36,  # backup (36.2% -> deferred)
+    "allspark/services/knowledge_engine.py": 94,       # search (58.3% -> 94.4%)
+    "allspark/services/resource_manager.py": 96,       # resource (68.4% -> 96.9%)
     # --- other high-risk low-coverage modules (ratcheted, non-acceptance) ---
-    "allspark/adapters/routes/governance.py": 0,
+    "allspark/adapters/routes/governance.py": 92,      # (0% -> 92.1%)
     "allspark/commands/survival.py": 9,
     "allspark/commands/docker.py": 8,
     "allspark/services/llm_engine.py": 3,
     "allspark/services/sensor_hub.py": 2,
-    "allspark/services/trade_engine.py": 3,
+    "allspark/services/trade_engine.py": 48,           # (3.7% -> 48.1%)
 }
 
 ACCEPTANCE_BRANCH = 90.0      # SHA-151: critical-path branch target
