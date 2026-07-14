@@ -98,14 +98,14 @@ allspark/
 
 ## 当前状态（v1.0.3）
 
-- v1.0.3 稳定性收敛已完成，P1 类型债与 Web/回归高优先级问题已闭环
+- SHA-158 发布就绪复审收敛进行中；2026-07-15 发现的 8 个 High/P1 已闭环，但 P2、发布事务一致性和外部环境验证仍开放，当前结论为 Off track / 尚未满足 Stable 发布门禁
 - 完整 tracked tests 已收集（以 `pytest tests/ -q` / CI 实际输出为准；CI 在 Python 3.10/3.11/3.12 复现，SHA-28）
 - SHA-151 质量门禁：Python 3.10 为权威覆盖环境，总行覆盖率 ≥75%，8 个关键路径模块分支覆盖率均 ≥90%；3.10/3.11/3.12 均运行完整测试与收集数防回退门禁
 - Ruff lint 0 errors
 - mypy 0 errors，`check_untyped_defs = true` 已启用
-- `scripts/bench_import.py --check` 当前低于 600ms 门槛
+- `scripts/bench_import.py --check` 同时执行 600ms sum-of-means 与 2000ms cold-wall 门禁，当前通过
 - 知识数据已外置为 YAML（旧 Python dict 文件已删除）
-- i18n 已外置为 `locales/zh.yaml` + `locales/en.yaml`（i18n.py 仅 96 行）
+- i18n 已外置为 `locales/zh.yaml` + `locales/en.yaml`（i18n.py 157 行）
 - Scheduler 已接入 bootstrap
 - 命令自动发现注册已实现（10 个命令模块 / 32 个 Command 类）
-- 剩余改进项：P2 真实环境集成验证（GPU/Docker/RPi/传感器/LLM 实机）、P3 视觉回归基线、bench `--hard-fail` 升级
+- 当前开放轨道：P2 CLI/Repository 可用性（SHA-222/225/227）、CI/发布事务（SHA-229/230）、真实环境与 CSP enforcing（SHA-33/179/181/213），以及 Low/v2+ 范围（SHA-228/34/35）；实时计数与发布结论以 Linear SHA-158 正文为准
