@@ -94,6 +94,7 @@ class _Chrome:
                 "--disable-background-networking",
                 "--disable-component-update",
                 "--disable-default-apps",
+                "--disable-dev-shm-usage",
                 "--disable-extensions",
                 "--disable-gpu",
                 "--no-default-browser-check",
@@ -106,13 +107,14 @@ class _Chrome:
             stderr=subprocess.DEVNULL,
         )
         active_port = self.profile / "DevToolsActivePort"
-        for _ in range(200):
+        for _ in range(600):
             if active_port.exists():
                 break
             if self.process.poll() is not None:
                 raise AssertionError("Chrome exited before DevTools became available")
             time.sleep(0.05)
         else:
+            self._stop_process()
             raise AssertionError("Chrome DevTools did not become available")
 
         port = active_port.read_text(encoding="utf-8").splitlines()[0]
@@ -126,13 +128,17 @@ class _Chrome:
     def __exit__(self, *_args: object) -> None:
         if self.ws is not None:
             self.ws.close()
-        if self.process is not None:
-            self.process.terminate()
-            try:
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-                self.process.wait(timeout=5)
+        self._stop_process()
+
+    def _stop_process(self) -> None:
+        if self.process is None or self.process.poll() is not None:
+            return
+        self.process.terminate()
+        try:
+            self.process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            self.process.kill()
+            self.process.wait(timeout=5)
 
     def call(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         self._request_id += 1
