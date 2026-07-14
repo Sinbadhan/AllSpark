@@ -7,6 +7,13 @@ Use this checklist before tagging or publishing an AllSpark release.
 - Confirm the release goal and version number.
 - Confirm no v2.0+ work is accidentally included in a maintenance release.
 - Review `CHANGELOG.md` and update the `Unreleased` section.
+- For v1.0.3, confirm the Stable boundary is desktop PROCESS mode plus local
+  core workflows. Docker/INTEGRATION, real LLM/GPU, voice, vision, Raspberry Pi
+  hardware, sensors/power/GPS, cross-host networking and removable-media
+  disaster recovery remain Experimental unless new real-environment evidence
+  is attached to SHA-33.
+- Confirm Bluetooth and Wi-Fi Direct are not advertised as transports; v1.0.3
+  implements LAN TCP transport and radio availability detection only.
 
 ## 2. Update version references
 
@@ -74,6 +81,9 @@ Verify no sensitive or generated files are staged:
 - SHA-158 contains the final audit comment and no unresolved P0/P1 blocker.
 - Hardware-dependent SHA-33 rows are either evidenced for this release or
   explicitly excluded from the supported release scope.
+- SHA-180 single-host multiprocess evidence passes. SHA-179 and the external
+  media portion of SHA-181 may stay open only when their capabilities are
+  explicitly Experimental and excluded from Stable support.
 - The RC pull request is green on all Python versions, including the clean-wheel
   smoke matrix and real-Chrome SKF XSS gate.
 - Deferred hardening is linked as follow-up work; Report-Only CSP must not be

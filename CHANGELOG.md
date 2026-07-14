@@ -51,6 +51,16 @@ workflow and supported hardware scope are approved.
   VectorEngine log noise suppressed.
 - SHA-143: Doc/version/CI consistency (workflow and executable gate constants
   are the source of truth) plus `test_doc_consistency` drift guards.
+- SHA-180: Spark Network now has independent-process integration coverage for
+  signed transfer, tampered and unsigned rejection, disconnect/restart, size
+  rejection and recovery. A configured shared secret is enforced rather than
+  bypassable by omitting signatures.
+- SHA-181: Snapshots use SQLite online backup for WAL consistency, atomic
+  publication/replacement, full SHA-256 metadata verification, temp cleanup and
+  live-connection recovery after restore failures.
+- SHA-182: Experimental status now comes from the server-side module registry
+  and is shared by API, Web, CLI and health scoring; the public README defines
+  the same scoped support boundary.
 
 **Packaging/hygiene (P3):**
 - SHA-144: bench_import - dual metric (sum-of-means micro-bench + wall-clock
@@ -74,17 +84,14 @@ hardening and is not represented as an active CSP defense in this release.
   per-node. Cross-node verification still requires a shared secret (v2.0 PKI per ADR 003).
 - **H2**: Spark Network TCP exchange server hardening — added
   `SPARKNET_MAX_INCOMING_BYTES` (50 MB) cap to prevent memory-exhaustion DoS;
-  wired soft signature verification on the receive path (entries carrying a
-  signature are verified against a configurable `network_shared_secret`,
-  mismatches rejected; unsigned entries still accepted as unverified for
-  backward compatibility); added connection/transfer logging; replaced silent
-  `except Exception: pass` with logged handlers.
+  a configured `network_shared_secret` now requires a valid signature for every
+  incoming entry, including rejection of missing signatures; added
+  connection/transfer logging and independent-process regressions.
 - **H3**: Web API bearer-token auth — when the Web UI binds a non-loopback host
   (`--host 0.0.0.0` or LAN IP), a bearer token is now required for all `/api/*`
   routes (auto-generated unless `--web-token` is given). `/api/init/*` stays
-  open so the init wizard can bootstrap. The token is injected into HTML
-  templates and the browser fetch wrapper adds the `Authorization` header
-  automatically.
+  open only for one-time bootstrap before initialization. Current behavior uses
+  an httpOnly, SameSite cookie and does not inject the credential into HTML.
 
 ### Changed
 - **L1/L2**: DI fixes — `commands/ai.py` VerifyCommand now uses

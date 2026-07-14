@@ -1,7 +1,7 @@
 # P2 Real-World Validation Log
 
 > Last updated: 2026-07-14
-> Status: started, not yet completed on real hardware
+> Status: scoped desktop evidence in progress; hardware integrations remain Experimental
 
 ## Scope
 
@@ -24,15 +24,52 @@ removable storage.
 
 | Area | Status | Required environment | Validation target |
 | --- | --- | --- | --- |
-| Spark Network TCP exchange | ready (loopback) | Local shell/CI allowing `127.0.0.1` TCP bind | Two-node request/exchange and knowledge transfer complete on local loopback. |
+| Spark Network TCP exchange | verified (single-host multiprocess) | Two independent Python processes on `127.0.0.1` | Signed happy path, tampered/unsigned rejection, disconnect, same-port restart, configured size rejection and recovery pass in `tests/test_sha180_multiprocess.py`. Cross-host transport remains Experimental. |
 | Web regression harness | ready (loopback) | Local shell/CI allowing uvicorn on loopback | `tests/regression/run_all.py` completes all suites exit 0, no `environment_blocked`. |
-| Docker graceful deployment | not_run | Host with Docker daemon | `DockerManager` detects daemon, starts/stops configured services, and preserves PROCESS fallback. |
+| Docker graceful deployment | unavailable on audit host | Host with Docker daemon | The audit host has no `docker` command. Automated unavailable/fallback behavior passes; daemon happy/recovery paths remain Experimental (SHA-179). |
 | Local LLM runtime | not_run | Machine with target GGUF model and llama-cpp-python backend | Model discovery, load, inference, timeout, and degraded no-model path. |
 | GPU acceleration | blocked_by_hardware | CUDA/Metal-capable host matching supported backend | Feature detection and model tier recommendation match hardware profile. |
 | Raspberry Pi power monitoring | blocked_by_hardware | RPi + ADC/SPI wiring | Real voltage/current read, manual fallback, low-power warning path. |
 | Sensor hub | blocked_by_hardware | I2C/GPIO/Serial sensors and GPS | Temperature/humidity/barometer/GPS readings, stale data handling, manual fallback. |
-| Data preservation on real media | not_run | Removable storage or separate filesystem | Snapshot, restore, checksum validation, and interrupted write recovery. |
+| Data preservation on real media | software verified; external media environment-blocked | Removable storage or independent filesystem | WAL-consistent atomic snapshot/restore, full SHA-256 verification, valid-SQLite tamper rejection, interrupted creation cleanup and failed-replace reconnect pass. APFS disk-image creation did not complete in this desktop environment, so removable/independent media remains Experimental (SHA-181). |
 | Offline web assets | ready | Browser with network disabled | UI remains readable with local CSS/icon fallbacks. |
+
+## 2026-07-14 Evidence
+
+### SHA-180: single-host independent processes
+
+- Environment: macOS desktop, Apple silicon, Python 3.10.5, loopback TCP only.
+- Commit: `01e448b`.
+- Gate: `pytest -q tests/test_sha180_multiprocess.py tests/test_sha36_regression.py`.
+- Result: 16 passed. The integration starts separate spawned server processes,
+  performs shared-secret signing, rejects both bad and missing signatures,
+  persists transferred knowledge, detects disconnect, restarts on the same
+  port, rejects an over-limit payload and then serves a valid request.
+- Boundary: the production constant remains 50 MiB; the process integration
+  uses a reduced injected threshold to exercise the same rejection branch
+  without allocating 50 MiB in every CI worker.
+
+### SHA-181: snapshot and restore
+
+- Environment: local APFS audit workspace, Python 3.10.5.
+- Commit: `b418fc3`.
+- Gate: `pytest -q tests/test_data_preservation.py tests/test_sha151_backup.py`.
+- Result: 44 passed after the SHA-181 additions. Coverage includes committed
+  WAL data, atomic publish, full SHA-256 metadata, legacy 16-character checksum
+  compatibility, checksum mismatch before touching the live DB, interruption
+  cleanup, stale WAL/SHM cleanup, connection reopening and replace-failure
+  recovery.
+- Independent-filesystem attempt: two `hdiutil create` attempts remained
+  sleeping before project code ran. They were terminated and temporary files
+  were removed. This is recorded as environment-blocked, not passed.
+
+## v1.0.3 Support Decision
+
+The Stable candidate scope is desktop PROCESS mode and local core workflows.
+Docker/INTEGRATION, real model/GPU, voice, vision, Raspberry Pi hardware,
+physical sensors/GPS/power, cross-host networking and removable-media disaster
+recovery remain Experimental. Bluetooth and Wi-Fi Direct transports are not
+implemented in v1.0.3; channel detection must not be presented as transport.
 
 ## Next Execution Order
 
@@ -40,6 +77,8 @@ removable storage.
    output to this log.
 2. Run `tests/regression/run_all.py` with loopback networking enabled and confirm
    zero `environment_blocked` rows.
-3. Validate Docker on a daemon-enabled host.
+3. On a post-release hardware-validation track, validate Docker on a
+   daemon-enabled host and move SHA-179 out of Experimental only with evidence.
 4. Validate LLM model discovery/load/inference with the smallest supported GGUF.
-5. Move to Raspberry Pi sensors, power, GPS, and removable-storage tests.
+5. Validate Raspberry Pi sensors, power, GPS, cross-host networking and
+   removable storage before expanding the public support boundary.

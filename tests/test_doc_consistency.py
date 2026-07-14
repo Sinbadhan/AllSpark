@@ -101,3 +101,20 @@ def test_changelog_unreleased_does_not_overclaim_release_closure() -> None:
     assert not any(claim in unreleased for claim in forbidden)
     assert "Report-Only" in unreleased
     assert "SHA-213" in unreleased
+
+
+def test_public_docs_define_honest_release_support_boundary() -> None:
+    readme = Path("README.md").read_text(encoding="utf-8")
+    readme_cn = Path("README_CN.md").read_text(encoding="utf-8")
+    validation = Path("docs/REAL_WORLD_VALIDATION.md").read_text(encoding="utf-8")
+
+    assert "v1.0.3 Release Support Boundary" in readme
+    assert "v1.0.3 发布支持边界" in readme_cn
+    for content in (readme, readme_cn, validation):
+        assert "PROCESS" in content
+        assert "Experimental" in content
+
+    assert "LAN/Bluetooth/WiFi Direct" not in readme
+    assert "局域网/蓝牙/WiFi Direct" not in readme_cn
+    assert "Bluetooth and Wi-Fi Direct transports" in readme
+    assert "蓝牙和 Wi-Fi Direct 传输" in readme_cn
