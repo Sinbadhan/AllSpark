@@ -280,9 +280,9 @@ AllSpark/
 |-------|--------|
 | Automated tests | ✅ see CI / pytest output |
 | Ruff lint | ✅ 0 errors |
-| mypy | ✅ CI-enforced, with historical typing debt isolated by error-code allowlist |
+| mypy | ✅ CI-enforced with `check_untyped_defs`; no disabled error-code categories |
 | Packaging types | ✅ `py.typed` included |
-| Public repo hygiene | ✅ Internal docs, runtime data, local models, and secrets ignored |
+| Public repo hygiene | ✅ Tests tracked for reproducible CI; runtime data, local models, secrets, and build output ignored |
 
 ---
 

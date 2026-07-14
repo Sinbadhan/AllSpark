@@ -255,7 +255,7 @@ AllSpark/
 │   ├── templates/                  # Web UI HTML 模板
 │   └── docker/                     # Dockerfile + docker-compose.yml
 │
-└── tests/                          # 自动化测试（数量以 pytest tests/ -q 为准；公开发布时保持内部隐藏）
+└── tests/                          # 已跟踪自动化测试（数量以 pytest tests/ -q / CI 为准）
 ```
 
 ---
@@ -280,9 +280,9 @@ AllSpark/
 |--------|------|
 | 自动化测试 | ✅ 以 CI / pytest 输出为准 |
 | Ruff lint | ✅ 0 errors |
-| mypy | ✅ CI 强制执行，历史类型债通过 error-code 白名单隔离 |
+| mypy | ✅ CI 强制执行 `check_untyped_defs`，无禁用 error-code 类别 |
 | 类型发布标记 | ✅ 已包含 `py.typed` |
-| 公开仓库卫生 | ✅ 内部文档、测试、运行时数据、本地模型、敏感信息已忽略 |
+| 公开仓库卫生 | ✅ 测试已跟踪以复现 CI；运行时数据、本地模型、密钥与构建产物保持忽略 |
 
 ---
 

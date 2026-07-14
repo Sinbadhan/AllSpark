@@ -6,43 +6,51 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
-### Audit remediation (SHA-158, 2026-07-11)
+### Audit remediation (SHA-158, in progress)
 
-Full publish-readiness audit (SHA-158) remediation - 15 issues closed across
-security, quality, UX, and packaging. Audit baseline Off track -> only
-real-hardware verification (SHA-33) remains.
+Release-readiness remediation across security, quality, UX, packaging, and
+documentation. Linear SHA-158 is the live source for issue status; this section
+records shipped behavior and does not claim release readiness before the RC
+workflow and supported hardware scope are approved.
 
 **Security (P0):**
 - SHA-142: Web auth boundary - token moved out of HTML to httpOnly+SameSite
   cookie; `/login` + `/api/auth/login`; one-time bootstrap (init/complete 410
   after init); middleware always on (loopback local trust, non-loopback gated).
-- SHA-147: SKF persistent XSS - input sanitization (`_sanitize_kf_field`) +
-  output escaping (escHtml) on knowledge metadata fields.
+- SHA-147/SHA-196: SKF persistent XSS - import-boundary metadata sanitization,
+  output escaping, removal of dynamic row handlers, and a real-Chrome public
+  import -> API -> Repository/Dashboard list/detail regression. CSP is currently
+  Report-Only; enforcing migration is explicitly deferred to SHA-213.
 - SHA-148: Knowledge `expert_verified` signoff schema (reviewer/qualification/
   date/citation/content_hash/signoff_version) + content-hash invalidation;
   142 entries downgraded to field_tested; loader + verifier gating.
-- SHA-28: Full test suite tracked in VCS + CI pytest (was gitignored, 55 tests
-  -> 730 tracked); CI coverage gate + collection-count gate.
+- SHA-28: Full test suite tracked in VCS; CI runs it across Python
+  3.10/3.11/3.12 and validates clean-wheel installation on the same matrix.
 
 **Quality (P1):**
 - SHA-150: NL survival Q&A - FTS5 bm25 + title-substring re-rank; 1 main
   answer + 2 related links (not full-text concat); 50+ golden set.
 - SHA-149: System health score factors in core capabilities (LLM/modules);
   weather structured rendering (no raw JSON/null).
-- SHA-151: Coverage gate (`--cov-fail-under=60`) + collection-count gate;
-  init_wizard critical-path tests (10% -> 20%).
-- SHA-152: Web a11y - button semantics (lang cards/chips), modal dialog
-  role/Esc/focus, icon aria-labels.
+- SHA-151: JSON-backed gate requires >=75% total line coverage and >=90%
+  branch coverage on all eight critical-path modules, plus a ratcheted test
+  collection floor.
+- SHA-152: Web a11y - native control semantics, dialog roles, focus traps,
+  deterministic focus restoration after async refresh, mobile-nav state/inert
+  synchronization, and executable JavaScript regressions.
 
 **UX (P2):**
 - SHA-153: Repository browser - search/category/tier/verification/language
   filter + pagination + row detail modal + full ID tooltip.
+- SHA-212: Restored the Repository knowledge list after a missing runtime i18n
+  mapping caused every normal load to fail; real rendered-JavaScript tests cover
+  empty, zero-match, normal, and multi-page states.
 - SHA-154: Config page - real read-only view (about+health APIs); removed
   hardcoded configTemplates/SAVED editor chrome.
 - SHA-155: CLI cold-start - `render(g.title)` (no marker leak); jieba/
   VectorEngine log noise suppressed.
-- SHA-143: Doc/version/CI consistency (single source = CI output) +
-  `test_doc_consistency` guard.
+- SHA-143: Doc/version/CI consistency (workflow and executable gate constants
+  are the source of truth) plus `test_doc_consistency` drift guards.
 
 **Packaging/hygiene (P3):**
 - SHA-144: bench_import - dual metric (sum-of-means micro-bench + wall-clock
@@ -54,8 +62,10 @@ real-hardware verification (SHA-33) remains.
   conditional dep; CI clean-wheel smoke matrix (3.10/3.11/3.12).
 - SHA-145: Starlette/httpx2 deprecation warning cleared (httpx2 declared).
 
-Remaining: SHA-33 real-hardware verification (RPi/sensors/LLM/Docker/multi-node)
-- needs physical hardware, cannot be mocked/skipped.
+Remaining release decisions are tracked in SHA-158: complete the RC CI evidence,
+finish SHA-152 manual keyboard/screen-reader/200% zoom evidence, and approve the
+SHA-33 hardware support boundary. SHA-213 (enforcing CSP) is documented follow-up
+hardening and is not represented as an active CSP defense in this release.
 
 ### Security
 - **H1**: Fixed `KnowledgeSigner._derive_key` bug — `getattr(self.db, "_db_path")`
@@ -99,8 +109,8 @@ Remaining: SHA-33 real-hardware verification (RPi/sensors/LLM/Docker/multi-node)
 ### Documentation
 - Updated `CLAUDE.md` from stale v0.7.0 to v1.0.3 (version, test count,
   directory structure, mypy `check_untyped_defs` status, command class count).
-- `CONTRIBUTING.md`: corrected stale mypy allowlist note; documented that CI
-  does not run pytest and `tests/` is private.
+- `CONTRIBUTING.md`: corrected stale mypy/pytest claims and documented the
+  reproducible CI, coverage, collection, and clean-wheel gates.
 
 ## [1.0.3] - 2026-06-24
 

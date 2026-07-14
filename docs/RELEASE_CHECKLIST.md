@@ -27,10 +27,15 @@ release scope and the audit gate (SHA-158) is green.
 ```bash
 ruff check allspark/ tests/
 mypy allspark/ --ignore-missing-imports
-python3 -m pytest tests/ -v --tb=short
+pytest -q --tb=short --cov=allspark --cov-branch \
+  --cov-report=term-missing --cov-report=json:coverage.json
+python3 scripts/check_coverage.py --coverage-json coverage.json
+python3 tests/regression/run_all.py
+python3 scripts/bench_import.py --check --hard-fail
 ```
 
-If mypy fails after tightening configuration, either fix the typed code in the same focused change or restore the allowlist and document the remaining debt.
+Do not lower coverage or collection floors to make a release pass. Record the
+exact pytest, coverage, regression, and benchmark output in the release PR.
 
 ## 4. Check package metadata
 
@@ -60,9 +65,21 @@ Verify no sensitive or generated files are staged:
 - `CONTRIBUTING.md` has current development commands.
 - `SECURITY.md` has a valid reporting path.
 - `docs/CONFIGURATION.md` reflects actual configuration behavior.
+- `docs/REAL_WORLD_VALIDATION.md` separates verified automation from hardware
+  that was not exercised in this release.
 - `CHANGELOG.md` has release notes for the new version.
 
-## 7. Tag and publish
+## 7. Confirm release scope and external evidence
+
+- SHA-158 contains the final audit comment and no unresolved P0/P1 blocker.
+- Hardware-dependent SHA-33 rows are either evidenced for this release or
+  explicitly excluded from the supported release scope.
+- The RC pull request is green on all Python versions, including the clean-wheel
+  smoke matrix and real-Chrome SKF XSS gate.
+- Deferred hardening is linked as follow-up work; Report-Only CSP must not be
+  described as enforcing.
+
+## 8. Tag and publish
 
 Only after checks pass:
 
@@ -75,7 +92,7 @@ Create a GitHub Release using the matching `CHANGELOG.md` section.
 
 Publish to PyPI only from a clean release environment and only after maintainer confirmation.
 
-## 8. Post-release
+## 9. Post-release
 
 - Confirm the GitHub Release renders correctly.
 - Confirm installation instructions still work.

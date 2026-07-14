@@ -99,7 +99,8 @@ allspark/
 ## 当前状态（v1.0.3）
 
 - v1.0.3 稳定性收敛已完成，P1 类型债与 Web/回归高优先级问题已闭环
-- 完整 tracked tests 已收集（以 `pytest tests/ -q` / CI 实际输出为准；CI 复现，SHA-28；覆盖率门禁 60% floor + 收集数门禁，SHA-151）
+- 完整 tracked tests 已收集（以 `pytest tests/ -q` / CI 实际输出为准；CI 在 Python 3.10/3.11/3.12 复现，SHA-28）
+- SHA-151 质量门禁：总行覆盖率 ≥75%，8 个关键路径模块分支覆盖率均 ≥90%，并设测试收集数防回退门禁
 - Ruff lint 0 errors
 - mypy 0 errors，`check_untyped_defs = true` 已启用
 - `scripts/bench_import.py --check` 当前低于 600ms 门槛

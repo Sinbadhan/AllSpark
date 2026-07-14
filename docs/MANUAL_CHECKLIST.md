@@ -6,12 +6,13 @@
 > any minor or major release; record results in the release PR.
 > **Tracks:** SHA-36
 
-CI on GitHub runs `ruff` + `mypy` + `pytest` (with a `--cov-fail-under` coverage
-gate and a test-collection count gate) on Python 3.10/3.11/3.12. The full
-`tests/` tree is tracked in version control (SHA-28), so CI reproduces the
-complete suite. This checklist covers what automated tests cannot: live LLM,
-voice/vision hardware, cross-node spark networking, Docker elastic deployment,
-and long-running schedulers.
+CI on GitHub runs `ruff` + `mypy` + the complete tracked `pytest` suite on
+Python 3.10/3.11/3.12. `scripts/check_coverage.py` reads coverage JSON and
+enforces at least 75% total line coverage plus at least 90% branch coverage on
+the eight SHA-151 critical-path modules; a collection-count floor prevents
+silent test deletion. This checklist covers what automation cannot prove:
+live LLM, voice/vision hardware, cross-node hardware, Docker deployment, and
+long-running schedulers.
 
 ---
 
