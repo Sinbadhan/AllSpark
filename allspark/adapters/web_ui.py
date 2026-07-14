@@ -305,14 +305,23 @@ def _register_init_routes(app):
         """Structured questionnaire options (PRD §4.2.2).
 
         Single source of truth is ``allspark/data/questionnaire.yaml``, shared
-        with the CLI wizard — the Web init wizard renders from this so the two
-        paths cannot drift (SHA-56). Each option carries a stable ``key``
-        (persisted in survivor_state) and a ``label_key`` resolved client-side
-        via the q_* i18n keys.
+        with the CLI wizard. Stable keys are persisted; both localized labels
+        travel with each option so switching language never depends on the
+        server process's current global locale.
         """
         from allspark.adapters.init_wizard import _load_questionnaire
 
-        return {"version": "2", "questions": _load_questionnaire()}
+        questions = _load_questionnaire()
+        for options in questions.values():
+            if not isinstance(options, list):
+                continue
+            for option in options:
+                label_key = option.get("label_key", "")
+                option["labels"] = {
+                    lang: MESSAGES.get(lang, {}).get(label_key, label_key)
+                    for lang in ("zh", "en")
+                }
+        return {"version": "2", "questions": questions}
 
     @app.get("/api/init/hardware")
     async def init_hardware():

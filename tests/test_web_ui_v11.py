@@ -377,8 +377,11 @@ def test_l3_factory_reset_returns_to_init_wizard():
         # And — the regression we are guarding against — `/` now renders
         # the init wizard, not the dashboard.
         html = c.get("/").text
-        # init.html contains the four-step wizard markup
-        assert "wizard" in html.lower() or "web_init_step1_title" in html or "init-step" in html or "硬件检测" in html or "Hardware detection" in html
+        # SHA-221: reset returns to the language-first wizard, not the old
+        # hardware-first flow or the dashboard.
+        step_one = html.split('id="step-1"', 1)[1].split('id="step-2"', 1)[0]
+        assert 'id="lang-zh"' in step_one
+        assert 'id="lang-en"' in step_one
 
 
 def test_l3_reset_client_uses_canonical_redirect():
@@ -687,6 +690,8 @@ def test_init_questionnaire_endpoint_loads_yaml():
             assert q[key], f"{key} has no options"
             first = q[key][0]
             assert "key" in first and "label_key" in first
+            assert set(first["labels"]) == {"zh", "en"}
+            assert all(first["labels"].values())
 
 
 def test_init_wizard_cli_loads_questionnaire_from_correct_path():

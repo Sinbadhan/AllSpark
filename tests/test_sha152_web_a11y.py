@@ -32,6 +32,12 @@ class TestInitA11y:
         assert 'setAttribute("aria-pressed", "true")' in t
         assert 'setAttribute("aria-pressed", "false")' in t
 
+    def test_questionnaire_selects_have_labels_and_skip_is_button(self):
+        t = _read("init.html")
+        assert '<label class="q-label" for="' in t
+        assert '<button type="button" class="step-skip"' in t
+        assert '<span class="step-skip"' not in t
+
 
 class TestIndexA11y:
     def test_configured_resource_card_is_keyboard_operable(self):

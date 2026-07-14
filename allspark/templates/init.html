@@ -133,7 +133,7 @@ input { font-family: inherit; }
 /* Step footer */
 .step-footer { display: flex; justify-content: space-between; margin-top: 24px; }
 .step-footer-right { margin-left: auto; }
-.step-skip { font-size: 11px; color: var(--secondary); cursor: pointer; margin-top: 12px; display: inline-block; }
+.step-skip { border: 0; background: none; padding: 0; font: inherit; font-size: 11px; color: var(--secondary); cursor: pointer; margin-top: 12px; display: inline-block; }
 .step-skip:hover { color: var(--on-surface); }
 
 /* Status text */
@@ -193,8 +193,27 @@ input { font-family: inherit; }
       <div class="step-dot" id="dot-4"></div>
     </div>
 
-    <!-- Step 1: Hardware -->
+    <!-- Step 1: Language -->
     <div class="step hidden" id="step-1">
+      <h2><span class="material-symbols-outlined">language</span> <span data-i18n="web_init_lang_select">Language</span></h2>
+      <div class="lang-grid">
+        <button type="button" class="lang-btn" onclick="selectLang('zh', this)" id="lang-zh" aria-pressed="false">
+          <div class="lang-name">中文</div>
+          <div class="lang-sub">Chinese UI</div>
+        </button>
+        <button type="button" class="lang-btn" onclick="selectLang('en', this)" id="lang-en" aria-pressed="false">
+          <div class="lang-name">English</div>
+          <div class="lang-sub">English UI</div>
+        </button>
+      </div>
+      <div class="step-footer">
+        <div></div>
+        <button type="button" onclick="goStep(2)" id="btn-step1-next" disabled class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
+      </div>
+    </div>
+
+    <!-- Step 2: Hardware -->
+    <div class="step hidden" id="step-2">
       <h2><span class="material-symbols-outlined">bolt</span> <span data-i18n="web_init_hw_detect">Hardware Detection</span></h2>
       <div id="hw-loading" class="loading-text" data-i18n="web_init_detecting">Detecting hardware...</div>
       <div id="hw-info" class="hidden">
@@ -202,26 +221,7 @@ input { font-family: inherit; }
         <div class="hw-grid" id="hw-grid"></div>
       </div>
       <div class="step-footer">
-        <div></div>
-        <button onclick="goStep(2)" id="btn-step1-next" disabled class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
-      </div>
-    </div>
-
-    <!-- Step 2: Language -->
-    <div class="step hidden" id="step-2">
-      <h2><span class="material-symbols-outlined">language</span> <span data-i18n="web_init_lang_select">Language</span></h2>
-      <div class="lang-grid">
-        <button type="button" class="lang-btn" onclick="selectLang('zh', this)" id="lang-zh" aria-pressed="false">
-          <div class="lang-name">中文</div>
-          <div class="lang-sub">Chinese</div>
-        </button>
-        <button type="button" class="lang-btn" onclick="selectLang('en', this)" id="lang-en" aria-pressed="false">
-          <div class="lang-name">English</div>
-          <div class="lang-sub">English</div>
-        </button>
-      </div>
-      <div class="step-footer">
-        <button onclick="goStep(1)" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
+        <button type="button" onclick="goStep(1)" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
         <button onclick="goStep(3)" id="btn-step2-next" disabled class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
       </div>
     </div>
@@ -235,7 +235,7 @@ input { font-family: inherit; }
         <button onclick="goStep(2)" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
         <button onclick="goStep(4)" class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
       </div>
-      <span class="step-skip" onclick="goStep(4)" data-i18n="web_init_btn_skip">Skip model setup →</span>
+      <button type="button" class="step-skip" onclick="goStep(4)" data-i18n="web_init_btn_skip">Skip model setup →</button>
     </div>
 
     <!-- Step 4: Survivor -->
@@ -405,6 +405,7 @@ function applyI18n() {
   if (nameInput) {
     nameInput.placeholder = i18n("web_init_name_placeholder");
   }
+  if (questionnaireData !== null) renderQuestionnaire();
 }
 
 async function api(path, opts = {}) {
@@ -421,18 +422,24 @@ function goStep(n) {
     if (i + 1 < n) dot.classList.add("done");
     if (i + 1 === n) dot.classList.add("active");
   });
-  if (n === 1) loadHardware();
-  if (n === 2) {
+  if (n === 1) {
     // SHA-12: pre-highlight the detected default language and enable Next.
     const detected = selectedLang;
     if (detected) {
-      document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("selected"));
+      document.querySelectorAll(".lang-btn").forEach(b => {
+        b.classList.remove("selected");
+        b.setAttribute("aria-pressed", "false");
+      });
       const btn = document.getElementById("lang-" + detected);
-      if (btn) btn.classList.add("selected");
-      const next = document.getElementById("btn-step2-next");
+      if (btn) {
+        btn.classList.add("selected");
+        btn.setAttribute("aria-pressed", "true");
+      }
+      const next = document.getElementById("btn-step1-next");
       if (next) next.disabled = false;
     }
   }
+  if (n === 2) loadHardware();
   if (n === 3) loadModels();
   if (n === 4) loadQuestionnaire();
   applyI18n();
@@ -440,8 +447,13 @@ function goStep(n) {
 }
 
 async function loadHardware() {
-  const data = await api("/api/init/hardware");
-  hwData = data;
+  if (!hwData) hwData = await api("/api/init/hardware");
+  renderHardware();
+}
+
+function renderHardware() {
+  const data = hwData;
+  if (!data) return;
   document.getElementById("hw-loading").classList.add("hidden");
   document.getElementById("hw-info").classList.remove("hidden");
 
@@ -466,7 +478,7 @@ async function loadHardware() {
     [i18n("hw_label_os"), data.os_name],
   ].map(([l, v]) => '<div class="hw-item"><div class="label">' + l + '</div><div class="value">' + v + '</div></div>').join("");
 
-  document.getElementById("btn-step1-next").disabled = false;
+  document.getElementById("btn-step2-next").disabled = false;
 }
 
 function selectLang(lang, el) {
@@ -474,8 +486,10 @@ function selectLang(lang, el) {
   document.querySelectorAll(".lang-btn").forEach(b => { b.classList.remove("selected"); b.setAttribute("aria-pressed", "false"); });
   el.classList.add("selected");
   el.setAttribute("aria-pressed", "true");
-  document.getElementById("btn-step2-next").disabled = false;
+  document.getElementById("btn-step1-next").disabled = false;
   applyI18n();
+  if (hwData) renderHardware();
+  if (currentStep === 3) loadModels();
 }
 
 async function loadModels() {
@@ -578,22 +592,23 @@ async function loadQuestionnaire() {
 }
 
 function qLabel(opt) {
-  // Resolve the option's label_key via the server-injected q_* i18n keys
-  // (window.I18N) when available, else fall back to the key itself.
-  const server = (window.I18N || {});
-  return server[opt.label_key] || opt.label_key;
+  return (opt.labels && opt.labels[selectedLang]) || opt.label_key;
 }
 
 function renderQuestionnaire() {
   const el = document.getElementById("questionnaire");
   if (!el || !questionnaireData) return;
+  const previousValues = {};
+  el.querySelectorAll("select[id]").forEach(select => {
+    previousValues[select.id] = select.value;
+  });
   const q = questionnaireData;
   const optional = ' <span class="text-secondary" style="font-size:10px;">' + i18n("web_init_q_optional") + '</span>';
 
   function selectField(id, opts, labelKey) {
     const opts_html = ['<option value="">' + i18n("web_init_q_optional").replace(/[()]/g, '').trim() + '</option>']
       .concat(opts.map(o => '<option value="' + o.key + '">' + escQ(qLabel(o)) + '</option>')).join("");
-    return '<div class="q-field"><div class="q-label">' + i18n(labelKey) + optional + '</div>' +
+    return '<div class="q-field"><label class="q-label" for="' + id + '">' + i18n(labelKey) + optional + '</label>' +
       '<select class="q-select" id="' + id + '">' + opts_html + '</select></div>';
   }
 
@@ -603,7 +618,8 @@ function renderQuestionnaire() {
       const pressed = selected.has(o.key) ? 'true' : 'false';
       return '<button type="button" class="q-chip' + on + '" data-key="' + o.key + '" aria-pressed="' + pressed + '" onclick="toggleChip(this,\'' + id + '\')">' + escQ(qLabel(o)) + '</button>';
     }).join("");
-    return '<div class="q-field"><div class="q-label">' + i18n(labelKey) + optional + '</div><div class="q-chips" id="' + id + '">' + chips + '</div></div>';
+    const labelId = id + '-label';
+    return '<div class="q-field"><div class="q-label" id="' + labelId + '">' + i18n(labelKey) + optional + '</div><div class="q-chips" id="' + id + '" role="group" aria-labelledby="' + labelId + '">' + chips + '</div></div>';
   }
 
   let html = "";
@@ -614,6 +630,10 @@ function renderQuestionnaire() {
   if (q.threat_types) html += chipField("q-threats", q.threat_types, "web_init_q_threats", selectedThreats);
   if (q.skill_categories) html += chipField("q-skills", q.skill_categories, "web_init_q_skills", selectedSkills);
   el.innerHTML = html;
+  Object.entries(previousValues).forEach(([id, value]) => {
+    const select = document.getElementById(id);
+    if (select) select.value = value;
+  });
 }
 
 function escQ(s) {

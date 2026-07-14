@@ -28,6 +28,12 @@ workflow and supported hardware scope are approved.
   3.10/3.11/3.12 and validates clean-wheel installation on the same matrix.
 
 **Quality (P1):**
+- SHA-221: Web first run now makes language the first actionable step and
+  follows the browser locale for its initial selection. Questionnaire options
+  carry stable keys plus zh/en labels, rerender immediately on repeated
+  language switches, and preserve entered values across back/forward
+  navigation. Native labels and a real skip button provide stable accessible
+  names; real-Chrome coverage includes zh/en locale, two switches and L3 reset.
 - SHA-218: Config now renders the real about, health, LLM and hardware schemas
   with DOM text APIs instead of undefined page-private escape/i18n helpers.
   LLM state follows `available/model_name`; each endpoint has an independent,
