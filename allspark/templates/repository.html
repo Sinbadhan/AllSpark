@@ -28,7 +28,11 @@
       <h3 class="text-sm font-semibold text-on-surface flex items-center gap-1">
         <span class="material-symbols-outlined text-primary text-sm">snippet_folder</span> {{ t('web_repository_files') }}
       </h3>
-      <button class="md:hidden icon-btn" aria-label="{{ t('web_mobile_menu_open') }}" onclick="document.getElementById('file-tree').classList.toggle('hidden')"><span class="material-symbols-outlined" aria-hidden="true">menu</span></button>
+      <button id="repo-tree-toggle" type="button" class="md:hidden icon-btn"
+              aria-label="{{ t('web_mobile_menu_open') }}" aria-controls="file-tree"
+              aria-expanded="false" onclick="toggleRepoTree()">
+        <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+      </button>
     </div>
     <ul class="text-sm p-1 flex-1 overflow-y-auto hidden md:block" id="file-tree">
       <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors" onclick="showSection('knowledge')">
@@ -101,12 +105,15 @@ const REPO_I18N = {
   prev: "{{ t('web_repo_prev') }}",
   next: "{{ t('web_repo_next') }}",
   no_match: "{{ t('web_repo_no_match') }}",
+  results: "{{ t('web_repo_results') }}",
   detail_title: "{{ t('web_repo_detail_title') }}",
   close: "{{ t('web_repo_close') }}",
   steps: "{{ t('web_steps') }}",
   warnings: "{{ t('web_warnings') }}",
   verification_label: "{{ t('web_th_verification') }}",
   source: "{{ t('web_th_source') }}",
+  tree_open: "{{ t('web_mobile_menu_open') }}",
+  tree_close: "{{ t('web_mobile_menu_close') }}",
 };
 const SKF_I18N = {
   path_hint: "{{ t('web_skf_path_placeholder') }}",
@@ -131,6 +138,16 @@ const SKF_I18N = {
 };
 
 let currentSection = "knowledge";
+
+function toggleRepoTree() {
+  const tree = document.getElementById("file-tree");
+  const toggle = document.getElementById("repo-tree-toggle");
+  if (!tree || !toggle) return;
+  tree.classList.toggle("hidden");
+  const expanded = !tree.classList.contains("hidden");
+  toggle.setAttribute("aria-expanded", String(expanded));
+  toggle.setAttribute("aria-label", expanded ? REPO_I18N.tree_close : REPO_I18N.tree_open);
+}
 
 async function showSection(section) {
   currentSection = section;
