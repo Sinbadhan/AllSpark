@@ -1,5 +1,7 @@
 import hmac
+import secrets
 import urllib.request
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Optional
 
@@ -36,14 +38,11 @@ _jinja_env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)), autoescape
 _WEB_TOKEN: Optional[str] = None
 _AUTH_COOKIE = "allspark_session"
 
-# SHA-196: CSP Report-Only baseline. script-src 'self' (no 'unsafe-inline') is
-# the enforcing target; Report-Only surfaces violations from the 8 inline
-# <script> blocks + 88 inline handlers so they can be migrated. style-src needs
-# 'unsafe-inline' because templates use inline styles + <style> blocks. No
-# external resources are loaded, so default-src 'self' covers everything.
-CSP_REPORT_ONLY = (
-    "default-src 'self'; "
-    "script-src 'self'; "
+# SHA-213: scripts use a per-request nonce and inline event handlers are
+# forbidden. style-src remains a separate boundary because templates still use
+# inline layout declarations and <style> blocks.
+_CSP_NONCE: ContextVar[str] = ContextVar("allspark_csp_nonce", default="")
+_CSP_NON_SCRIPT_DIRECTIVES = (
     "style-src 'self' 'unsafe-inline'; "
     "img-src 'self' data:; "
     "connect-src 'self'; "
@@ -51,6 +50,13 @@ CSP_REPORT_ONLY = (
     "base-uri 'self'; "
     "frame-ancestors 'none'"
 )
+
+
+def build_csp_policy(nonce: str) -> str:
+    return (
+        f"default-src 'self'; script-src 'self' 'nonce-{nonce}'; "
+        f"script-src-attr 'none'; {_CSP_NON_SCRIPT_DIRECTIVES}"
+    )
 
 
 def _is_authed(request: Request) -> bool:
@@ -83,6 +89,7 @@ def _render_template(name: str, **context) -> str:
     lang = get_language()
     context.setdefault("lang", lang)
     context.setdefault("version", __version__)
+    context.setdefault("csp_nonce", _CSP_NONCE.get())
     # Inject all web_ prefixed i18n keys as window.I18N for JS-side usage
     web_i18n = {
         k: v for k, v in MESSAGES.get(lang, {}).items()
@@ -153,18 +160,19 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
             return RedirectResponse("/login", status_code=303)
         return await call_next(request)
 
-    # SHA-196: Content-Security-Policy in Report-Only mode as a second line of
-    # defense alongside SHA-147's SKF input/output sanitization. The app still
-    # uses inline <script> blocks + inline event handlers (88 handlers across 8
-    # templates), so an enforcing CSP with `script-src 'self'` would break the
-    # UI. Report-Only logs violations to the browser console without blocking,
-    # building the migration list (see docs/csp-migration.md). Switch to
-    # enforcing once inline scripts/handlers are moved to addEventListener.
+    # SHA-213: enforce a per-request script nonce on every response. The nonce
+    # is scoped through ContextVar so concurrent template renders cannot share
+    # it; script-src-attr 'none' keeps inline event handlers blocked.
     @app.middleware("http")
     async def add_csp_header(request: Request, call_next):
-        response = await call_next(request)
-        response.headers["Content-Security-Policy-Report-Only"] = CSP_REPORT_ONLY
-        return response
+        nonce = secrets.token_urlsafe(18)
+        token = _CSP_NONCE.set(nonce)
+        try:
+            response = await call_next(request)
+            response.headers["Content-Security-Policy"] = build_csp_policy(nonce)
+            return response
+        finally:
+            _CSP_NONCE.reset(token)
 
     db = Database(Path(db_path) if db_path else None)
     init_language(db)

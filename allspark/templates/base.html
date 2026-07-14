@@ -492,7 +492,7 @@ table { border-collapse: collapse; width: 100%; }
 <!-- Mobile TopBar -->
 <div class="mobile-topbar">
   <div style="font-size:20px;font-weight:700;color:var(--primary-container);letter-spacing:-0.02em;">ALLSPARK</div>
-  <button id="mobile-nav-toggle" onclick="toggleMobileNav()" style="color:var(--primary-container);" aria-label="{{ t('web_mobile_menu_open') }}" aria-expanded="false" aria-controls="mobile-nav">
+  <button id="mobile-nav-toggle" style="color:var(--primary-container);" aria-label="{{ t('web_mobile_menu_open') }}" aria-expanded="false" aria-controls="mobile-nav">
     <span class="material-symbols-outlined" aria-hidden="true">menu</span>
   </button>
 </div>
@@ -500,7 +500,7 @@ table { border-collapse: collapse; width: 100%; }
 <!-- Mobile Nav Overlay -->
 <div id="mobile-nav" class="mobile-nav-overlay" role="dialog" aria-modal="true" aria-label="{{ t('web_nav_menu_label') }}">
   <div style="display:flex;justify-content:flex-end;padding:12px;">
-    <button onclick="toggleMobileNav()" style="color:var(--primary-container);" aria-label="{{ t('web_mobile_menu_close') }}">
+    <button id="mobile-nav-close" style="color:var(--primary-container);" aria-label="{{ t('web_mobile_menu_close') }}">
       <span class="material-symbols-outlined" aria-hidden="true">close</span>
     </button>
   </div>
@@ -549,11 +549,11 @@ table { border-collapse: collapse; width: 100%; }
         <input placeholder="{{ t('web_search_placeholder') }}" type="text" id="global-search"/>
         <span class="material-symbols-outlined" style="color:var(--on-surface-variant);font-size:18px;" aria-hidden="true">search</span>
       </div>
-      <button class="icon-btn" id="notifications-btn" title="{{ t('web_notifications_title') }}" aria-label="{{ t('web_notifications_title') }}" onclick="showNotifications()"><span class="material-symbols-outlined" aria-hidden="true">notifications</span></button>
-      <button class="icon-btn" id="lang-toggle-btn" title="{{ t('web_lang_switch_label') }}" aria-label="{{ t('web_lang_switch_label') }}" onclick="toggleLanguage()">
+      <button class="icon-btn" id="notifications-btn" title="{{ t('web_notifications_title') }}" aria-label="{{ t('web_notifications_title') }}"><span class="material-symbols-outlined" aria-hidden="true">notifications</span></button>
+      <button class="icon-btn" id="lang-toggle-btn" title="{{ t('web_lang_switch_label') }}" aria-label="{{ t('web_lang_switch_label') }}">
         <span class="material-symbols-outlined" aria-hidden="true">translate</span>
       </button>
-      <button class="icon-btn" id="about-btn" title="{{ t('web_about_title') }}" aria-label="{{ t('web_about_title') }}" onclick="openAbout()">
+      <button class="icon-btn" id="about-btn" title="{{ t('web_about_title') }}" aria-label="{{ t('web_about_title') }}">
         <span class="material-symbols-outlined" aria-hidden="true">info</span>
       </button>
     </div>
@@ -579,7 +579,7 @@ table { border-collapse: collapse; width: 100%; }
 
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 const I18N = {{ web_i18n | tojson }};
 const LANG = "{{ lang }}";
 const API = "";
@@ -734,8 +734,8 @@ function confirmDialog(title, opts) {
     const cancel = document.createElement('button');
     cancel.className = 'btn-outline';
     cancel.textContent = opts.cancelText || (I18N.web_cancel || 'Cancel');
-    ok.onclick = () => finish(true);
-    cancel.onclick = () => finish(false);
+    ok.addEventListener('click', () => finish(true));
+    cancel.addEventListener('click', () => finish(false));
     actions.appendChild(cancel); actions.appendChild(ok);
     sh.card.appendChild(actions);
     ok.focus();
@@ -762,8 +762,8 @@ function promptDialog(title, opts) {
     cancel.textContent = opts.cancelText || (I18N.web_cancel || 'Cancel');
     const submit = () => finish(input.value);
     const cancelFn = () => finish(null);
-    ok.onclick = submit;
-    cancel.onclick = cancelFn;
+    ok.addEventListener('click', submit);
+    cancel.addEventListener('click', cancelFn);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
     sh.card.appendChild(input);
     actions.appendChild(cancel); actions.appendChild(ok);
@@ -853,6 +853,11 @@ window.addEventListener("load", () => {
   }
   const pending = new URLSearchParams(location.search).get("q");
   if (pending) runGlobalSearch(pending);
+  document.getElementById("mobile-nav-toggle")?.addEventListener("click", () => toggleMobileNav());
+  document.getElementById("mobile-nav-close")?.addEventListener("click", () => toggleMobileNav(false));
+  document.getElementById("notifications-btn")?.addEventListener("click", showNotifications);
+  document.getElementById("lang-toggle-btn")?.addEventListener("click", toggleLanguage);
+  document.getElementById("about-btn")?.addEventListener("click", openAbout);
 });
 
 /* === Global: language toggle === */
@@ -885,7 +890,7 @@ async function openAbout() {
         <h2 id="about-title" style="margin:0 0 12px;">{{ t('web_about_title') }}</h2>
         <div id="about-body" class="text-sm" role="status" aria-live="polite">{{ t('web_about_loading') }}</div>
         <div style="margin-top:16px;text-align:right;">
-          <button id="about-close" class="action-btn action-outline" onclick="closeAbout()">{{ t('web_about_close') }}</button>
+          <button id="about-close" class="action-btn action-outline">{{ t('web_about_close') }}</button>
         </div>
       </div>`;
     modal.addEventListener("click", e => { if (e.target === modal) closeAbout(); });
@@ -895,6 +900,7 @@ async function openAbout() {
       if (dialog) _trapDialogTab(dialog, e);
     });
     document.body.appendChild(modal);
+    document.getElementById("about-close").addEventListener("click", closeAbout);
   }
   modal._previouslyFocused = document.activeElement;
   modal.style.display = "flex";

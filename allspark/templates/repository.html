@@ -64,7 +64,7 @@
       </h3>
       <button id="file-tree-toggle" type="button" class="md:hidden icon-btn"
               aria-label="{{ t('web_repository_file_tree_toggle') }}"
-              aria-controls="file-tree" aria-expanded="false" onclick="toggleFileTree()">
+              aria-controls="file-tree" aria-expanded="false" data-repo-action="toggle-file-tree">
         <span class="material-symbols-outlined" aria-hidden="true">menu</span>
       </button>
     </div>
@@ -104,10 +104,10 @@
         <span class="material-symbols-outlined text-primary-container">history</span> {{ t('web_repository_knowledge_entries') }}
       </h2>
       <div class="flex items-center gap-2">
-        <button id="btn-skf-export" class="action-btn action-outline" onclick="openSkfExport()">
+        <button id="btn-skf-export" class="action-btn action-outline" data-repo-action="open-skf-export">
           <span class="material-symbols-outlined text-sm">download</span> {{ t('web_repository_export') }}
         </button>
-        <button id="btn-skf-import" class="action-btn action-primary" onclick="openSkfImport()">
+        <button id="btn-skf-import" class="action-btn action-primary" data-repo-action="open-skf-import">
           <span class="material-symbols-outlined text-sm">upload</span> {{ t('web_repository_import') }}
         </button>
       </div>
@@ -122,7 +122,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
 // SHA-152: file-tree toggle - sync aria-expanded (distinct from the global
 // mobile-menu button, which previously shared the same "打开菜单" label).
 function toggleFileTree() {
@@ -231,8 +231,8 @@ function renderSkfPanel() {
           <input id="skf-export-path" placeholder="${SKF_I18N.path_placeholder}" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;margin-bottom:6px;"/>
           <input id="skf-export-cat" placeholder="${SKF_I18N.filter_category}" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;margin-bottom:6px;"/>
           <input id="skf-export-lang" placeholder="${SKF_I18N.filter_language}" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;margin-bottom:8px;"/>
-          <button class="action-btn action-primary" onclick="doSkfExport()">${SKF_I18N.btn_export}</button>
-          <button class="action-btn action-outline" onclick="doSkfInfo('export')">${SKF_I18N.btn_info}</button>
+          <button class="action-btn action-primary" data-repo-action="skf-export">${SKF_I18N.btn_export}</button>
+          <button class="action-btn action-outline" data-repo-action="skf-info" data-mode="export">${SKF_I18N.btn_info}</button>
         </div>
         <div style="flex:1;min-width:280px;border:1px solid var(--surface-container-high);border-radius:4px;padding:12px;">
           <h4 style="margin:0 0 8px;color:var(--on-surface);">${SKF_I18N.import_title}</h4>
@@ -240,8 +240,8 @@ function renderSkfPanel() {
           <label style="display:flex;align-items:center;gap:6px;color:var(--secondary);font-size:13px;margin-bottom:8px;">
             <input id="skf-import-verify" type="checkbox" checked/>${SKF_I18N.verify_required}
           </label>
-          <button class="action-btn action-primary" onclick="doSkfImport()">${SKF_I18N.btn_import}</button>
-          <button class="action-btn action-outline" onclick="doSkfInfo('import')">${SKF_I18N.btn_info}</button>
+          <button class="action-btn action-primary" data-repo-action="skf-import">${SKF_I18N.btn_import}</button>
+          <button class="action-btn action-outline" data-repo-action="skf-info" data-mode="import">${SKF_I18N.btn_info}</button>
         </div>
       </div>
       <div id="skf-result" class="text-sm" style="margin-top:12px;color:var(--on-surface-variant);"></div>
@@ -340,7 +340,7 @@ function renderCommunityPanel() {
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             <input id="member-name" placeholder="${COMM_I18N.name_ph}" style="flex:1;min-width:160px;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
             <input id="member-role" placeholder="${COMM_I18N.role_ph}" value="executor" style="flex:1;min-width:160px;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
-            <button class="action-btn action-primary" onclick="addMember()">${COMM_I18N.add}</button>
+            <button class="action-btn action-primary" data-repo-action="add-member">${COMM_I18N.add}</button>
           </div>
           <div id="member-list" class="text-sm" style="margin-top:8px;color:var(--on-surface-variant);"></div>
         </div>
@@ -505,9 +505,9 @@ function _repoRender() {
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-top:1px solid var(--surface-container-high);font-size:12px;color:var(--secondary);">
       <span role="status" aria-live="polite" aria-atomic="true">${escHtml(REPO_I18N.results.replace('{n}', String(filtered.length)))}</span>
       <div style="display:flex;gap:6px;align-items:center;">
-        <button class="action-btn action-outline" style="padding:3px 10px;font-size:11px;"${_repoPage <= 1 ? ' disabled' : ''} onclick="_repoGo(${_repoPage - 1})">${escHtml(REPO_I18N.prev)}</button>
+        <button class="action-btn action-outline" style="padding:3px 10px;font-size:11px;"${_repoPage <= 1 ? ' disabled' : ''} data-repo-action="go-page" data-page="${_repoPage - 1}">${escHtml(REPO_I18N.prev)}</button>
         <span style="padding:3px 8px;">${_repoPage} / ${totalPages}</span>
-        <button class="action-btn action-outline" style="padding:3px 10px;font-size:11px;"${_repoPage >= totalPages ? ' disabled' : ''} onclick="_repoGo(${_repoPage + 1})">${escHtml(REPO_I18N.next)}</button>
+        <button class="action-btn action-outline" style="padding:3px 10px;font-size:11px;"${_repoPage >= totalPages ? ' disabled' : ''} data-repo-action="go-page" data-page="${_repoPage + 1}">${escHtml(REPO_I18N.next)}</button>
       </div>
     </div>`;
   el.innerHTML = bar + `<table class="repo-desktop-table w-full text-left border-collapse min-w-[600px]">
@@ -522,7 +522,7 @@ function _repoRender() {
     </thead>
     <tbody class="text-sm">${rows}</tbody></table><div class="repo-mobile-list">${mobileItems}</div>` + pager;
   const si = document.getElementById("repo-search");
-  if (si) si.oninput = () => {
+  if (si) si.addEventListener("input", () => {
     const start = si.selectionStart;
     const end = si.selectionEnd;
     _repoFilters.q = si.value;
@@ -535,10 +535,10 @@ function _repoRender() {
         replacement.setSelectionRange(start, end);
       }
     }
-  };
+  });
   const bind = (id, key) => {
     const s = document.getElementById(id);
-    if (s) s.onchange = () => { _repoFilters[key] = s.value; _repoPage = 1; _repoRender(); };
+    if (s) s.addEventListener("change", () => { _repoFilters[key] = s.value; _repoPage = 1; _repoRender(); });
   };
   bind("repo-f-cat", "category");
   bind("repo-f-tier", "tier");
@@ -579,7 +579,7 @@ async function openRepoDetail(id) {
     modal.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-labelledby="repo-detail-title" style="max-width:520px;width:92%;max-height:80vh;overflow:auto;padding:20px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <h3 id="repo-detail-title" style="margin:0;font-size:16px;color:var(--primary-container);">${escHtml(e.title)}</h3>
-        <button id="repo-detail-close" class="icon-btn" aria-label="${escHtml(REPO_I18N.close)}" onclick="closeRepoDetail()"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+        <button id="repo-detail-close" class="icon-btn" aria-label="${escHtml(REPO_I18N.close)}" data-repo-action="close-detail"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
       </div>
       <div class="text-sm text-secondary" style="margin-bottom:8px;">${escHtml(e.category)} / ${escHtml(e.subcategory || "")} · ${escHtml(e.id)}</div>
       <p class="text-sm" style="margin-bottom:10px;">${escHtml(e.summary)}</p>
@@ -589,7 +589,7 @@ async function openRepoDetail(id) {
     </div>`;
     document.getElementById("repo-detail-close").focus();
   } catch (ex) {
-    modal.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-label="${escHtml(REPO_I18N.detail_title)}" style="max-width:380px;width:90%;padding:20px;"><p class="text-sm">${escHtml(String(ex))}</p><button id="repo-detail-close" class="action-btn action-outline" style="margin-top:10px;" onclick="closeRepoDetail()">${escHtml(REPO_I18N.close)}</button></div>`;
+    modal.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-label="${escHtml(REPO_I18N.detail_title)}" style="max-width:380px;width:90%;padding:20px;"><p class="text-sm">${escHtml(String(ex))}</p><button id="repo-detail-close" class="action-btn action-outline" style="margin-top:10px;" data-repo-action="close-detail">${escHtml(REPO_I18N.close)}</button></div>`;
     document.getElementById("repo-detail-close").focus();
   }
 }
@@ -656,7 +656,7 @@ async function loadModelsTable(el) {
         <td class="p-3 text-on-surface">${escHtml(d.name)}</td>
         <td class="p-3 text-secondary">--</td>
         <td class="p-3"><span class="text-secondary flex items-center gap-1"><span class="text-[10px]">○</span> ${I18N.web_repo_available}</span></td>
-        <td class="p-3 text-right"><button onclick="downloadModel('${d.name}')" class="text-primary hover:underline text-xs">${I18N.web_repo_download_btn}</button></td>
+        <td class="p-3 text-right"><button data-repo-action="download-model" data-model="${escHtml(String(d.name || ''))}" class="text-primary hover:underline text-xs">${I18N.web_repo_download_btn}</button></td>
       </tr>
     `).join("")}
     </tbody></table>`;
@@ -678,5 +678,20 @@ document.querySelectorAll('.file-tree-item').forEach(item => {
   item.addEventListener('click', () => showSection(item.dataset.section, item));
 });
 const initialRepositoryLoad = showSection("knowledge");
+document.addEventListener("click", event => {
+  const target = event.target.closest("[data-repo-action]");
+  if (!target) return;
+  const action = target.dataset.repoAction;
+  if (action === "toggle-file-tree") toggleFileTree();
+  else if (action === "open-skf-export") openSkfExport();
+  else if (action === "open-skf-import") openSkfImport();
+  else if (action === "skf-export") doSkfExport();
+  else if (action === "skf-import") doSkfImport();
+  else if (action === "skf-info") doSkfInfo(target.dataset.mode);
+  else if (action === "add-member") addMember();
+  else if (action === "go-page") _repoGo(Number(target.dataset.page));
+  else if (action === "close-detail") closeRepoDetail();
+  else if (action === "download-model") downloadModel(target.dataset.model);
+});
 </script>
 {% endblock %}

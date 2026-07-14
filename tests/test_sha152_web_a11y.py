@@ -44,7 +44,9 @@ class TestIndexA11y:
         t = _read("index.html")
         # The configured card (span-4, not offline) must carry role/tabindex so
         # it is operable after save, not just the unconfigured card.
-        assert 'class="resource-card span-4" data-resource-type="' in t
+        assert 'class="resource-card span-4" ' in t
+        assert 'data-resource-type="${escHtml(String(r.type || \'\'))}"' in t
+        assert 'data-index-action="resource-edit"' in t
         assert 'role="button" tabindex="0"' in t
 
     def test_modal_has_dialog_semantics(self):
@@ -78,14 +80,14 @@ class TestIndexA11y:
 
     def test_open_resource_edit_saves_explicit_trigger(self):
         t = _read("index.html")
-        # SHA-152: openResourceEdit takes a `trigger` arg (passed as `this` from
-        # onclick/onkeydown) so mouse clicks don't lose the trigger (was using
-        # document.activeElement, which is <body> for mouse clicks).
+        # SHA-152/SHA-213: delegated click/keyboard handlers pass their actual
+        # data-action target, so mouse clicks do not fall back to <body> and the
+        # CSP contract does not require inline `this` handlers.
         assert "function openResourceEdit(rtype, amount, consumption, intake, trigger)" in t
         assert "modal._previouslyFocused = trigger || document.activeElement" in t
-        # All call sites pass `this`.
-        assert t.count("openResourceEdit(") >= 5  # 1 def + 4 call sites
-        assert ", this)" in t or ", this);" in t
+        assert "function openResourceFromTarget(target)" in t
+        assert t.count("openResourceFromTarget(target)") >= 3
+        assert "target,\n  );" in t
 
 
 class TestMobileNavA11y:

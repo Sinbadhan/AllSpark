@@ -48,7 +48,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
 const CONFIG_I18N = {
   loading: "{{ t('web_loading') }}",
   unavailable: "{{ t('web_config_unavailable') }}",

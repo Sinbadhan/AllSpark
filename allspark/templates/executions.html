@@ -19,7 +19,7 @@
       <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
       <input id="exec-search" class="w-full bg-surface-dim border border-surface-container-high py-1.5 pl-8 pr-2 text-on-surface text-sm focus:outline-none focus:border-primary transition-colors" placeholder="{{ t('web_executions_search_placeholder') }}" type="text" autocomplete="off"/>
     </div>
-    <button onclick="refreshExecutions()" class="bg-surface-container border border-surface-container-high px-3 py-1.5 text-on-surface hover:border-primary transition-colors flex items-center gap-1 text-sm font-semibold">
+    <button data-exec-action="refresh" class="bg-surface-container border border-surface-container-high px-3 py-1.5 text-on-surface hover:border-primary transition-colors flex items-center gap-1 text-sm font-semibold">
       <span class="material-symbols-outlined text-lg">refresh</span> {{ t('web_executions_refresh') }}
     </button>
   </div>
@@ -46,9 +46,9 @@
 
 <!-- Tab bar: Tasks | Goals | Timeline -->
 <div class="subtab-bar" style="margin-bottom:12px;">
-  <button class="sub-tab active" data-exectab="tasks" onclick="switchExecTab('tasks')">{{ t('web_active_tasks') }}</button>
-  <button class="sub-tab" data-exectab="goals" onclick="switchExecTab('goals')">{{ t('web_goals_tab') }}</button>
-  <button class="sub-tab" data-exectab="timeline" onclick="switchExecTab('timeline')">{{ t('web_tab_timeline') }}</button>
+  <button class="sub-tab active" data-exectab="tasks">{{ t('web_active_tasks') }}</button>
+  <button class="sub-tab" data-exectab="goals">{{ t('web_goals_tab') }}</button>
+  <button class="sub-tab" data-exectab="timeline">{{ t('web_tab_timeline') }}</button>
 </div>
 
 <div id="exectab-tasks" class="exec-tab-content">
@@ -60,8 +60,8 @@
 <div id="exectab-goals" class="exec-tab-content" style="display:none;">
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
     <input id="goal-add-desc" placeholder="{{ t('web_goals_add_desc_placeholder') }}" style="flex:1;min-width:240px;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
-    <button class="action-btn action-primary" onclick="addGoal()">{{ t('web_goals_add_btn') }}</button>
-    <button class="action-btn action-outline" onclick="refreshGoals()">{{ t('web_btn_refresh') }}</button>
+    <button class="action-btn action-primary" data-exec-action="add-goal">{{ t('web_goals_add_btn') }}</button>
+    <button class="action-btn action-outline" data-exec-action="refresh-goals">{{ t('web_btn_refresh') }}</button>
   </div>
   <div id="goal-list" class="text-sm text-on-surface-variant">{{ t('web_loading') }}</div>
 </div>
@@ -72,7 +72,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
 // I18N is provided globally by base.html (contains all web_ prefixed keys)
 const TASK_I18N = {
   start: "{{ t('web_task_action_start') }}",
@@ -115,21 +115,21 @@ async function refreshExecutions() {
       const borderColor = isActive ? "border-l-primary" : isFailed ? "border-l-error" : isSuccess ? "border-l-secondary" : "border-l-surface-container-high";
       const icon = isActive ? "sync" : isFailed ? "error" : isSuccess ? "check_circle" : "schedule";
       const iconClass = isActive ? "text-primary animate-spin" : isFailed ? "text-error" : isSuccess ? "text-secondary" : "text-on-surface-variant";
-      const taskId = (t.id || "").replace(/'/g, "&apos;");
+      const taskId = escHtml(String(t.id || ""));
 
       // Action buttons depend on current status; click handlers stop propagation
       // so they don't toggle the detail panel.
       let actions = "";
       if (!isSuccess && !isFailed) {
         if (!isActive) {
-          actions += `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" title="${TASK_I18N.start}" onclick="event.stopPropagation();taskAction('${taskId}','start')">▶</button>`;
+          actions += `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" title="${TASK_I18N.start}" data-exec-action="task" data-task-id="${taskId}" data-task-action="start">▶</button>`;
         }
-        actions += `<button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" title="${TASK_I18N.complete}" onclick="event.stopPropagation();taskAction('${taskId}','complete')">✓</button>`;
-        actions += `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;color:var(--critical, #ff4444);" title="${TASK_I18N.fail}" onclick="event.stopPropagation();taskAction('${taskId}','fail')">✗</button>`;
+        actions += `<button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" title="${TASK_I18N.complete}" data-exec-action="task" data-task-id="${taskId}" data-task-action="complete">✓</button>`;
+        actions += `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;color:var(--critical, #ff4444);" title="${TASK_I18N.fail}" data-exec-action="task" data-task-id="${taskId}" data-task-action="fail">✗</button>`;
       }
 
       return `<div class="bg-surface-container border border-surface-container-high flex flex-col border-l-[3px] ${borderColor}">
-        <div class="grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 items-center p-2 cursor-pointer hover:bg-surface-container-highest transition-colors" onclick="toggleExecDetail(this)">
+        <div class="grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 items-center p-2 cursor-pointer hover:bg-surface-container-highest transition-colors" data-exec-action="toggle-detail">
           <span class="material-symbols-outlined ${iconClass}">${icon}</span>
           <div>
             <div class="font-semibold text-on-surface text-sm">${escHtml(t.title)}</div>
@@ -220,7 +220,7 @@ async function refreshGoals() {
             <div class="text-xs text-secondary">Phase ${g.phase || '-'} · ${g.status || '-'} · ${g.progress || 0}%</div>
           </div>
           <div style="display:flex;gap:4px;">
-            <button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" onclick="completeGoal('${g.id}')">${GOAL_I18N.complete}</button>
+            <button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" data-exec-action="complete-goal" data-goal-id="${escHtml(String(g.id || ''))}">${GOAL_I18N.complete}</button>
           </div>
         </div>
       </div>`).join("");
@@ -264,5 +264,24 @@ async function refreshTimeline() {
     ).join("");
   } catch(e) { el.textContent = String(e); }
 }
+
+document.addEventListener("click", event => {
+  const target = event.target.closest("[data-exec-action], [data-exectab]");
+  if (!target) return;
+  if (target.dataset.exectab) {
+    switchExecTab(target.dataset.exectab);
+    return;
+  }
+  const action = target.dataset.execAction;
+  if (action === "refresh") refreshExecutions();
+  else if (action === "add-goal") addGoal();
+  else if (action === "refresh-goals") refreshGoals();
+  else if (action === "toggle-detail") toggleExecDetail(target);
+  else if (action === "complete-goal") completeGoal(target.dataset.goalId);
+  else if (action === "task") {
+    event.stopPropagation();
+    taskAction(target.dataset.taskId, target.dataset.taskAction);
+  }
+});
 </script>
 {% endblock %}

@@ -135,7 +135,7 @@
 
   <!-- Today's Briefing (collapsible) -->
   <div id="briefing-banner" class="span-12" style="background:var(--surface-low);border:1px solid var(--surface-container-high);border-radius:6px;padding:12px;margin-bottom:8px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleBriefing()">
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" data-index-action="toggle-briefing">
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="material-symbols-outlined text-primary" style="font-size:18px;">today</span>
         <strong>{{ t('web_briefing_title') }}</strong>
@@ -169,13 +169,13 @@
   <!-- Quick Actions -->
   <div class="quick-actions span-4">
     <h2>{{ t('web_quick_actions') }}</h2>
-    <button onclick="switchTab('chat')" class="action-btn action-primary">
+    <button data-subtab="chat" class="action-btn action-primary">
       <span class="material-symbols-outlined" style="font-size:16px;">chat</span> {{ t('web_action_chat') }}
     </button>
-    <button onclick="switchTab('knowledge')" class="action-btn action-outline">
+    <button data-subtab="knowledge" class="action-btn action-outline">
       <span class="material-symbols-outlined" style="font-size:16px;">search</span> {{ t('web_action_search_knowledge') }}
     </button>
-    <button onclick="switchTab('experience')" class="action-btn action-outline">
+    <button data-subtab="experience" class="action-btn action-outline">
       <span class="material-symbols-outlined" style="font-size:16px;">psychology</span> {{ t('web_action_log_experience') }}
     </button>
   </div>
@@ -198,7 +198,7 @@
           <span class="material-symbols-outlined">search</span>
           <input id="knowledge-search" placeholder="{{ t('web_knowledge_search_placeholder') }}" type="text" autocomplete="off"/>
         </div>
-        <button onclick="searchKnowledge()" class="btn-outline" style="padding:6px 12px;">{{ t('web_search') }}</button>
+        <button data-index-action="search-knowledge" class="btn-outline" style="padding:6px 12px;">{{ t('web_search') }}</button>
       </div>
       <div id="knowledge-results" style="overflow-y:auto;max-height:300px;"></div>
       <div id="knowledge-detail" style="display:none"></div>
@@ -210,7 +210,7 @@
         <div id="chat-messages" class="chat-messages"></div>
         <div class="chat-input-bar">
           <input id="chat-input" placeholder="{{ t('web_chat_placeholder') }}" type="text" autocomplete="off"/>
-          <button onclick="sendChat()" class="btn-primary" style="padding:8px 16px;">{{ t('web_send') }}</button>
+          <button data-index-action="send-chat" class="btn-primary" style="padding:8px 16px;">{{ t('web_send') }}</button>
         </div>
       </div>
     </div>
@@ -226,7 +226,7 @@
         <input id="exp-event" placeholder="{{ t('web_exp_event_placeholder') }}"/>
         <input id="exp-outcome" placeholder="{{ t('web_exp_outcome_placeholder') }}"/>
         <input id="exp-lesson" placeholder="{{ t('web_exp_lesson_placeholder') }}"/>
-        <button onclick="logExperience()" class="btn-primary" style="align-self:flex-start;">{{ t('web_log_experience') }}</button>
+        <button data-index-action="log-experience" class="btn-primary" style="align-self:flex-start;">{{ t('web_log_experience') }}</button>
       </div>
       <div id="exp-list" style="overflow-y:auto;max-height:200px;"></div>
     </div>
@@ -237,7 +237,7 @@
       <div class="module-section">
         <h3>{{ t('web_llm_engine') }}</h3>
         <div id="llm-status" class="text-sm text-on-surface-variant mb-2">{{ t('web_loading') }}</div>
-        <button onclick="loadLLM()" class="btn-primary">{{ t('web_load_model') }}</button>
+        <button data-index-action="load-llm" class="btn-primary">{{ t('web_load_model') }}</button>
       </div>
     </div>
 
@@ -248,7 +248,7 @@
       <details>
         <summary class="text-secondary text-sm" style="cursor:pointer;">{{ t('web_psych_questionnaire') }}</summary>
         <div id="psych-questionnaire" class="text-sm" style="margin-top:8px;">{{ t('web_psych_q_loading') }}</div>
-        <button class="action-btn action-primary" style="margin-top:8px;" onclick="submitAssessment()">{{ t('web_psych_q_submit') }}</button>
+        <button class="action-btn action-primary" style="margin-top:8px;" data-index-action="submit-assessment">{{ t('web_psych_q_submit') }}</button>
       </details>
     </div>
 
@@ -267,7 +267,7 @@
             <option value="sad">{{ t('web_diary_emotion_sad') }}</option>
             <option value="angry">{{ t('web_diary_emotion_angry') }}</option>
           </select>
-          <button class="action-btn action-primary" onclick="saveDiary()">{{ t('web_diary_save') }}</button>
+          <button class="action-btn action-primary" data-index-action="save-diary">{{ t('web_diary_save') }}</button>
         </div>
       </div>
       <div id="diary-list" class="text-sm text-on-surface-variant">{{ t('web_diary_loading') }}</div>
@@ -277,7 +277,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
 // I18N is provided globally by base.html (contains all web_ prefixed keys)
 // Resource labels — uppercase for display; resource_<type> keys live in i18n already.
 function resourceLabel(type) {
@@ -306,10 +306,6 @@ function switchTab(tab) {
   if (tab === 'diary') refreshDiary();
 }
 
-document.querySelectorAll('.sub-tab').forEach(btn => {
-  btn.addEventListener('click', () => switchTab(btn.dataset.subtab));
-});
-
 async function refreshDashboard() {
   const data = await api("/api/status");
 
@@ -335,13 +331,13 @@ async function refreshDashboard() {
   container.innerHTML = data.resources.map(r => {
     const icon = resourceIcons[r.type] || "inventory_2";
     const label = resourceLabel(r.type);
-    const editBtn = `<span class="material-symbols-outlined" style="font-size:14px;cursor:pointer;color:var(--secondary);" title="${RES_I18N.edit_label}" onclick="event.stopPropagation();openResourceEdit('${r.type}',${r.amount||0},${r.daily_consumption||0},${r.daily_intake||0}, this)">edit</span>`;
-    const keyAction = `if(event.key==='Enter'||event.key===' '){event.preventDefault();openResourceEdit('${r.type}',${r.amount||0},${r.daily_consumption||0},${r.daily_intake||0}, this);}`;
+    const resourceAttrs = `data-index-action="resource-edit" data-resource-type="${escHtml(String(r.type || ''))}" data-resource-amount="${Number(r.amount) || 0}" data-resource-consumption="${Number(r.daily_consumption) || 0}" data-resource-intake="${Number(r.daily_intake) || 0}"`;
+    const editBtn = `<span class="material-symbols-outlined" style="font-size:14px;cursor:pointer;color:var(--secondary);" title="${RES_I18N.edit_label}" ${resourceAttrs}>edit</span>`;
     if (!r.configured) {
       // SHA-59: compact empty-state. Earlier every unconfigured card repeated
       // the long "set amount + daily use to calculate remaining time" hint,
       // crowding the dashboard. Now each card is a single dense line.
-      return '<div class="resource-card offline span-4" data-resource-type="' + escHtml(r.type) + '" role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',0,0,0, this)" onkeydown="' + keyAction + '">' +
+      return '<div class="resource-card offline span-4" ' + resourceAttrs + ' role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;">' +
         '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value text-secondary">' + I18N.web_unconfigured + ' ' + editBtn + '</span></div>' +
         '<div class="card-status" style="font-size:13px;color:var(--secondary);">' + I18N.web_set_amount_hint_short + '</div>' +
         '<div class="card-remaining">' + escHtml(label) + '</div></div>';
@@ -357,7 +353,7 @@ async function refreshDashboard() {
     const remainingText = hasEstimate
       ? I18N.web_remaining_hours_fmt.replace('{h}', Math.round(r.remaining_hours))
       : I18N.web_remaining_unknown;
-    return '<div class="resource-card span-4" data-resource-type="' + escHtml(r.type) + '" role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',' + (r.amount||0) + ',' + (r.daily_consumption||0) + ',' + (r.daily_intake||0) + ', this)" onkeydown="' + keyAction + '">' +
+    return '<div class="resource-card span-4" ' + resourceAttrs + ' role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;">' +
       '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + r.amount + r.unit + ' ' + editBtn + '</span></div>' +
       '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + statusColor + '"></div></div>' +
       '<div class="card-status">' + statusText + '</div>' +
@@ -423,7 +419,7 @@ async function showKnowledge(id) {
   const container = document.getElementById("knowledge-detail");
   document.getElementById("knowledge-results").style.display = "none";
   container.style.display = "block";
-  let html = '<div class="back-btn" onclick="backToResults()"><span class="material-symbols-outlined" style="font-size:14px;">arrow_back</span> ' + I18N.web_kb_back + '</div>';
+  let html = '<div class="back-btn" role="button" tabindex="0" data-index-action="back-to-results"><span class="material-symbols-outlined" style="font-size:14px;">arrow_back</span> ' + I18N.web_kb_back + '</div>';
   html += '<div class="kb-detail"><h3>' + escHtml(entry.title) + '</h3>';
   html += '<p class="text-sm mb-3">' + escHtml(entry.summary) + '</p>';
   if (entry.steps && entry.steps.length) {
@@ -588,8 +584,8 @@ function openResourceEdit(rtype, amount, consumption, intake, trigger) {
         <label for="res-edit-intake" style="font-size:12px;color:var(--secondary);">${RES_I18N.intake}</label>
         <input id="res-edit-intake" type="number" step="any" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;margin:4px 0 10px;border-radius:4px;"/>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
-          <button class="action-btn action-outline" onclick="closeResEdit()">${RES_I18N.cancel}</button>
-          <button class="action-btn action-primary" id="res-edit-save">${RES_I18N.save}</button>
+          <button class="action-btn action-outline" data-index-action="close-resource-edit">${RES_I18N.cancel}</button>
+          <button class="action-btn action-primary" id="res-edit-save" data-index-action="save-resource">${RES_I18N.save}</button>
         </div>
       </div>`;
     modal.addEventListener("click", e => { if (e.target === modal) closeResEdit(); });
@@ -601,7 +597,6 @@ function openResourceEdit(rtype, amount, consumption, intake, trigger) {
   document.getElementById("res-edit-amount").value = amount;
   document.getElementById("res-edit-consumption").value = consumption;
   document.getElementById("res-edit-intake").value = intake;
-  document.getElementById("res-edit-save").onclick = () => saveResource(rtype);
   modal.style.display = "flex";
   // SHA-152: focus management - save the explicit trigger (passed as `this`
   // from onclick/onkeydown) rather than document.activeElement, which is the
@@ -739,5 +734,47 @@ async function saveDiary() {
     refreshDiary();
   } catch(e) { notify(e); }
 }
+
+function openResourceFromTarget(target) {
+  openResourceEdit(
+    target.dataset.resourceType,
+    Number(target.dataset.resourceAmount || 0),
+    Number(target.dataset.resourceConsumption || 0),
+    Number(target.dataset.resourceIntake || 0),
+    target,
+  );
+}
+
+document.addEventListener("click", event => {
+  const target = event.target.closest("[data-index-action], [data-subtab]");
+  if (!target) return;
+  if (target.dataset.subtab) {
+    switchTab(target.dataset.subtab);
+    return;
+  }
+  const action = target.dataset.indexAction;
+  if (action === "toggle-briefing") toggleBriefing();
+  else if (action === "search-knowledge") searchKnowledge();
+  else if (action === "send-chat") sendChat();
+  else if (action === "log-experience") logExperience();
+  else if (action === "load-llm") loadLLM();
+  else if (action === "submit-assessment") submitAssessment();
+  else if (action === "save-diary") saveDiary();
+  else if (action === "back-to-results") backToResults();
+  else if (action === "close-resource-edit") closeResEdit();
+  else if (action === "save-resource") saveResource(document.getElementById("res-edit-modal")._resourceType);
+  else if (action === "resource-edit") {
+    event.stopPropagation();
+    openResourceFromTarget(target);
+  }
+});
+document.addEventListener("keydown", event => {
+  const target = event.target.closest("[data-index-action]");
+  if (!target || !["Enter", " "].includes(event.key)) return;
+  if (!["resource-edit", "back-to-results"].includes(target.dataset.indexAction)) return;
+  event.preventDefault();
+  if (target.dataset.indexAction === "resource-edit") openResourceFromTarget(target);
+  else backToResults();
+});
 </script>
 {% endblock %}

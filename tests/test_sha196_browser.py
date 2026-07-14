@@ -67,6 +67,10 @@ def _serve(app: Any) -> Iterator[str]:
             try:
                 urllib.request.urlopen(f"{base_url}/api/system/health", timeout=0.2)
                 break
+            except urllib.error.HTTPError as exc:
+                if exc.code in {401, 403, 410, 503}:
+                    break
+                time.sleep(0.05)
             except (OSError, urllib.error.URLError):
                 time.sleep(0.05)
         else:

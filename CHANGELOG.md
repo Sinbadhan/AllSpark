@@ -21,10 +21,12 @@ workflow and supported hardware scope are approved.
 - SHA-142: Web auth boundary - token moved out of HTML to httpOnly+SameSite
   cookie; `/login` + `/api/auth/login`; one-time bootstrap (init/complete 410
   after init); middleware always on (loopback local trust, non-loopback gated).
-- SHA-147/SHA-196: SKF persistent XSS - import-boundary metadata sanitization,
-  output escaping, removal of dynamic row handlers, and a real-Chrome public
-  import -> API -> Repository/Dashboard list/detail regression. CSP is currently
-  Report-Only; enforcing migration is explicitly deferred to SHA-213.
+- SHA-147/SHA-196/SHA-213: SKF persistent XSS - import-boundary metadata
+  sanitization, output escaping, and a real-Chrome public import -> API ->
+  Repository/Dashboard list/detail regression. Every response now carries an
+  enforcing CSP with a fresh per-request script nonce and
+  `script-src-attr 'none'`; all 78 remaining event attributes were migrated to
+  listeners/delegation, and seven Web surfaces have a zero-violation Chrome gate.
 - SHA-148: Knowledge `expert_verified` signoff schema (reviewer/qualification/
   date/citation/content_hash/signoff_version) + content-hash invalidation;
   142 entries downgraded to field_tested; loader + verifier gating.
@@ -166,8 +168,8 @@ is excluded from the v1.0.3 Stable claim. The v1.0.3 support boundary is desktop
 PROCESS mode plus local core workflows and the VoiceOver-validated core Web
 flow; SHA-33 remains a post-release
 hardware-validation track and cannot expand Stable support without real-world
-evidence. SHA-213 (enforcing CSP) is documented follow-up hardening and is not
-represented as an active CSP defense in this release.
+evidence. Script CSP is now an active enforcing defense; inline styles remain
+allowed as a separately documented boundary and do not relax `script-src`.
 
 ### Security
 - **H1**: Fixed `KnowledgeSigner._derive_key` bug — `getattr(self.db, "_db_path")`

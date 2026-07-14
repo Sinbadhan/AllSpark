@@ -154,7 +154,8 @@ def test_changelog_unreleased_does_not_overclaim_release_closure() -> None:
         "ready for release",
     )
     assert not any(claim in unreleased for claim in forbidden)
-    assert "Report-Only" in unreleased
+    assert "enforcing CSP" in unreleased
+    assert "script-src-attr 'none'" in unreleased
     assert "SHA-213" in unreleased
     assert "macOS VoiceOver" in unreleased
     assert "Windows + NVDA remains" in unreleased

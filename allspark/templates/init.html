@@ -197,18 +197,18 @@ input { font-family: inherit; }
     <div class="step hidden" id="step-1">
       <h2><span class="material-symbols-outlined">language</span> <span data-i18n="web_init_lang_select">Language</span></h2>
       <div class="lang-grid">
-        <button type="button" class="lang-btn" onclick="selectLang('zh', this)" id="lang-zh" aria-pressed="false">
+        <button type="button" class="lang-btn" data-init-action="select-language" data-lang="zh" id="lang-zh" aria-pressed="false">
           <div class="lang-name">中文</div>
           <div class="lang-sub">Chinese UI</div>
         </button>
-        <button type="button" class="lang-btn" onclick="selectLang('en', this)" id="lang-en" aria-pressed="false">
+        <button type="button" class="lang-btn" data-init-action="select-language" data-lang="en" id="lang-en" aria-pressed="false">
           <div class="lang-name">English</div>
           <div class="lang-sub">English UI</div>
         </button>
       </div>
       <div class="step-footer">
         <div></div>
-        <button type="button" onclick="goStep(2)" id="btn-step1-next" disabled class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
+        <button type="button" data-init-action="go-step" data-step="2" id="btn-step1-next" disabled class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
       </div>
     </div>
 
@@ -221,8 +221,8 @@ input { font-family: inherit; }
         <div class="hw-grid" id="hw-grid"></div>
       </div>
       <div class="step-footer">
-        <button type="button" onclick="goStep(1)" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
-        <button onclick="goStep(3)" id="btn-step2-next" disabled class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
+        <button type="button" data-init-action="go-step" data-step="1" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
+        <button data-init-action="go-step" data-step="3" id="btn-step2-next" disabled class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
       </div>
     </div>
 
@@ -232,10 +232,10 @@ input { font-family: inherit; }
       <div id="model-info"></div>
       <div id="model-actions"></div>
       <div class="step-footer">
-        <button onclick="goStep(2)" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
-        <button onclick="goStep(4)" class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
+        <button data-init-action="go-step" data-step="2" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
+        <button data-init-action="go-step" data-step="4" class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
       </div>
-      <button type="button" class="step-skip" onclick="goStep(4)" data-i18n="web_init_btn_skip">Skip model setup →</button>
+      <button type="button" class="step-skip" data-init-action="go-step" data-step="4" data-i18n="web_init_btn_skip">Skip model setup →</button>
     </div>
 
     <!-- Step 4: Survivor -->
@@ -244,8 +244,8 @@ input { font-family: inherit; }
       <input class="init-input" id="survivor-name" type="text" data-placeholder-zh="你的名字" data-placeholder-en="Your name" placeholder="Your name" value="Survivor">
       <div id="questionnaire" class="questionnaire"></div>
       <div class="step-footer">
-        <button onclick="goStep(3)" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
-        <button onclick="completeInit()" id="btn-complete" class="btn-primary">
+        <button data-init-action="go-step" data-step="3" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
+        <button data-init-action="complete" id="btn-complete" class="btn-primary">
           <span class="material-symbols-outlined" style="font-size:16px;">local_fire_department</span> <span data-i18n="web_init_btn_init">Initialize AllSpark</span>
         </button>
       </div>
@@ -253,7 +253,7 @@ input { font-family: inherit; }
   </div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 // Server-injected i18n keys (web_*/error_*/q_* ...) for label resolution.
 window.I18N = {{ web_i18n | tojson }};
 let currentStep = 0;
@@ -515,7 +515,7 @@ async function loadModels() {
 
   if (!downloaded && hwData.llm_enabled) {
     html += '<div class="download-section">';
-    html += '<button onclick="downloadModel(\'' + model + '\')" id="btn-download" class="btn-primary">';
+    html += '<button data-init-action="download-model" data-model="' + escQ(model) + '" id="btn-download" class="btn-primary">';
     html += '<span class="material-symbols-outlined" style="font-size:16px;">download</span> ' + i18n("web_init_download", {model: model, size: size}) + '</button>';
     html += '<div id="download-progress" class="download-progress hidden">';
     html += '<div class="progress-bar"><div class="progress-fill" id="dl-fill" style="width:0%"></div></div>';
@@ -616,7 +616,7 @@ function renderQuestionnaire() {
     const chips = opts.map(o => {
       const on = selected.has(o.key) ? ' selected' : '';
       const pressed = selected.has(o.key) ? 'true' : 'false';
-      return '<button type="button" class="q-chip' + on + '" data-key="' + o.key + '" aria-pressed="' + pressed + '" onclick="toggleChip(this,\'' + id + '\')">' + escQ(qLabel(o)) + '</button>';
+      return '<button type="button" class="q-chip' + on + '" data-key="' + escQ(o.key) + '" data-question-id="' + escQ(id) + '" aria-pressed="' + pressed + '">' + escQ(qLabel(o)) + '</button>';
     }).join("");
     const labelId = id + '-label';
     return '<div class="q-field"><div class="q-label" id="' + labelId + '">' + i18n(labelKey) + optional + '</div><div class="q-chips" id="' + id + '" role="group" aria-labelledby="' + labelId + '">' + chips + '</div></div>';
@@ -686,6 +686,19 @@ window.addEventListener("load", () => {
   applyLocalIcons();
   const iconObserver = new MutationObserver(() => applyLocalIcons());
   iconObserver.observe(document.body, { childList: true, subtree: true });
+});
+document.addEventListener("click", event => {
+  const target = event.target.closest("[data-init-action], .q-chip[data-question-id]");
+  if (!target) return;
+  if (target.classList.contains("q-chip")) {
+    toggleChip(target, target.dataset.questionId);
+    return;
+  }
+  const action = target.dataset.initAction;
+  if (action === "select-language") selectLang(target.dataset.lang, target);
+  else if (action === "go-step") goStep(Number(target.dataset.step));
+  else if (action === "download-model") downloadModel(target.dataset.model);
+  else if (action === "complete") completeInit();
 });
 goStep(1);
 </script>

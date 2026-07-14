@@ -108,8 +108,10 @@ Verify no sensitive or generated files are staged:
   evidence. Automated DOM tests and screenshots do not substitute for the
   VoiceOver assistive-technology run. Windows + NVDA is explicitly recorded as
   `not_run`/Testing and excluded from the v1.0.3 Stable accessibility claim.
-- Deferred hardening is linked as follow-up work; Report-Only CSP must not be
-  described as enforcing.
+- Enforcing CSP is present on HTML, API, authentication-error and bootstrap
+  responses; all rendered scripts carry the matching per-request nonce,
+  `script-src-attr 'none'` is active, and the seven-page Chrome violation gate
+  passes for the exact candidate commit.
 
 ## 8. Tag and publish
 

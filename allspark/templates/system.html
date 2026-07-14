@@ -75,7 +75,7 @@
   <div class="module-card span-12">
     <div class="module-header">
       <h3 class="module-title">{{ t('web_system_modules_title') }}</h3>
-      <button onclick="refreshSystem()" class="sync-btn">
+      <button data-system-action="refresh-system" class="sync-btn">
         <span class="material-symbols-outlined" style="font-size:14px;">refresh</span> {{ t('web_system_sync') }}
       </button>
     </div>
@@ -100,7 +100,7 @@
   <div class="info-card span-12">
     <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">smart_toy</span> {{ t('web_system_llm_engine') }}</h3>
     <div id="llm-detail" class="text-sm text-on-surface-variant">{{ t('web_loading') }}</div>
-    <button onclick="loadLLM()" class="btn-primary mt-3">{{ t('web_system_load_model') }}</button>
+    <button data-system-action="load-llm" class="btn-primary mt-3">{{ t('web_system_load_model') }}</button>
   </div>
 
   <!-- Mode control -->
@@ -129,7 +129,7 @@
         </select>
       </div>
     </div>
-    <button class="action-btn action-primary" style="margin-top:12px;" onclick="applyModes()">{{ t('web_mode_save') }}</button>
+    <button class="action-btn action-primary" style="margin-top:12px;" data-system-action="apply-modes">{{ t('web_mode_save') }}</button>
   </div>
 
   <!-- Backups card -->
@@ -139,9 +139,9 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
       <input id="backup-label" type="text" placeholder="{{ t('web_backup_label_placeholder') }}"
              style="flex:1;min-width:180px;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
-      <button class="action-btn action-primary" onclick="createSnapshot()">{{ t('web_backup_create') }}</button>
-      <button class="action-btn action-outline" onclick="emergencySave()">{{ t('web_backup_emergency') }}</button>
-      <button class="action-btn action-outline" onclick="refreshSnapshots()">{{ t('web_btn_refresh') }}</button>
+      <button class="action-btn action-primary" data-system-action="create-snapshot">{{ t('web_backup_create') }}</button>
+      <button class="action-btn action-outline" data-system-action="emergency-save">{{ t('web_backup_emergency') }}</button>
+      <button class="action-btn action-outline" data-system-action="refresh-snapshots">{{ t('web_btn_refresh') }}</button>
     </div>
     <div id="snapshot-list" class="text-sm text-on-surface-variant">{{ t('web_loading') }}</div>
   </div>
@@ -156,17 +156,17 @@
       <div style="padding:10px;border:1px solid var(--surface-container-high);border-radius:4px;">
         <div style="font-weight:600;">{{ t('web_reset_l1_title') }}</div>
         <div class="text-sm text-secondary">{{ reset_descriptions[1] }}</div>
-        <button class="action-btn action-outline" style="margin-top:8px;" onclick="confirmReset(1)">{{ t('web_reset_btn_execute') }}</button>
+        <button class="action-btn action-outline" style="margin-top:8px;" data-system-action="confirm-reset" data-level="1">{{ t('web_reset_btn_execute') }}</button>
       </div>
       <div style="padding:10px;border:1px solid var(--surface-container-high);border-radius:4px;">
         <div style="font-weight:600;">{{ t('web_reset_l2_title') }}</div>
         <div class="text-sm text-secondary">{{ reset_descriptions[2] }}</div>
-        <button class="action-btn action-outline" style="margin-top:8px;" onclick="confirmReset(2)">{{ t('web_reset_btn_execute') }}</button>
+        <button class="action-btn action-outline" style="margin-top:8px;" data-system-action="confirm-reset" data-level="2">{{ t('web_reset_btn_execute') }}</button>
       </div>
       <div style="padding:10px;border:1px solid var(--critical, #ff4444);border-radius:4px;">
         <div style="font-weight:600;color:var(--critical, #ff4444);">{{ t('web_reset_l3_title') }}</div>
         <div class="text-sm text-secondary">{{ reset_descriptions[3] }}</div>
-        <button class="action-btn" style="margin-top:8px;background:var(--critical, #ff4444);color:#fff;" onclick="confirmReset(3)">{{ t('web_reset_btn_execute') }}</button>
+        <button class="action-btn" style="margin-top:8px;background:var(--critical, #ff4444);color:#fff;" data-system-action="confirm-reset" data-level="3">{{ t('web_reset_btn_execute') }}</button>
       </div>
     </div>
   </div>
@@ -184,7 +184,7 @@
         <input id="poi-type" placeholder="{{ t('web_location_type_placeholder') }}" style="background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
         <input id="poi-desc" placeholder="{{ t('web_location_desc_placeholder') }}" style="grid-column:1 / -1;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
       </div>
-      <button class="action-btn action-primary" style="margin-top:8px;" onclick="addPoi()">{{ t('web_location_save') }}</button>
+      <button class="action-btn action-primary" style="margin-top:8px;" data-system-action="add-poi">{{ t('web_location_save') }}</button>
     </details>
   </div>
 
@@ -193,10 +193,10 @@
     <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">cell_tower</span> {{ t('web_comms_title') }}</h3>
     <div id="comms-status" class="text-sm text-on-surface-variant" style="margin-bottom:10px;">{{ t('web_loading') }}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="action-btn action-primary" onclick="commsAction('start')">{{ t('web_comms_start') }}</button>
-      <button class="action-btn action-outline" onclick="commsAction('stop')">{{ t('web_comms_stop') }}</button>
-      <button class="action-btn action-outline" onclick="commsAction('scan')">{{ t('web_comms_scan') }}</button>
-      <button class="action-btn action-outline" onclick="refreshComms()">{{ t('web_btn_refresh') }}</button>
+      <button class="action-btn action-primary" data-system-action="comms" data-comms-action="start">{{ t('web_comms_start') }}</button>
+      <button class="action-btn action-outline" data-system-action="comms" data-comms-action="stop">{{ t('web_comms_stop') }}</button>
+      <button class="action-btn action-outline" data-system-action="comms" data-comms-action="scan">{{ t('web_comms_scan') }}</button>
+      <button class="action-btn action-outline" data-system-action="refresh-comms">{{ t('web_btn_refresh') }}</button>
     </div>
   </div>
 
@@ -209,7 +209,7 @@
       <summary class="text-secondary text-sm" style="cursor:pointer;">{{ t('web_weather_set_pressure') }}</summary>
       <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
         <input id="weather-pressure" type="number" step="0.1" placeholder="{{ t('web_weather_pressure') }}" style="flex:1;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
-        <button class="action-btn action-primary" onclick="setPressure()">{{ t('web_btn_save') }}</button>
+        <button class="action-btn action-primary" data-system-action="set-pressure">{{ t('web_btn_save') }}</button>
       </div>
     </details>
   </div>
@@ -223,7 +223,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
 // I18N is provided globally by base.html (contains all web_ prefixed keys)
 
 function escHtml(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
@@ -272,7 +272,7 @@ async function refreshSystem() {
           statusText = I18N.web_system_module_running;
           action = m.is_core
             ? '<span class="text-secondary" style="font-size:11px;">—</span>'
-            : `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" onclick="moduleAction('${escHtml(m.name)}','disable')">${MODULE_I18N.disable}</button>`;
+            : `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" data-system-action="module" data-module="${escHtml(String(m.name || ''))}" data-module-action="disable">${MODULE_I18N.disable}</button>`;
         } else if (capabilityState === "ready") {
           statusColor = "var(--warning)";
           statusText = I18N.web_system_module_ready;
@@ -293,7 +293,7 @@ async function refreshSystem() {
           statusColor = "var(--secondary)";
           statusText = I18N.web_system_module_disabled;
           action = hwSupported && m.dependency_installed
-            ? `<button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" onclick="moduleAction('${escHtml(m.name)}','enable')">${MODULE_I18N.enable}</button>`
+            ? `<button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" data-system-action="module" data-module="${escHtml(String(m.name || ''))}" data-module-action="enable">${MODULE_I18N.enable}</button>`
             : '<span class="text-secondary" style="font-size:11px;">—</span>';
         }
         const dependencyText = m.dependency_installed
@@ -367,10 +367,10 @@ async function refreshSnapshots() {
     if (!list.length) { el.textContent = BACKUP_I18N.no_snapshots; return; }
     el.innerHTML = '<table class="mini-table" style="width:100%;"><thead><tr><th>' + I18N.web_th_label + '</th><th>' + I18N.web_th_size + '</th><th>' + I18N.web_th_when + '</th><th></th></tr></thead><tbody>' +
       list.map(s => {
-        const label = (s.label || s.name || "").replace(/"/g, '&quot;');
+        const label = String(s.label || s.name || "");
         const size = s.size_bytes ? Math.round(s.size_bytes/1024) + ' KB' : '--';
         const when = s.created_at || '--';
-        return `<tr><td>${escHtml(label)}</td><td>${size}</td><td class="text-secondary">${escHtml(when)}</td><td><button class="action-btn action-outline" style="padding:4px 10px;font-size:11px;" onclick="restoreSnapshot('${label}')">${BACKUP_I18N.restore}</button></td></tr>`;
+        return `<tr><td>${escHtml(label)}</td><td>${size}</td><td class="text-secondary">${escHtml(when)}</td><td><button class="action-btn action-outline" style="padding:4px 10px;font-size:11px;" data-system-action="restore-snapshot" data-label="${escHtml(label)}">${BACKUP_I18N.restore}</button></td></tr>`;
       }).join('') + '</tbody></table>';
   } catch(e) {
     document.getElementById("snapshot-list").textContent = String(e);
@@ -543,7 +543,7 @@ async function refreshLocation() {
            <div style="font-weight:600;">${escHtml(p.name)}</div>
            <div class="text-xs text-secondary">${escHtml(p.type || "")} · ${escHtml(p.description || "")}</div>
          </div>
-         <button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" onclick="removePoi('${p.id}')">${POI_I18N.remove}</button>
+         <button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" data-system-action="remove-poi" data-poi-id="${escHtml(String(p.id || ''))}">${POI_I18N.remove}</button>
        </div>`
     ).join("");
   } catch(e) { list.textContent = String(e); }
@@ -744,5 +744,24 @@ async function refreshEnvironment() {
   } catch(e) { el.textContent = String(e); }
 }
 refreshEnvironment();
+document.addEventListener("click", event => {
+  const target = event.target.closest("[data-system-action]");
+  if (!target) return;
+  const action = target.dataset.systemAction;
+  if (action === "refresh-system") refreshSystem();
+  else if (action === "load-llm") loadLLM();
+  else if (action === "apply-modes") applyModes();
+  else if (action === "create-snapshot") createSnapshot();
+  else if (action === "emergency-save") emergencySave();
+  else if (action === "refresh-snapshots") refreshSnapshots();
+  else if (action === "confirm-reset") confirmReset(Number(target.dataset.level));
+  else if (action === "add-poi") addPoi();
+  else if (action === "comms") commsAction(target.dataset.commsAction);
+  else if (action === "refresh-comms") refreshComms();
+  else if (action === "set-pressure") setPressure();
+  else if (action === "module") moduleAction(target.dataset.module, target.dataset.moduleAction);
+  else if (action === "restore-snapshot") restoreSnapshot(target.dataset.label);
+  else if (action === "remove-poi") removePoi(target.dataset.poiId);
+});
 </script>
 {% endblock %}

@@ -70,6 +70,7 @@ elements["file-tree-toggle"].attributes["aria-expanded"] = "false";
 
 const documentStub = {{
   body: {{ appendChild() {{}} }},
+  addEventListener() {{}},
   querySelectorAll() {{ return []; }},
   getElementById(id) {{
     if (!elements[id]) elements[id] = makeElement();
@@ -182,7 +183,7 @@ def test_all_repository_i18n_consumers_are_declared() -> None:
         ),
         (
             {"categories": [{"category": "medicine"}], "entries": [_entry(i) for i in range(25)]},
-            ["kid-0", "kid-19", "共 25 条", "1 / 2", "_repoGo(2)"],
+            ["kid-0", "kid-19", "共 25 条", "1 / 2", 'data-page="2"'],
         ),
     ],
 )

@@ -31,7 +31,7 @@
   </form>
   <div class="lock">{{ t('web_login_secure_note') }}</div>
 </div>
-<script>
+<script nonce="{{ csp_nonce }}">
 const I18N = {{ web_i18n | tojson }};
 function L(k){ return (I18N && I18N[k]) || k; }
 const form = document.getElementById('login-form');
