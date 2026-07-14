@@ -20,6 +20,8 @@ STALE_TOKENS = [
     "kept private (gitignored",
     "公开发布时保持内部隐藏",
     "内部文档、测试、运行时数据",
+    "发布事务（SHA-230）",
+    "GitHub Actions main run #92",
 ]
 
 # Historical changelog sections may retain the numbers that were true then.

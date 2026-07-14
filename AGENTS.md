@@ -99,7 +99,7 @@ allspark/
 ## 当前状态（v1.0.3 Release Candidate）
 
 - v1.0.3 尚未 tag 或发布；SHA-158 是实时发布状态权威入口，当前结论为 Off track / 尚未满足 Stable 发布门禁
-- 2026-07-15 发现的 8 个 High/P1 与本轮 CLI/Repository/CI P2 已闭环；发布事务一致性、外部环境验证和低优先级入口仍开放
+- 2026-07-15 发现的 8 个 High/P1、本轮 CLI/Repository/CI P2 与发布事务一致性已闭环；最终 RC 复验、外部环境验证和低优先级入口仍开放
 - 完整 tracked tests 已收集（以 `pytest tests/ -q` / CI 实际输出为准；CI 在 Python 3.10/3.11/3.12 复现，SHA-28）
 - SHA-151 质量门禁：Python 3.10 为权威覆盖环境，总行覆盖率 ≥75%，8 个关键路径模块分支覆盖率均 ≥90%；3.10/3.11/3.12 均运行完整测试与收集数防回退门禁
 - Ruff lint 0 errors
@@ -109,5 +109,5 @@ allspark/
 - i18n 已外置为 `locales/zh.yaml` + `locales/en.yaml`（i18n.py 157 行）
 - Scheduler 已接入 bootstrap
 - 命令自动发现注册已实现（10 个命令模块 / 32 个 Command 类）
-- 当前开放轨道：发布事务（SHA-230）、真实环境与 CSP enforcing（SHA-33/179/181/213），以及 Low/v2+ 范围（SHA-228/34/35）；实时计数与发布结论以 Linear SHA-158 正文为准
-- GitHub Actions main run #92：Python 3.10/3.11/3.12 test + clean-wheel smoke 6/6 success，0 annotations
+- 当前开放轨道与实时计数以 Linear SHA-158 正文为准；真实环境、CSP enforcing 与 v2+ 能力继续保持 Testing/Experimental 边界
+- 当前基线的精确 commit、测试计数和 GitHub Actions 证据维护在 Linear SHA-158，仓库文档不复制易漂移的 run 编号
