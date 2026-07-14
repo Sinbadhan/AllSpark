@@ -1,6 +1,6 @@
 """SHA-156: Web global controls must not have dead entries.
 
-"启动操作" must target the task center (/executions), not the dashboard root;
+The task center is exposed through one semantic navigation entry per viewport;
 the dead `href="#"` docs link and the redundant settings icon (-> /config, dup
 of the nav link) are removed. Mobile nav has a global search entry (desktop parity).
 """
@@ -12,11 +12,10 @@ def _read(name: str) -> str:
 
 
 class TestDeadEntries:
-    def test_exec_btn_targets_executions_not_root(self):
+    def test_executions_uses_navigation_not_a_duplicate_command(self):
         t = _read("base.html")
-        # SHA-156: "启动操作" goes to /executions (task center), not /.
-        assert "class=\"exec-btn\" onclick=\"location.href='/executions'\"" in t
-        assert "class=\"exec-btn\" onclick=\"location.href='/'\"" not in t
+        assert 'class="exec-btn"' not in t
+        assert t.count('href="/executions"') == 2
 
     def test_no_dead_docs_link(self):
         t = _read("base.html")

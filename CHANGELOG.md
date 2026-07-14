@@ -98,7 +98,11 @@ workflow and supported hardware scope are approved.
   Repository filter focus continuity and native detail triggers. The macOS
   VoiceOver core flow is verified; Windows + NVDA remains Testing/Experimental.
 
-**UX (P2):**
+**UX (P2/P3):**
+- SHA-228: The sidebar no longer presents Executions as a duplicate
+  `Execute Task` command that only reloads the task center. Desktop and mobile
+  now share one semantic `Executions / 执行中心` navigation label, with
+  `aria-current` on the active page and real-Chrome cross-page coverage.
 - SHA-229: GitHub Actions now uses the Node 24-native `actions/checkout@v7`
   and `actions/setup-python@v6`, removes the temporary runtime-forcing
   environment variable, and declares read-only repository contents permission.
@@ -149,8 +153,8 @@ workflow and supported hardware scope are approved.
 **Packaging/hygiene (P3):**
 - SHA-144: bench_import - dual metric (sum-of-means micro-bench + wall-clock
   SLO) with independent budgets; `--hard-fail` on either.
-- SHA-156: Web dead-entry cleanup (exec-btn -> /executions; removed dead docs
-  link; dedup settings icon).
+- SHA-156: Web dead-entry cleanup (removed dead docs link, deduplicated the
+  settings icon, and added mobile global-search parity).
 - SHA-157: Package metadata - PEP 639 license; removed deprecated classifier;
   removed unused prompt-toolkit; MANIFEST `*.j2` fix; Python 3.10 `tomli`
   conditional dep; CI clean-wheel smoke matrix (3.10/3.11/3.12).

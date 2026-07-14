@@ -203,13 +203,6 @@ table { border-collapse: collapse; width: 100%; }
 }
 .sidebar .brand h1 { font-size: 18px; font-weight: 700; color: var(--primary-container); letter-spacing: -0.02em; line-height: 1; }
 .sidebar .brand p { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); margin-top: 4px; }
-.sidebar .exec-btn {
-  margin: 0 12px 16px; padding: 8px 12px; background: var(--primary); color: var(--on-primary);
-  border-radius: var(--radius); font-weight: 600; font-size: 13px; display: flex;
-  align-items: center; justify-content: center; gap: 8px; transition: background 0.15s;
-}
-.sidebar .exec-btn:hover { background: var(--primary-container); }
-.sidebar .exec-btn:active { transform: scale(0.95); }
 .sidebar nav { flex: 1; padding: 0 8px; display: flex; flex-direction: column; gap: 2px; }
 .sidebar nav a {
   display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: var(--radius);
@@ -518,7 +511,7 @@ table { border-collapse: collapse; width: 100%; }
   <nav>
     <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span> {{ t('web_nav_dashboard') }}</a>
     <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">terminal</span> {{ t('web_nav_system') }}</a>
-    <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span> {{ t('web_nav_executions') }}</a>
+    <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"{% if nav_active == 'executions' %} aria-current="page"{% endif %}><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span> {{ t('web_nav_executions') }}</a>
     <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">settings_input_component</span> {{ t('web_nav_config') }}</a>
     <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">folder_open</span> {{ t('web_nav_repository') }}</a>
   </nav>
@@ -533,13 +526,10 @@ table { border-collapse: collapse; width: 100%; }
       <p>{{ t('web_kernel_version', version=version) }}</p>
     </div>
   </div>
-  <button class="exec-btn" onclick="location.href='/executions'">
-    <span class="material-symbols-outlined" style="font-size:16px;" aria-hidden="true">play_arrow</span> {{ t('web_execute_task') }}
-  </button>
   <nav>
     <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span> {{ t('web_nav_dashboard') }}</a>
     <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">terminal</span> {{ t('web_nav_system') }}</a>
-    <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span> {{ t('web_nav_executions') }}</a>
+    <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"{% if nav_active == 'executions' %} aria-current="page"{% endif %}><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span> {{ t('web_nav_executions') }}</a>
     <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">settings_input_component</span> {{ t('web_nav_config') }}</a>
     <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">folder_open</span> {{ t('web_nav_repository') }}</a>
   </nav>

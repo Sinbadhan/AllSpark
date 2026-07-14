@@ -1342,7 +1342,6 @@ web_login_token_label: Access Token
 web_login_submit: Sign In
 web_login_error: Invalid token, please try again
 web_login_secure_note: Token is exchanged for an httpOnly session cookie, never written to the page
-web_execute_task: Execute Task
 web_search_placeholder: Search...
 web_global_search_empty: Enter a search term first
 web_global_search_sent: Searching for "{query}"
