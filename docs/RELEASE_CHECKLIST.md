@@ -34,15 +34,17 @@ release scope and the audit gate (SHA-158) is green.
 ```bash
 ruff check allspark/ tests/
 mypy allspark/ --ignore-missing-imports
-pytest -q --tb=short --cov=allspark --cov-branch \
+python3.10 -m pytest -q --tb=short --cov=allspark --cov-branch \
   --cov-report=term-missing --cov-report=json:coverage.json
-python3 scripts/check_coverage.py --coverage-json coverage.json
+python3.10 scripts/check_coverage.py --coverage-json coverage.json
 python3 tests/regression/run_all.py
 python3 scripts/bench_import.py --check --hard-fail
 ```
 
 Do not lower coverage or collection floors to make a release pass. Record the
 exact pytest, coverage, regression, and benchmark output in the release PR.
+Python 3.10 is the canonical coverage environment; CI still runs the complete
+test suite and collection gate independently on Python 3.11 and 3.12.
 Run §1 of `docs/MANUAL_CHECKLIST.md` and attach the keyboard, VoiceOver/NVDA,
 and 200% browser-zoom evidence to the release PR.
 

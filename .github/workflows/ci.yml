@@ -35,20 +35,25 @@ jobs:
       - name: Type check with mypy
         run: mypy allspark/ --ignore-missing-imports
 
-      - name: Run tests with pytest
+      - name: Run tests with coverage (Python 3.10)
+        if: matrix.python-version == '3.10'
         # SHA-28: full suite is tracked in version control and gates merges
         # across all supported Python versions. Hardware/live-model smoke
         # tests auto-skip (gated behind ALLSPARK_LIVE_* env vars / importorskip).
-        # SHA-151: coverage gate. --cov-branch records branch arcs (the release
-        # acceptance is 90% branch on the critical path, not just line coverage);
-        # --cov-report=json feeds the per-module gate in the next step;
-        # term-missing surfaces low-coverage domains. The next step reads the
-        # JSON report and independently enforces total LINE coverage plus the
-        # per-module BRANCH floors; coverage.py's --fail-under would otherwise
-        # combine statements and branches when --cov-branch is enabled.
+        # SHA-151: Python 3.10 is the canonical coverage environment. Coverage
+        # 7.x does not consistently trace Starlette TestClient portal threads
+        # on Python 3.11/3.12, even though those requests and assertions pass.
+        # Keep one authoritative coverage result instead of comparing tracer
+        # artifacts across runtimes; the next step still enforces total LINE
+        # coverage plus per-module BRANCH floors without lowering either gate.
         run: pytest -q --tb=short --cov=allspark --cov-branch --cov-report=term-missing --cov-report=json:coverage.json
 
+      - name: Run full tests (Python 3.11 and 3.12)
+        if: matrix.python-version != '3.10'
+        run: pytest -q --tb=short
+
       - name: Per-module branch coverage gate
+        if: matrix.python-version == '3.10'
         # SHA-151: enforce ratcheted per-module BRANCH floors on the critical
         # path (auth/init/SKF/import/reset/backup/search/resource) and other
         # high-risk low-coverage modules, and enforce >=75% total line coverage.

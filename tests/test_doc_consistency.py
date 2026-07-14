@@ -65,6 +65,10 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
     assert "pytest -q --tb=short --cov=allspark --cov-branch" in workflow
+    assert "Run full tests (Python 3.11 and 3.12)" in workflow
+    assert workflow.count("if: matrix.python-version == '3.10'") >= 2
+    assert "if: matrix.python-version != '3.10'" in workflow
+    assert "run: pytest -q --tb=short\n" in workflow
     assert "python scripts/check_coverage.py --coverage-json coverage.json" in workflow
     assert '"pytest-cov>=7.1,<8"' in pyproject
     assert 'patch = ["subprocess"]' in pyproject
@@ -89,6 +93,7 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
         Path(path).read_text(encoding="utf-8")
         for path in ("AGENTS.md", "CONTRIBUTING.md", "docs/MANUAL_CHECKLIST.md")
     )
+    assert "canonical Python 3.10 coverage job" in docs
     assert "75%" in docs
     assert "90%" in docs
 

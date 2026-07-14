@@ -34,7 +34,8 @@ workflow and supported hardware scope are approved.
   weather structured rendering (no raw JSON/null).
 - SHA-151: JSON-backed gate requires >=75% total line coverage and >=90%
   branch coverage on all eight critical-path modules, plus a ratcheted test
-  collection floor.
+  collection floor. Python 3.10 is the canonical coverage environment while
+  Python 3.11/3.12 continue to run the complete functional and collection gates.
 - SHA-152: Web a11y - native control semantics, dialog roles, focus traps,
   deterministic focus restoration after async refresh, mobile-nav state/inert
   synchronization, and executable JavaScript regressions.
