@@ -65,6 +65,10 @@ def test_public_version_references_match() -> None:
 def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+    assert workflow.count("actions/checkout@v7") == 2
+    assert workflow.count("actions/setup-python@v6") == 2
+    assert "FORCE_JAVASCRIPT_ACTIONS_TO_NODE" not in workflow
+    assert "permissions:\n  contents: read" in workflow
     assert "pytest -q --tb=short --cov=allspark --cov-branch" in workflow
     assert "Run full tests (Python 3.11 and 3.12)" in workflow
     assert workflow.count("if: matrix.python-version == '3.10'") >= 2

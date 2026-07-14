@@ -94,6 +94,9 @@ Verify no sensitive or generated files are staged:
   explicitly Experimental and excluded from Stable support.
 - The RC pull request is green on all Python versions, including the clean-wheel
   smoke matrix and real-Chrome SKF XSS gate.
+- Record the successful workflow run for the exact release-candidate commit.
+  Historical failed runs do not describe the current HEAD; the selected run
+  must complete every required job without Node runtime deprecation annotations.
 - SHA-152 contains completed keyboard-only, macOS VoiceOver, and 200% zoom
   evidence. Automated DOM tests and screenshots do not substitute for the
   VoiceOver assistive-technology run. Windows + NVDA is explicitly recorded as

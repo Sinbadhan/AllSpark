@@ -90,6 +90,11 @@ workflow and supported hardware scope are approved.
   VoiceOver core flow is verified; Windows + NVDA remains Testing/Experimental.
 
 **UX (P2):**
+- SHA-229: GitHub Actions now uses the Node 24-native `actions/checkout@v7`
+  and `actions/setup-python@v6`, removes the temporary runtime-forcing
+  environment variable, and declares read-only repository contents permission.
+  Executable drift guards and the release checklist require a clean run for the
+  exact candidate commit rather than treating historical failures as current.
 - SHA-227: Repository uses an information-first mobile list at 320/390px so
   title, verification, category, tier and the secondary ID remain scannable
   without page-level horizontal scrolling. Desktop and tablet keep the dense
