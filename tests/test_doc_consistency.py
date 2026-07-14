@@ -111,6 +111,9 @@ def test_changelog_unreleased_does_not_overclaim_release_closure() -> None:
     assert not any(claim in unreleased for claim in forbidden)
     assert "Report-Only" in unreleased
     assert "SHA-213" in unreleased
+    assert "VoiceOver/NVDA" in unreleased
+    assert "SHA-33 remains a post-release" in unreleased
+    assert "approve the SHA-33" not in unreleased
 
 
 def test_public_docs_define_honest_release_support_boundary() -> None:

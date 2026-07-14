@@ -73,10 +73,12 @@ workflow and supported hardware scope are approved.
   conditional dep; CI clean-wheel smoke matrix (3.10/3.11/3.12).
 - SHA-145: Starlette/httpx2 deprecation warning cleared (httpx2 declared).
 
-Remaining release decisions are tracked in SHA-158: complete the RC CI evidence,
-finish SHA-152 manual keyboard/screen-reader/200% zoom evidence, and approve the
-SHA-33 hardware support boundary. SHA-213 (enforcing CSP) is documented follow-up
-hardening and is not represented as an active CSP defense in this release.
+The remaining release gate tracked in SHA-158 is honest VoiceOver/NVDA
+announcement evidence for SHA-152. The v1.0.3 support boundary is approved as
+desktop PROCESS mode plus local core workflows; SHA-33 remains a post-release
+hardware-validation track and cannot expand Stable support without real-world
+evidence. SHA-213 (enforcing CSP) is documented follow-up hardening and is not
+represented as an active CSP defense in this release.
 
 ### Security
 - **H1**: Fixed `KnowledgeSigner._derive_key` bug — `getattr(self.db, "_db_path")`
