@@ -41,7 +41,7 @@ def test_voiceover_critical_web_semantics_in_real_chrome(tmp_path: Path) -> None
             {"width": 1280, "height": 768, "deviceScaleFactor": 1, "mobile": False},
         )
         browser.navigate(f"{base_url}/repository")
-        browser.wait_for("_repoEntries.some(entry => entry.id === 'audit/soap')")
+        browser.wait_for("document.getElementById('repo-search') !== null")
 
         search_state = browser.evaluate(
             """(() => {
