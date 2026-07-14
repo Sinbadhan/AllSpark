@@ -45,6 +45,8 @@ def test_voiceover_critical_web_semantics_in_real_chrome(tmp_path: Path) -> None
 
         search_state = browser.evaluate(
             """(() => {
+              _repoFilters.lang = 'all';
+              _repoRender();
               const input = document.getElementById('repo-search');
               input.focus();
               input.value = 'soap';
