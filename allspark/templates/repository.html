@@ -8,6 +8,40 @@
   .border-grid-b { border-bottom: 1px solid #2a2a2a; }
   .bg-raised { background-color: #141414; }
   .hover-border-spark:hover { border-color: #ff6b35; }
+  .file-tree-item {
+    width: 100%; border: 0; background: transparent; color: var(--secondary);
+    padding: 4px 12px; display: flex; align-items: center; gap: 6px;
+    font: inherit; text-align: left; cursor: pointer;
+  }
+  .file-tree-item:hover, .file-tree-item:focus-visible {
+    color: var(--on-surface); background: var(--surface-container);
+  }
+  .file-tree-item[aria-current="page"] {
+    color: var(--primary-container); background: var(--surface-container);
+  }
+  .file-tree-item.file-tree-child { padding-left: 32px; }
+  .repo-mobile-list { display: none; }
+  @media (max-width: 767px) {
+    #repo-content { overflow-x: hidden; }
+    .repo-desktop-table { display: none; }
+    .repo-mobile-list { display: block; min-width: 0; }
+    .repo-mobile-item {
+      min-width: 0; padding: 12px; border-bottom: 1px solid var(--surface-container-high);
+    }
+    .repo-mobile-title {
+      width: 100%; min-width: 0; overflow-wrap: anywhere; color: var(--primary-container);
+      background: none; border: 0; padding: 0; font: inherit; font-weight: 600;
+      text-align: left; cursor: pointer;
+    }
+    .repo-mobile-meta {
+      display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 8px;
+      color: var(--secondary); font-size: 11px;
+    }
+    .repo-mobile-id {
+      margin-top: 7px; color: var(--outline); font-size: 10px;
+      overflow-wrap: anywhere;
+    }
+  }
 </style>
 {% endblock %}
 
@@ -35,30 +69,30 @@
       </button>
     </div>
     <ul class="text-sm p-1 flex-1 overflow-y-auto hidden md:block" id="file-tree">
-      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors" onclick="showSection('knowledge')">
-        <span class="material-symbols-outlined text-sm">folder</span> /knowledge
-      </li>
-      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors pl-8" onclick="showSection('knowledge')">
-        <span class="material-symbols-outlined text-sm">description</span> entries.skf
-      </li>
-      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors" onclick="showSection('experience')">
-        <span class="material-symbols-outlined text-sm">folder</span> /experience
-      </li>
-      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors pl-8" onclick="showSection('experience')">
-        <span class="material-symbols-outlined text-sm">description</span> log.json
-      </li>
-      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors" onclick="showSection('models')">
-        <span class="material-symbols-outlined text-sm">folder</span> /models
-      </li>
-      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors pl-8" onclick="showSection('models')">
-        <span class="material-symbols-outlined text-sm">description</span> gguf_models.json
-      </li>
-      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors" onclick="showSection('skf')">
-        <span class="material-symbols-outlined text-sm">folder</span> /skf_packages
-      </li>
-      <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors" onclick="showSection('community')">
-        <span class="material-symbols-outlined text-sm">folder</span> /community
-      </li>
+      <li><button type="button" class="file-tree-item" data-section="knowledge">
+        <span class="material-symbols-outlined text-sm" aria-hidden="true">folder</span> /knowledge
+      </button></li>
+      <li><button type="button" class="file-tree-item file-tree-child" data-section="knowledge">
+        <span class="material-symbols-outlined text-sm" aria-hidden="true">description</span> entries.skf
+      </button></li>
+      <li><button type="button" class="file-tree-item" data-section="experience">
+        <span class="material-symbols-outlined text-sm" aria-hidden="true">folder</span> /experience
+      </button></li>
+      <li><button type="button" class="file-tree-item file-tree-child" data-section="experience">
+        <span class="material-symbols-outlined text-sm" aria-hidden="true">description</span> log.json
+      </button></li>
+      <li><button type="button" class="file-tree-item" data-section="models">
+        <span class="material-symbols-outlined text-sm" aria-hidden="true">folder</span> /models
+      </button></li>
+      <li><button type="button" class="file-tree-item file-tree-child" data-section="models">
+        <span class="material-symbols-outlined text-sm" aria-hidden="true">description</span> gguf_models.json
+      </button></li>
+      <li><button type="button" class="file-tree-item" data-section="skf">
+        <span class="material-symbols-outlined text-sm" aria-hidden="true">folder</span> /skf_packages
+      </button></li>
+      <li><button type="button" class="file-tree-item" data-section="community">
+        <span class="material-symbols-outlined text-sm" aria-hidden="true">folder</span> /community
+      </button></li>
     </ul>
   </aside>
 
@@ -147,8 +181,16 @@ const SKF_I18N = {
 
 let currentSection = "knowledge";
 
-async function showSection(section) {
+function setFileTreeCurrent(section, trigger) {
+  const items = Array.from(document.querySelectorAll('.file-tree-item'));
+  items.forEach(item => item.removeAttribute('aria-current'));
+  const current = trigger || items.find(item => item.dataset.section === section);
+  if (current) current.setAttribute('aria-current', 'page');
+}
+
+async function showSection(section, trigger) {
   currentSection = section;
+  setFileTreeCurrent(section, trigger);
   const titleEl = document.getElementById("section-title");
   const contentEl = document.getElementById("repo-content");
 
@@ -449,6 +491,16 @@ function _repoRender() {
       <td class="p-3 text-secondary">${escHtml(String(e.verification || ""))}</td>
       <td class="p-3 text-secondary text-right">${escHtml(String(e.priority))}</td>
     </tr>`).join("") : `<tr><td colspan="5" class="p-4 text-center text-secondary">${escHtml(REPO_I18N.no_match)}</td></tr>`;
+  const mobileItems = pageItems.length ? pageItems.map(e => `
+    <article class="repo-mobile-item" data-kid="${escHtml(e.id)}">
+      <button type="button" class="repo-detail-trigger repo-mobile-title" aria-label="${escHtml(REPO_I18N.detail_title + ': ' + e.title)}">${escHtml(e.title)}</button>
+      <div class="repo-mobile-meta">
+        <span data-meta="verification">${escHtml(REPO_I18N.verification)}: ${escHtml(String(e.verification || ""))}</span>
+        <span data-meta="category">${escHtml(REPO_I18N.category)}: ${escHtml(e.category)}</span>
+        <span data-meta="tier">${escHtml(REPO_I18N.tier)}: ${escHtml(String(e.priority))}</span>
+      </div>
+      <div class="repo-mobile-id" title="${escHtml(e.id)}">${escHtml(e.id)}</div>
+    </article>`).join("") : `<div class="repo-mobile-empty p-4 text-center text-secondary">${escHtml(REPO_I18N.no_match)}</div>`;
   const pager = `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-top:1px solid var(--surface-container-high);font-size:12px;color:var(--secondary);">
       <span role="status" aria-live="polite" aria-atomic="true">${escHtml(REPO_I18N.results.replace('{n}', String(filtered.length)))}</span>
@@ -458,7 +510,7 @@ function _repoRender() {
         <button class="action-btn action-outline" style="padding:3px 10px;font-size:11px;"${_repoPage >= totalPages ? ' disabled' : ''} onclick="_repoGo(${_repoPage + 1})">${escHtml(REPO_I18N.next)}</button>
       </div>
     </div>`;
-  el.innerHTML = bar + `<table class="w-full text-left border-collapse min-w-[600px]">
+  el.innerHTML = bar + `<table class="repo-desktop-table w-full text-left border-collapse min-w-[600px]">
     <thead class="bg-surface-container-high border-b border-surface-container-high">
       <tr>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_id}</th>
@@ -468,7 +520,7 @@ function _repoRender() {
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_tier}</th>
       </tr>
     </thead>
-    <tbody class="text-sm">${rows}</tbody></table>` + pager;
+    <tbody class="text-sm">${rows}</tbody></table><div class="repo-mobile-list">${mobileItems}</div>` + pager;
   const si = document.getElementById("repo-search");
   if (si) si.oninput = () => {
     const start = si.selectionStart;
@@ -495,9 +547,9 @@ function _repoRender() {
   // SHA-147: event delegation instead of inline onclick on rows (avoid
   // JS-string-context injection from entry IDs). The native title button owns
   // keyboard activation; the full row remains a pointer target.
-  el.querySelectorAll("tr[data-kid]").forEach(tr => {
-    const kid = tr.getAttribute("data-kid");
-    tr.addEventListener("click", () => openRepoDetail(kid));
+  el.querySelectorAll("[data-kid]").forEach(item => {
+    const kid = item.getAttribute("data-kid");
+    item.addEventListener("click", () => openRepoDetail(kid));
   });
 }
 
@@ -622,6 +674,9 @@ function escHtml(s) {
 }
 
 // Load default section
+document.querySelectorAll('.file-tree-item').forEach(item => {
+  item.addEventListener('click', () => showSection(item.dataset.section, item));
+});
 showSection("knowledge");
 </script>
 {% endblock %}

@@ -90,6 +90,12 @@ workflow and supported hardware scope are approved.
   VoiceOver core flow is verified; Windows + NVDA remains Testing/Experimental.
 
 **UX (P2):**
+- SHA-227: Repository uses an information-first mobile list at 320/390px so
+  title, verification, category, tier and the secondary ID remain scannable
+  without page-level horizontal scrolling. Desktop and tablet keep the dense
+  table, while the file tree now uses native buttons with visible keyboard
+  focus and a single `aria-current` item; Enter and Space selection are covered
+  by real-browser regression tests in zh and en.
 - SHA-225: Hardware tier eligibility is now separate from dependency,
   configuration, runtime and Experimental state in one registry schema shared
   by CLI initialization, `/api/modules` and System. Docker is shown as an

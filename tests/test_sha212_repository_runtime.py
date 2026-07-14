@@ -70,6 +70,7 @@ elements["file-tree-toggle"].attributes["aria-expanded"] = "false";
 
 const documentStub = {{
   body: {{ appendChild() {{}} }},
+  querySelectorAll() {{ return []; }},
   getElementById(id) {{
     if (!elements[id]) elements[id] = makeElement();
     return elements[id];
