@@ -28,9 +28,7 @@ def test_config_runtime_and_degraded_states_in_real_chrome(tmp_path: Path) -> No
             },
         )
         browser.navigate(f"{base_url}/config")
-        browser.wait_for(
-            "document.getElementById('cfg-version').textContent !== '--'"
-        )
+        browser.evaluate("initialConfigLoad", await_promise=True)
         normal = browser.evaluate(
             """({
               errors: window.__configErrors,

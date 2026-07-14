@@ -6,6 +6,8 @@ from pathlib import Path
 
 from allspark.adapters.web_ui import create_app
 from allspark.core.database import Database
+from allspark.infrastructure.hardware import FeatureFlags
+from allspark.infrastructure.module_loader import ModuleRegistry
 from tests.test_sha196_browser import _Chrome, _chrome_binary, _serve
 
 
@@ -15,6 +17,7 @@ def test_fresh_environment_page_never_presents_actionable_score(
     db_path = tmp_path / "environment-browser.db"
     database = Database(db_path)
     database.mark_initialized()
+    ModuleRegistry(FeatureFlags()).save_to_db(database)
     database.close()
 
     app = create_app(str(db_path))

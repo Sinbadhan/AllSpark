@@ -59,7 +59,9 @@ workflow and supported hardware scope are approved.
   returns an explicit unknown result with no numeric score or exploration
   recommendation; known critical shortages still surface as threats. CLI/API/
   Web expose completeness, source and observation time, with fresh-install,
-  partial, stale, complete-data and real-Chrome regression coverage.
+  partial, stale, complete-data and real-Chrome regression coverage. If the
+  optional assessor is unavailable, Web now renders the same explicit 0%
+  evidence state instead of treating a 503 payload as assessment data.
 - SHA-217: Rule-based survival Q&A now keeps the original user question in
   retrieval and uses intent keywords only as recall expansion. Multi-term title
   coverage promotes specific methods such as battery fire starting; FTS query

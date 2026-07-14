@@ -126,6 +126,6 @@ async function loadConfig() {
     setConfigText("cfg-tier", hw && hw.tier);
   } catch (e) { setConfigText("cfg-tier", CONFIG_I18N.unavailable); }
 }
-loadConfig();
+const initialConfigLoad = loadConfig();
 </script>
 {% endblock %}

@@ -662,7 +662,20 @@ refreshWeather();
 async function refreshEnvironment() {
   const el = document.getElementById("env-result");
   try {
-    const data = await api("/api/environment");
+    const response = await api("/api/environment");
+    const data = response && response._http_error ? {
+      overall_score: null,
+      climate: {},
+      terrain: {},
+      threats: {},
+      opportunities: {},
+      recommendations: [],
+      completeness: {
+        ratio: 0,
+        missing: ["climate", "terrain", "resources"],
+      },
+      sources: {},
+    } : response;
     const score = typeof data.overall_score === "number"
       ? Math.round(data.overall_score * 100) + "%"
       : ENV_I18N.insufficient;
