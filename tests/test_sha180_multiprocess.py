@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import multiprocessing
-import queue
+import argparse
+import json
 import socket
 import sqlite3
+import subprocess
+import sys
 import time
 from pathlib import Path
-from typing import Any
 
 from allspark.core.config import SPARKNET_MAX_INCOMING_BYTES
 from allspark.core.database import Database
@@ -23,6 +24,7 @@ from allspark.services.spark_network import (
 
 _SECRET = "sha180-shared-secret"
 _SERVER_READY_TIMEOUT_SECONDS = 30
+_SERVER_ORPHAN_TIMEOUT_SECONDS = 90
 
 
 def _free_port() -> int:
@@ -31,27 +33,25 @@ def _free_port() -> int:
         return sock.getsockname()[1]
 
 
-def _process_context() -> Any:
-    methods = multiprocessing.get_all_start_methods()
-    # coverage.py's subprocess bootstrap can hang before worker entry when
-    # Python 3.12 uses spawn on POSIX. Fork still provides an independent OS
-    # process for the socket/SQLite integration boundary under test.
-    return multiprocessing.get_context("fork" if "fork" in methods else "spawn")
+def _write_ready(path: Path, payload: dict[str, object]) -> None:
+    pending = path.with_suffix(f"{path.suffix}.tmp")
+    pending.write_text(json.dumps(payload), encoding="utf-8")
+    pending.replace(path)
 
 
 def _server_worker(
-    db_path: str,
+    db_path: Path,
     port: int,
-    ready: Any,
-    stop: Any,
+    ready_path: Path,
+    stop_path: Path,
     max_incoming_bytes: int | None = None,
-) -> None:
+) -> int:
     if max_incoming_bytes is not None:
         import allspark.services.spark_network as network_module
 
         network_module.SPARKNET_MAX_INCOMING_BYTES = max_incoming_bytes
 
-    db = Database(Path(db_path))
+    db = Database(db_path)
     db.save_survivor_state("network_shared_secret", _SECRET)
     db.save_knowledge(
         KnowledgeEntry(
@@ -66,10 +66,17 @@ def _server_worker(
     network = SparkNetwork(db=db, spark_id="server-process")
     try:
         result = network.start_exchange_server(host="127.0.0.1", port=port)
-        ready.put(result)
-        stop.wait(20)
+        _write_ready(ready_path, result)
+        if result.get("status") != "started":
+            return 1
+
+        deadline = time.monotonic() + _SERVER_ORPHAN_TIMEOUT_SECONDS
+        while not stop_path.exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        return 0 if stop_path.exists() else 2
     except Exception as exc:
-        ready.put({"status": "error", "message": repr(exc)})
+        _write_ready(ready_path, {"status": "error", "message": repr(exc)})
+        return 1
     finally:
         network.stop_discovery()
         time.sleep(1.1)
@@ -77,43 +84,80 @@ def _server_worker(
 
 
 def _start_server(
-    context: Any,
     db_path: Path,
     port: int,
     *,
     max_incoming_bytes: int | None = None,
-) -> tuple[Any, Any]:
-    ready = context.Queue()
-    stop = context.Event()
-    process = context.Process(
-        target=_server_worker,
-        args=(str(db_path), port, ready, stop, max_incoming_bytes),
+) -> tuple[subprocess.Popen[str], Path]:
+    ready_path = db_path.with_suffix(".ready.json")
+    stop_path = db_path.with_suffix(".stop")
+    ready_path.unlink(missing_ok=True)
+    stop_path.unlink(missing_ok=True)
+    command = [
+        sys.executable,
+        str(Path(__file__).resolve()),
+        "--worker",
+        "--db-path",
+        str(db_path),
+        "--port",
+        str(port),
+        "--ready-path",
+        str(ready_path),
+        "--stop-path",
+        str(stop_path),
+    ]
+    if max_incoming_bytes is not None:
+        command.extend(["--max-incoming-bytes", str(max_incoming_bytes)])
+    process = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
     )
-    process.start()
-    try:
-        started = ready.get(timeout=_SERVER_READY_TIMEOUT_SECONDS)
-    except queue.Empty as exc:
-        alive_at_timeout = process.is_alive()
-        exitcode_at_timeout = process.exitcode
+
+    deadline = time.monotonic() + _SERVER_READY_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        if ready_path.exists():
+            started = json.loads(ready_path.read_text(encoding="utf-8"))
+            break
+        if process.poll() is not None:
+            stdout, stderr = process.communicate()
+            raise AssertionError(
+                "server process exited before readiness "
+                f"(exitcode={process.returncode}, stdout={stdout!r}, stderr={stderr!r})"
+            )
+        time.sleep(0.05)
+    else:
+        alive_at_timeout = process.poll() is None
+        exitcode_at_timeout = process.poll()
         if alive_at_timeout:
             process.terminate()
-        process.join(timeout=5)
+        stdout, stderr = process.communicate(timeout=5)
         raise AssertionError(
             "server process did not report readiness "
             f"within {_SERVER_READY_TIMEOUT_SECONDS}s "
-            f"(alive={alive_at_timeout}, exitcode={exitcode_at_timeout})"
-        ) from exc
-    assert started["status"] == "started", started
-    return process, stop
+            f"(alive={alive_at_timeout}, exitcode={exitcode_at_timeout}, "
+            f"stdout={stdout!r}, stderr={stderr!r})"
+        )
+    if started["status"] != "started":
+        stop_path.touch()
+        stdout, stderr = process.communicate(timeout=5)
+        raise AssertionError(
+            f"server failed to start: {started!r} "
+            f"(exitcode={process.returncode}, stdout={stdout!r}, stderr={stderr!r})"
+        )
+    return process, stop_path
 
 
-def _stop_server(process: Any, stop: Any) -> None:
-    stop.set()
-    process.join(timeout=5)
-    if process.is_alive():
+def _stop_server(process: subprocess.Popen[str], stop_path: Path) -> None:
+    stop_path.touch()
+    try:
+        process.wait(timeout=15)
+    except subprocess.TimeoutExpired:
         process.terminate()
-        process.join(timeout=5)
-    assert process.exitcode == 0
+        process.wait(timeout=5)
+    stdout, stderr = process.communicate()
+    assert process.returncode == 0, (stdout, stderr)
 
 
 def _node(port: int) -> SparkNode:
@@ -169,7 +213,6 @@ def _knowledge_exists(db_path: Path, entry_id: str) -> bool:
 
 
 def test_signed_transfer_tamper_rejection_disconnect_and_restart(tmp_path: Path) -> None:
-    context = _process_context()
     server_db_path = tmp_path / "server.db"
     client_db = Database(tmp_path / "client.db")
     client_db.save_survivor_state("network_shared_secret", _SECRET)
@@ -191,7 +234,7 @@ def test_signed_transfer_tamper_rejection_disconnect_and_restart(tmp_path: Path)
     client_db.save_knowledge(entry)
     client = SparkNetwork(db=client_db, spark_id="client-process")
     port = _free_port()
-    process, stop = _start_server(context, server_db_path, port)
+    process, stop = _start_server(server_db_path, port)
     client.nodes["server-process"] = _node(port)
 
     try:
@@ -232,7 +275,7 @@ def test_signed_transfer_tamper_rejection_disconnect_and_restart(tmp_path: Path)
     disconnected = client.request_exchange("server-process")
     assert disconnected["status"] == "error"
 
-    restarted_process, restarted_stop = _start_server(context, server_db_path, port)
+    restarted_process, restarted_stop = _start_server(server_db_path, port)
     try:
         recovered = client.request_exchange("server-process")
         assert recovered["status"] == "ok", recovered
@@ -243,10 +286,8 @@ def test_signed_transfer_tamper_rejection_disconnect_and_restart(tmp_path: Path)
 
 
 def test_configured_size_limit_drops_payload_and_server_recovers(tmp_path: Path) -> None:
-    context = _process_context()
     port = _free_port()
     process, stop = _start_server(
-        context,
         tmp_path / "limited-server.db",
         port,
         max_incoming_bytes=1024,
@@ -269,3 +310,25 @@ def test_configured_size_limit_drops_payload_and_server_recovers(tmp_path: Path)
         _stop_server(process, stop)
 
     assert SPARKNET_MAX_INCOMING_BYTES == 50 * 1024 * 1024
+
+
+def _worker_cli() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--worker", action="store_true", required=True)
+    parser.add_argument("--db-path", type=Path, required=True)
+    parser.add_argument("--port", type=int, required=True)
+    parser.add_argument("--ready-path", type=Path, required=True)
+    parser.add_argument("--stop-path", type=Path, required=True)
+    parser.add_argument("--max-incoming-bytes", type=int)
+    args = parser.parse_args()
+    return _server_worker(
+        args.db_path,
+        args.port,
+        args.ready_path,
+        args.stop_path,
+        args.max_incoming_bytes,
+    )
+
+
+if __name__ == "__main__":
+    raise SystemExit(_worker_cli())
