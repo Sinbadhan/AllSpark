@@ -417,7 +417,7 @@ async function searchKnowledge() {
 }
 
 async function showKnowledge(id) {
-  const entry = await api("/api/knowledge/" + id);
+  const entry = await api("/api/knowledge/" + encodeURIComponent(id));
   const container = document.getElementById("knowledge-detail");
   document.getElementById("knowledge-results").style.display = "none";
   container.style.display = "block";

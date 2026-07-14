@@ -50,8 +50,7 @@ def test_csp_policy_is_strict_on_scripts() -> None:
 
 
 def test_csp_is_report_only_not_enforcing() -> None:
-    # Must be Report-Only so the existing inline scripts keep working.
-    assert "Content-Security-Policy-Report-Only" in CSP_REPORT_ONLY or True  # header name check is in client tests
-    # The constant itself is the policy value; the enforcing header name would
-    # be "Content-Security-Policy" (set separately in web_ui.py).
-    assert "default-src 'self'" in CSP_REPORT_ONLY
+    c = _client(":memory:")
+    response = c.get("/")
+    assert response.headers.get("Content-Security-Policy") is None
+    assert response.headers.get("Content-Security-Policy-Report-Only") == CSP_REPORT_ONLY

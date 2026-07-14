@@ -49,6 +49,9 @@ dev = [
     "httpx2>=0.2,<3",
     # Coverage gate (SHA-151): JSON-backed total-line and per-module branch floors.
     "pytest-cov>=4.0,<7",
+    # SHA-196 browser gate drives an already-installed Chrome over the local
+    # DevTools protocol; it does not download browsers or contact the internet.
+    "websockets>=12,<17",
 ]
 rag = [
     "sentence-transformers>=2.7",

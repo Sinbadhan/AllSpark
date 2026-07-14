@@ -123,7 +123,7 @@ class TestXSSSanitization:
 
     def test_sanitize_field_strips_html_metacharacters(self):
         assert _sanitize_kf_field('<img id="x">', "id") == "img id=x"
-        assert _sanitize_kf_field("<script>alert(1)</script>", "category") == "scriptalert(1)/script"
+        assert _sanitize_kf_field("<script>alert(1)</script>", "category") == "scriptalert(1)script"
         assert _sanitize_kf_field("water", "category") == "water"
         # Non-string coerced; None -> default.
         assert _sanitize_kf_field(None, "subcategory", "default") == "default"

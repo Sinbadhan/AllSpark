@@ -47,6 +47,11 @@ def _sanitize_kf_field(value, field: str, default: str = "") -> str:
     if not isinstance(value, str):
         value = str(value)
     value = _HTML_META_RE.sub("", value).strip()
+    # Categories and subcategories are interpolated as one URL path segment by
+    # the Web API. A closing-tag slash would otherwise turn one segment into
+    # several after URL decoding and make the imported entry unreachable.
+    if field in {"category", "subcategory"}:
+        value = value.replace("/", "")
     max_len = _FIELD_MAXLEN.get(field, 128)
     if len(value) > max_len:
         value = value[:max_len]

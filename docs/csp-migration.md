@@ -66,14 +66,16 @@ the UI. Report-Only surfaces each violation so it can be migrated deliberately.
    unauthenticated (CSP reports can't carry cookies), rate-limited, and log
    only the violation fields needed for triage.
 
-## Remaining risk (SHA-196 follow-ups, not closed by this baseline)
+## Browser regression gate
 
-* **Browser-level stored-XSS regression** - the original SHA-196 acceptance
-  asks for a real-browser test that imports a malicious SKF and asserts the
-  payload is inert through the full import -> API -> DOM render chain. This
-  needs a headless browser harness (Playwright) and is not covered by the
-  static checks here. SHA-147's sanitization + escHtml remain the primary
-  defense; CSP is the second line once enforcing.
+`tests/test_sha196_browser.py` drives an installed Chrome in headless mode over
+the local DevTools protocol. It uses a temporary database and loopback-only
+server, imports malicious SKF metadata through `/api/skf/import`, and checks the
+Repository and Dashboard list/detail DOM states. CI fails rather than skips when
+Chrome is absent.
+
+## Remaining risk
+
 * **Strict CSP enforcement** - blocked on the inline script/handler migration
   above.
 * **`style-src 'unsafe-inline'`** - left in place because templates use inline
@@ -83,6 +85,9 @@ the UI. Report-Only surfaces each violation so it can be migrated deliberately.
 ## Verification
 
 * `tests/test_sha196_csp.py` asserts the Report-Only header is present on HTML
-  and API responses and that `script-src` has no `'unsafe-inline'`.
-* Browser-level enforcement is verified manually (open the console, confirm no
-  violations) before flipping to enforcing.
+  and API responses, the enforcing header is absent, and `script-src` has no
+  `'unsafe-inline'`.
+* `tests/test_sha196_browser.py` covers the real SKF import -> API -> browser DOM
+  path without external network access or a browser download.
+* CSP enforcement remains a manual pre-flip check until the inline migration is
+  complete; Report-Only is observability, not active blocking.

@@ -155,7 +155,10 @@ def register_core_routes(app, check):
             ]
         return []
 
-    @app.get("/api/knowledge/{kid}")
+    # Knowledge IDs intentionally contain slashes (for example
+    # survival/water/purification/boiling), so the route must consume the full
+    # remaining path after the browser URL-encodes the ID.
+    @app.get("/api/knowledge/{kid:path}")
     async def get_knowledge_entry(kid: str):
         container, db = check()
         entry = db.get_knowledge(kid)
