@@ -30,7 +30,19 @@ MODELS_DIR = DEFAULT_DB_DIR / "models"
 from allspark.services import model_registry as _registry  # noqa: E402
 
 
+def _detect_initial_language() -> str:
+    """Choose a deterministic display language before first-run confirmation."""
+    try:
+        sys_lang = (locale.getlocale()[0] or "").lower()
+    except Exception:
+        sys_lang = ""
+    return "zh" if any(token in sys_lang for token in ("zh", "cn", "chinese")) else "en"
+
+
 def run_init_wizard(db: Database) -> dict:
+    # This only controls the pre-choice display. Persistence starts after the
+    # user explicitly confirms zh or en in _step_language_select().
+    set_language(_detect_initial_language(), persist=False)
     console.print(Panel(
         Text.assemble(
             (t("init_welcome_line1") + "\n", "bold red"),
@@ -152,15 +164,13 @@ def _ask_tier_override(detected_tier: HardwareTier) -> HardwareTier:
 
 
 def _step_language_select() -> str:
+    initial_language = _detect_initial_language()
+    set_language(initial_language, persist=False)
     console.print(f"\n[bold cyan]━━ {t('init_step_language')} ━━[/]")
     console.print(t("init_lang_prompt"))
+    console.print(f"[dim]{t('init_lang_switch_hint')}[/]")
 
-    # SHA-12: detect system locale to suggest a default; user can override.
-    try:
-        sys_lang = (locale.getlocale()[0] or "").lower()
-    except Exception:
-        sys_lang = ""
-    default_choice = "1" if ("zh" in sys_lang or "cn" in sys_lang or "chinese" in sys_lang) else "2"
+    default_choice = "1" if initial_language == "zh" else "2"
     zh_marker = " (default)" if default_choice == "1" else ""
     en_marker = " (default)" if default_choice == "2" else ""
 

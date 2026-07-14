@@ -1036,8 +1036,9 @@ init_complete_msg: ✓ 初始化完成！火种已就绪。
 init_complete_hint: 输入 '帮助' 查看可用命令。
 init_step_language: 步骤 1/4：语言设置
 init_lang_prompt: 选择你的语言：
-init_lang_zh: 中文 (zh)
-init_lang_en: English (en)
+init_lang_switch_hint: 系统区域设置只决定默认项，你可以选择任一语言。
+init_lang_zh: 中文 / Chinese (zh)
+init_lang_en: English / 英语 (en)
 init_lang_invalid: 请输入 1 或 2
 init_lang_set_zh: ✓ 已选择中文
 init_lang_set_en: ✓ 已选择英文

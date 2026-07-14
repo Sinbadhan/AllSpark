@@ -90,6 +90,11 @@ workflow and supported hardware scope are approved.
   VoiceOver core flow is verified; Windows + NVDA remains Testing/Experimental.
 
 **UX (P2):**
+- SHA-222: CLI first run now uses the detected zh/en locale only as a
+  non-persistent display default before the first choice; unavailable and
+  unsupported locales deterministically fall back to English. Both choices
+  remain self-describing as `中文 / Chinese` and `English / 英语`, with a real
+  PTY regression proving the English screen is understandable before input.
 - SHA-153: Repository browser - search/category/tier/verification/language
   filter + pagination + row detail modal + full ID tooltip.
 - SHA-212: Restored the Repository knowledge list after a missing runtime i18n

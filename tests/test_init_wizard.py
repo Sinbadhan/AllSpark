@@ -6,16 +6,21 @@ hardware-detect step that persists the profile + module registry. The
 interactive run_init_wizard orchestrator remains partly covered (it chains
 these), but these guard the bootstrap-critical paths.
 """
+from io import StringIO
 from types import SimpleNamespace
+
+from rich.console import Console
 
 from allspark.adapters import init_wizard
 from allspark.adapters.init_wizard import (
+    _detect_initial_language,
     _load_questionnaire,
     _select_multi,
     _select_option,
     _step_hardware_detect,
 )
 from allspark.core.database import Database
+from allspark.core.i18n import get_language, set_language
 from allspark.infrastructure.hardware import HardwareTier
 
 
@@ -32,6 +37,60 @@ class TestLoadQuestionnaire:
         q = _load_questionnaire()
         for opt in q["location_types"]:
             assert "key" in opt and "label_key" in opt
+
+
+class TestInitialLanguage:
+    def test_zh_locale(self, monkeypatch):
+        monkeypatch.setattr(init_wizard.locale, "getlocale", lambda: ("zh_CN", "UTF-8"))
+        assert _detect_initial_language() == "zh"
+
+    def test_en_locale(self, monkeypatch):
+        monkeypatch.setattr(init_wizard.locale, "getlocale", lambda: ("en_US", "UTF-8"))
+        assert _detect_initial_language() == "en"
+
+    def test_unknown_or_unavailable_locale_falls_back_to_en(self, monkeypatch):
+        monkeypatch.setattr(init_wizard.locale, "getlocale", lambda: ("fr_FR", "UTF-8"))
+        assert _detect_initial_language() == "en"
+        monkeypatch.setattr(init_wizard.locale, "getlocale", lambda: (None, None))
+        assert _detect_initial_language() == "en"
+
+    def test_locale_error_falls_back_to_en(self, monkeypatch):
+        def fail():
+            raise ValueError("locale unavailable")
+
+        monkeypatch.setattr(init_wizard.locale, "getlocale", fail)
+        assert _detect_initial_language() == "en"
+
+    @staticmethod
+    def _capture_choice(monkeypatch, locale_name, choices):
+        output = StringIO()
+        original_console = init_wizard.console
+        original_language = get_language()
+        values = iter(choices)
+        captured = Console(file=output, force_terminal=False, width=100)
+        monkeypatch.setattr(init_wizard.locale, "getlocale", lambda: (locale_name, "UTF-8"))
+        monkeypatch.setattr(captured, "input", lambda *args, **kwargs: next(values))
+        monkeypatch.setattr(init_wizard, "console", captured)
+        try:
+            result = init_wizard._step_language_select()
+            return result, output.getvalue()
+        finally:
+            init_wizard.console = original_console
+            set_language(original_language, persist=False)
+
+    def test_zh_choice_screen_is_self_describing(self, monkeypatch):
+        result, output = self._capture_choice(monkeypatch, "zh_CN", ["1"])
+        assert result == "zh"
+        assert "步骤 1/4：语言设置" in output
+        assert "中文 / Chinese (zh)" in output
+        assert "English / 英语 (en)" in output
+
+    def test_unknown_locale_uses_english_copy_and_error(self, monkeypatch):
+        result, output = self._capture_choice(monkeypatch, "fr_FR", ["bad", "2"])
+        assert result == "en"
+        assert "Step 1/4: Language" in output
+        assert "Your system locale only sets the default" in output
+        assert "Enter 1 or 2" in output
 
 
 class TestSelectOption:

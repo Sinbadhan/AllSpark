@@ -1084,8 +1084,9 @@ init_complete_msg: ✓ Initialization complete! AllSpark is ready.
 init_complete_hint: Type 'help' to see available commands.
 init_step_language: 'Step 1/4: Language'
 init_lang_prompt: 'Choose your language:'
-init_lang_zh: 中文 (zh)
-init_lang_en: English (en)
+init_lang_switch_hint: Your system locale only sets the default; you can choose either language.
+init_lang_zh: 中文 / Chinese (zh)
+init_lang_en: English / 英语 (en)
 init_lang_invalid: Enter 1 or 2
 init_lang_set_zh: ✓ Language set to Chinese
 init_lang_set_en: ✓ Language set to English
