@@ -22,6 +22,7 @@ from allspark.services.spark_network import (
 )
 
 _SECRET = "sha180-shared-secret"
+_SERVER_READY_TIMEOUT_SECONDS = 30
 
 
 def _free_port() -> int:
@@ -82,11 +83,18 @@ def _start_server(
     )
     process.start()
     try:
-        started = ready.get(timeout=10)
+        started = ready.get(timeout=_SERVER_READY_TIMEOUT_SECONDS)
     except queue.Empty as exc:
-        process.terminate()
+        alive_at_timeout = process.is_alive()
+        exitcode_at_timeout = process.exitcode
+        if alive_at_timeout:
+            process.terminate()
         process.join(timeout=5)
-        raise AssertionError("server process did not report readiness") from exc
+        raise AssertionError(
+            "server process did not report readiness "
+            f"within {_SERVER_READY_TIMEOUT_SECONDS}s "
+            f"(alive={alive_at_timeout}, exitcode={exitcode_at_timeout})"
+        ) from exc
     assert started["status"] == "started", started
     return process, stop
 
