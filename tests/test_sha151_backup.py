@@ -175,6 +175,40 @@ def test_create_snapshot_interruption_publishes_no_partial_artifact(
     assert not list(dp.snapshot_dir.glob(".*.tmp"))
 
 
+def test_create_snapshot_metadata_publish_failure_rolls_back_snapshot(
+    dp: DataPreservation, monkeypatch
+) -> None:
+    real_replace = dp_module.os.replace
+
+    def _fail_metadata_publish(source: Path, destination: Path) -> None:
+        if str(destination).endswith(".db.meta"):
+            raise OSError("simulated metadata publish failure")
+        real_replace(source, destination)
+
+    monkeypatch.setattr(dp_module.os, "replace", _fail_metadata_publish)
+
+    result = dp.create_snapshot(label="metadata-failure")
+
+    assert result["status"] == "error"
+    assert "metadata publish failure" in result["message"]
+    assert list(dp.snapshot_dir.glob("snapshot_*.db")) == []
+    assert list(dp.snapshot_dir.glob("snapshot_*.db.meta")) == []
+    assert not list(dp.snapshot_dir.glob(".*.tmp"))
+
+
+def test_create_snapshot_rejects_failed_staged_integrity(
+    dp: DataPreservation, monkeypatch
+) -> None:
+    monkeypatch.setattr(dp, "_verify_integrity", lambda _path: False)
+
+    result = dp.create_snapshot(label="bad-integrity")
+
+    assert result == {"status": "error", "message": "Snapshot integrity check failed"}
+    assert list(dp.snapshot_dir.glob("snapshot_*.db")) == []
+    assert list(dp.snapshot_dir.glob("snapshot_*.db.meta")) == []
+    assert not list(dp.snapshot_dir.glob(".*.tmp"))
+
+
 def test_restore_snapshot_not_found(dp: DataPreservation) -> None:
     r = dp.restore_snapshot("does-not-exist")
     assert r["status"] == "error"
