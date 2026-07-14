@@ -339,7 +339,7 @@ async function refreshDashboard() {
       // SHA-59: compact empty-state. Earlier every unconfigured card repeated
       // the long "set amount + daily use to calculate remaining time" hint,
       // crowding the dashboard. Now each card is a single dense line.
-      return '<div class="resource-card offline span-4" role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',0,0,0, this)" onkeydown="' + keyAction + '">' +
+      return '<div class="resource-card offline span-4" data-resource-type="' + escHtml(r.type) + '" role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',0,0,0, this)" onkeydown="' + keyAction + '">' +
         '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value text-secondary">' + I18N.web_unconfigured + ' ' + editBtn + '</span></div>' +
         '<div class="card-status" style="font-size:13px;color:var(--secondary);">' + I18N.web_set_amount_hint_short + '</div>' +
         '<div class="card-remaining">' + escHtml(label) + '</div></div>';
@@ -355,7 +355,7 @@ async function refreshDashboard() {
     const remainingText = hasEstimate
       ? I18N.web_remaining_hours_fmt.replace('{h}', Math.round(r.remaining_hours))
       : I18N.web_remaining_unknown;
-    return '<div class="resource-card span-4" role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',' + (r.amount||0) + ',' + (r.daily_consumption||0) + ',' + (r.daily_intake||0) + ', this)" onkeydown="' + keyAction + '">' +
+    return '<div class="resource-card span-4" data-resource-type="' + escHtml(r.type) + '" role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',' + (r.amount||0) + ',' + (r.daily_consumption||0) + ',' + (r.daily_intake||0) + ', this)" onkeydown="' + keyAction + '">' +
       '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + r.amount + r.unit + ' ' + editBtn + '</span></div>' +
       '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + statusColor + '"></div></div>' +
       '<div class="card-status">' + statusText + '</div>' +
@@ -606,6 +606,7 @@ function openResourceEdit(rtype, amount, consumption, intake, trigger) {
   // <body> for mouse clicks and would lose the trigger. Fall back to
   // activeElement only if no trigger was passed.
   modal._previouslyFocused = trigger || document.activeElement;
+  modal._resourceType = rtype;
   document.getElementById("res-edit-amount").focus();
   if (!modal._focusTrap) {
     modal._focusTrap = (e) => {
@@ -627,11 +628,15 @@ function closeResEdit() {
   // leave focus on a detached node; fall back to the resource area.
   if (m && m._previouslyFocused) {
     const prev = m._previouslyFocused;
+    const resourceType = m._resourceType;
     m._previouslyFocused = null;
+    m._resourceType = null;
     if (document.body.contains(prev) && typeof prev.focus === "function") {
       prev.focus();
     } else {
-      const card = document.querySelector(".resource-card");
+      const cards = Array.from(document.querySelectorAll(".resource-card"));
+      const card = cards.find(item => item.getAttribute("data-resource-type") === resourceType)
+        || cards[0];
       if (card && typeof card.focus === "function") card.focus();
     }
   }
@@ -649,7 +654,7 @@ async function saveResource(rtype) {
     // SHA-152: refresh first so the re-rendered resource card exists when
     // closeResEdit restores focus (the saved trigger was detached by the
     // re-render; closeResEdit falls back to the resource area).
-    refreshDashboard();
+    await refreshDashboard();
     closeResEdit();
   } catch(e) { notify(e); }
 }

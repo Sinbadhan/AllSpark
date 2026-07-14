@@ -804,8 +804,7 @@ window.addEventListener("load", () => {
     mobileSearch.addEventListener("keydown", e => {
       if (e.key === "Enter") {
         runGlobalSearch(mobileSearch.value);
-        const nav = document.getElementById("mobile-nav");
-        if (nav) nav.classList.remove("open");
+        toggleMobileNav(false);
       }
     });
   }
@@ -875,11 +874,13 @@ function closeAbout() {
 }
 // SHA-152: mobile nav accessibility - sync aria-expanded, isolate background
 // content via inert, trap Tab + Esc, and restore focus to the toggle on close.
-function toggleMobileNav() {
+function toggleMobileNav(forceOpen) {
   const overlay = document.getElementById('mobile-nav');
   const toggle = document.getElementById('mobile-nav-toggle');
   if (!overlay || !toggle) return;
-  const willOpen = !overlay.classList.contains('open');
+  const willOpen = typeof forceOpen === 'boolean'
+    ? forceOpen
+    : !overlay.classList.contains('open');
   overlay.classList.toggle('open', willOpen);
   toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
   // Inert the page chrome so background content leaves the a11y tree + Tab order.
@@ -889,7 +890,7 @@ function toggleMobileNav() {
     overlay._previouslyFocused = toggle;
     if (!overlay._trap) {
       overlay._trap = (e) => {
-        if (e.key === 'Escape') { toggleMobileNav(); return; }
+        if (e.key === 'Escape') { toggleMobileNav(false); return; }
         if (e.key !== 'Tab') return;
         const f = overlay.querySelectorAll('button, a, input, [tabindex]:not([tabindex="-1"])');
         if (f.length < 2) { e.preventDefault(); return; }

@@ -37,7 +37,8 @@ class TestIndexA11y:
         t = _read("index.html")
         # The configured card (span-4, not offline) must carry role/tabindex so
         # it is operable after save, not just the unconfigured card.
-        assert 'class="resource-card span-4" role="button" tabindex="0"' in t
+        assert 'class="resource-card span-4" data-resource-type="' in t
+        assert 'role="button" tabindex="0"' in t
 
     def test_modal_has_dialog_semantics(self):
         t = _read("index.html")
@@ -62,9 +63,11 @@ class TestIndexA11y:
         assert "_focusTrap" in t
         assert "_previouslyFocused" in t
         # Restore guards against a detached trigger (save path re-renders) via
-        # document.body.contains before focusing; falls back to .resource-card.
+        # document.body.contains before focusing; falls back to the same resource.
         assert "document.body.contains(prev)" in t
         assert "prev.focus()" in t
+        assert 'getAttribute("data-resource-type") === resourceType' in t
+        assert "await refreshDashboard()" in t
 
     def test_open_resource_edit_saves_explicit_trigger(self):
         t = _read("index.html")
@@ -93,11 +96,16 @@ class TestMobileNavA11y:
 
     def test_toggle_function_isolates_and_traps(self):
         t = _read("base.html")
-        assert "function toggleMobileNav()" in t
+        assert "function toggleMobileNav(forceOpen)" in t
         assert "toggleAttribute('inert', willOpen)" in t  # background isolation
         assert 'setAttribute(\'aria-expanded\'' in t  # state sync
         assert "Escape" in t  # Esc closes
         assert "_trap" in t  # Tab trap
+
+    def test_mobile_search_uses_central_close_path(self):
+        t = _read("base.html")
+        assert "toggleMobileNav(false)" in t
+        assert 'nav.classList.remove("open")' not in t
 
 
 class TestRepositoryA11y:
