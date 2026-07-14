@@ -94,6 +94,12 @@ class TestMobileNavA11y:
         assert 'aria-modal="true"' in t
         assert "web_nav_menu_label" in t
 
+    def test_overlay_scrolls_at_high_zoom(self):
+        t = _read("base.html")
+        overlay_css = t.split(".mobile-nav-overlay {", 1)[1].split("}", 1)[0]
+        assert "overflow-y: auto" in overlay_css
+        assert "overscroll-behavior: contain" in overlay_css
+
     def test_toggle_function_isolates_and_traps(self):
         t = _read("base.html")
         assert "function toggleMobileNav(forceOpen)" in t
