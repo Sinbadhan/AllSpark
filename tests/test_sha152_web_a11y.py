@@ -61,7 +61,60 @@ class TestIndexA11y:
         # SHA-152: focus trap (Tab cycles within modal) + restore on close.
         assert "_focusTrap" in t
         assert "_previouslyFocused" in t
-        assert "_previouslyFocused.focus" in t  # restore on close
+        # Restore guards against a detached trigger (save path re-renders) via
+        # document.body.contains before focusing; falls back to .resource-card.
+        assert "document.body.contains(prev)" in t
+        assert "prev.focus()" in t
+
+    def test_open_resource_edit_saves_explicit_trigger(self):
+        t = _read("index.html")
+        # SHA-152: openResourceEdit takes a `trigger` arg (passed as `this` from
+        # onclick/onkeydown) so mouse clicks don't lose the trigger (was using
+        # document.activeElement, which is <body> for mouse clicks).
+        assert "function openResourceEdit(rtype, amount, consumption, intake, trigger)" in t
+        assert "modal._previouslyFocused = trigger || document.activeElement" in t
+        # All call sites pass `this`.
+        assert t.count("openResourceEdit(") >= 5  # 1 def + 4 call sites
+        assert ", this)" in t or ", this);" in t
+
+
+class TestMobileNavA11y:
+    def test_toggle_button_has_expanded_and_controls(self):
+        t = _read("base.html")
+        assert 'id="mobile-nav-toggle"' in t
+        assert 'aria-expanded="false"' in t
+        assert 'aria-controls="mobile-nav"' in t
+
+    def test_overlay_has_dialog_semantics(self):
+        t = _read("base.html")
+        assert 'id="mobile-nav" class="mobile-nav-overlay" role="dialog"' in t
+        assert 'aria-modal="true"' in t
+        assert "web_nav_menu_label" in t
+
+    def test_toggle_function_isolates_and_traps(self):
+        t = _read("base.html")
+        assert "function toggleMobileNav()" in t
+        assert "toggleAttribute('inert', willOpen)" in t  # background isolation
+        assert 'setAttribute(\'aria-expanded\'' in t  # state sync
+        assert "Escape" in t  # Esc closes
+        assert "_trap" in t  # Tab trap
+
+
+class TestRepositoryA11y:
+    def test_file_tree_button_has_distinct_label(self):
+        t = _read("repository.html")
+        # SHA-152: was web_mobile_menu_open ("打开菜单") - same as the global
+        # mobile-menu button. Now a distinct file-tree label.
+        assert "web_repository_file_tree_toggle" in t
+        assert 'aria-label="{{ t(\'web_mobile_menu_open\') }}"' not in t
+
+    def test_file_tree_button_syncs_expanded(self):
+        t = _read("repository.html")
+        assert 'id="file-tree-toggle"' in t
+        assert 'aria-expanded="false"' in t
+        assert 'aria-controls="file-tree"' in t
+        assert "function toggleFileTree()" in t
+        assert "setAttribute('aria-expanded'" in t
 
 
 class TestBaseA11y:

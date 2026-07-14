@@ -28,9 +28,9 @@
       <h3 class="text-sm font-semibold text-on-surface flex items-center gap-1">
         <span class="material-symbols-outlined text-primary text-sm">snippet_folder</span> {{ t('web_repository_files') }}
       </h3>
-      <button id="repo-tree-toggle" type="button" class="md:hidden icon-btn"
-              aria-label="{{ t('web_mobile_menu_open') }}" aria-controls="file-tree"
-              aria-expanded="false" onclick="toggleRepoTree()">
+      <button id="file-tree-toggle" type="button" class="md:hidden icon-btn"
+              aria-label="{{ t('web_repository_file_tree_toggle') }}"
+              aria-controls="file-tree" aria-expanded="false" onclick="toggleFileTree()">
         <span class="material-symbols-outlined" aria-hidden="true">menu</span>
       </button>
     </div>
@@ -89,6 +89,16 @@
 
 {% block scripts %}
 <script>
+// SHA-152: file-tree toggle - sync aria-expanded (distinct from the global
+// mobile-menu button, which previously shared the same "打开菜单" label).
+function toggleFileTree() {
+  const tree = document.getElementById('file-tree');
+  const toggle = document.getElementById('file-tree-toggle');
+  if (!tree || !toggle) return;
+  const willShow = tree.classList.contains('hidden');
+  tree.classList.toggle('hidden', !willShow);
+  toggle.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+}
 const REPO_I18N = {
   export_disabled: "{{ t('web_repository_export_disabled') }}",
   import_disabled: "{{ t('web_repository_import_disabled') }}",
@@ -112,8 +122,6 @@ const REPO_I18N = {
   warnings: "{{ t('web_warnings') }}",
   verification_label: "{{ t('web_th_verification') }}",
   source: "{{ t('web_th_source') }}",
-  tree_open: "{{ t('web_mobile_menu_open') }}",
-  tree_close: "{{ t('web_mobile_menu_close') }}",
 };
 const SKF_I18N = {
   path_hint: "{{ t('web_skf_path_placeholder') }}",
@@ -138,16 +146,6 @@ const SKF_I18N = {
 };
 
 let currentSection = "knowledge";
-
-function toggleRepoTree() {
-  const tree = document.getElementById("file-tree");
-  const toggle = document.getElementById("repo-tree-toggle");
-  if (!tree || !toggle) return;
-  tree.classList.toggle("hidden");
-  const expanded = !tree.classList.contains("hidden");
-  toggle.setAttribute("aria-expanded", String(expanded));
-  toggle.setAttribute("aria-label", expanded ? REPO_I18N.tree_close : REPO_I18N.tree_open);
-}
 
 async function showSection(section) {
   currentSection = section;

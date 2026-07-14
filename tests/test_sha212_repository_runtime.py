@@ -63,10 +63,10 @@ const elements = {{
   "section-title": makeElement(),
   "repo-content": makeElement(),
   "file-tree": makeElement(),
-  "repo-tree-toggle": makeElement(),
+  "file-tree-toggle": makeElement(),
 }};
 elements["file-tree"].classList = makeClassList(["hidden"]);
-elements["repo-tree-toggle"].attributes["aria-expanded"] = "false";
+elements["file-tree-toggle"].attributes["aria-expanded"] = "false";
 
 const documentStub = {{
   body: {{ appendChild() {{}} }},
@@ -123,10 +123,10 @@ const context = vm.createContext({{
 (async () => {{
   const completion = vm.runInContext({json.dumps(script)}, context);
   await completion;
-  vm.runInContext("toggleRepoTree()", context);
+  vm.runInContext("toggleFileTree()", context);
   process.stdout.write(JSON.stringify({{
     content: elements["repo-content"].innerHTML,
-    treeExpanded: elements["repo-tree-toggle"].attributes["aria-expanded"],
+    treeExpanded: elements["file-tree-toggle"].attributes["aria-expanded"],
     treeHidden: elements["file-tree"].classList.contains("hidden"),
   }}));
 }})().catch(error => {{
