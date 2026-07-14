@@ -118,10 +118,9 @@ class SparkNetwork:
     def _get_shared_secret(self) -> Optional[str]:
         """Read the optional network shared secret from survivor_state.
 
-        When set (key ``network_shared_secret``), incoming knowledge transfers
-        carrying signatures are verified and rejected on mismatch. When unset,
-        all transfers are accepted as unverified — soft mode, backward
-        compatible with nodes that have not configured a secret (audit H1/H2).
+        When set (key ``network_shared_secret``), every incoming knowledge
+        entry must carry a valid signature. When unset, transfers are accepted
+        as unverified for backward compatibility (audit H1/H2).
         """
         if not self.db:
             return None
@@ -334,10 +333,20 @@ class SparkNetwork:
 
             response = self._send_tcp_message(node, msg)
             if response and response.msg_type == "transfer_ack":
+                sig_rejected = response.payload.get("sig_rejected_count", 0)
+                if sig_rejected:
+                    return {
+                        "status": "error",
+                        "message": t("net_error_signature_rejected"),
+                        "sent_count": len(entries),
+                        "sig_rejected_count": sig_rejected,
+                    }
                 return {
                     "status": "ok",
                     "sent_count": len(entries),
                     "accepted_count": response.payload.get("accepted_count", 0),
+                    "pending_count": response.payload.get("pending_count", 0),
+                    "rejected_count": response.payload.get("rejected_count", 0),
                 }
             return {"status": "error", "message": t("net_error_not_acked")}
         except Exception as e:
@@ -350,7 +359,7 @@ class SparkNetwork:
         from allspark.services.knowledge_verifier import KnowledgeVerifier
         verifier = KnowledgeVerifier(self.db, self.llm)
         signer = self._get_signer()
-        sig_enforced = signer is not None and bool(signatures)
+        sig_enforced = signer is not None
 
         accepted = 0
         rejected = 0
@@ -369,21 +378,22 @@ class SparkNetwork:
                 prerequisites=item.get("prerequisites", []),
                 warnings=item.get("warnings", []),
                 verification=item.get("verification", "unverified"),
-                source="other_spark",
+                source=item.get("source", ""),
                 version=item.get("version", 1),
                 language=item.get("language", "zh"),
             )
 
-            # Soft signature verification (audit H1/H2). Enforced only when a
-            # shared secret is configured AND the peer sent signatures; entries
-            # without a signature are accepted as unverified (gradual rollout).
+            # A configured shared secret is an enforcement boundary: missing
+            # and invalid signatures are both rejected. The sender-provided
+            # source participates in the signature, then is replaced locally.
             if sig_enforced:
                 sig = signatures.get(entry.id) if signatures else None
-                if sig and not signer.verify_entry(entry, sig):
+                if not sig or not signer.verify_entry(entry, sig):
                     sig_rejected += 1
-                    logger.warning("Rejected knowledge entry %s: signature mismatch", entry.id)
+                    logger.warning("Rejected knowledge entry %s: missing or invalid signature", entry.id)
                     continue
 
+            entry.source = "other_spark"
             report = verifier.verify_entry(entry)
 
             if report.level in ("expert_verified", "cross_ref", "field_tested"):
@@ -568,6 +578,8 @@ class SparkNetwork:
                         sender_id=self.spark_id,
                         payload={
                             "accepted_count": result.get("accepted_count", 0),
+                            "pending_count": result.get("pending_count", 0),
+                            "rejected_count": result.get("rejected_count", 0),
                             "sig_rejected_count": result.get("sig_rejected_count", 0),
                         },
                     )

@@ -542,6 +542,7 @@ net_error_no_response: No response from node
 net_error_no_database: No database available
 net_error_not_acked: Transfer not acknowledged
 net_error_no_entries: No valid entries to send
+net_error_signature_rejected: The receiving node rejected the knowledge signature
 network_usage: 'Usage: net | net scan | net start | net stop | net send <node> <knowledge_id>'
 network_usage_short: 'Usage: net | net scan | net start | net stop | net send <node>
   <ID>'
