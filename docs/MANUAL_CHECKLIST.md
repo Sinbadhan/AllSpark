@@ -25,7 +25,7 @@ cross-node hardware, Docker deployment, and long-running schedulers.
 | 1.1 | CLI cold start | `python -m allspark` from a fresh `~/.allspark/` | wizard runs to completion in expected language; status panel renders |
 | 1.2 | Web UI cold start | `python -m allspark --web` then open `http://localhost:8000` | init wizard appears in browser language; no 500 in `/api/status` |
 | 1.3 | i18n round-trip | start zh → switch to en in CLI and Web → switch back | no Chinese in en mode; no English in zh mode (modulo user-typed content) |
-| 1.4 | Reset L1/L2/L3 | `reset 1` → confirm → `reset 2` → confirm → `reset 3` → confirm | each level honors 24h cooldown; rejected returns reason; L3 returns to wizard |
+| 1.4 | Reset L1/L2/L3 | seed diary/timeline/action-plan/knowledge-vector data; run each level in an isolated DB; restart between accepted and rejected attempts | L2 clears private operational history but keeps knowledge/vector/hardware/language; L3 clears every top-level application table, keeps language, writes one new audit row, and returns to `/`; cooldown survives restart and rejected/forced attempts are attributable |
 | 1.5 | SKF export/import round-trip | `skf export ~/Desktop/test.skf` → fresh DB → `skf import ~/Desktop/test.skf` | same knowledge count after import; SHA256 verified |
 | 1.6 | Backup auto-snapshot | quit cleanly → check `~/.allspark/backups/` | latest snapshot has `_clean.db` and `_metadata.json` |
 | 1.7 | Keyboard-only Web flow | disconnect/ignore the pointer; complete init, mobile navigation, resource edit, Repository filter/detail, and modal close | every control is reachable with visible focus; modal Tab/Shift+Tab trap, Esc close, and trigger-focus restore all work |

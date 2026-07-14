@@ -364,6 +364,7 @@ def test_l3_factory_reset_returns_to_init_wizard():
         body = r.json()
         # success could be True or the error if cooldown is active
         assert body.get("success") is True or body.get("message") == "ok", body
+        assert body.get("redirect") == "/"
 
         # The init flag is gone from the DB.
         db = Database(path)
@@ -379,6 +380,13 @@ def test_l3_factory_reset_returns_to_init_wizard():
         assert "wizard" in html.lower() or "web_init_step1_title" in html or "init-step" in html or "硬件检测" in html or "Hardware detection" in html
 
 
+def test_l3_reset_client_uses_canonical_redirect():
+    template = (
+        Path(__file__).resolve().parents[1] / "allspark" / "templates" / "system.html"
+    ).read_text()
+    assert "window.location.assign(data.redirect)" in template
+
+
 def test_l1_l2_reset_keeps_initialized():
     """L1/L2 must NOT reset the init flag — only L3 does."""
     with TempDb() as path:
@@ -390,6 +398,25 @@ def test_l1_l2_reset_keeps_initialized():
             html = c.get("/").text
             assert "硬件检测" not in html and "Hardware detection" not in html, \
                 f"L{level} reset should not return to init wizard"
+
+
+def test_reset_logs_api_exposes_accepted_and_rejected_web_attempts():
+    with TempDb() as path:
+        c = _client(path)
+        accepted = c.post(
+            "/api/reset/1", json={"confirm": True, "force": True}
+        )
+        assert accepted.status_code == 200
+
+        rejected = c.post("/api/reset/2", json={"confirm": True})
+        assert rejected.status_code == 409
+
+        logs = c.get("/api/reset/logs").json()["logs"]
+        assert [entry["status"] for entry in logs[:2]] == [
+            "rejected",
+            "accepted",
+        ]
+        assert all(entry["performed_by"] == "web" for entry in logs[:2])
 
 
 def test_reset_requires_confirm():
@@ -438,6 +465,16 @@ def test_system_page_includes_new_cards():
         assert "weather-current" in html
         assert "env-result" in html
         assert "moduleAction" in html   # module enable/disable column
+
+
+def test_system_page_uses_executable_reset_policy_descriptions():
+    from allspark.services.reset_manager import get_reset_descriptions
+
+    with TempDb() as path:
+        c = _client(path)
+        html = c.get("/system").text
+        for description in get_reset_descriptions().values():
+            assert description in html
 
 
 def test_index_page_includes_new_tabs():

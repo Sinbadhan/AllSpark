@@ -238,7 +238,8 @@ class Database:
                 reason TEXT DEFAULT '',
                 backup_id TEXT DEFAULT '',
                 performed_by TEXT DEFAULT '',
-                performed_at TEXT NOT NULL
+                performed_at TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'accepted'
             );
 
             -- Phase 7: GPS location for spark itself
@@ -321,6 +322,15 @@ class Database:
             except sqlite3.OperationalError:
                 cur.execute(f"ALTER TABLE map_pois ADD COLUMN {col} {ctype}")
                 self.conn.commit()
+
+        try:
+            cur.execute("SELECT status FROM reset_log LIMIT 1")
+        except sqlite3.OperationalError:
+            cur.execute(
+                "ALTER TABLE reset_log "
+                "ADD COLUMN status TEXT NOT NULL DEFAULT 'accepted'"
+            )
+            self.conn.commit()
 
     def _now(self) -> str:
         return datetime.now().isoformat()
@@ -1033,10 +1043,21 @@ class Database:
     # --- Reset Log ---
 
     def save_reset_log(self, reset_id: str, level: int, reason: str = "",
-                       backup_id: str = "", performed_by: str = ""):
+                       backup_id: str = "", performed_by: str = "",
+                       status: str = "accepted", performed_at: str | None = None):
         self.conn.execute(
-            "INSERT INTO reset_log VALUES (?,?,?,?,?)",
-            (reset_id, level, reason, backup_id, performed_by, self._now())
+            "INSERT INTO reset_log "
+            "(id, level, reason, backup_id, performed_by, performed_at, status) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                reset_id,
+                level,
+                reason,
+                backup_id,
+                performed_by,
+                performed_at or self._now(),
+                status,
+            ),
         )
         self.conn.commit()
 
@@ -1046,6 +1067,33 @@ class Database:
             (limit,)
         ).fetchall()
         return [dict(r) for r in rows]
+
+    def get_latest_accepted_reset(self) -> dict | None:
+        row = self.conn.execute(
+            "SELECT * FROM reset_log WHERE status='accepted' "
+            "ORDER BY performed_at DESC LIMIT 1"
+        ).fetchone()
+        return dict(row) if row else None
+
+    def get_application_tables(self) -> list[str]:
+        """Return top-level application tables, excluding SQLite/FTS internals."""
+        rows = self.conn.execute(
+            "SELECT name, sql FROM sqlite_master "
+            "WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+        ).fetchall()
+        virtual_tables = {
+            row["name"]
+            for row in rows
+            if (row["sql"] or "").lstrip().upper().startswith("CREATE VIRTUAL TABLE")
+        }
+        return sorted(
+            row["name"]
+            for row in rows
+            if not any(
+                row["name"].startswith(f"{virtual_table}_")
+                for virtual_table in virtual_tables
+            )
+        )
 
     # --- Spark Location (GPS) ---
 

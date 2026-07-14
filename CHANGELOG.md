@@ -28,6 +28,15 @@ workflow and supported hardware scope are approved.
   3.10/3.11/3.12 and validates clean-wheel installation on the same matrix.
 
 **Quality (P1):**
+- SHA-219: Reset scope now comes from one executable matrix shared by CLI and
+  Web descriptions. L2 clears diary/FTS, timeline and action plans while
+  preserving language, hardware, knowledge and vectors; L3 enumerates SQLite
+  top-level application tables so later schema additions cannot silently
+  survive a factory reset, then redirects Web clients to canonical first boot.
+- SHA-220: Reset audit writes use an explicit migrated schema and record
+  accepted, rejected and failed attempts with actor/force reason/backup data.
+  The 24-hour cooldown reloads from the latest accepted record after process
+  restart; L3 snapshots and clears historical logs before recording itself.
 - SHA-150: NL survival Q&A - FTS5 bm25 + title-substring re-rank; 1 main
   answer + 2 related links (not full-text concat); 50+ golden set.
 - SHA-149: System health score factors in core capabilities (LLM/modules);

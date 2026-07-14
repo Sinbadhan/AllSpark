@@ -226,9 +226,9 @@ reset_affected_tasks: 任务数据
 reset_affected_goals: 目标数据
 reset_affected_milestones: 里程碑数据
 reset_affected_all_data: 所有数据（不可恢复）
-reset_l1_description: L1 重置评估：清除运行状态、生存者状态、硬件配置，保留资源与知识
-reset_l2_description: L2 重置档案：清除所有运行数据，保留知识库
-reset_l3_description: L3 重置出厂：清除所有数据，恢复出厂状态
+reset_l1_description: L1 评估重置：清除评估状态及非保护硬件数据；保留初始化状态、语言、生存者身份、资源、知识库和 GPS 轨迹。
+reset_l2_description: L2 档案重置：清除生存者档案、资源、任务、目标、经验、治理、地图、日记、时间线和行动计划；保留语言、硬件配置、知识库及知识向量。
+reset_l3_description: L3 出厂重置：清除全部应用数据及旧重置日志，保留语言偏好，记录本次重置并返回首次启动。
 reset_l3_warning_irreversible: ⚠️ 此操作不可逆！所有数据将被永久删除
 reset_executed: ✓ 重置完成（{level}），备份已创建
 reset_rejected: ✗ 重置被拒绝：{reason}
@@ -1409,11 +1409,11 @@ web_danger_zone: 危险操作
 web_danger_zone_subtitle: 不可逆的系统级操作，请谨慎执行
 web_reset_title: 三级重置
 web_reset_l1_title: L1 评估重置
-web_reset_l1_desc: 清空当前评估缓存，保留所有数据。
+web_reset_l1_desc: 清除评估状态，保留初始化状态、身份、资源、知识库和 GPS 轨迹。
 web_reset_l2_title: L2 档案重置
-web_reset_l2_desc: 清空任务、目标、经验、日记，保留语言/硬件配置和知识库。
+web_reset_l2_desc: 清除生存者档案和运行历史，保留语言、硬件配置、知识库及知识向量。
 web_reset_l3_title: L3 出厂重置
-web_reset_l3_desc: 清空全部数据，恢复至首次启动状态。需输入 RESET 二次确认。
+web_reset_l3_desc: 清除应用数据及旧重置日志，保留语言，记录本次重置并返回首次启动。需输入 RESET 二次确认。
 web_reset_confirm_l3: 输入 RESET 以确认出厂重置
 web_reset_btn_execute: 执行重置
 web_reset_executing: 重置执行中…

@@ -1,4 +1,6 @@
 import logging
+import uuid
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -8,6 +10,72 @@ from allspark.core.models import OperatingMode, ResetLevel
 logger = logging.getLogger(__name__)
 
 _RESET_COOLDOWN_HOURS = 24
+
+
+@dataclass(frozen=True)
+class ResetPolicy:
+    description_key: str
+    affected_keys: tuple[str, ...]
+    clear_tables: frozenset[str] = frozenset()
+    clear_all_application_tables: bool = False
+
+
+# Executable source of truth for reset scope. CLI evaluation and the Web UI
+# both render the description_key from this matrix; reset methods consume the
+# same table sets. Partial key/value-table preservation is handled explicitly
+# in the corresponding reset method below.
+RESET_POLICIES = {
+    ResetLevel.ASSESSMENT: ResetPolicy(
+        description_key="reset_l1_description",
+        affected_keys=(
+            "reset_affected_operating_state",
+            "reset_affected_survivor_state",
+            "reset_affected_hardware_profile",
+        ),
+    ),
+    ResetLevel.ARCHIVE: ResetPolicy(
+        description_key="reset_l2_description",
+        affected_keys=(
+            "reset_affected_operating_state",
+            "reset_affected_survivor_state",
+            "reset_affected_resources",
+            "reset_affected_tasks",
+            "reset_affected_goals",
+            "reset_affected_milestones",
+        ),
+        clear_tables=frozenset(
+            {
+                "resources",
+                "tasks",
+                "experience_log",
+                "map_pois",
+                "community_members",
+                "conflicts",
+                "trade_offers",
+                "goals",
+                "milestones",
+                "timeline_events",
+                "diary_entries",
+                "diary_fts",
+                "spark_location",
+                "psych_state",
+                "action_plans",
+            }
+        ),
+    ),
+    ResetLevel.FACTORY: ResetPolicy(
+        description_key="reset_l3_description",
+        affected_keys=("reset_affected_all_data",),
+        clear_all_application_tables=True,
+    ),
+}
+
+
+def get_reset_descriptions() -> dict[int, str]:
+    return {
+        level.value: t(policy.description_key)
+        for level, policy in RESET_POLICIES.items()
+    }
 
 # Operating-state keys that must survive an L1 (assessment) or L2 (archive)
 # reset so the next launch does not look like a fresh install.
@@ -40,7 +108,7 @@ class ResetManager:
         self.data_preservation = data_preservation
         self.resource_mgr = resource_mgr
         self.docker_manager = docker_manager
-        self._last_reset_time = None
+        self._last_reset_time = self._load_last_reset_time()
 
     def evaluate_reset(self, level: ResetLevel) -> dict:
         result: dict[str, Any] = {
@@ -70,38 +138,29 @@ class ResetManager:
                 )
                 return result
 
-        if level == ResetLevel.ASSESSMENT:
-            result["affected_data"] = [
-                t("reset_affected_operating_state"),
-                t("reset_affected_survivor_state"),
-                t("reset_affected_hardware_profile"),
-            ]
-            result["description"] = t("reset_l1_description")
-
-        elif level == ResetLevel.ARCHIVE:
-            result["affected_data"] = [
-                t("reset_affected_operating_state"),
-                t("reset_affected_survivor_state"),
-                t("reset_affected_hardware_profile"),
-                t("reset_affected_resources"),
-                t("reset_affected_tasks"),
-                t("reset_affected_goals"),
-                t("reset_affected_milestones"),
-            ]
-            result["description"] = t("reset_l2_description")
-
-        elif level == ResetLevel.FACTORY:
-            result["affected_data"] = [
-                t("reset_affected_all_data"),
-            ]
-            result["description"] = t("reset_l3_description")
+        policy = RESET_POLICIES[level]
+        result["affected_data"] = [t(key) for key in policy.affected_keys]
+        result["description"] = t(policy.description_key)
+        if level == ResetLevel.FACTORY:
             result["warnings"].append(t("reset_l3_warning_irreversible"))
 
         return result
 
-    def execute_reset(self, level: ResetLevel, force: bool = False) -> dict:
+    def execute_reset(
+        self,
+        level: ResetLevel,
+        force: bool = False,
+        performed_by: str = "system",
+    ) -> dict:
         evaluation = self.evaluate_reset(level)
         if not evaluation["allowed"] and not force:
+            reason = self._format_reasons(evaluation["warnings"])
+            self._save_audit_log(
+                level=level,
+                status="rejected",
+                reason=reason,
+                performed_by=performed_by,
+            )
             return {
                 "status": "rejected",
                 "reason": evaluation["warnings"],
@@ -114,20 +173,47 @@ class ResetManager:
         else:
             backup_result = {"status": "skipped"}
 
-        if level == ResetLevel.ASSESSMENT:
-            self._reset_assessment()
-        elif level == ResetLevel.ARCHIVE:
-            self._reset_archive()
-        elif level == ResetLevel.FACTORY:
-            self._reset_factory()
+        try:
+            if level == ResetLevel.ASSESSMENT:
+                self._reset_assessment()
+            elif level == ResetLevel.ARCHIVE:
+                self._reset_archive()
+            elif level == ResetLevel.FACTORY:
+                self._reset_factory()
+        except Exception as exc:
+            self.db.conn.rollback()
+            self._save_audit_log(
+                level=level,
+                status="failed",
+                reason=str(exc),
+                performed_by=performed_by,
+                backup_id=self._backup_id(backup_result),
+            )
+            raise
 
-        self._last_reset_time = datetime.now()
+        completed_at = datetime.now()
+        reason_parts = ["force=true"] if force else []
+        if force:
+            reason_parts.extend(evaluation["warnings"])
+        try:
+            self._save_audit_log(
+                level=level,
+                status="accepted",
+                reason=self._format_reasons(reason_parts),
+                performed_by=performed_by,
+                backup_id=self._backup_id(backup_result),
+                performed_at=completed_at,
+            )
+        except Exception:
+            self.db.conn.rollback()
+            raise
+        self._last_reset_time = completed_at
 
         return {
             "status": "ok",
             "level": level.name,
             "backup": backup_result,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": completed_at.isoformat(),
         }
 
     def _reset_assessment(self):
@@ -142,21 +228,24 @@ class ResetManager:
         self.db.conn.execute("DELETE FROM operating_state WHERE 1")
         self.db.conn.execute("DELETE FROM survivor_state WHERE 1")
         self.db.conn.execute("DELETE FROM hardware_profile WHERE 1")
-        self.db.conn.commit()
-
         self._restore_kv("operating_state", protected_op)
         self._restore_kv("survivor_state", protected_sv)
         self._restore_kv("hardware_profile", protected_hw)
 
     def _reset_archive(self):
-        self._reset_assessment()
-        self.db.conn.execute("DELETE FROM resources WHERE 1")
-        self.db.conn.execute("DELETE FROM tasks WHERE 1")
-        self.db.conn.execute("DELETE FROM goals WHERE 1")
-        self.db.conn.execute("DELETE FROM milestones WHERE 1")
-        self.db.conn.execute("DELETE FROM experience_log WHERE 1")
-        self.db.conn.execute("DELETE FROM map_pois WHERE 1")
-        self.db.conn.commit()
+        protected_op = self._snapshot_protected(
+            "operating_state", _PROTECTED_OPERATING_STATE_KEYS
+        )
+        protected_sv = self._snapshot_protected("survivor_state", {"language"})
+        try:
+            self.db.conn.execute("DELETE FROM operating_state")
+            self.db.conn.execute("DELETE FROM survivor_state")
+            self._clear_tables(RESET_POLICIES[ResetLevel.ARCHIVE].clear_tables)
+            self._restore_kv("operating_state", protected_op)
+            self._restore_kv("survivor_state", protected_sv)
+        except Exception:
+            self.db.conn.rollback()
+            raise
 
     def _reset_factory(self):
         if self.docker_manager:
@@ -164,24 +253,19 @@ class ResetManager:
                 self.docker_manager.stop_all()
                 self.docker_manager.reset()
             except Exception as e:
-                logger.warning(f"Failed to stop/reset docker manager during factory reset: {e}")
+                logger.warning(
+                    "Failed to stop/reset docker manager during factory reset: %s", e
+                )
 
-        tables = [
-            "resources", "tasks", "knowledge", "knowledge_fts",
-            "experience_log", "map_pois", "operating_state",
-            "survivor_state", "hardware_profile",
-            "community_members", "conflicts", "trade_offers",
-            "goals", "milestones", "timeline_events",
-            "diary_entries", "diary_fts", "reset_log",
-            "spark_location", "psych_state",
-        ]
-        for table in tables:
-            try:
-                self.db.conn.execute(f"DELETE FROM {table}")
-            except Exception as e:
-                logger.warning(f"Failed to delete table '{table}' during factory reset: {e}")
-        self.db.conn.commit()
-        self.db.mark_uninitialized()
+        language = self._snapshot_protected("operating_state", {"language"})
+        if not language:
+            language = self._snapshot_protected("survivor_state", {"language"})
+        try:
+            self._clear_tables(self.db.get_application_tables())
+            self._restore_kv("operating_state", language)
+        except Exception:
+            self.db.conn.rollback()
+            raise
 
     def get_reset_status(self) -> dict:
         return {
@@ -195,6 +279,47 @@ class ResetManager:
             return True
         elapsed = datetime.now() - self._last_reset_time
         return elapsed >= timedelta(hours=_RESET_COOLDOWN_HOURS)
+
+    def _load_last_reset_time(self) -> datetime | None:
+        getter = getattr(self.db, "get_latest_accepted_reset", None)
+        if getter is None:
+            return None
+        row = getter()
+        if not row or not row.get("performed_at"):
+            return None
+        try:
+            return datetime.fromisoformat(row["performed_at"])
+        except (TypeError, ValueError):
+            logger.warning("Ignoring invalid reset_log timestamp: %r", row["performed_at"])
+            return None
+
+    def _save_audit_log(
+        self,
+        *,
+        level: ResetLevel,
+        status: str,
+        reason: str,
+        performed_by: str,
+        backup_id: str = "",
+        performed_at: datetime | None = None,
+    ) -> None:
+        self.db.save_reset_log(
+            uuid.uuid4().hex,
+            level.value,
+            reason=reason,
+            backup_id=backup_id,
+            performed_by=performed_by,
+            status=status,
+            performed_at=(performed_at or datetime.now()).isoformat(),
+        )
+
+    @staticmethod
+    def _backup_id(backup_result: dict) -> str:
+        return str(backup_result.get("path") or backup_result.get("id") or "")
+
+    @staticmethod
+    def _format_reasons(reasons: list[Any]) -> str:
+        return " | ".join(str(reason) for reason in reasons if reason)
 
     # ─── Protected state helpers ────────────────────────────────────────
 
@@ -216,5 +341,8 @@ class ResetManager:
             self.db.conn.execute(
                 f"INSERT OR REPLACE INTO {table} VALUES (?,?)", (key, value)
             )
-        if data:
-            self.db.conn.commit()
+
+    def _clear_tables(self, tables) -> None:
+        for table in tables:
+            quoted = '"' + table.replace('"', '""') + '"'
+            self.db.conn.execute(f"DELETE FROM {quoted}")

@@ -162,7 +162,9 @@ class ResetCommand(BaseCommand):
             if evaluation["allowed"]:
                 confirm = self.console.input(f"[bold red]{t('reset_confirm_l1')}[/]").strip().lower()
                 if confirm in ("yes", "是", "y"):
-                    result = rm.execute_reset(ResetLevel.ASSESSMENT)
+                    result = rm.execute_reset(
+                        ResetLevel.ASSESSMENT, performed_by="cli"
+                    )
                     if result["status"] == "ok":
                         self.console.print(t("reset_executed", level="L1"))
                     else:
@@ -175,7 +177,9 @@ class ResetCommand(BaseCommand):
             if evaluation["allowed"]:
                 confirm = self.console.input(f"[bold red]{t('reset_confirm_l2')}[/]").strip().lower()
                 if confirm in ("yes", "是", "y"):
-                    result = rm.execute_reset(ResetLevel.ARCHIVE)
+                    result = rm.execute_reset(
+                        ResetLevel.ARCHIVE, performed_by="cli"
+                    )
                     if result["status"] == "ok":
                         self.console.print(t("reset_executed", level="L2"))
                     else:
@@ -188,7 +192,9 @@ class ResetCommand(BaseCommand):
             if evaluation["allowed"]:
                 confirm = self.console.input(f"[bold red]{t('reset_confirm_l3')}[/]").strip()
                 if confirm == "FACTORY":
-                    result = rm.execute_reset(ResetLevel.FACTORY, force=True)
+                    result = rm.execute_reset(
+                        ResetLevel.FACTORY, force=True, performed_by="cli"
+                    )
                     if result["status"] == "ok":
                         self.console.print(t("reset_executed", level="L3"))
                         self.console.print(f"[bold yellow]{t('reset_system_restart')}[/]")

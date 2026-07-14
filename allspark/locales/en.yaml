@@ -256,11 +256,9 @@ reset_affected_tasks: Task data
 reset_affected_goals: Goal data
 reset_affected_milestones: Milestone data
 reset_affected_all_data: All data (irreversible)
-reset_l1_description: 'L1 Reset Assessment: Clear operating state, survivor state,
-  hardware profile. Keep resources and knowledge'
-reset_l2_description: 'L2 Reset Archive: Clear all operational data. Keep knowledge
-  base'
-reset_l3_description: 'L3 Factory Reset: Clear all data, restore to factory state'
+reset_l1_description: 'L1 Assessment Reset: Clear assessment state and non-protected hardware data. Keep initialization, language, survivor identity, resources, knowledge, and GPS tracks.'
+reset_l2_description: 'L2 Archive Reset: Clear survivor profile, resources, tasks, goals, experience, governance, map, diary, timeline, and action plans. Keep language, hardware configuration, knowledge, and knowledge vectors.'
+reset_l3_description: 'L3 Factory Reset: Clear all application data and old reset logs, keep the language preference, record this reset, and return to first boot.'
 reset_l3_warning_irreversible: ⚠️ This action is irreversible! All data will be permanently
   deleted
 reset_executed: ✓ Reset completed ({level}), backup created
@@ -1472,11 +1470,11 @@ web_danger_zone: Danger zone
 web_danger_zone_subtitle: Irreversible system-level actions. Proceed with care.
 web_reset_title: Three-level reset
 web_reset_l1_title: L1 — Assessment reset
-web_reset_l1_desc: Clears the assessment cache. All data is preserved.
+web_reset_l1_desc: Clears assessment state while preserving initialization, identity, resources, knowledge, and GPS tracks.
 web_reset_l2_title: L2 — Archive reset
-web_reset_l2_desc: Clears tasks, goals, experience and diary. Keeps language, hardware config and knowledge base.
+web_reset_l2_desc: Clears the survivor profile and operational history. Keeps language, hardware config, knowledge, and knowledge vectors.
 web_reset_l3_title: L3 — Factory reset
-web_reset_l3_desc: Erases all data and returns the system to first-boot state. Requires typing RESET to confirm.
+web_reset_l3_desc: Erases application data and old reset logs, keeps language, records the reset, and returns to first boot. Requires typing RESET to confirm.
 web_reset_confirm_l3: Type RESET to confirm factory reset
 web_reset_btn_execute: Execute reset
 web_reset_executing: Reset in progress…

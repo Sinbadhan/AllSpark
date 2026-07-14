@@ -237,7 +237,11 @@ def register_survival_routes(app, check):
                 detail=t("error_reset_level_not_valid", level=level),
                 next_action=t("error_reset_use_level"),
             )
-        result = reset_manager_svc.execute_reset(reset_level, force=bool(data.get("force", False)))
+        result = reset_manager_svc.execute_reset(
+            reset_level,
+            force=bool(data.get("force", False)),
+            performed_by="web",
+        )
         ok = result.get("status") == "ok"
 
         # FACTORY reset wipes the operating_state row that marks the system as
@@ -266,6 +270,8 @@ def register_survival_routes(app, check):
             "status": result.get("status", ""),
             "message": result.get("status", ""),
         }
+        if reset_level == ResetLevel.FACTORY:
+            response["redirect"] = "/"
         reasons = result.get("reason") or []
         if isinstance(reasons, list) and reasons:
             response["reasons"] = reasons

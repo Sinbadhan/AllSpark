@@ -152,17 +152,17 @@
     <div style="display:grid;gap:12px;">
       <div style="padding:10px;border:1px solid var(--surface-container-high);border-radius:4px;">
         <div style="font-weight:600;">{{ t('web_reset_l1_title') }}</div>
-        <div class="text-sm text-secondary">{{ t('web_reset_l1_desc') }}</div>
+        <div class="text-sm text-secondary">{{ reset_descriptions[1] }}</div>
         <button class="action-btn action-outline" style="margin-top:8px;" onclick="confirmReset(1)">{{ t('web_reset_btn_execute') }}</button>
       </div>
       <div style="padding:10px;border:1px solid var(--surface-container-high);border-radius:4px;">
         <div style="font-weight:600;">{{ t('web_reset_l2_title') }}</div>
-        <div class="text-sm text-secondary">{{ t('web_reset_l2_desc') }}</div>
+        <div class="text-sm text-secondary">{{ reset_descriptions[2] }}</div>
         <button class="action-btn action-outline" style="margin-top:8px;" onclick="confirmReset(2)">{{ t('web_reset_btn_execute') }}</button>
       </div>
       <div style="padding:10px;border:1px solid var(--critical, #ff4444);border-radius:4px;">
         <div style="font-weight:600;color:var(--critical, #ff4444);">{{ t('web_reset_l3_title') }}</div>
-        <div class="text-sm text-secondary">{{ t('web_reset_l3_desc') }}</div>
+        <div class="text-sm text-secondary">{{ reset_descriptions[3] }}</div>
         <button class="action-btn" style="margin-top:8px;background:var(--critical, #ff4444);color:#fff;" onclick="confirmReset(3)">{{ t('web_reset_btn_execute') }}</button>
       </div>
     </div>
@@ -415,7 +415,11 @@ async function confirmReset(level) {
       body: JSON.stringify(body),
     });
     const data = await r.json();
-    if (data.success) { toast(RESET_I18N.done, "success"); window.location.reload(); }
+    if (data.success) {
+      toast(RESET_I18N.done, "success");
+      if (data.redirect) window.location.assign(data.redirect);
+      else window.location.reload();
+    }
     else {
       // Prefer the structured reason list returned by the reset manager.
       const reason = (data.reasons && data.reasons.length)

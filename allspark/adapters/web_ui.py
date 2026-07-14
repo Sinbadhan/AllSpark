@@ -15,6 +15,7 @@ from allspark.core.database import Database
 from allspark.core.i18n import MESSAGES, get_language, init_language, set_language, t
 from allspark.infrastructure.hardware import compute_feature_flags, detect_hardware
 from allspark.infrastructure.module_loader import ModuleRegistry
+from allspark.services.reset_manager import get_reset_descriptions
 
 MODELS_DIR = DEFAULT_DB_DIR / "models"
 
@@ -187,7 +188,11 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
     async def system_page():
         if not app.state.initialized:
             return _render_template("init.html")
-        return _render_template("system.html", page_title=t("web_page_title_system"))
+        return _render_template(
+            "system.html",
+            page_title=t("web_page_title_system"),
+            reset_descriptions=get_reset_descriptions(),
+        )
 
     @app.get("/executions", response_class=HTMLResponse)
     async def executions_page():
