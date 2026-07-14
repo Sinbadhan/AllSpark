@@ -284,8 +284,8 @@ async function refreshSystem() {
             ? `<button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" onclick="moduleAction('${escHtml(m.name)}','enable')">${MODULE_I18N.enable}</button>`
             : '<span class="text-secondary" style="font-size:11px;">—</span>';
         }
-        // SHA-33d: append Experimental badge for unverified-on-real-hardware modules.
-        if (EXPERIMENTAL_MODULES.has(m.name)) {
+        // SHA-33d: the server registry is the single source for release status.
+        if (m.experimental) {
           statusText += ' <span title="' + I18N.web_system_experimental + '" style="font-size:9px;background:var(--warning);color:var(--bg);padding:1px 4px;border-radius:2px;font-weight:600;">EXP</span>';
         }
         return '<tr><td style="color:var(--primary-container);font-weight:600;">' + escHtml(m.name) + '</td>' +
@@ -434,12 +434,6 @@ const MODULE_I18N = {
   done_disable: "{{ t('web_modules_done_disable') }}",
   failed: "{{ t('web_modules_action_failed') }}",
 };
-// SHA-33d: modules not verified on real hardware - labeled Experimental
-// (per SHA-33 acceptance: "未通过的能力在 UI/CLI 明确标为 Experimental").
-const EXPERIMENTAL_MODULES = new Set([
-  "llm", "voice", "docker_manager", "sensor_hub",
-  "gps_manager", "power_monitor", "trade_engine", "psychology",
-]);
 const COMMS_I18N = {
   no_neighbors: "{{ t('web_comms_no_neighbors') }}",
   unavailable: "{{ t('web_comms_unavailable') }}",

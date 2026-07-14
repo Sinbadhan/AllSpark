@@ -41,6 +41,7 @@ MODULE_DEFINITIONS = [
     ModuleDef("sensor_hub", "传感器 — 温度/湿度/气压/GPS", "Sensor Hub — temp/humidity/pressure/GPS", "sensor_hub"),
     ModuleDef("data_preservation", "数据固化 — 断电自动保存/快照", "Data Preservation — auto-save/snapshot", "data_preservation"),
     ModuleDef("boot_manager", "启动优化 — systemd/watchdog", "Boot Manager — systemd/watchdog", "boot_manager"),
+    ModuleDef("docker_manager", "Docker 弹性部署 — 容器编排", "Docker deployment — container orchestration", "docker_enabled"),
     ModuleDef("goal_engine", "目标引擎 — 自动生成/里程碑追踪", "Goal Engine — auto-generate/milestone tracking", "self_learning", is_core=True),
     ModuleDef("reset_manager", "重置管理器 — 三级重置/安全约束", "Reset Manager — 3-level reset/safety", "data_preservation"),
     ModuleDef("daily_briefing", "每日简报 — 生存日报", "Daily Briefing — survival report", "self_learning", is_core=True),
@@ -52,6 +53,32 @@ MODULE_DEFINITIONS = [
     ModuleDef("environment", "环境评估 — 气候/威胁/机会", "Environment Assessor — climate/threats/opportunity", "sensor_hub"),
     ModuleDef("voice", "语音交互 — Whisper STT + TTS", "Voice Interaction — Whisper STT + TTS", "voice_input"),
 ]
+
+# Optional capabilities that have implementation and automated coverage but no
+# release-grade validation on their target hardware/runtime yet (SHA-33d).
+EXPERIMENTAL_MODULES = frozenset({
+    "knowledge_vector",
+    "kiwix",
+    "llm",
+    "image_recognition",
+    "voice_input",
+    "voice_output",
+    "offline_map",
+    "kolibri",
+    "spark_network",
+    "vision_engine",
+    "multimodal",
+    "trade_engine",
+    "power_monitor",
+    "sensor_hub",
+    "boot_manager",
+    "docker_manager",
+    "weather",
+    "psychology",
+    "gps_manager",
+    "environment",
+    "voice",
+})
 
 
 class ModuleRegistry:
@@ -170,6 +197,9 @@ class ModuleRegistry:
             else:
                 status = t("module_pending")
 
+            if name in EXPERIMENTAL_MODULES:
+                status = f"{status} [yellow]{t('module_experimental_short')}[/]"
+
             table.add_row(name, desc, is_core, hw_icon, status)
 
         with console.capture() as capture:
@@ -196,6 +226,7 @@ class ModuleRegistry:
                 "feature_flag": mod.feature_flag,
                 "hw_supported": flag_on,
                 "status": status,
+                "experimental": name in EXPERIMENTAL_MODULES,
             })
         return result
 
