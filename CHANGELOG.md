@@ -28,6 +28,13 @@ workflow and supported hardware scope are approved.
   3.10/3.11/3.12 and validates clean-wheel installation on the same matrix.
 
 **Quality (P1):**
+- SHA-226: Dashboard grid tracks and resource-card contents now shrink and
+  wrap predictably instead of inheriting a wide min-content track from the tab
+  bar. Phase, mode, resource type, value and status remain visible without a
+  main-canvas horizontal scroller at 320/360/390/430px; real-Chrome coverage
+  exercises zh/en, unconfigured, critical, sustained and long-unit states.
+  The narrow-screen system footer now reserves enough height for both summary
+  and health rows instead of clipping the second line.
 - SHA-221: Web first run now makes language the first actionable step and
   follows the browser locale for its initial selection. Questionnaire options
   carry stable keys plus zh/en labels, rerender immediately on repeated

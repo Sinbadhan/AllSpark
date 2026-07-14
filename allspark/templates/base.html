@@ -485,7 +485,10 @@ table { border-collapse: collapse; width: 100%; }
 
 /* SHA-59: collapse the footer on narrow viewports so it stops crowding content. */
 @media (max-width: 560px) {
-  .footer { flex-wrap: wrap; gap: 4px; padding: 4px 10px; font-size: 10px; }
+  :root { --footer-h: 52px; }
+  .footer { align-content: center; flex-wrap: wrap; gap: 4px; padding: 4px 10px; font-size: 10px; line-height: 1.2; }
+  .footer > div { min-width: 0; width: 100%; }
+  .footer > div:last-child { justify-content: flex-end; gap: 8px !important; }
   .footer #footer-uptime { display: none; }
 }
 </style>
