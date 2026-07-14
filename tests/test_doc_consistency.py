@@ -164,9 +164,14 @@ def test_changelog_unreleased_does_not_overclaim_release_closure() -> None:
 
 
 def test_public_docs_define_honest_release_support_boundary() -> None:
+    agents = Path("AGENTS.md").read_text(encoding="utf-8")
     readme = Path("README.md").read_text(encoding="utf-8")
     readme_cn = Path("README_CN.md").read_text(encoding="utf-8")
     validation = Path("docs/REAL_WORLD_VALIDATION.md").read_text(encoding="utf-8")
+
+    assert "On track / Release-ready" in agents
+    assert "2026-07-15 Final RC Review" in validation
+    assert "Go / Release-ready" in validation
 
     assert "v1.0.3 Release Support Boundary" in readme
     assert "v1.0.3 发布支持边界" in readme_cn

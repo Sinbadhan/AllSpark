@@ -119,14 +119,37 @@ physical sensors/GPS/power, cross-host networking and removable-media disaster
 recovery remain Experimental. Bluetooth and Wi-Fi Direct transports are not
 implemented in v1.0.3; channel detection must not be presented as transport.
 
-## Next Execution Order
+## 2026-07-15 Final RC Review
 
-1. Run the automated baseline in an unrestricted local shell and attach command
-   output to this log.
-2. Run `tests/regression/run_all.py` with loopback networking enabled and confirm
-   zero `environment_blocked` rows.
-3. On a post-release hardware-validation track, validate Docker on a
+- Code candidate: `2e9f64cd94a644b37acd8f6a0a06edb3f9c9ac6d`.
+- Full local gate: 1205 collected / 1199 passed / 6 hardware-gated skips;
+  total line coverage 76.44%; all critical branch floors passed; Ruff and mypy
+  clean.
+- Regression harness: Web 152 (4 explicitly allowlisted degraded) / CLI 4 /
+  boundary 32 / HTML render 10, exit 0.
+- Final release-flow suite: 162 passed across first run, rule-based Q&A,
+  Repository, Config, System, reset integrity, degraded truth, CSP enforcement,
+  and 320-430 px layouts.
+- Real Chrome CSP gate: Dashboard, System, Config, Executions, Repository, Init,
+  and Login completed core interactions with zero policy violations and zero
+  runtime exceptions.
+- [GitHub Actions Run #97](https://github.com/Sinbadhan/AllSpark/actions/runs/29371977980):
+  test and clean-wheel smoke jobs succeeded on Python 3.10/3.11/3.12; six
+  checks reported zero warning/failure annotations.
+- Decision: **Go / Release-ready for the documented desktop PROCESS-mode
+  support boundary.** This is approval of the candidate scope, not evidence for
+  excluded hardware or a claim that an untagged candidate is already Stable.
+
+## Remaining External Validation Order
+
+The unrestricted automated baseline and loopback regression are complete. The
+remaining work can expand future support claims, but is excluded from the
+current release-ready boundary:
+
+1. On a post-release hardware-validation track, validate Docker on a
    daemon-enabled host and move SHA-179 out of Experimental only with evidence.
-4. Validate LLM model discovery/load/inference with the smallest supported GGUF.
-5. Validate Raspberry Pi sensors, power, GPS, cross-host networking and
+2. Validate LLM model discovery/load/inference with the smallest supported GGUF.
+3. Validate Raspberry Pi sensors, power, GPS, cross-host networking and
    removable storage before expanding the public support boundary.
+4. Complete independent/removable-media restore evidence and Windows + NVDA
+   compatibility testing before promoting those capabilities.
