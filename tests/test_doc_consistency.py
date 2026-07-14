@@ -63,8 +63,12 @@ def test_public_version_references_match() -> None:
 
 def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
     assert "pytest -q --tb=short --cov=allspark --cov-branch" in workflow
     assert "python scripts/check_coverage.py --coverage-json coverage.json" in workflow
+    assert '"pytest-cov>=7.1,<8"' in pyproject
+    assert 'patch = ["subprocess"]' in pyproject
+    assert 'omit = ["allspark/templates/*", "allspark/static/*"]' in pyproject
     collection_floor = re.search(r'test "\$\{COUNT:-0\}" -ge (\d+)', workflow)
     assert collection_floor is not None and int(collection_floor.group(1)) >= 1133
 
