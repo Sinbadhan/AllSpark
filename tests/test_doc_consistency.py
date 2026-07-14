@@ -4,6 +4,7 @@ import re
 import subprocess
 from pathlib import Path
 
+from allspark.infrastructure.module_loader import EXPERIMENTAL_MODULES
 from scripts.check_coverage import ACCEPTANCE_TOTAL_LINE, DEFAULT_BRANCH_FLOORS
 
 STALE_TOKENS = [
@@ -127,6 +128,30 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
     assert "局域网/蓝牙/WiFi Direct" not in readme_cn
     assert "Bluetooth and Wi-Fi Direct transports" in readme
     assert "蓝牙和 Wi-Fi Direct 传输" in readme_cn
+
+    experimental_feature_rows = {
+        readme: (
+            ("Psychology Tracking", "psychology"),
+            ("Weather-Goal Linkage", "weather"),
+            ("Knowledge Trading", "trade_engine"),
+            ("Environment Assessment", "environment"),
+            ("Weather Prediction", "weather"),
+            ("Map System", "offline_map"),
+        ),
+        readme_cn: (
+            ("心理追踪", "psychology"),
+            ("天气-目标联动", "weather"),
+            ("知识交易", "trade_engine"),
+            ("环境评估", "environment"),
+            ("天气预测", "weather"),
+            ("地图系统", "offline_map"),
+        ),
+    }
+    for content, feature_rows in experimental_feature_rows.items():
+        for feature_name, module_name in feature_rows:
+            assert module_name in EXPERIMENTAL_MODULES
+            row = next(line for line in content.splitlines() if line.startswith(f"| {feature_name}"))
+            assert "Experimental" in row, f"{feature_name} must match the release registry"
 
 
 def test_manual_release_gate_covers_accessibility_and_transport_boundary() -> None:

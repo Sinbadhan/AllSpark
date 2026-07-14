@@ -47,7 +47,7 @@ See [real-world validation](docs/REAL_WORLD_VALIDATION.md) for current evidence.
 | Personality System | Crisis/Stable/Companion/Multiplayer/Renaissance — 5 adaptive modes |
 | Experience Accumulation | Experience recording → pattern recognition → knowledge entry loop |
 | Daily Briefing | Auto-generated survival report: resources + warnings + goals + tasks + knowledge tip |
-| Psychology Tracking | Loneliness/stress index + self-assessment questionnaire + intervention triggers |
+| Psychology Tracking (Experimental) | Loneliness/stress index + self-assessment questionnaire + intervention triggers |
 
 ### 🎯 Goal & Mission System
 | Feature | Description |
@@ -55,7 +55,7 @@ See [real-world validation](docs/REAL_WORLD_VALIDATION.md) for current evidence.
 | Goal Engine | Auto-generate goals from resource state + 6 templates + manual goals |
 | Milestone Tracking | Milestones auto-calculate progress; all done → goal completed |
 | Goal-Task Linkage | Goals → tasks bi-directional sync; completing tasks advances milestones |
-| Weather-Goal Linkage | Severe weather auto-pauses outdoor goals + creates shelter reinforcement |
+| Weather-Goal Linkage (Experimental) | Severe weather auto-pauses outdoor goals + creates shelter reinforcement |
 | 3-Level Reset | L1 (assessment) / L2 (archive) / L3 (factory) + safety constraints + cooldown |
 
 ### 📚 Knowledge System
@@ -72,7 +72,7 @@ See [real-world validation](docs/REAL_WORLD_VALIDATION.md) for current evidence.
 |---------|-------------|
 | Knowledge Verification | 5-step verification: format → source → consistency → cross-reference → rating |
 | AllSpark Network (Experimental) | UDP discovery + LAN TCP knowledge exchange; single-host multi-process verified, cross-host not certified |
-| Knowledge Trading | Propose/accept/reject/evaluate inter-node knowledge exchange protocol |
+| Knowledge Trading (Experimental) | Propose/accept/reject/evaluate inter-node knowledge exchange protocol |
 | Image Recognition (Experimental) | Multi-modal analysis path; camera and target model runtime are not certified |
 
 ### 👥 Multiplayer & Governance
@@ -88,9 +88,9 @@ See [real-world validation](docs/REAL_WORLD_VALIDATION.md) for current evidence.
 | Feature | Description |
 |---------|-------------|
 | GPS Manager | Manual positioning is supported; physical GPS/sensor input remains Experimental |
-| Environment Assessment | 4-dimensional: climate/terrain/threats/opportunities + composite score |
-| Weather Prediction | Barometric pressure → 12h forecast (clear/rain/storm) + cloud guide |
-| Map System | Text-based map + POI management + category view |
+| Environment Assessment (Experimental) | 4-dimensional: climate/terrain/threats/opportunities + composite score |
+| Weather Prediction (Experimental) | Barometric pressure → 12h forecast (clear/rain/storm) + cloud guide |
+| Map System (Experimental) | Text-based map + POI management + category view |
 
 ### 📝 Journal & Timeline
 | Feature | Description |
