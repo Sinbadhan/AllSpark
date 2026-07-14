@@ -39,11 +39,21 @@ jobs:
         # SHA-28: full suite is tracked in version control and gates merges
         # across all supported Python versions. Hardware/live-model smoke
         # tests auto-skip (gated behind ALLSPARK_LIVE_* env vars / importorskip).
-        # SHA-151: coverage gate. term-missing surfaces per-module coverage so
-        # low-coverage domains are visible (not hidden behind the total), and
-        # --cov-fail-under prevents total coverage from regressing below the
-        # ratcheted floor (raise over time as critical-path tests land).
-        run: pytest -q --tb=short --cov=allspark --cov-report=term-missing --cov-fail-under=61
+        # SHA-151: coverage gate. --cov-branch records branch arcs (the release
+        # acceptance is 90% branch on the critical path, not just line coverage);
+        # --cov-report=json feeds the per-module gate in the next step;
+        # term-missing surfaces low-coverage domains. The next step reads the
+        # JSON report and independently enforces total LINE coverage plus the
+        # per-module BRANCH floors; coverage.py's --fail-under would otherwise
+        # combine statements and branches when --cov-branch is enabled.
+        run: pytest -q --tb=short --cov=allspark --cov-branch --cov-report=term-missing --cov-report=json:coverage.json
+
+      - name: Per-module branch coverage gate
+        # SHA-151: enforce ratcheted per-module BRANCH floors on the critical
+        # path (auth/init/SKF/import/reset/backup/search/resource) and other
+        # high-risk low-coverage modules, and enforce >=75% total line coverage.
+        # Runs only when pytest passed (CI stops on the prior step otherwise).
+        run: python scripts/check_coverage.py --coverage-json coverage.json
 
       - name: Test collection count gate
         # SHA-151: ensure the suite isn't silently shrinking (removing tests
@@ -54,7 +64,7 @@ jobs:
         run: |
           COUNT=$(pytest --collect-only -q 2>&1 | grep -oE '[0-9]+ tests? collected' | head -1 | grep -oE '[0-9]+' || echo 0)
           echo "Collected tests: $COUNT"
-          test "${COUNT:-0}" -ge 700
+          test "${COUNT:-0}" -ge 1095
 
       - name: Module import smoke benchmark (advisory)
         # Soft budget: prints ::warning:: and stays green when import time
