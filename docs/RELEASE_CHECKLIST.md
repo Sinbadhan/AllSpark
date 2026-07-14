@@ -43,6 +43,8 @@ python3 scripts/bench_import.py --check --hard-fail
 
 Do not lower coverage or collection floors to make a release pass. Record the
 exact pytest, coverage, regression, and benchmark output in the release PR.
+Run §1 of `docs/MANUAL_CHECKLIST.md` and attach the keyboard, VoiceOver/NVDA,
+and 200% browser-zoom evidence to the release PR.
 
 ## 4. Check package metadata
 
@@ -86,6 +88,9 @@ Verify no sensitive or generated files are staged:
   explicitly Experimental and excluded from Stable support.
 - The RC pull request is green on all Python versions, including the clean-wheel
   smoke matrix and real-Chrome SKF XSS gate.
+- SHA-152 contains completed keyboard-only, VoiceOver/NVDA, and 200% zoom
+  evidence. Automated DOM tests and screenshots do not substitute for these
+  assistive-technology checks.
 - Deferred hardening is linked as follow-up work; Report-Only CSP must not be
   described as enforcing.
 

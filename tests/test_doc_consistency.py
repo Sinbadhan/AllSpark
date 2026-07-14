@@ -66,7 +66,7 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     assert "pytest -q --tb=short --cov=allspark --cov-branch" in workflow
     assert "python scripts/check_coverage.py --coverage-json coverage.json" in workflow
     collection_floor = re.search(r'test "\$\{COUNT:-0\}" -ge (\d+)', workflow)
-    assert collection_floor is not None and int(collection_floor.group(1)) >= 1132
+    assert collection_floor is not None and int(collection_floor.group(1)) >= 1133
 
     critical_modules = {
         "allspark/adapters/init_wizard.py",
@@ -118,3 +118,15 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
     assert "局域网/蓝牙/WiFi Direct" not in readme_cn
     assert "Bluetooth and Wi-Fi Direct transports" in readme
     assert "蓝牙和 Wi-Fi Direct 传输" in readme_cn
+
+
+def test_manual_release_gate_covers_accessibility_and_transport_boundary() -> None:
+    manual = Path("docs/MANUAL_CHECKLIST.md").read_text(encoding="utf-8")
+    release = Path("docs/RELEASE_CHECKLIST.md").read_text(encoding="utf-8")
+
+    for required in ("Keyboard-only", "VoiceOver", "NVDA", "200%"):
+        assert required in manual
+    assert "Bluetooth fallback" not in manual
+    assert "not presented as working data transports" in manual
+    assert "VoiceOver/NVDA" in release
+    assert "Automated DOM tests and screenshots do not substitute" in release
