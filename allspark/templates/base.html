@@ -513,11 +513,11 @@ table { border-collapse: collapse; width: 100%; }
     <input type="text" id="mobile-global-search" placeholder="{{ t('web_search_placeholder') }}" aria-label="{{ t('web_search_placeholder') }}" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:8px 10px;border-radius:4px;font-size:13px;"/>
   </div>
   <nav>
-    <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined">dashboard</span> {{ t('web_nav_dashboard') }}</a>
-    <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined">terminal</span> {{ t('web_nav_system') }}</a>
-    <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"><span class="material-symbols-outlined">play_arrow</span> {{ t('web_nav_executions') }}</a>
-    <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined">settings_input_component</span> {{ t('web_nav_config') }}</a>
-    <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined">folder_open</span> {{ t('web_nav_repository') }}</a>
+    <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span> {{ t('web_nav_dashboard') }}</a>
+    <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">terminal</span> {{ t('web_nav_system') }}</a>
+    <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span> {{ t('web_nav_executions') }}</a>
+    <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">settings_input_component</span> {{ t('web_nav_config') }}</a>
+    <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">folder_open</span> {{ t('web_nav_repository') }}</a>
   </nav>
 </div>
 
@@ -531,14 +531,14 @@ table { border-collapse: collapse; width: 100%; }
     </div>
   </div>
   <button class="exec-btn" onclick="location.href='/executions'">
-    <span class="material-symbols-outlined" style="font-size:16px;">play_arrow</span> {{ t('web_execute_task') }}
+    <span class="material-symbols-outlined" style="font-size:16px;" aria-hidden="true">play_arrow</span> {{ t('web_execute_task') }}
   </button>
   <nav>
-    <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined">dashboard</span> {{ t('web_nav_dashboard') }}</a>
-    <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined">terminal</span> {{ t('web_nav_system') }}</a>
-    <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"><span class="material-symbols-outlined">play_arrow</span> {{ t('web_nav_executions') }}</a>
-    <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined">settings_input_component</span> {{ t('web_nav_config') }}</a>
-    <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined">folder_open</span> {{ t('web_nav_repository') }}</a>
+    <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span> {{ t('web_nav_dashboard') }}</a>
+    <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">terminal</span> {{ t('web_nav_system') }}</a>
+    <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span> {{ t('web_nav_executions') }}</a>
+    <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">settings_input_component</span> {{ t('web_nav_config') }}</a>
+    <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">folder_open</span> {{ t('web_nav_repository') }}</a>
   </nav>
 </div>
 
@@ -548,13 +548,13 @@ table { border-collapse: collapse; width: 100%; }
   <!-- TopAppBar (Desktop) -->
   <header class="topbar">
     <div class="title">
-      <span class="material-symbols-outlined" style="font-size:20px;">sensors</span>
+      <span class="material-symbols-outlined" style="font-size:20px;" aria-hidden="true">sensors</span>
       <span id="topbar-title">{{ page_title }}</span>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="search-box">
         <input placeholder="{{ t('web_search_placeholder') }}" type="text" id="global-search"/>
-        <span class="material-symbols-outlined" style="color:var(--on-surface-variant);font-size:18px;">search</span>
+        <span class="material-symbols-outlined" style="color:var(--on-surface-variant);font-size:18px;" aria-hidden="true">search</span>
       </div>
       <button class="icon-btn" id="notifications-btn" title="{{ t('web_notifications_title') }}" aria-label="{{ t('web_notifications_title') }}" onclick="showNotifications()"><span class="material-symbols-outlined" aria-hidden="true">notifications</span></button>
       <button class="icon-btn" id="lang-toggle-btn" title="{{ t('web_lang_switch_label') }}" aria-label="{{ t('web_lang_switch_label') }}" onclick="toggleLanguage()">
@@ -581,7 +581,7 @@ table { border-collapse: collapse; width: 100%; }
   </footer>
 
   <!-- SHA-59: in-app toast + modal (replaces native alert/confirm/prompt) -->
-  <div id="toast-stack" class="toast-stack"></div>
+  <div id="toast-stack" class="toast-stack" aria-label="{{ t('web_notifications_title') }}"></div>
   <div id="modal-root"></div>
 
 </div>
@@ -651,6 +651,9 @@ function toast(msg, level) {
   if (!stack) { return; }
   const el = document.createElement('div');
   el.className = 'toast toast-' + level;
+  el.setAttribute('role', level === 'error' ? 'alert' : 'status');
+  el.setAttribute('aria-live', level === 'error' ? 'assertive' : 'polite');
+  el.setAttribute('aria-atomic', 'true');
   el.textContent = String(msg);
   stack.appendChild(el);
   // animate in
@@ -662,29 +665,73 @@ function toast(msg, level) {
   }, ttl);
 }
 function _modalRoot() { return document.getElementById('modal-root'); }
-function _closeModal() { const r = _modalRoot(); if (r) r.innerHTML = ''; }
+function _dialogFocusables(container) {
+  return Array.from(container.querySelectorAll(
+    'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )).filter(el => !el.hidden && el.getAttribute('aria-hidden') !== 'true');
+}
+function _trapDialogTab(container, event) {
+  if (event.key !== 'Tab') return;
+  const focusable = _dialogFocusables(container);
+  if (!focusable.length) { event.preventDefault(); container.focus(); return; }
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+}
+function _closeModal() {
+  const r = _modalRoot();
+  if (!r) return;
+  const previous = r._previouslyFocused;
+  r._previouslyFocused = null;
+  r.innerHTML = '';
+  if (previous && document.body.contains(previous) && typeof previous.focus === 'function') {
+    setTimeout(() => previous.focus(), 0);
+  }
+}
+let _modalSequence = 0;
 function _modalShell(opts) {
   const r = _modalRoot();
   if (!r) return null;
+  r._previouslyFocused = document.activeElement;
   r.innerHTML = '';
   const wrap = document.createElement('div');
   wrap.className = 'modal-overlay';
   const card = document.createElement('div');
   card.className = 'modal-card' + (opts.danger ? ' modal-danger' : '');
+  card.setAttribute('role', 'dialog');
+  card.setAttribute('aria-modal', 'true');
+  card.setAttribute('tabindex', '-1');
   const body = document.createElement('div');
   body.className = 'modal-body';
-  if (opts.title) { const h = document.createElement('div'); h.className = 'modal-title'; h.textContent = opts.title; body.appendChild(h); }
+  if (opts.title) {
+    const h = document.createElement('div');
+    h.className = 'modal-title';
+    h.id = 'modal-title-' + (++_modalSequence);
+    h.textContent = opts.title;
+    card.setAttribute('aria-labelledby', h.id);
+    body.appendChild(h);
+  }
   if (opts.message) { const p = document.createElement('div'); p.className = 'modal-message'; p.textContent = opts.message; body.appendChild(p); }
   card.appendChild(body);
   wrap.appendChild(card);
-  wrap.addEventListener('click', (e) => { if (e.target === wrap && opts.dismissOnOverlay !== false) { _closeModal(); opts.onClose && opts.onClose(); } });
+  const dismiss = () => {
+    if (typeof opts.onDismiss === 'function') opts.onDismiss();
+    else _closeModal();
+  };
+  wrap.addEventListener('click', (e) => { if (e.target === wrap && opts.dismissOnOverlay !== false) dismiss(); });
+  wrap.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && opts.dismissOnEscape !== false) { e.preventDefault(); dismiss(); return; }
+    _trapDialogTab(card, e);
+  });
   r.appendChild(wrap);
   return { wrap: wrap, card: card, body: body };
 }
 function confirmDialog(title, opts) {
   opts = opts || {};
   return new Promise((resolve) => {
-    const sh = _modalShell({ title: title, danger: opts.danger, message: opts.message });
+    let settled = false;
+    const finish = value => { if (settled) return; settled = true; _closeModal(); resolve(value); };
+    const sh = _modalShell({ title: title, danger: opts.danger, message: opts.message, onDismiss: () => finish(false) });
     if (!sh) { resolve(false); return; }
     const actions = document.createElement('div');
     actions.className = 'modal-actions';
@@ -694,8 +741,8 @@ function confirmDialog(title, opts) {
     const cancel = document.createElement('button');
     cancel.className = 'btn-outline';
     cancel.textContent = opts.cancelText || (I18N.web_cancel || 'Cancel');
-    ok.onclick = () => { _closeModal(); resolve(true); };
-    cancel.onclick = () => { _closeModal(); resolve(false); };
+    ok.onclick = () => finish(true);
+    cancel.onclick = () => finish(false);
     actions.appendChild(cancel); actions.appendChild(ok);
     sh.card.appendChild(actions);
     ok.focus();
@@ -704,7 +751,9 @@ function confirmDialog(title, opts) {
 function promptDialog(title, opts) {
   opts = opts || {};
   return new Promise((resolve) => {
-    const sh = _modalShell({ title: title, danger: opts.danger, message: opts.message });
+    let settled = false;
+    const finish = value => { if (settled) return; settled = true; _closeModal(); resolve(value); };
+    const sh = _modalShell({ title: title, danger: opts.danger, message: opts.message, onDismiss: () => finish(null) });
     if (!sh) { resolve(null); return; }
     const input = document.createElement('input');
     input.className = 'modal-input';
@@ -718,8 +767,8 @@ function promptDialog(title, opts) {
     const cancel = document.createElement('button');
     cancel.className = 'btn-outline';
     cancel.textContent = opts.cancelText || (I18N.web_cancel || 'Cancel');
-    const submit = () => { const v = input.value; _closeModal(); resolve(v); };
-    const cancelFn = () => { _closeModal(); resolve(null); };
+    const submit = () => finish(input.value);
+    const cancelFn = () => finish(null);
     ok.onclick = submit;
     cancel.onclick = cancelFn;
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
@@ -839,17 +888,24 @@ async function openAbout() {
     modal.id = "about-modal";
     modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
     modal.innerHTML = `
-      <div class="card" style="max-width:520px;width:90%;max-height:80vh;overflow-y:auto;padding:20px;">
-        <h2 style="margin:0 0 12px;">{{ t('web_about_title') }}</h2>
-        <div id="about-body" class="text-sm">{{ t('web_about_loading') }}</div>
+      <div class="card" role="dialog" aria-modal="true" aria-labelledby="about-title" style="max-width:520px;width:90%;max-height:80vh;overflow-y:auto;padding:20px;">
+        <h2 id="about-title" style="margin:0 0 12px;">{{ t('web_about_title') }}</h2>
+        <div id="about-body" class="text-sm" role="status" aria-live="polite">{{ t('web_about_loading') }}</div>
         <div style="margin-top:16px;text-align:right;">
-          <button class="action-btn action-outline" onclick="closeAbout()">{{ t('web_about_close') }}</button>
+          <button id="about-close" class="action-btn action-outline" onclick="closeAbout()">{{ t('web_about_close') }}</button>
         </div>
       </div>`;
     modal.addEventListener("click", e => { if (e.target === modal) closeAbout(); });
+    modal.addEventListener("keydown", e => {
+      if (e.key === "Escape") { e.preventDefault(); closeAbout(); return; }
+      const dialog = modal.querySelector('[role="dialog"]');
+      if (dialog) _trapDialogTab(dialog, e);
+    });
     document.body.appendChild(modal);
   }
+  modal._previouslyFocused = document.activeElement;
   modal.style.display = "flex";
+  document.getElementById("about-close").focus();
   try {
     const data = await api("/api/system/about");
     const flags = data.feature_flags || {};
@@ -871,7 +927,11 @@ async function openAbout() {
 }
 function closeAbout() {
   const m = document.getElementById("about-modal");
-  if (m) m.style.display = "none";
+  if (!m) return;
+  m.style.display = "none";
+  const previous = m._previouslyFocused;
+  m._previouslyFocused = null;
+  if (previous && document.body.contains(previous) && typeof previous.focus === "function") previous.focus();
 }
 // SHA-152: mobile nav accessibility - sync aria-expanded, isolate background
 // content via inert, trap Tab + Esc, and restore focus to the toggle on close.

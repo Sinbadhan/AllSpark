@@ -6,6 +6,7 @@ semantics + Esc, and icon buttons expose aria-labels. Full VoiceOver/NVDA
 manual verification remains a follow-up, but these guard the code-level
 requirements against regression.
 """
+import re
 from pathlib import Path
 
 TEMPLATES = Path("allspark/templates")
@@ -130,6 +131,33 @@ class TestRepositoryA11y:
         assert "function toggleFileTree()" in t
         assert "setAttribute('aria-expanded'" in t
 
+    def test_filter_controls_have_names_and_search_keeps_focus(self):
+        t = _read("repository.html")
+        for control in ("repo-search", "repo-f-cat", "repo-f-tier", "repo-f-ver", "repo-f-lang"):
+            marker = t.split(f'id="{control}"', 1)[1].split(">", 1)[0]
+            assert "aria-label=" in marker
+        assert "replacement.focus({preventScroll: true})" in t
+        assert "replacement.setSelectionRange(start, end)" in t
+
+    def test_repository_rows_expose_native_detail_buttons(self):
+        t = _read("repository.html")
+        assert 'class="repo-detail-trigger' in t
+        assert 'aria-label="${escHtml(REPO_I18N.detail_title' in t
+        assert 'tabindex="0" data-kid=' not in t
+
+    def test_repository_results_and_detail_are_announced(self):
+        t = _read("repository.html")
+        assert 'role="status" aria-live="polite" aria-atomic="true"' in t
+        assert 'role="dialog" aria-modal="true" aria-labelledby="repo-detail-title"' in t
+        assert 'document.getElementById("repo-detail-close").focus()' in t
+
+    def test_repository_detail_traps_and_restores_focus(self):
+        t = _read("repository.html")
+        assert "_trapDialogTab(dialog, e)" in t
+        assert "modal._previouslyFocused = document.activeElement" in t
+        assert "document.body.contains(previous)" in t
+        assert "previous.focus()" in t
+
 
 class TestBaseA11y:
     def test_icon_buttons_have_aria_labels(self):
@@ -148,3 +176,33 @@ class TestBaseA11y:
         t = _read("base.html")
         assert 'aria-label="{{ t(\'web_mobile_menu_open\') }}"' in t
         assert 'aria-label="{{ t(\'web_mobile_menu_close\') }}"' in t
+
+    def test_primary_navigation_hides_decorative_icons(self):
+        t = _read("base.html")
+        nav = t.split("<!-- Mobile Nav Overlay -->", 1)[1].split("<!-- Main Content Wrapper -->", 1)[0]
+        icon_tags = re.findall(r'<span class="material-symbols-outlined"[^>]*>', nav)
+        assert len(icon_tags) >= 10
+        assert all('aria-hidden="true"' in tag for tag in icon_tags)
+
+    def test_toasts_are_live_regions_with_error_escalation(self):
+        t = _read("base.html")
+        assert "level === 'error' ? 'alert' : 'status'" in t
+        assert "level === 'error' ? 'assertive' : 'polite'" in t
+        assert "el.setAttribute('aria-atomic', 'true')" in t
+
+    def test_generic_modals_have_dialog_semantics_and_focus_management(self):
+        t = _read("base.html")
+        assert "card.setAttribute('role', 'dialog')" in t
+        assert "card.setAttribute('aria-modal', 'true')" in t
+        assert "card.setAttribute('aria-labelledby', h.id)" in t
+        assert "_trapDialogTab(card, e)" in t
+        assert "r._previouslyFocused = document.activeElement" in t
+        assert "document.body.contains(previous)" in t
+
+    def test_about_modal_has_complete_dialog_behavior(self):
+        t = _read("base.html")
+        assert 'role="dialog" aria-modal="true" aria-labelledby="about-title"' in t
+        assert 'id="about-body" class="text-sm" role="status" aria-live="polite"' in t
+        assert 'document.getElementById("about-close").focus()' in t
+        assert "_trapDialogTab(dialog, e)" in t
+        assert "m._previouslyFocused = null" in t
