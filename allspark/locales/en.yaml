@@ -951,8 +951,11 @@ env_rec_poor: 🚨 Environment assessment is poor. Prioritize basic survival nee
 env_rec_fair: ⚡ Environment is fair. Watch for risks, allocate resources wisely.
 env_rec_good: ✅ Environment is OK. Can plan exploration and resource gathering.
 env_rec_high_threat: ⚠️ High threat factors present. Strengthen defense and vigilance.
+env_rec_insufficient: Evidence is incomplete. Add current climate, terrain, and core resource data before acting.
 env_extreme_temp: 'Extreme temperature: {temp}°C'
+env_climate_unknown: No current climate evidence
 env_terrain_unknown: Terrain info needs manual input or GPS
+env_terrain_gps: Current position is available; terrain details remain limited
 env_terrain_water: Water source nearby
 env_terrain_danger: ', danger zone present'
 env_terrain_shelter: ', shelter/camp available'
@@ -960,6 +963,7 @@ env_threat_power_critical: Power nearly depleted
 env_threat_power_low: Power insufficient
 env_threat_water_critical: Water critically low
 env_threat_water_low: Water insufficient
+env_threat_food_critical: Food is depleted
 env_threat_weather: Severe weather warning
 env_opp_power_ok: Power sufficient, can explore
 env_opp_knowledge: Rich knowledge base ({count} entries)
@@ -967,6 +971,21 @@ env_opp_stable: Basic survival stable, can develop long-term projects
 env_opp_pois: '{count} locations discovered'
 env_header: 🌍 Environment Assessment
 env_overall_score: '  {icon} Overall Score: {pct}%'
+env_overall_unknown: '  ◇ Overall Score: insufficient evidence'
+env_completeness_line: '  Evidence completeness: {pct}% (missing: {missing})'
+env_dimension_climate: climate
+env_dimension_terrain: terrain
+env_dimension_resources: resources
+env_source_line: '  {dimension}: {source} @ {observed_at}{freshness}'
+env_source_unknown: unknown
+env_source_database: database
+env_source_database_partial: partial database data
+env_source_poi: saved locations
+env_source_manual: manual observation
+env_source_sensor: sensor
+env_source_gps: GPS
+env_source_time_unknown: time unknown
+env_source_stale: ' (stale)'
 env_climate_line: '  🌤️ Climate: {condition} ({pct}%)'
 env_terrain_line: '  🏔️ Terrain: {details} ({pct}%)'
 env_threat_line: '  ⚠️ Threat Level: {level} ({pct}%)'
@@ -1623,6 +1642,14 @@ web_environment_climate: Climate
 web_environment_terrain: Terrain
 web_environment_threats: Threats
 web_environment_opportunities: Opportunities
+web_environment_insufficient: Insufficient evidence
+web_environment_completeness: Evidence completeness
+web_environment_missing: Missing
+web_environment_sources: Evidence sources
+web_environment_as_of: Observed
+web_environment_stale: stale
+web_environment_unknown: unknown
+web_environment_resources: Resources
 web_community_tab: Community
 web_community_status: Governance status
 web_community_no_members: No members yet

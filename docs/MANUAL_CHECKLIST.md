@@ -32,6 +32,7 @@ cross-node hardware, Docker deployment, and long-running schedulers.
 | 1.8 | macOS screen reader | run the same core Web flow with VoiceOver on macOS | landmarks, control names, selected/expanded state, validation errors, dialogs, and status changes are announced without duplicate or symbol-only names |
 | 1.8W | Windows screen reader (Testing) | run the same core Web flow with NVDA on Windows when that environment is available | record pass/fail evidence; until a real run passes, Windows + NVDA remains Experimental and must not be included in the Stable accessibility claim |
 | 1.9 | Browser zoom | set browser zoom to 200% on a 1280px-wide desktop viewport; repeat the core Web flow | no text/control overlap or clipped actions; no page-level horizontal scroll; data tables may use a clearly contained horizontal scroller |
+| 1.10 | Environment evidence states | inspect CLI and Web environment assessment with (a) no sensor/resource setup, (b) one stale sensor or partial resources, and (c) fresh climate + terrain + configured power/water/food | (a)/(b) show insufficient evidence, missing dimensions, source/time and no numeric score or exploration advice; known shortages still warn; only (c) emits a score and opportunities |
 
 ## 2. Hardware-dependent (run when hardware available — SHA-33)
 

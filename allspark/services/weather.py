@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import Any, Optional
 
 from allspark.core.i18n import t
@@ -16,6 +17,8 @@ class WeatherPredictor:
             "humidity_pct": None,
             "light_level": None,
             "source": "unknown",
+            "observed_at": None,
+            "stale": True,
         }
 
         if self.sensor_hub:
@@ -25,26 +28,31 @@ class WeatherPredictor:
                     if not readings:
                         continue
                     r = readings[0]
+                    if r.get("status") == "no_data":
+                        continue
                     dev_type = dev.get("type", "")
                     if dev_type == "pressure":
                         result["pressure_hpa"] = r.get("value")
+                        result["observed_at"] = r.get("timestamp")
+                        result["source"] = r.get("source") or "sensor"
                     elif dev_type == "temperature":
                         result["temperature_c"] = r.get("value")
                     elif dev_type == "humidity":
                         result["humidity_pct"] = r.get("value")
                     elif dev_type == "light":
                         result["light_level"] = r.get("value")
-                if result["pressure_hpa"] is not None:
-                    result["source"] = "sensor"
             except Exception:
                 pass
 
         if result["pressure_hpa"] is None and self.db:
-            result["source"] = "manual"
-            result["pressure_hpa"] = self._get_manual_pressure()
+            pressure, observed_at = self._get_manual_pressure_record()
+            result["pressure_hpa"] = pressure
+            result["observed_at"] = observed_at
+            result["source"] = "manual" if pressure is not None else "unknown"
 
         if result["pressure_hpa"] is not None:
             result["pressure_trend"] = self._calculate_trend()
+            result["stale"] = self._is_stale(result["observed_at"])
 
         return result
 
@@ -126,21 +134,43 @@ class WeatherPredictor:
 
     def set_manual_pressure(self, pressure_hpa: float):
         if self.db:
-            from datetime import datetime
             ts_key = f"manual_pressure_{datetime.now().strftime('%Y%m%d%H%M%S')}"
             self.db.save_hardware_profile(ts_key, str(pressure_hpa))
             self.db.save_hardware_profile("manual_pressure", str(pressure_hpa))
 
     def _get_manual_pressure(self) -> Optional[float]:
+        return self._get_manual_pressure_record()[0]
+
+    def _get_manual_pressure_record(self) -> tuple[Optional[float], Optional[str]]:
         if not self.db:
-            return None
+            return None, None
         try:
             row = self.db.conn.execute(
+                "SELECT key, value FROM hardware_profile "
+                "WHERE key LIKE 'manual_pressure_%' ORDER BY key DESC LIMIT 1"
+            ).fetchone()
+            if row:
+                observed_at = datetime.strptime(
+                    row["key"].removeprefix("manual_pressure_"), "%Y%m%d%H%M%S"
+                ).isoformat()
+                return float(row["value"]), observed_at
+            fallback = self.db.conn.execute(
                 "SELECT value FROM hardware_profile WHERE key='manual_pressure'"
             ).fetchone()
-            return float(row[0]) if row else None
+            return (float(fallback[0]), None) if fallback else (None, None)
         except (ValueError, TypeError):
-            return None
+            return None, None
+
+    @staticmethod
+    def _is_stale(observed_at: Optional[str]) -> bool:
+        if not observed_at:
+            return True
+        try:
+            observed = datetime.fromisoformat(observed_at.replace("Z", "+00:00"))
+            now = datetime.now(observed.tzinfo) if observed.tzinfo else datetime.now()
+            return now - observed > timedelta(hours=6)
+        except (TypeError, ValueError):
+            return True
 
     def _calculate_trend(self) -> str:
         if not self.db:

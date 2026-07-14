@@ -903,8 +903,11 @@ env_rec_poor: 🚨 环境评估较差，建议优先保障基本生存需求，�
 env_rec_fair: ⚡ 环境一般，注意防范风险，合理分配资源。
 env_rec_good: ✅ 环境尚可，可以安排探索和资源采集活动。
 env_rec_high_threat: ⚠️ 存在高威胁因素，建议加强防御和警戒。
+env_rec_insufficient: 证据不足，请先补充当前气候、地形和核心资源数据再采取行动。
 env_extreme_temp: 极端温度：{temp}°C
+env_climate_unknown: 缺少当前气候证据
 env_terrain_unknown: 地形信息需要手动输入或通过GPS获取
+env_terrain_gps: 已获取当前位置，地形详情仍有限
 env_terrain_water: 附近有水源
 env_terrain_danger: ，存在危险区域
 env_terrain_shelter: ，有庇护所/营地
@@ -912,6 +915,7 @@ env_threat_power_critical: 电力即将耗尽
 env_threat_power_low: 电力不足
 env_threat_water_critical: 水源严重不足
 env_threat_water_low: 水源不足
+env_threat_food_critical: 食物已耗尽
 env_threat_weather: 恶劣天气预警
 env_opp_power_ok: 电力充足，可进行探索活动
 env_opp_knowledge: 知识库丰富（{count}条）
@@ -919,6 +923,21 @@ env_opp_stable: 基础生存稳定，可发展长期项目
 env_opp_pois: 已发现{count}个地点
 env_header: 🌍 环境评估
 env_overall_score: '  {icon} 综合评分：{pct}%'
+env_overall_unknown: '  ◇ 综合评分：证据不足'
+env_completeness_line: '  证据完整度：{pct}%（缺失：{missing}）'
+env_dimension_climate: 气候
+env_dimension_terrain: 地形
+env_dimension_resources: 资源
+env_source_line: '  {dimension}：{source} @ {observed_at}{freshness}'
+env_source_unknown: 未知
+env_source_database: 数据库
+env_source_database_partial: 数据库部分数据
+env_source_poi: 已保存地点
+env_source_manual: 手动观测
+env_source_sensor: 传感器
+env_source_gps: GPS
+env_source_time_unknown: 时间未知
+env_source_stale: （已过期）
 env_climate_line: '  🌤️ 气候：{condition} ({pct}%)'
 env_terrain_line: '  🏔️ 地形：{details} ({pct}%)'
 env_threat_line: '  ⚠️ 威胁等级：{level} ({pct}%)'
@@ -1562,6 +1581,14 @@ web_environment_climate: 气候
 web_environment_terrain: 地形
 web_environment_threats: 威胁
 web_environment_opportunities: 机会
+web_environment_insufficient: 证据不足
+web_environment_completeness: 证据完整度
+web_environment_missing: 缺失
+web_environment_sources: 证据来源
+web_environment_as_of: 观测时间
+web_environment_stale: 已过期
+web_environment_unknown: 未知
+web_environment_resources: 资源
 web_community_tab: 社区
 web_community_status: 治理状态
 web_community_no_members: 暂无成员

@@ -80,7 +80,8 @@ class TestEnvironmentAssessor:
         assert "terrain" in result
         assert "threats" in result
         assert "opportunities" in result
-        assert 0 <= result["overall_score"] <= 1.0
+        assert result["status"] == "unknown"
+        assert result["overall_score"] is None
 
     def test_assess_with_low_resources(self, db):
         r = Resource(
@@ -109,7 +110,7 @@ class TestEnvironmentAssessor:
         env = EnvironmentAssessor(db=db)
         output = env.format_assessment()
         assert "环境" in output or "Environment" in output
-        assert "%" in output
+        assert "证据不足" in output or "insufficient" in output.lower()
 
     def test_recommendations(self, db):
         env = EnvironmentAssessor(db=db)

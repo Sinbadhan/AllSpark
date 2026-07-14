@@ -283,7 +283,8 @@ class TestEnvironmentAssessor:
 
     def test_overall_score_range(self):
         result = self.assessor.assess()
-        assert 0 <= result["overall_score"] <= 1
+        assert result["status"] == "unknown"
+        assert result["overall_score"] is None
 
 
 class TestDailyBriefing:

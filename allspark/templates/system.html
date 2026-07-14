@@ -454,6 +454,14 @@ const ENV_I18N = {
   terrain: "{{ t('web_environment_terrain') }}",
   threats: "{{ t('web_environment_threats') }}",
   opportunities: "{{ t('web_environment_opportunities') }}",
+  insufficient: "{{ t('web_environment_insufficient') }}",
+  completeness: "{{ t('web_environment_completeness') }}",
+  missing: "{{ t('web_environment_missing') }}",
+  sources: "{{ t('web_environment_sources') }}",
+  asOf: "{{ t('web_environment_as_of') }}",
+  stale: "{{ t('web_environment_stale') }}",
+  unknown: "{{ t('web_environment_unknown') }}",
+  resources: "{{ t('web_environment_resources') }}",
 };
 const WEATHER_I18N = { done: "{{ t('web_weather_done') }}" };
 
@@ -637,37 +645,68 @@ async function refreshEnvironment() {
   const el = document.getElementById("env-result");
   try {
     const data = await api("/api/environment");
-    const score = data.overall_score !== undefined ? Math.round(Number(data.overall_score) * 100) + "%" : "--";
+    const score = typeof data.overall_score === "number"
+      ? Math.round(data.overall_score * 100) + "%"
+      : ENV_I18N.insufficient;
     const climate = data.climate || {};
     const terrain = data.terrain || {};
     const threats = data.threats || {};
     const opportunities = data.opportunities || {};
     const recs = data.recommendations || [];
+    const completeness = data.completeness || {};
+    const sources = data.sources || {};
+    const ratio = typeof completeness.ratio === "number"
+      ? Math.round(completeness.ratio * 100) + "%"
+      : ENV_I18N.unknown;
+    const dimensionNames = {
+      climate: ENV_I18N.climate,
+      terrain: ENV_I18N.terrain,
+      resources: ENV_I18N.resources,
+    };
+    const missing = (completeness.missing || [])
+      .map(name => dimensionNames[name] || name)
+      .join(", ") || "--";
+    const sourceLine = info => {
+      info = info || {};
+      const source = info.source || ENV_I18N.unknown;
+      const observed = info.observed_at || ENV_I18N.unknown;
+      const stale = info.stale ? ` · ${ENV_I18N.stale}` : "";
+      return `${source} · ${ENV_I18N.asOf}: ${observed}${stale}`;
+    };
     el.innerHTML = `
       <div style="display:grid;gap:8px;">
         <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
           <span class="text-secondary">${I18N.web_environment_title}</span>
-          <strong class="text-primary">${score}</strong>
+          <strong id="env-score" class="text-primary">${escHtml(score)}</strong>
+        </div>
+        <div id="env-completeness" class="text-xs text-secondary">
+          ${ENV_I18N.completeness}: ${escHtml(ratio)} · ${ENV_I18N.missing}: ${escHtml(missing)}
         </div>
         <div class="grid-responsive" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;">
           <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:8px;">
             <div class="text-xs text-secondary">${ENV_I18N.climate}</div>
             <div>${escHtml(climate.condition || "--")}</div>
             <div class="text-xs text-secondary">${escHtml(climate.details || "")}</div>
+            <div class="text-xs text-secondary">${escHtml(sourceLine(sources.climate))}</div>
           </div>
           <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:8px;">
             <div class="text-xs text-secondary">${ENV_I18N.terrain}</div>
             <div>${escHtml(terrain.type || "--")}</div>
             <div class="text-xs text-secondary">${escHtml(terrain.details || "")}</div>
+            <div class="text-xs text-secondary">${escHtml(sourceLine(sources.terrain))}</div>
           </div>
           <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:8px;">
             <div class="text-xs text-secondary">${ENV_I18N.threats}</div>
             <div>${escHtml(threats.level || "--")}</div>
+            <div class="text-xs text-secondary">${(threats.factors || []).map(escHtml).join("<br>")}</div>
           </div>
           <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:8px;">
             <div class="text-xs text-secondary">${ENV_I18N.opportunities}</div>
             <div>${(opportunities.items || []).map(escHtml).join("<br>") || "--"}</div>
           </div>
+        </div>
+        <div id="env-sources" class="text-xs text-secondary">
+          ${ENV_I18N.sources} · ${ENV_I18N.resources}: ${escHtml(sourceLine(sources.resources))}
         </div>
         ${recs.length ? '<div class="text-sm">' + recs.map(escHtml).join('<br>') + '</div>' : ''}
       </div>`;
