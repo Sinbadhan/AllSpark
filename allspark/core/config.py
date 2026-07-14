@@ -50,7 +50,7 @@ PERSONALITY_TEMPLATES = {
     },
     "stable": {
         "style": "informative",
-        "emoji_prefix": "✅",
+        "emoji_prefix": "◇",
         "verbosity": "normal",
         "tone": "calm",
     },

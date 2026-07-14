@@ -28,6 +28,13 @@ workflow and supported hardware scope are approved.
   3.10/3.11/3.12 and validates clean-wheel installation on the same matrix.
 
 **Quality (P1):**
+- SHA-224: Rule-based answers no longer use the stable personality greeting as
+  a health claim. API and CLI responses share the same system-health function
+  as the Web footer and separately expose current system state, core-resource
+  readiness and answer scope (specific, general/verify, no match or generated/
+  unverified). The stable style now uses neutral "Standard guidance" wording;
+  bilingual API/direct-engine and real-Chrome footer/chat contracts prevent
+  degraded systems or generic answers from being success-styled.
 - SHA-223: Environment guidance is now evidence-gated across current climate,
   terrain and configured power/water/food data. Missing or stale evidence
   returns an explicit unknown result with no numeric score or exploration

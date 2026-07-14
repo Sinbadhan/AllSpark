@@ -3,8 +3,9 @@ import re
 
 from allspark.container import ServiceContainer
 from allspark.core.i18n import t
-from allspark.core.models import OperatingMode
+from allspark.core.models import OperatingMode, ResourceType
 from allspark.core.tokenizer import tokenize
+from allspark.services.system_health import assess_system_health
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +84,9 @@ class RuleEngine:
                     user_input, intent, resources, warnings
                 )
             else:
-                return self.personality.format_response(
+                return self._format_trusted_response(
                     t("knowledge_module_not_loaded"),
-                    add_greeting=True
+                    "none",
                 )
         else:
             return self._handle_general(user_input, resources, warnings, phase)
@@ -232,9 +233,9 @@ class RuleEngine:
             user_input, direct[0] if direct else None
         )
         if decision == "miss":
-            return self.personality.format_response(
+            return self._format_trusted_response(
                 t("no_knowledge_match"),
-                add_greeting=True
+                "none",
             )
 
         expanded = self.knowledge.get_relevant_knowledge(expansion_query, resources)
@@ -244,8 +245,8 @@ class RuleEngine:
             entries = self._merge_entries(expanded, direct)
 
         if not entries:
-            return self.personality.format_response(
-                t("no_knowledge_match"), add_greeting=True
+            return self._format_trusted_response(
+                t("no_knowledge_match"), "none"
             )
 
         lines = []
@@ -258,7 +259,43 @@ class RuleEngine:
         # SHA-150: 1 main answer + 2 related links (not full-text concat).
         lines.append(self.knowledge.format_answer(entries[:3]))
 
-        return self.personality.format_response("\n".join(lines), add_greeting=True)
+        return self._format_trusted_response(
+            "\n".join(lines),
+            "specific" if decision == "specific" else "general",
+        )
+
+    def _format_trusted_response(self, content: str, match: str) -> str:
+        health = assess_system_health(self.container)["state"]
+        resources = self._resource_trust_state(
+            self.resource_mgr.check_warnings()
+        )
+        trust_line = t(
+            "answer_trust_line",
+            system=t(f"answer_system_{health}"),
+            resources=t(f"answer_resources_{resources}"),
+            match=t(f"answer_match_{match}"),
+        )
+        return self.personality.format_response(
+            f"{trust_line}\n\n{content}", add_greeting=True
+        )
+
+    def _resource_trust_state(self, warnings: list) -> str:
+        if any(warning.get("level") == "critical" for warning in warnings):
+            return "critical"
+        if warnings:
+            return "warning"
+        required = (
+            ResourceType.POWER,
+            ResourceType.WATER,
+            ResourceType.FOOD,
+        )
+        resources = [self.db.get_resource(resource_type) for resource_type in required]
+        if any(
+            resource is None or not self.resource_mgr.is_configured(resource)
+            for resource in resources
+        ):
+            return "unknown"
+        return "ready"
 
     @staticmethod
     def _merge_entries(primary: list, secondary: list) -> list:
@@ -346,17 +383,19 @@ class RuleEngine:
         if self.llm and self.llm.available:
             llm_response = self.llm.survival_chat(user_input, context=context, phase=phase)
             if llm_response:
-                return self.personality.format_response(llm_response, add_greeting=True)
+                return self._format_trusted_response(
+                    llm_response, "unverified"
+                )
 
         if self.knowledge:
             entries = self.knowledge.search(user_input, limit=3)
             if entries:
                 # SHA-150: 1 main answer + 2 related links (not full-text concat).
-                return self.personality.format_response(
-                    self.knowledge.format_answer(entries), add_greeting=True
+                return self._format_trusted_response(
+                    self.knowledge.format_answer(entries), "general"
                 )
 
-        return self.personality.format_response(
+        return self._format_trusted_response(
             t("general_fallback", phase_suggestion=t(f"phase_fallback_{phase}")),
-            add_greeting=True
+            "none",
         )

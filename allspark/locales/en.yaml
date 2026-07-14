@@ -771,10 +771,22 @@ general_fallback: 'I cannot understand your question.
 module_not_available: Module {name} not loaded. Current hardware may not support this
   feature.
 greeting_crisis: ⚠️ CRITICAL STATUS
-greeting_stable: Status Normal
+greeting_stable: Standard guidance
 greeting_companion: I'm Here
 greeting_multiplayer: Multiplayer Active
 greeting_renaissance: Civilization Growing
+answer_trust_line: 'System health: {system} | Resource data: {resources} | Answer match: {match}'
+answer_system_healthy: healthy
+answer_system_degraded: degraded
+answer_system_unavailable: unavailable
+answer_resources_unknown: unknown
+answer_resources_critical: critical
+answer_resources_warning: warning
+answer_resources_ready: ready
+answer_match_specific: specific
+answer_match_general: general; verify applicability
+answer_match_none: no direct match
+answer_match_unverified: generated; unverified
 phase_goal_0_0: Stop bleeding & first aid
 phase_goal_0_1: Find water source
 phase_goal_0_2: Build temporary shelter

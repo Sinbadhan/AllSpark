@@ -716,10 +716,22 @@ general_fallback: '我暂时无法理解你的问题。
   输入 ''帮助'' 查看可用命令。'
 module_not_available: 模块 {name} 未加载，当前硬件可能不支持此功能。
 greeting_crisis: ⚠️ 紧急状态
-greeting_stable: 状态正常
+greeting_stable: 标准指引
 greeting_companion: 我在这里
 greeting_multiplayer: 多人协作中
 greeting_renaissance: 文明在生长
+answer_trust_line: '系统健康：{system} | 资源数据：{resources} | 答案匹配：{match}'
+answer_system_healthy: 健康
+answer_system_degraded: 降级
+answer_system_unavailable: 不可用
+answer_resources_unknown: 未知
+answer_resources_critical: 严重不足
+answer_resources_warning: 存在告警
+answer_resources_ready: 已配置
+answer_match_specific: 具体匹配
+answer_match_general: 泛化匹配，请核对适用性
+answer_match_none: 无直接匹配
+answer_match_unverified: 生成内容，未验证
 phase_goal_0_0: 止血和急救
 phase_goal_0_1: 寻找水源
 phase_goal_0_2: 搭建临时庇护所
