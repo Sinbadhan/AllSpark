@@ -51,7 +51,7 @@ DEFAULT_BRANCH_FLOORS = {
     "allspark/commands/docker.py": 8,
     "allspark/services/llm_engine.py": 3,
     "allspark/services/sensor_hub.py": 2,
-    "allspark/services/trade_engine.py": 48,           # (3.7% -> 48.1%)
+    "allspark/services/trade_engine.py": 95,           # (3.7% -> 100%)
 }
 
 ACCEPTANCE_BRANCH = 90.0      # SHA-151: critical-path branch target

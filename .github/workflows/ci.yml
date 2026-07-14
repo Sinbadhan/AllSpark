@@ -44,7 +44,7 @@ jobs:
         # --cov-report=json feeds the per-module gate in the next step;
         # term-missing surfaces low-coverage domains; --cov-fail-under prevents
         # total line coverage from regressing below the ratcheted floor.
-        run: pytest -q --tb=short --cov=allspark --cov-branch --cov-report=term-missing --cov-report=json:coverage.json --cov-fail-under=61
+        run: pytest -q --tb=short --cov=allspark --cov-branch --cov-report=term-missing --cov-report=json:coverage.json --cov-fail-under=74
 
       - name: Per-module branch coverage gate
         # SHA-151: enforce ratcheted per-module BRANCH floors on the critical
