@@ -469,3 +469,6 @@ class TestBootstrapDockerIntegration:
         container = bootstrap.bootstrap()
         docker_mgr = container.get("docker_manager")
         assert docker_mgr is not None
+        assert flags.recommended_deploy_mode == "docker"
+        assert flags.deploy_mode == "docker"
+        assert flags.docker_available is True

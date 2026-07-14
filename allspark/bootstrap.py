@@ -11,6 +11,7 @@ from allspark.infrastructure.hardware import (
     FeatureFlags,
     compute_feature_flags,
     detect_hardware,
+    resolve_runtime_deploy_mode,
 )
 from allspark.infrastructure.module_loader import ModuleRegistry
 from allspark.services.experience_engine import ExperienceEngine
@@ -52,6 +53,9 @@ class ApplicationBootstrap:
         self._init_resources()
         self._load_knowledge()
         self._register_conditional_services()
+        self.registry.register(
+            "rule_engine", self.container.get("rule_engine")
+        )
         self._register_scheduler()
         self._init_docker()
         self.registry.save_to_db(self.db)
@@ -420,12 +424,20 @@ class ApplicationBootstrap:
         )
 
     def _init_docker(self):
-        if not self.flags.docker_enabled:
+        if not (self.flags.docker_eligible or self.flags.docker_enabled):
             return
 
         from allspark.docker_manager import DockerManager
 
-        deploy_mode = DeployMode(self.flags.deploy_mode)
+        recommended_mode = self.flags.recommended_deploy_mode
+        if recommended_mode == DeployMode.PROCESS.value and self.flags.docker_enabled:
+            recommended_mode = self.flags.deploy_mode
+            self.flags.recommended_deploy_mode = recommended_mode
+            self.flags.docker_eligible = True
+            self.flags.recommended_docker_services = list(
+                self.flags.docker_services
+            )
+        deploy_mode = DeployMode(recommended_mode)
         docker_mgr = DockerManager(
             db=self.db,
             flags=self.flags,
@@ -434,20 +446,16 @@ class ApplicationBootstrap:
 
         if not docker_mgr.is_docker_available():
             logger.warning(t("docker_fallback_to_process"))
-            self.flags.deploy_mode = "process"
-            self.flags.docker_enabled = False
-            self.flags.docker_services = []
+            resolve_runtime_deploy_mode(self.flags, docker_available=False)
             return
 
-        container = self.container
-        container.register("docker_manager", docker_mgr)
-        self.registry.register("docker_manager", docker_mgr)
+        resolve_runtime_deploy_mode(self.flags, docker_available=True)
 
         try:
             docker_mgr.start_all()
+            self.container.register("docker_manager", docker_mgr)
+            self.registry.register("docker_manager", docker_mgr)
             logger.info(t("docker_started"))
         except Exception as e:
             logger.warning(f"Docker start failed, falling back to process mode: {e}")
-            self.flags.deploy_mode = "process"
-            self.flags.docker_enabled = False
-            self.flags.docker_services = []
+            resolve_runtime_deploy_mode(self.flags, docker_available=False)

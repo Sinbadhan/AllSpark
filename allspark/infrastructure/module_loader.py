@@ -1,3 +1,5 @@
+import importlib.util
+import shutil
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -75,6 +77,48 @@ EXPERIMENTAL_MODULES = frozenset({
     "docker_manager",
     "weather",
     "psychology",
+    "gps_manager",
+    "environment",
+    "voice",
+})
+
+DEPENDENCY_IMPORTS = {
+    "knowledge_vector": ("sentence_transformers",),
+    "llm": ("llama_cpp",),
+    "image_recognition": ("onnxruntime",),
+    "vision_engine": ("onnxruntime",),
+    "voice_input": ("whisper",),
+    "voice_output": ("pyttsx3",),
+    "multimodal": ("onnxruntime",),
+    "power_monitor": ("RPi.GPIO", "spidev"),
+    "sensor_hub": ("RPi.GPIO", "smbus2"),
+    "weather": ("smbus2",),
+    "gps_manager": ("serial",),
+    "voice": ("whisper", "pyttsx3"),
+}
+
+DEPENDENCY_EXECUTABLES = {
+    "kiwix": ("kiwix-serve",),
+    "kolibri": ("kolibri",),
+}
+
+CONFIGURATION_REQUIRED = frozenset({
+    "knowledge_vector",
+    "kiwix",
+    "llm",
+    "image_recognition",
+    "voice_input",
+    "voice_output",
+    "kolibri",
+    "spark_network",
+    "vision_engine",
+    "multimodal",
+    "trade_engine",
+    "power_monitor",
+    "sensor_hub",
+    "boot_manager",
+    "docker_manager",
+    "weather",
     "gps_manager",
     "environment",
     "voice",
@@ -206,18 +250,91 @@ class ModuleRegistry:
             console.print(table)
         return capture.get()
 
-    def format_status_dict(self) -> list[dict]:
+    def _dependency_installed(self, module_name: str) -> bool:
+        if module_name == "docker_manager":
+            return self.flags.docker_available
+        imports = DEPENDENCY_IMPORTS.get(module_name)
+        if imports:
+            try:
+                return all(importlib.util.find_spec(name) is not None for name in imports)
+            except (ImportError, ModuleNotFoundError, ValueError):
+                return False
+        executables = DEPENDENCY_EXECUTABLES.get(module_name)
+        if executables:
+            return all(shutil.which(name) is not None for name in executables)
+        return True
+
+    def _is_running(self, module_name: str, loaded: bool) -> bool:
+        if not loaded:
+            return False
+        instance = self._loaded[module_name]
+        get_status = getattr(instance, "get_status", None)
+        if not callable(get_status):
+            return True
+        try:
+            status = get_status()
+        except Exception:
+            return False
+        runtime_keys = {
+            "llm": "available",
+            "power_monitor": "monitoring",
+            "sensor_hub": "polling",
+        }
+        runtime_key = runtime_keys.get(module_name)
+        if runtime_key:
+            return bool(status.get(runtime_key))
+        if module_name == "voice":
+            return bool(status.get("is_listening") or status.get("session_active"))
+        return True
+
+    def format_status_dict(
+        self,
+        *,
+        dependency_overrides: dict[str, bool] | None = None,
+        configured_overrides: dict[str, bool] | None = None,
+        running_overrides: dict[str, bool] | None = None,
+    ) -> list[dict]:
+        dependency_overrides = dependency_overrides or {}
+        configured_overrides = configured_overrides or {}
+        running_overrides = running_overrides or {}
         result = []
         for name, mod in self._modules.items():
             flag_on = bool(getattr(self.flags, mod.feature_flag, False))
+            hardware_capable = (
+                self.flags.docker_eligible
+                if name == "docker_manager"
+                else mod.is_core or flag_on
+            )
+            dependency_installed = dependency_overrides.get(
+                name, self._dependency_installed(name)
+            )
+            loaded = name in self._loaded
+            configured = configured_overrides.get(
+                name,
+                loaded or (name not in CONFIGURATION_REQUIRED and hardware_capable),
+            )
+            running = running_overrides.get(name, self._is_running(name, loaded))
             if name in self._disabled:
                 status = "disabled"
-            elif name in self._loaded:
+            elif loaded:
                 status = "loaded"
             elif not flag_on:
                 status = "unsupported"
             else:
                 status = "available"
+
+            if name in self._disabled:
+                capability_state = "disabled"
+            elif not hardware_capable:
+                capability_state = "unsupported"
+            elif not dependency_installed:
+                capability_state = "missing_dependency"
+            elif not configured:
+                capability_state = "not_configured"
+            elif running:
+                capability_state = "running"
+            else:
+                capability_state = "ready"
             result.append({
                 "name": name,
                 "description_en": mod.description_en,
@@ -226,6 +343,11 @@ class ModuleRegistry:
                 "feature_flag": mod.feature_flag,
                 "hw_supported": flag_on,
                 "status": status,
+                "hardware_capable": hardware_capable,
+                "dependency_installed": dependency_installed,
+                "configured": configured,
+                "running": running,
+                "capability_state": capability_state,
                 "experimental": name in EXPERIMENTAL_MODULES,
             })
         return result
@@ -241,6 +363,9 @@ class ModuleRegistry:
             "spark_network", "multimodal", "self_learning",
             "governance", "trade_engine", "power_monitor",
             "sensor_hub", "data_preservation", "boot_manager",
+            "deploy_mode", "docker_enabled", "docker_services",
+            "recommended_deploy_mode", "docker_eligible",
+            "docker_available", "recommended_docker_services",
         ]:
             val = getattr(self.flags, attr, None)
             if val is not None:
@@ -266,6 +391,14 @@ class ModuleRegistry:
         for k, v in flags_dict.items():
             if hasattr(flags, k):
                 setattr(flags, k, v)
+        if "recommended_deploy_mode" not in flags_dict:
+            flags.recommended_deploy_mode = flags.deploy_mode
+        if "docker_eligible" not in flags_dict:
+            flags.docker_eligible = flags.recommended_deploy_mode in {
+                "docker", "integration",
+            }
+        if "recommended_docker_services" not in flags_dict:
+            flags.recommended_docker_services = list(flags.docker_services)
 
         registry = cls(flags)
 

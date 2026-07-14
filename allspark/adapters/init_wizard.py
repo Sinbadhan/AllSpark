@@ -14,10 +14,12 @@ from allspark.core.config import DEFAULT_DB_DIR
 from allspark.core.database import Database
 from allspark.core.i18n import get_language, set_language, t
 from allspark.infrastructure.hardware import (
+    DeployMode,
     HardwareTier,
     compute_feature_flags,
     detect_hardware,
     format_hardware_report,
+    resolve_runtime_deploy_mode,
 )
 from allspark.infrastructure.module_loader import ModuleRegistry
 
@@ -80,8 +82,15 @@ def _step_hardware_detect(db: Database) -> dict:
 
     profile = detect_hardware()
     flags = compute_feature_flags(profile.tier, profile.gpu_available)
+    _resolve_runtime_flags(db, flags)
 
-    report = format_hardware_report(profile, flags, lang=get_language())
+    registry = ModuleRegistry(flags)
+    report = format_hardware_report(
+        profile,
+        flags,
+        lang=get_language(),
+        capabilities=registry.format_status_dict(),
+    )
     console.print(report)
 
     if profile.tier == HardwareTier.PHANTOM:
@@ -92,6 +101,8 @@ def _step_hardware_detect(db: Database) -> dict:
     if selected_tier != profile.tier:
         profile.tier = selected_tier
         flags = compute_feature_flags(selected_tier, profile.gpu_available)
+        _resolve_runtime_flags(db, flags)
+        registry = ModuleRegistry(flags)
         tier_names = {
             HardwareTier.PHANTOM: "Phantom (2GB)", HardwareTier.MINIMUM: "Minimum (4GB)",
             HardwareTier.RECOMMENDED: "Recommended (8GB)", HardwareTier.COMFORTABLE: "Comfortable (16GB)",
@@ -99,7 +110,12 @@ def _step_hardware_detect(db: Database) -> dict:
         }
         tier_name = tier_names.get(selected_tier, selected_tier.value)
         console.print(f"\n[green]{t('init_hw_tier_selected', tier=tier_name)}[/]")
-        updated_report = format_hardware_report(profile, flags, lang=get_language())
+        updated_report = format_hardware_report(
+            profile,
+            flags,
+            lang=get_language(),
+            capabilities=registry.format_status_dict(),
+        )
         console.print(updated_report)
 
     for key, val in [
@@ -118,10 +134,23 @@ def _step_hardware_detect(db: Database) -> dict:
     ]:
         db.save_hardware_profile(key, val)
 
-    registry = ModuleRegistry(flags)
     registry.save_to_db(db)
 
     return {"profile": profile, "flags": flags}
+
+
+def _resolve_runtime_flags(db: Database, flags) -> None:
+    docker_available = False
+    if flags.docker_eligible:
+        from allspark.docker_manager import DockerManager
+
+        manager = DockerManager(
+            db=db,
+            flags=flags,
+            deploy_mode=DeployMode(flags.recommended_deploy_mode),
+        )
+        docker_available = manager.is_docker_available()
+    resolve_runtime_deploy_mode(flags, docker_available)
 
 
 def _ask_tier_override(detected_tier: HardwareTier) -> HardwareTier:

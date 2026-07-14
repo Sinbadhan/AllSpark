@@ -75,6 +75,10 @@ class FeatureFlags:
     deploy_mode: str = "process"
     docker_enabled: bool = False
     docker_services: list = field(default_factory=list)
+    recommended_deploy_mode: str = "process"
+    docker_eligible: bool = False
+    docker_available: bool = False
+    recommended_docker_services: list = field(default_factory=list)
 
 
 TIER_THRESHOLDS = {
@@ -305,6 +309,8 @@ def compute_feature_flags(tier: HardwareTier, gpu_available: bool = False) -> Fe
 
     deploy_mode = DEPLOY_MODE_MAP.get(tier, DeployMode.PROCESS)
     flags.deploy_mode = deploy_mode.value
+    flags.recommended_deploy_mode = deploy_mode.value
+    flags.docker_eligible = deploy_mode in (DeployMode.DOCKER, DeployMode.INTEGRATION)
     if deploy_mode in (DeployMode.DOCKER, DeployMode.INTEGRATION):
         flags.docker_enabled = True
         docker_svcs = ["web"]
@@ -315,11 +321,44 @@ def compute_feature_flags(tier: HardwareTier, gpu_available: bool = False) -> Fe
         if flags.kiwix:
             docker_svcs.append("kiwix")
         flags.docker_services = docker_svcs
+        flags.recommended_docker_services = list(docker_svcs)
 
     return flags
 
 
-def format_hardware_report(profile: HardwareProfile, flags: FeatureFlags, lang: str = "zh") -> str:
+def resolve_runtime_deploy_mode(
+    flags: FeatureFlags,
+    docker_available: bool,
+) -> FeatureFlags:
+    """Resolve a hardware recommendation into the verified runtime mode."""
+    flags.docker_available = docker_available
+    recommended = flags.recommended_deploy_mode
+    docker_target = recommended in {
+        DeployMode.DOCKER.value,
+        DeployMode.INTEGRATION.value,
+    }
+    if docker_target and docker_available:
+        flags.deploy_mode = recommended
+        flags.docker_enabled = True
+        flags.docker_services = list(flags.recommended_docker_services)
+    else:
+        flags.deploy_mode = DeployMode.PROCESS.value
+        flags.docker_enabled = False
+        flags.docker_services = []
+    return flags
+
+
+def format_hardware_report(
+    profile: HardwareProfile,
+    flags: FeatureFlags,
+    lang: str = "zh",
+    capabilities: list[dict] | None = None,
+) -> str:
+    if capabilities is None:
+        from allspark.infrastructure.module_loader import ModuleRegistry
+
+        capabilities = ModuleRegistry(flags).format_status_dict()
+
     if lang == "en":
         tier_names = {
             HardwareTier.PHANTOM: "Phantom (2GB)",
@@ -337,15 +376,15 @@ def format_hardware_report(profile: HardwareProfile, flags: FeatureFlags, lang: 
             f"Storage: {profile.storage_available_gb:.1f} / {profile.storage_total_gb:.1f} GB available",
             f"GPU: {profile.gpu_info}",
             "",
-            "═══ Feature Availability ═══",
+            "═══ Capability Preflight ═══",
         ]
         feature_labels = {
             "rule_engine": "Rule Engine",
-            "sqlite_fts": "SQLite FTS",
-            "vector_rag": "Vector RAG",
+            "knowledge_fts": "SQLite FTS",
+            "knowledge_vector": "Vector RAG",
             "kiwix": "Kiwix Wikipedia",
             "llm": f"LLM ({flags.llm_model})",
-            "multilingual_knowledge": "Multilingual Knowledge",
+            "multilingual": "Multilingual Knowledge",
             "text_interaction": "Text Interaction",
             "image_recognition": "Image Recognition",
             "voice_input": "Voice Input",
@@ -362,6 +401,16 @@ def format_hardware_report(profile: HardwareProfile, flags: FeatureFlags, lang: 
             "sensor_hub": "Sensor Hub",
             "data_preservation": "Data Preservation",
             "boot_manager": "Boot Manager",
+        }
+        dimension_labels = {
+            "hardware_true": "Hardware capable",
+            "hardware_false": "Hardware unsupported",
+            "dependency_true": "Dependency installed",
+            "dependency_false": "Missing dependency",
+            "configured_true": "Configured",
+            "configured_false": "Not configured",
+            "running_true": "Running",
+            "running_false": "Not running",
         }
     else:
         tier_names = {
@@ -380,15 +429,15 @@ def format_hardware_report(profile: HardwareProfile, flags: FeatureFlags, lang: 
             f"存储：{profile.storage_available_gb:.1f} / {profile.storage_total_gb:.1f} GB 可用",
             f"显卡：{profile.gpu_info}",
             "",
-            "═══ 功能可用性 ═══",
+            "═══ 能力预检 ═══",
         ]
         feature_labels = {
             "rule_engine": "规则引擎",
-            "sqlite_fts": "SQLite 全文检索",
-            "vector_rag": "向量检索 (RAG)",
+            "knowledge_fts": "SQLite 全文检索",
+            "knowledge_vector": "向量检索 (RAG)",
             "kiwix": "Kiwix 维基百科",
             "llm": f"LLM（{flags.llm_model}）",
-            "multilingual_knowledge": "多语言知识库",
+            "multilingual": "多语言知识库",
             "text_interaction": "纯文字交互",
             "image_recognition": "图片识别",
             "voice_input": "语音输入",
@@ -406,14 +455,42 @@ def format_hardware_report(profile: HardwareProfile, flags: FeatureFlags, lang: 
             "data_preservation": "数据固化",
             "boot_manager": "启动优化",
         }
+        dimension_labels = {
+            "hardware_true": "硬件支持",
+            "hardware_false": "硬件不支持",
+            "dependency_true": "依赖已安装",
+            "dependency_false": "缺少依赖",
+            "configured_true": "已配置",
+            "configured_false": "未配置",
+            "running_true": "运行中",
+            "running_false": "未运行",
+        }
 
-    for attr, label in feature_labels.items():
-        val = getattr(flags, attr)
-        if isinstance(val, bool):
-            icon = "✅" if val else "❌"
-            lines.append(f"  {icon} {label}")
+    capability_map = {item["name"]: item for item in capabilities}
+    for name, label in feature_labels.items():
+        capability = capability_map.get(name)
+        if not capability:
+            continue
+        details = [
+            dimension_labels[
+                f"hardware_{str(bool(capability['hardware_capable'])).lower()}"
+            ],
+            dimension_labels[
+                f"dependency_{str(bool(capability['dependency_installed'])).lower()}"
+            ],
+            dimension_labels[
+                f"configured_{str(bool(capability['configured'])).lower()}"
+            ],
+            dimension_labels[
+                f"running_{str(bool(capability['running'])).lower()}"
+            ],
+        ]
+        marker = "◇" if capability["hardware_capable"] else "✗"
+        experimental = " [EXP]" if capability["experimental"] else ""
+        lines.append(f"  {marker} {label}{experimental} — {'; '.join(details)}")
 
     deploy_mode = flags.deploy_mode
+    recommended_mode = flags.recommended_deploy_mode
     if lang == "en":
         deploy_names = {
             "process": "Process Mode",
@@ -422,9 +499,17 @@ def format_hardware_report(profile: HardwareProfile, flags: FeatureFlags, lang: 
         }
         lines.append("")
         lines.append("═══ Deployment Mode ═══")
-        lines.append(f"  Mode: {deploy_names.get(deploy_mode, deploy_mode)}")
-        if flags.docker_enabled:
-            lines.append(f"  Container Services: {', '.join(flags.docker_services)}")
+        lines.append(
+            f"  Eligible target: {deploy_names.get(recommended_mode, recommended_mode)}"
+        )
+        docker_state = "Available" if flags.docker_available else "Unavailable"
+        lines.append(f"  Docker daemon: {docker_state}")
+        lines.append(f"  Actual mode: {deploy_names.get(deploy_mode, deploy_mode)}")
+        if flags.recommended_docker_services:
+            lines.append(
+                "  Planned container services: "
+                + ", ".join(flags.recommended_docker_services)
+            )
     else:
         deploy_names = {
             "process": "进程模式",
@@ -433,8 +518,15 @@ def format_hardware_report(profile: HardwareProfile, flags: FeatureFlags, lang: 
         }
         lines.append("")
         lines.append("═══ 部署模式 ═══")
-        lines.append(f"  模式：{deploy_names.get(deploy_mode, deploy_mode)}")
-        if flags.docker_enabled:
-            lines.append(f"  容器化服务：{'、'.join(flags.docker_services)}")
+        lines.append(
+            f"  硬件建议目标：{deploy_names.get(recommended_mode, recommended_mode)}"
+        )
+        docker_state = "可用" if flags.docker_available else "不可用"
+        lines.append(f"  Docker 守护进程：{docker_state}")
+        lines.append(f"  实际模式：{deploy_names.get(deploy_mode, deploy_mode)}")
+        if flags.recommended_docker_services:
+            lines.append(
+                f"  计划容器服务：{'、'.join(flags.recommended_docker_services)}"
+            )
 
     return "\n".join(lines)

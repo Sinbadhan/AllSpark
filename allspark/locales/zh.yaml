@@ -1740,6 +1740,16 @@ web_system_module_available: 可用
 web_system_module_disabled: 已禁用
 web_system_experimental: 未真机验证（Experimental）
 web_system_module_unsupported: 不支持
+web_system_module_running: 运行中
+web_system_module_ready: 已就绪，未运行
+web_system_module_missing_dependency: 缺少依赖
+web_system_module_not_configured: 未配置
+web_system_dependency: 依赖
+web_system_configuration: 配置
+web_system_dependency_installed: 已安装
+web_system_dependency_missing: 缺失
+web_system_configured: 已配置
+web_system_not_configured: 未配置
 web_system_status_label: 状态
 web_system_model_label: 模型
 web_system_health_status_label: 健康状态

@@ -90,6 +90,15 @@ workflow and supported hardware scope are approved.
   VoiceOver core flow is verified; Windows + NVDA remains Testing/Experimental.
 
 **UX (P2):**
+- SHA-225: Hardware tier eligibility is now separate from dependency,
+  configuration, runtime and Experimental state in one registry schema shared
+  by CLI initialization, `/api/modules` and System. Docker is shown as an
+  eligible target until its daemon is verified; the report records the actual
+  PROCESS fallback without presenting planned containers as active. System
+  exposes dependency/configuration columns, suppresses invalid core-module
+  actions and contains the module table in a horizontal scroller on narrow
+  screens. Regression coverage includes no-Docker, no-model, missing optional
+  dependency, complete-runtime, idle-service and legacy-flags states.
 - SHA-222: CLI first run now uses the detected zh/en locale only as a
   non-persistent display default before the first choice; unavailable and
   unsupported locales deterministically fall back to English. Both choices

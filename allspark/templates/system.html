@@ -27,6 +27,7 @@
   background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 16px; transition: border-color 0.3s;
 }
+.module-card { min-width: 0; }
 .module-card:hover, .info-card:hover { border-color: var(--primary-container); }
 .module-card .module-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
 .module-card .module-title { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); }
@@ -36,6 +37,8 @@
   letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; transition: border-color 0.15s;
 }
 .module-card .sync-btn:hover { border-color: var(--primary-container); }
+.module-card .data-table { min-width: 620px; }
+.module-table-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
 .info-card .info-title { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); margin-bottom: 12px; display: flex; align-items: center; gap: 4px; }
 </style>
 {% endblock %}
@@ -76,14 +79,14 @@
         <span class="material-symbols-outlined" style="font-size:14px;">refresh</span> {{ t('web_system_sync') }}
       </button>
     </div>
-    <div style="overflow-x:auto;">
+    <div class="module-table-scroll">
       <table class="data-table">
         <thead>
           <tr>
             <th>{{ t('web_system_module_id') }}</th>
             <th>{{ t('web_system_status') }}</th>
-            <th>{{ t('web_system_load_table') }}</th>
-            <th>{{ t('web_system_uptime') }}</th>
+            <th>{{ t('web_system_dependency') }}</th>
+            <th>{{ t('web_system_configuration') }}</th>
             <th style="text-align:right;">{{ t('web_system_action') }}</th>
           </tr>
         </thead>
@@ -258,39 +261,54 @@ async function refreshSystem() {
     if (modules && Object.keys(modules).length) {
       const entries = Array.isArray(modules) ? modules : Object.values(modules);
       modTable.innerHTML = entries.map(m => {
-        // API contract (ModuleRegistry.format_status_dict): each module carries
-        // `status` (loaded|available|unsupported|disabled) and `hw_supported`.
-        // Legacy `m.loaded / m.can_load` are NOT returned and were making every
-        // module render as "disabled" (SHA-55).
-        const status = m.status || (m.loaded ? "loaded" : m.can_load ? "available" : "disabled");
-        const hwSupported = m.hw_supported !== false && m.flag_enabled !== false;
+        const legacyStatus = m.status || (m.loaded ? "loaded" : m.can_load ? "available" : "disabled");
+        const capabilityState = m.capability_state || ({
+          loaded: "running", available: "ready", unsupported: "unsupported", disabled: "disabled"
+        }[legacyStatus] || "unsupported");
+        const hwSupported = m.hardware_capable !== false;
         let statusColor, statusText, action;
-        if (status === "loaded") {
+        if (capabilityState === "running") {
           statusColor = "var(--success)";
-          statusText = I18N.web_system_module_loaded;
-          action = `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" onclick="moduleAction('${escHtml(m.name)}','disable')">${MODULE_I18N.disable}</button>`;
-        } else if (status === "available") {
+          statusText = I18N.web_system_module_running;
+          action = m.is_core
+            ? '<span class="text-secondary" style="font-size:11px;">—</span>'
+            : `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" onclick="moduleAction('${escHtml(m.name)}','disable')">${MODULE_I18N.disable}</button>`;
+        } else if (capabilityState === "ready") {
           statusColor = "var(--warning)";
-          statusText = I18N.web_system_module_available;
-          action = `<button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" onclick="moduleAction('${escHtml(m.name)}','enable')">${MODULE_I18N.enable}</button>`;
-        } else if (status === "unsupported") {
+          statusText = I18N.web_system_module_ready;
+          action = '<span class="text-secondary" style="font-size:11px;">—</span>';
+        } else if (capabilityState === "missing_dependency") {
+          statusColor = "var(--critical)";
+          statusText = I18N.web_system_module_missing_dependency;
+          action = '<span class="text-secondary" style="font-size:11px;">—</span>';
+        } else if (capabilityState === "not_configured") {
+          statusColor = "var(--warning)";
+          statusText = I18N.web_system_module_not_configured;
+          action = '<span class="text-secondary" style="font-size:11px;">—</span>';
+        } else if (capabilityState === "unsupported") {
           statusColor = "var(--secondary)";
           statusText = I18N.web_system_module_unsupported;
           action = '<span class="text-secondary" style="font-size:11px;">—</span>';
         } else { // disabled
           statusColor = "var(--secondary)";
           statusText = I18N.web_system_module_disabled;
-          action = hwSupported
+          action = hwSupported && m.dependency_installed
             ? `<button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" onclick="moduleAction('${escHtml(m.name)}','enable')">${MODULE_I18N.enable}</button>`
             : '<span class="text-secondary" style="font-size:11px;">—</span>';
         }
+        const dependencyText = m.dependency_installed
+          ? I18N.web_system_dependency_installed
+          : I18N.web_system_dependency_missing;
+        const configurationText = m.configured
+          ? I18N.web_system_configured
+          : I18N.web_system_not_configured;
         // SHA-33d: the server registry is the single source for release status.
         if (m.experimental) {
           statusText += ' <span title="' + I18N.web_system_experimental + '" style="font-size:9px;background:var(--warning);color:var(--bg);padding:1px 4px;border-radius:2px;font-weight:600;">EXP</span>';
         }
         return '<tr><td style="color:var(--primary-container);font-weight:600;">' + escHtml(m.name) + '</td>' +
           '<td style="color:' + statusColor + '">' + statusText + '</td>' +
-          '<td>--</td><td>--</td>' +
+          '<td>' + dependencyText + '</td><td>' + configurationText + '</td>' +
           '<td style="text-align:right;">' + action + '</td></tr>';
       }).join("");
     } else {
