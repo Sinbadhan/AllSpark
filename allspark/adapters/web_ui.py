@@ -35,6 +35,22 @@ _jinja_env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)), autoescape
 _WEB_TOKEN: Optional[str] = None
 _AUTH_COOKIE = "allspark_session"
 
+# SHA-196: CSP Report-Only baseline. script-src 'self' (no 'unsafe-inline') is
+# the enforcing target; Report-Only surfaces violations from the 8 inline
+# <script> blocks + 88 inline handlers so they can be migrated. style-src needs
+# 'unsafe-inline' because templates use inline styles + <style> blocks. No
+# external resources are loaded, so default-src 'self' covers everything.
+CSP_REPORT_ONLY = (
+    "default-src 'self'; "
+    "script-src 'self'; "
+    "style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data:; "
+    "connect-src 'self'; "
+    "object-src 'none'; "
+    "base-uri 'self'; "
+    "frame-ancestors 'none'"
+)
+
 
 def _is_authed(request: Request) -> bool:
     """True if the request carries the auth cookie or a valid Bearer header.
@@ -135,6 +151,19 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
                 )
             return RedirectResponse("/login", status_code=303)
         return await call_next(request)
+
+    # SHA-196: Content-Security-Policy in Report-Only mode as a second line of
+    # defense alongside SHA-147's SKF input/output sanitization. The app still
+    # uses inline <script> blocks + inline event handlers (88 handlers across 8
+    # templates), so an enforcing CSP with `script-src 'self'` would break the
+    # UI. Report-Only logs violations to the browser console without blocking,
+    # building the migration list (see docs/csp-migration.md). Switch to
+    # enforcing once inline scripts/handlers are moved to addEventListener.
+    @app.middleware("http")
+    async def add_csp_header(request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Content-Security-Policy-Report-Only"] = CSP_REPORT_ONLY
+        return response
 
     db = Database(Path(db_path) if db_path else None)
     init_language(db)
