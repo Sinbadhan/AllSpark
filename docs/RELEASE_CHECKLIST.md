@@ -32,6 +32,11 @@ Version bumps follow semantic versioning. The project is on the 1.0.x line;
 do not bump to a new minor/major unless the maintainer explicitly approves the
 release scope and the audit gate (SHA-158) is green.
 
+Until the matching tag exists, the package version is a release candidate:
+keep its changes under `Unreleased`, mark public docs as Release Candidate, and
+do not use the Production/Stable package classifier. Creating the tag, moving
+the changelog section, and promoting the classifier are one release operation.
+
 ## 3. Run local quality checks
 
 ```bash
@@ -87,6 +92,8 @@ Verify no sensitive or generated files are staged:
 ## 7. Confirm release scope and external evidence
 
 - SHA-158 contains the final audit comment and no unresolved P0/P1 blocker.
+- SHA-158 Current baseline and the latest Linear project status update name the
+  same exact main commit, test counts, open-item counts and release health.
 - Hardware-dependent SHA-33 rows are either evidenced for this release or
   explicitly excluded from the supported release scope.
 - SHA-180 single-host multiprocess evidence passes. SHA-179 and the external
@@ -112,6 +119,10 @@ Only after checks pass:
 git tag vX.Y.Z
 git push origin vX.Y.Z
 ```
+
+The version in `pyproject.toml` and `allspark/__init__.py`, the changelog release
+heading, Git tag and GitHub Release must match exactly. Never add a dated
+changelog release heading before its tag exists.
 
 Create a GitHub Release using the matching `CHANGELOG.md` section.
 

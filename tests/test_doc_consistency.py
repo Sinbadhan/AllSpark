@@ -62,6 +62,45 @@ def test_public_version_references_match() -> None:
         assert f"**v{version.group(1)}**" in Path(readme).read_text(encoding="utf-8")
 
 
+def test_candidate_version_tag_and_changelog_are_consistent() -> None:
+    pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+    changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+    readme = Path("README.md").read_text(encoding="utf-8")
+    version_match = re.search(r'^version = "([^"]+)"', pyproject, re.MULTILINE)
+    assert version_match is not None
+    version = version_match.group(1)
+    tag = f"v{version}"
+    tag_exists = bool(
+        subprocess.run(
+            ["git", "tag", "--list", tag],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    )
+    released_heading = re.search(
+        rf"^## \[{re.escape(version)}\] - \d{{4}}-\d{{2}}-\d{{2}}$",
+        changelog,
+        re.MULTILINE,
+    )
+
+    if tag_exists:
+        assert released_heading is not None
+    else:
+        assert released_heading is None
+        assert f"**Target candidate:** v{version}." in changelog
+        assert "Development Status :: 4 - Beta" in pyproject
+        assert "Development Status :: 5 - Production/Stable" not in pyproject
+        assert "Release Candidate" in readme
+
+
+def test_ignored_working_notes_are_explicitly_non_authoritative() -> None:
+    gitignore = Path(".gitignore").read_text(encoding="utf-8")
+    assert "Non-authoritative local working notes" in gitignore
+    for path in ("PROGRESS.md", "ARCHITECTURE.md", "CLAUDE.md"):
+        assert path in gitignore
+
+
 def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")

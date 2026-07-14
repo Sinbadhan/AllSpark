@@ -6,6 +6,10 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
+**Target candidate:** v1.0.3. This version has not been tagged or published as
+Stable. Linear SHA-158 remains the live release decision; keep all entries in
+Unreleased until its gates pass and a matching tag is created.
+
 ### Audit remediation (SHA-158, in progress)
 
 Release-readiness remediation across security, quality, UX, packaging, and
@@ -200,15 +204,15 @@ represented as an active CSP defense in this release.
 - `CONTRIBUTING.md`: corrected stale mypy/pytest claims and documented the
   reproducible CI, coverage, collection, and clean-wheel gates.
 
-## [1.0.3] - 2026-06-24
+### v1.0.3 candidate baseline (2026-06-24)
 
-Stability convergence release. Closes the 2026-06-23 audit backlog — 9 Linear
+Stability convergence baseline. Closes the 2026-06-23 audit backlog — 9 Linear
 issues (SHA-36, 37, 40, 55, 56, 57, 58, 59, 60) covering two P1 contract bugs
 and the P2/P3 quality debt. Automated suite grows from 589 → 612 passed with
 6 hardware-gated live tests; mypy now runs clean with **zero** disabled error
 codes; the regression harness separates allowed degradation from real failures.
 
-### Fixed
+#### Fixed
 - **SHA-55** (P1): Web UI/API contract drift — `system.html` read the legacy
   `m.loaded`/`m.can_load` fields the `/api/modules` endpoint never returned,
   so every module rendered as "disabled"; `repository.html` read `e.category`
@@ -229,7 +233,7 @@ codes; the regression harness separates allowed degradation from real failures.
   (baked in at startup language) instead of a `mark()` key, surviving a later
   `lang` switch. Both now route through `t()`/`render()`.
 
-### Added
+#### Added
 - **SHA-37**: English knowledge YAML for tier1/2/3 (10/10/17 entries),
   closing the bilingual gap — English users previously got only Tier 0.
   Loader registers the `_en.yaml` files; bilingual-parity + English-title
@@ -249,7 +253,7 @@ codes; the regression harness separates allowed degradation from real failures.
   resolve; Material Symbols offline fallback (`.icons-offline` hides ligature
   text when the font is unavailable).
 
-### Changed
+#### Changed
 - **SHA-40**: mypy `disable_error_code` block removed entirely — all four
   previously-suppressed codes (assignment/arg-type/operator/attr-defined, 68
   errors across 18 files) paid down. Regular `mypy allspark/` is green with no

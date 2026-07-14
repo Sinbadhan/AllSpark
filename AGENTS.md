@@ -96,9 +96,10 @@ allspark/
 
 极客终端/航天仪表盘风格：冷峻精确、高信息密度。色彩体系 PRIMARY=#ff6b35 / CRITICAL=#ff4444 / WARNING=#ffaa00 / SUCCESS=#44cc44 / BG=#0a0a0a。CLI 用 Rich Table/Panel，状态标记用 ✓✗⚠◇。详见 `.trae/rules/`。
 
-## 当前状态（v1.0.3）
+## 当前状态（v1.0.3 Release Candidate）
 
-- SHA-158 发布就绪复审收敛进行中；2026-07-15 发现的 8 个 High/P1 已闭环，但 P2、发布事务一致性和外部环境验证仍开放，当前结论为 Off track / 尚未满足 Stable 发布门禁
+- v1.0.3 尚未 tag 或发布；SHA-158 是实时发布状态权威入口，当前结论为 Off track / 尚未满足 Stable 发布门禁
+- 2026-07-15 发现的 8 个 High/P1 与本轮 CLI/Repository/CI P2 已闭环；发布事务一致性、外部环境验证和低优先级入口仍开放
 - 完整 tracked tests 已收集（以 `pytest tests/ -q` / CI 实际输出为准；CI 在 Python 3.10/3.11/3.12 复现，SHA-28）
 - SHA-151 质量门禁：Python 3.10 为权威覆盖环境，总行覆盖率 ≥75%，8 个关键路径模块分支覆盖率均 ≥90%；3.10/3.11/3.12 均运行完整测试与收集数防回退门禁
 - Ruff lint 0 errors
@@ -108,4 +109,5 @@ allspark/
 - i18n 已外置为 `locales/zh.yaml` + `locales/en.yaml`（i18n.py 157 行）
 - Scheduler 已接入 bootstrap
 - 命令自动发现注册已实现（10 个命令模块 / 32 个 Command 类）
-- 当前开放轨道：P2 CLI/Repository 可用性（SHA-222/225/227）、CI/发布事务（SHA-229/230）、真实环境与 CSP enforcing（SHA-33/179/181/213），以及 Low/v2+ 范围（SHA-228/34/35）；实时计数与发布结论以 Linear SHA-158 正文为准
+- 当前开放轨道：发布事务（SHA-230）、真实环境与 CSP enforcing（SHA-33/179/181/213），以及 Low/v2+ 范围（SHA-228/34/35）；实时计数与发布结论以 Linear SHA-158 正文为准
+- GitHub Actions main run #92：Python 3.10/3.11/3.12 test + clean-wheel smoke 6/6 success，0 annotations
