@@ -31,6 +31,14 @@ def _free_port() -> int:
         return sock.getsockname()[1]
 
 
+def _process_context() -> Any:
+    methods = multiprocessing.get_all_start_methods()
+    # coverage.py's subprocess bootstrap can hang before worker entry when
+    # Python 3.12 uses spawn on POSIX. Fork still provides an independent OS
+    # process for the socket/SQLite integration boundary under test.
+    return multiprocessing.get_context("fork" if "fork" in methods else "spawn")
+
+
 def _server_worker(
     db_path: str,
     port: int,
@@ -161,7 +169,7 @@ def _knowledge_exists(db_path: Path, entry_id: str) -> bool:
 
 
 def test_signed_transfer_tamper_rejection_disconnect_and_restart(tmp_path: Path) -> None:
-    context = multiprocessing.get_context("spawn")
+    context = _process_context()
     server_db_path = tmp_path / "server.db"
     client_db = Database(tmp_path / "client.db")
     client_db.save_survivor_state("network_shared_secret", _SECRET)
@@ -235,7 +243,7 @@ def test_signed_transfer_tamper_rejection_disconnect_and_restart(tmp_path: Path)
 
 
 def test_configured_size_limit_drops_payload_and_server_recovers(tmp_path: Path) -> None:
-    context = multiprocessing.get_context("spawn")
+    context = _process_context()
     port = _free_port()
     process, stop = _start_server(
         context,
