@@ -137,6 +137,44 @@ def test_create_snapshot_no_db_file(dp_no_db: DataPreservation) -> None:
     assert dp_no_db.create_snapshot(label="x") == {"status": "no_db_file"}
 
 
+def test_create_snapshot_is_wal_consistent_and_leaves_no_temp_files(
+    dp: DataPreservation,
+) -> None:
+    dp.db.conn.execute("PRAGMA journal_mode=WAL")
+    dp.db.conn.execute(
+        "INSERT OR REPLACE INTO operating_state VALUES (?, ?)",
+        ("sha181_wal", "committed"),
+    )
+    dp.db.conn.commit()
+
+    result = dp.create_snapshot(label="wal / safe")
+
+    assert result["status"] == "ok"
+    assert "/" not in Path(result["path"]).name
+    with sqlite3.connect(result["path"]) as conn:
+        assert conn.execute(
+            "SELECT value FROM operating_state WHERE key='sha181_wal'"
+        ).fetchone() == ("committed",)
+    assert not list(dp.snapshot_dir.glob(".*.tmp"))
+
+
+def test_create_snapshot_interruption_publishes_no_partial_artifact(
+    dp: DataPreservation, monkeypatch
+) -> None:
+    def _partial_then_fail(destination: Path) -> None:
+        destination.write_bytes(b"partial")
+        raise OSError("simulated interruption")
+
+    monkeypatch.setattr(dp, "_copy_database", _partial_then_fail)
+
+    result = dp.create_snapshot(label="interrupted")
+
+    assert result["status"] == "error"
+    assert list(dp.snapshot_dir.glob("snapshot_*.db")) == []
+    assert list(dp.snapshot_dir.glob("snapshot_*.db.meta")) == []
+    assert not list(dp.snapshot_dir.glob(".*.tmp"))
+
+
 def test_restore_snapshot_not_found(dp: DataPreservation) -> None:
     r = dp.restore_snapshot("does-not-exist")
     assert r["status"] == "error"
@@ -150,6 +188,94 @@ def test_restore_snapshot_bad_integrity(dp: DataPreservation, monkeypatch) -> No
     r = dp.restore_snapshot(str(target))
     assert r["status"] == "error"
     assert "integrity" in r["message"].lower()
+
+
+def test_restore_rejects_sqlite_valid_checksum_tampering_and_keeps_db_open(
+    dp: DataPreservation,
+) -> None:
+    dp.db.conn.execute(
+        "INSERT OR REPLACE INTO operating_state VALUES (?, ?)",
+        ("sha181_state", "snapshot"),
+    )
+    dp.db.conn.commit()
+    snapshot = dp.create_snapshot(label="tamper")
+    dp.db.conn.execute(
+        "UPDATE operating_state SET value=? WHERE key=?",
+        ("current", "sha181_state"),
+    )
+    dp.db.conn.commit()
+
+    with sqlite3.connect(snapshot["path"]) as conn:
+        conn.execute(
+            "UPDATE operating_state SET value=? WHERE key=?",
+            ("tampered-but-valid", "sha181_state"),
+        )
+
+    result = dp.restore_snapshot(snapshot["path"])
+
+    assert result["status"] == "error"
+    assert "checksum" in result["message"].lower()
+    assert dp.db.conn.execute(
+        "SELECT value FROM operating_state WHERE key='sha181_state'"
+    ).fetchone()[0] == "current"
+
+
+def test_restore_is_atomic_reopens_database_and_removes_stale_sidecars(
+    dp: DataPreservation,
+) -> None:
+    dp.db.conn.execute(
+        "INSERT OR REPLACE INTO operating_state VALUES (?, ?)",
+        ("sha181_state", "snapshot"),
+    )
+    dp.db.conn.commit()
+    snapshot = dp.create_snapshot(label="restore-atomic")
+    dp.db.conn.execute(
+        "UPDATE operating_state SET value=? WHERE key=?",
+        ("current", "sha181_state"),
+    )
+    dp.db.conn.commit()
+    Path(f"{dp.db_path}-wal").touch()
+    Path(f"{dp.db_path}-shm").touch()
+
+    result = dp.restore_snapshot(snapshot["path"])
+
+    assert result["status"] == "ok"
+    assert result["checksum_verified"] is True
+    assert dp.db.conn.execute(
+        "SELECT value FROM operating_state WHERE key='sha181_state'"
+    ).fetchone()[0] == "snapshot"
+    assert not Path(f"{dp.db_path}-wal").exists()
+    assert not Path(f"{dp.db_path}-shm").exists()
+    assert not list(dp.db_path.parent.glob(".*.restore.tmp"))
+
+
+def test_restore_requires_snapshot_metadata(dp: DataPreservation) -> None:
+    snapshot = dp.create_snapshot(label="missing-meta")
+    Path(f"{snapshot['path']}.meta").unlink()
+
+    result = dp.restore_snapshot(snapshot["path"])
+
+    assert result == {"status": "error", "message": "Snapshot metadata not found"}
+
+
+def test_restore_replace_failure_reopens_original_database(
+    dp: DataPreservation, monkeypatch
+) -> None:
+    snapshot = dp.create_snapshot(label="replace-failure")
+    real_replace = dp_module.os.replace
+
+    def _fail_restore(source: Path, destination: Path) -> None:
+        if str(source).endswith(".restore.tmp"):
+            raise OSError("simulated replace failure")
+        real_replace(source, destination)
+
+    monkeypatch.setattr(dp_module.os, "replace", _fail_restore)
+
+    result = dp.restore_snapshot(snapshot["path"])
+
+    assert result["status"] == "error"
+    assert "replace failure" in result["message"]
+    assert dp.db.conn.execute("SELECT 1").fetchone()[0] == 1
 
 
 def test_verify_integrity_non_main_db_uses_sqlite_connect(dp: DataPreservation) -> None:

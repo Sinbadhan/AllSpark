@@ -1,11 +1,14 @@
 import hashlib
 import json
 import logging
+import os
+import re
 import shutil
 import signal
 import sqlite3
 import threading
 import time
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -125,32 +128,51 @@ class DataPreservation:
             logger.warning("Backup cleanup failed: %s", e)
 
     def create_snapshot(self, label: str = "") -> dict:
+        snap_path: Optional[Path] = None
+        snap_tmp: Optional[Path] = None
+        meta_tmp: Optional[Path] = None
         try:
             self.snapshot_dir.mkdir(parents=True, exist_ok=True)
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            label_part = f"_{label}" if label else ""
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            safe_label = re.sub(r"[^\w.-]+", "-", label.strip(), flags=re.UNICODE)
+            safe_label = safe_label.strip(".-_")[:64]
+            label_part = f"_{safe_label}" if safe_label else ""
             snap_name = f"snapshot_{timestamp}{label_part}.db"
             snap_path = self.snapshot_dir / snap_name
 
             if self.db_path.exists():
-                if self.db:
-                    try:
-                        self.db.conn.commit()
-                    except Exception as e:
-                        logger.warning("DB commit failed before snapshot: %s", e)
-                shutil.copy2(str(self.db_path), str(snap_path))
+                token = uuid.uuid4().hex
+                snap_tmp = self.snapshot_dir / f".{snap_name}.{token}.tmp"
+                meta_path = self.snapshot_dir / f"{snap_name}.meta"
+                meta_tmp = self.snapshot_dir / f".{snap_name}.meta.{token}.tmp"
+
+                self._copy_database(snap_tmp)
+                if not self._verify_integrity(snap_tmp):
+                    raise ValueError("Snapshot integrity check failed")
+
                 meta = {
                     "label": label,
                     "created": datetime.now().isoformat(),
-                    "db_size_mb": round(snap_path.stat().st_size / (1024 * 1024), 2),
-                    "checksum": self._checksum(snap_path),
+                    "db_size_mb": round(snap_tmp.stat().st_size / (1024 * 1024), 2),
+                    "checksum": self._checksum(snap_tmp),
+                    "checksum_algorithm": "sha256",
                 }
-                meta_path = self.snapshot_dir / f"{snap_name}.meta"
-                with open(meta_path, "w") as f:
+                with open(meta_tmp, "w") as f:
                     json.dump(meta, f, indent=2, ensure_ascii=False)
+                    f.flush()
+                    os.fsync(f.fileno())
+
+                os.replace(snap_tmp, snap_path)
+                os.replace(meta_tmp, meta_path)
+                self._fsync_directory(self.snapshot_dir)
                 return {"status": "ok", "path": str(snap_path), "meta": meta}
             return {"status": "no_db_file"}
         except Exception as e:
+            for temp_path in (snap_tmp, meta_tmp):
+                if temp_path:
+                    temp_path.unlink(missing_ok=True)
+            if snap_path and snap_path.exists() and not Path(f"{snap_path}.meta").exists():
+                snap_path.unlink(missing_ok=True)
             return {"status": "error", "message": str(e)}
 
     def list_snapshots(self) -> list[dict]:
@@ -168,10 +190,16 @@ class DataPreservation:
         return snapshots
 
     def restore_snapshot(self, label_or_path: str) -> dict:
+        restore_tmp: Optional[Path] = None
+        db_connection_closed = False
         try:
             snap_path = Path(label_or_path)
             if not snap_path.exists():
-                candidates = list(self.snapshot_dir.glob(f"*{label_or_path}*.db"))
+                candidates = sorted(
+                    self.snapshot_dir.glob(f"*{label_or_path}*.db"),
+                    key=lambda path: path.stat().st_mtime,
+                    reverse=True,
+                )
                 if not candidates:
                     return {"status": "error", "message": "Snapshot not found"}
                 snap_path = candidates[0]
@@ -180,17 +208,89 @@ class DataPreservation:
             if not integrity:
                 return {"status": "error", "message": "Snapshot integrity check failed"}
 
+            meta_path = Path(f"{snap_path}.meta")
+            if not meta_path.is_file():
+                return {"status": "error", "message": "Snapshot metadata not found"}
+            try:
+                with open(meta_path) as f:
+                    metadata = json.load(f)
+                expected_checksum = metadata["checksum"]
+            except (OSError, KeyError, TypeError, json.JSONDecodeError):
+                return {"status": "error", "message": "Snapshot metadata is invalid"}
+
+            actual_checksum = self._checksum(snap_path)
+            if (
+                not isinstance(expected_checksum, str)
+                or len(expected_checksum) not in (16, 64)
+                or actual_checksum[:len(expected_checksum)] != expected_checksum
+            ):
+                return {"status": "error", "message": "Snapshot checksum mismatch"}
+
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+            restore_tmp = self.db_path.parent / f".{self.db_path.name}.{uuid.uuid4().hex}.restore.tmp"
+            shutil.copy2(snap_path, restore_tmp)
+            if not self._verify_integrity(restore_tmp):
+                return {"status": "error", "message": "Staged snapshot integrity check failed"}
+
             if self.db:
                 try:
                     self.db.conn.close()
+                    db_connection_closed = True
                 except Exception as e:
                     logger.warning("DB close failed during snapshot restore: %s", e)
 
-            shutil.copy2(str(snap_path), str(self.db_path))
+            for suffix in ("-wal", "-shm"):
+                Path(f"{self.db_path}{suffix}").unlink(missing_ok=True)
+            os.replace(restore_tmp, self.db_path)
+            self._fsync_directory(self.db_path.parent)
 
-            return {"status": "ok", "restored_from": str(snap_path), "integrity": integrity}
+            if self.db:
+                self._reopen_database()
+                db_connection_closed = False
+
+            return {
+                "status": "ok",
+                "restored_from": str(snap_path),
+                "integrity": integrity,
+                "checksum_verified": True,
+            }
         except Exception as e:
+            if db_connection_closed and self.db:
+                try:
+                    self._reopen_database()
+                except Exception:
+                    logger.exception("DB reopen failed after snapshot restore error")
             return {"status": "error", "message": str(e)}
+        finally:
+            if restore_tmp:
+                restore_tmp.unlink(missing_ok=True)
+
+    def _copy_database(self, destination: Path) -> None:
+        if self.db:
+            self.db.conn.commit()
+            target = sqlite3.connect(str(destination))
+            try:
+                self.db.conn.backup(target)
+                target.commit()
+            finally:
+                target.close()
+            return
+        shutil.copy2(self.db_path, destination)
+
+    def _reopen_database(self) -> None:
+        self.db.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
+        self.db.conn.row_factory = sqlite3.Row
+
+    @staticmethod
+    def _fsync_directory(directory: Path) -> None:
+        try:
+            fd = os.open(directory, os.O_RDONLY)
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
+        except OSError:
+            logger.debug("Directory fsync unavailable for %s", directory)
 
     def _verify_integrity(self, db_path: Path) -> bool:
         try:
@@ -209,7 +309,7 @@ class DataPreservation:
         with open(path, "rb") as f:
             for chunk in iter(lambda: f.read(8192), b""):
                 h.update(chunk)
-        return h.hexdigest()[:16]
+        return h.hexdigest()
 
     def _install_signal_handlers(self):
         if self._signal_handlers_installed:
