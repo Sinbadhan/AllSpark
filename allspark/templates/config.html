@@ -49,42 +49,82 @@
 
 {% block scripts %}
 <script>
+const CONFIG_I18N = {
+  loading: "{{ t('web_loading') }}",
+  unavailable: "{{ t('web_config_unavailable') }}",
+  llmLoaded: "{{ t('web_config_llm_loaded') }}",
+  llmUnloaded: "{{ t('web_config_llm_unloaded') }}",
+};
+
+function setConfigText(id, value) {
+  document.getElementById(id).textContent = value || CONFIG_I18N.unavailable;
+}
+
+function renderConfigFlags(flags) {
+  const root = document.getElementById("cfg-flags");
+  root.replaceChildren();
+  const keys = Object.keys(flags || {}).sort();
+  if (!keys.length) {
+    root.textContent = CONFIG_I18N.unavailable;
+    return;
+  }
+  keys.forEach(key => {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;justify-content:space-between;gap:6px;padding:2px 0;";
+    const label = document.createElement("span");
+    label.className = "text-on-surface-variant";
+    label.textContent = key;
+    const mark = document.createElement("span");
+    mark.style.color = flags[key] ? "var(--success)" : "var(--secondary)";
+    mark.textContent = flags[key] ? "✓" : "✗";
+    row.append(label, mark);
+    root.appendChild(row);
+  });
+}
+
 async function loadConfig() {
+  ["cfg-version", "cfg-language", "cfg-license", "cfg-homepage", "cfg-health", "cfg-llm", "cfg-tier"]
+    .forEach(id => setConfigText(id, CONFIG_I18N.loading));
+  document.getElementById("cfg-flags").textContent = CONFIG_I18N.loading;
+
   try {
     const about = await api("/api/system/about");
-    document.getElementById("cfg-version").textContent = about.version || "--";
-    document.getElementById("cfg-language").textContent = about.language || "--";
-    document.getElementById("cfg-license").textContent = about.license || "--";
+    setConfigText("cfg-version", about.version);
+    setConfigText("cfg-language", about.language);
+    setConfigText("cfg-license", about.license);
+    const homepage = document.getElementById("cfg-homepage");
+    homepage.replaceChildren();
     if (about.homepage) {
-      document.getElementById("cfg-homepage").innerHTML =
-        '<a href="' + escHtml(about.homepage) + '" style="color:var(--primary)" target="_blank" rel="noopener">' + escHtml(about.homepage) + '</a>';
+      const link = document.createElement("a");
+      link.href = about.homepage;
+      link.style.color = "var(--primary)";
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.textContent = about.homepage;
+      homepage.appendChild(link);
+    } else {
+      homepage.textContent = CONFIG_I18N.unavailable;
     }
-    const flags = about.feature_flags || {};
-    const flagRows = Object.keys(flags).sort().map(k => {
-      const on = flags[k];
-      const mark = on
-        ? '<span style="color:var(--success)">✓</span>'
-        : '<span style="color:var(--secondary)">✗</span>';
-      return '<div style="display:flex;justify-content:space-between;gap:6px;padding:2px 0;"><span class="text-on-surface-variant">' + escHtml(k) + '</span>' + mark + '</div>';
-    }).join("");
-    document.getElementById("cfg-flags").innerHTML = flagRows || '<span class="text-secondary">--</span>';
+    renderConfigFlags(about.feature_flags);
   } catch (e) {
-    document.getElementById("cfg-flags").textContent = String(e);
+    ["cfg-version", "cfg-language", "cfg-license", "cfg-homepage"]
+      .forEach(id => setConfigText(id, CONFIG_I18N.unavailable));
+    renderConfigFlags({});
   }
   try {
     const health = await api("/api/system/health");
-    document.getElementById("cfg-health").textContent =
-      (health.score !== undefined ? health.score + "%" : "--") + " · " + (health.state || "--");
-  } catch (e) { /* health optional */ }
+    const score = typeof health.score === "number" ? health.score + "%" : CONFIG_I18N.unavailable;
+    setConfigText("cfg-health", `${score} · ${health.state || CONFIG_I18N.unavailable}`);
+  } catch (e) { setConfigText("cfg-health", CONFIG_I18N.unavailable); }
   try {
     const llm = await api("/api/llm/status");
-    document.getElementById("cfg-llm").textContent =
-      llm && llm.loaded ? (llm.model || t('web_config_llm_loaded')) : t('web_config_llm_unloaded');
-  } catch (e) { document.getElementById("cfg-llm").textContent = "--"; }
+    const state = llm && llm.available ? CONFIG_I18N.llmLoaded : CONFIG_I18N.llmUnloaded;
+    setConfigText("cfg-llm", llm && llm.model_name ? `${state} · ${llm.model_name}` : state);
+  } catch (e) { setConfigText("cfg-llm", CONFIG_I18N.unavailable); }
   try {
     const hw = await api("/api/init/hardware");
-    document.getElementById("cfg-tier").textContent = hw && hw.tier ? hw.tier : "--";
-  } catch (e) { /* hw optional */ }
+    setConfigText("cfg-tier", hw && hw.tier);
+  } catch (e) { setConfigText("cfg-tier", CONFIG_I18N.unavailable); }
 }
 loadConfig();
 </script>

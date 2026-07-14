@@ -1444,6 +1444,7 @@ web_config_hw_tier: Hardware tier
 web_config_section_flags: Feature flags
 web_config_llm_loaded: loaded
 web_config_llm_unloaded: not loaded
+web_config_unavailable: unavailable
 web_repository_title: Repository
 web_repository_subtitle: Knowledge, experience, models and SKF packages
 web_repository_files: Files

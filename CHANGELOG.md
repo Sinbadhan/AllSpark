@@ -28,6 +28,12 @@ workflow and supported hardware scope are approved.
   3.10/3.11/3.12 and validates clean-wheel installation on the same matrix.
 
 **Quality (P1):**
+- SHA-218: Config now renders the real about, health, LLM and hardware schemas
+  with DOM text APIs instead of undefined page-private escape/i18n helpers.
+  LLM state follows `available/model_name`; each endpoint has an independent,
+  localized unavailable state so one outage cannot blank the rest of the page.
+  A real-Chrome gate checks zero runtime errors, populated normal/unloaded
+  fields and a forced four-endpoint degraded rerender.
 - SHA-224: Rule-based answers no longer use the stable personality greeting as
   a health claim. API and CLI responses share the same system-health function
   as the Web footer and separately expose current system state, core-resource

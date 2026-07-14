@@ -1383,6 +1383,7 @@ web_config_hw_tier: 硬件档位
 web_config_section_flags: 功能开关
 web_config_llm_loaded: 已加载
 web_config_llm_unloaded: 未加载
+web_config_unavailable: 不可用
 web_repository_title: 资料库
 web_repository_subtitle: 知识、经验、模型与 SKF 包概览
 web_repository_files: 文件
