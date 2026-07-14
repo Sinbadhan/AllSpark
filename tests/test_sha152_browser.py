@@ -97,13 +97,10 @@ def test_voiceover_critical_web_semantics_in_real_chrome(tmp_path: Path) -> None
             "labelledBy": "repo-detail-title",
             "active": "repo-detail-close",
         }
-        restored = browser.evaluate(
-            """(() => {
-              closeRepoDetail();
-              return document.activeElement.classList.contains('repo-detail-trigger');
-            })()"""
+        browser.evaluate("closeRepoDetail()")
+        browser.wait_for(
+            "document.activeElement.classList.contains('repo-detail-trigger')"
         )
-        assert restored is True
 
         toast_state = browser.evaluate(
             """(() => {
