@@ -90,6 +90,8 @@ class ResourceManager:
         power = self.db.get_resource(ResourceType.POWER)
         if power is None or not self.is_configured(power):
             return OperatingMode.STANDARD
+        if not self.has_remaining_estimate(power):
+            return OperatingMode.PROACTIVE
         hours = power.estimated_remaining_hours
         for mode in [OperatingMode.PROACTIVE, OperatingMode.STANDARD,
                       OperatingMode.ECONOMY, OperatingMode.HIBERNATION]:
@@ -116,7 +118,7 @@ class ResourceManager:
     def check_warnings(self) -> list[dict]:
         warnings = []
         power = self.db.get_resource(ResourceType.POWER)
-        if power and self.is_configured(power):
+        if power and self.has_remaining_estimate(power):
             hours = power.estimated_remaining_hours
             thresh = RESOURCE_WARNING_THRESHOLDS["power"]
             if hours < thresh["critical_hours"]:
@@ -133,7 +135,7 @@ class ResourceManager:
                 })
 
         water = self.db.get_resource(ResourceType.WATER)
-        if water and self.is_configured(water):
+        if water and self.has_remaining_estimate(water):
             days = water.estimated_remaining_hours / 24.0
             thresh = RESOURCE_WARNING_THRESHOLDS["water"]
             if days < thresh["critical_days"]:
@@ -148,7 +150,7 @@ class ResourceManager:
                 })
 
         food = self.db.get_resource(ResourceType.FOOD)
-        if food and self.is_configured(food):
+        if food and self.has_remaining_estimate(food):
             days = food.estimated_remaining_hours / 24.0
             thresh = RESOURCE_WARNING_THRESHOLDS["food"]
             if days < thresh["critical_days"]:

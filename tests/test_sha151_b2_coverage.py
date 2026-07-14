@@ -279,10 +279,25 @@ def test_update_resource_none_path(rm: ResourceManager) -> None:
     assert rm.db.get_resource(ResourceType.POWER) is None
 
 
-def test_determine_operating_mode_sustained_falls_through(rm: ResourceManager) -> None:
-    # power SUSTAINED (-1h) -> no threshold matches -> HIBERNATION (line 98).
+def test_determine_operating_mode_sustained_is_proactive(rm: ResourceManager) -> None:
+    # Net-positive power has no depletion deadline and must not trigger sleep.
     rm.db.upsert_resource(_res(ResourceType.POWER, consumption=10, intake=20, hours=-1.0))
-    assert rm.determine_operating_mode() == OperatingMode.HIBERNATION
+    assert rm.determine_operating_mode() == OperatingMode.PROACTIVE
+
+
+@pytest.mark.parametrize(
+    "resource",
+    [
+        _res(ResourceType.POWER, current=100, consumption=10, intake=20, hours=-1.0),
+        _res(ResourceType.WATER, current=12, consumption=0, intake=0, hours=-1.0),
+        _res(ResourceType.FOOD, current=2000, consumption=0, intake=0, hours=-1.0),
+    ],
+)
+def test_check_warnings_ignores_sustained_estimates(
+    rm: ResourceManager, resource: Resource,
+) -> None:
+    rm.db.upsert_resource(resource)
+    assert rm.check_warnings() == []
 
 
 def test_determine_operating_mode_proactive(rm: ResourceManager) -> None:

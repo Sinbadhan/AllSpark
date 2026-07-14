@@ -66,7 +66,7 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     assert "pytest -q --tb=short --cov=allspark --cov-branch" in workflow
     assert "python scripts/check_coverage.py --coverage-json coverage.json" in workflow
     collection_floor = re.search(r'test "\$\{COUNT:-0\}" -ge (\d+)', workflow)
-    assert collection_floor is not None and int(collection_floor.group(1)) >= 1129
+    assert collection_floor is not None and int(collection_floor.group(1)) >= 1132
 
     critical_modules = {
         "allspark/adapters/init_wizard.py",
