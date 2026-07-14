@@ -33,6 +33,7 @@ removable storage.
 | Sensor hub | blocked_by_hardware | I2C/GPIO/Serial sensors and GPS | Temperature/humidity/barometer/GPS readings, stale data handling, manual fallback. |
 | Data preservation on real media | software verified; external media environment-blocked | Removable storage or independent filesystem | WAL-consistent atomic snapshot/restore, full SHA-256 verification, valid-SQLite tamper rejection, interrupted creation cleanup and failed-replace reconnect pass. APFS disk-image creation did not complete in this desktop environment, so removable/independent media remains Experimental (SHA-181). |
 | Offline web assets | ready | Browser with network disabled | UI remains readable with local CSS/icon fallbacks. |
+| Web accessibility | zoom verified; screen readers pending | Chrome at 1280 px / 200%; macOS VoiceOver; Windows NVDA | Core dashboard, navigation, resource edit, and Repository flows pass 200% zoom after `421d040`; VoiceOver/NVDA announcement evidence is still required (SHA-152). |
 
 ## 2026-07-14 Evidence
 
@@ -62,6 +63,25 @@ removable storage.
 - Independent-filesystem attempt: two `hdiutil create` attempts remained
   sleeping before project code ran. They were terminated and temporary files
   were removed. This is recorded as environment-blocked, not passed.
+
+### SHA-152: Chrome 200% zoom
+
+- Environment: macOS desktop, Google Chrome, 1280 x 768 browser window, browser
+  zoom indicator at 200%.
+- Commit: `421d040`.
+- Flow: dashboard and status content, mobile navigation, resource editor,
+  Repository filter/table/detail dialog, dialog close, and trigger-focus restore.
+- Initial result: failed because the fixed mobile navigation overlay did not own
+  vertical scrolling, which clipped the Config and Repository actions.
+- Fix: the overlay now uses `overflow-y: auto` and contained overscroll, with a
+  static regression in `tests/test_sha152_web_a11y.py`.
+- Final result: pass. All navigation actions are reachable; tested content and
+  controls have no overlap or page-level horizontal scroll; dialogs remain
+  operable and use contained vertical scrolling where needed.
+- Automated regression: `1128 passed, 6 skipped`; Ruff and mypy pass locally.
+- Remaining boundary: keyboard behavior is automated and browser-verified, but
+  actual announcement quality still needs macOS VoiceOver and Windows NVDA
+  evidence before SHA-152 can close.
 
 ## v1.0.3 Support Decision
 
