@@ -14,12 +14,17 @@ import pytest
 import scripts.check_coverage as cc  # type: ignore[import-not-found]
 
 
-def _full_cov(*, delta: float = 0.0, overrides: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+def _full_cov(
+    *,
+    delta: float = 0.0,
+    total_line: float = 75.0,
+    overrides: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Build a coverage.py-style JSON dict with every floored module at its floor +/- delta."""
     overrides = overrides or {}
     files: dict[str, Any] = {}
     for mod, floor in cc.DEFAULT_BRANCH_FLOORS.items():
-        br = max(0.0, floor + delta)
+        br = min(100.0, max(0.0, floor + delta))
         summ = {
             "percent_branches_covered": br,
             "num_branches": 100,
@@ -32,7 +37,7 @@ def _full_cov(*, delta: float = 0.0, overrides: dict[str, dict[str, Any]] | None
         files[mod] = {"summary": summ}
     return {
         "totals": {
-            "percent_statements_covered": 62.0,
+            "percent_statements_covered": total_line,
             "percent_branches_covered": 50.0,
         },
         "files": files,
@@ -57,16 +62,26 @@ def test_gate_passes_when_all_modules_at_floor(tmp_path: Path) -> None:
 
 
 def test_gate_fails_when_a_module_below_floor(tmp_path: Path) -> None:
-    # init_wizard floor is 17; push it to 16 -> exit 1.
+    # init_wizard floor is 90; push it below acceptance -> exit 1.
     cov_path = _write_cov(
         tmp_path,
-        _full_cov(overrides={"allspark/adapters/init_wizard.py": {"percent_branches_covered": 16.0}}),
+        _full_cov(overrides={"allspark/adapters/init_wizard.py": {"percent_branches_covered": 89.0}}),
     )
     assert _run_main_with_json(cov_path) == 1
 
 
 def test_gate_passes_when_modules_above_floor(tmp_path: Path) -> None:
     cov_path = _write_cov(tmp_path, _full_cov(delta=5.0))
+    assert _run_main_with_json(cov_path) == 0
+
+
+def test_gate_fails_when_total_line_below_acceptance(tmp_path: Path) -> None:
+    cov_path = _write_cov(tmp_path, _full_cov(total_line=74.99))
+    assert _run_main_with_json(cov_path) == 1
+
+
+def test_gate_passes_when_total_line_at_acceptance(tmp_path: Path) -> None:
+    cov_path = _write_cov(tmp_path, _full_cov(total_line=75.0))
     assert _run_main_with_json(cov_path) == 0
 
 
@@ -96,6 +111,7 @@ def test_gate_json_output_is_valid(tmp_path: Path, capsys: pytest.CaptureFixture
     payload = json.loads(out)
     assert rc == 0
     assert "total_line" in payload
+    assert payload["total_line_ok"] is True
     assert "modules" in payload
     assert len(payload["modules"]) == len(cc.DEFAULT_BRANCH_FLOORS)
     assert payload["acceptance_branch"] == 90.0

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """SHA-151: per-module branch coverage gate for critical-path modules.
 
-Complements the total line-coverage gate (``--cov-fail-under`` in CI) by
-enforcing a ratcheted BRANCH coverage floor on each critical-path module.
+Enforces the total LINE coverage acceptance and a ratcheted BRANCH coverage
+floor on each critical-path module from one coverage.py JSON report. Keeping
+the two metrics separate avoids coverage.py's combined statement/branch
+percentage when branch measurement is enabled.
 
 Release acceptance (Linear SHA-151) requires >=90% branch on the critical
 path (auth/init/SKF/import/reset/backup/search/resource) and >=75% total
-line coverage. Current floors are ratcheted to the measured levels on
-``main`` (commit e44b1c5, 2026-07-13) to prevent regression; they are
-deliberately below acceptance. The acceptance-gap table prints how far each
-module is from 90% so the gap stays visible instead of being hidden behind a
-passing gate.
+line coverage. The 8 critical-path floors are pinned to the 90% acceptance
+threshold. Other high-risk floors are ratcheted to measured levels to prevent
+regression.
 
 Usage:
     # Read a coverage.json produced by the CI pytest step (no pytest re-run):
@@ -160,13 +160,15 @@ def main() -> int:
             "gap_to_90": round(max(0.0, ACCEPTANCE_BRANCH - branch_pct), 1),
         })
 
-    total_line_gap = round(max(0.0, ACCEPTANCE_TOTAL_LINE - total_line), 1)
+    total_line_gap = round(max(0.0, ACCEPTANCE_TOTAL_LINE - total_line), 2)
+    total_line_ok = total_line >= ACCEPTANCE_TOTAL_LINE
 
     if args.json:
         json.dump({
             "total_line": total_line,
             "total_branch": total_branch,
             "total_line_gap_to_75": total_line_gap,
+            "total_line_ok": total_line_ok,
             "acceptance_branch": ACCEPTANCE_BRANCH,
             "acceptance_total_line": ACCEPTANCE_TOTAL_LINE,
             "modules": rows,
@@ -189,15 +191,19 @@ def main() -> int:
         for r in rows:
             if r["gap_to_90"] > 0:
                 print(f"   {r['module']}: {r['branch']}% -> need +{r['gap_to_90']}pp to reach 90%")
+        if not total_line_ok:
+            print(
+                f"\n!! Total line coverage below acceptance: "
+                f"{total_line}% < {ACCEPTANCE_TOTAL_LINE}%"
+            )
         if failed:
             print(f"\n!! {len(failed)} module(s) below ratcheted floor:")
             for mod, pct, floor in failed:
                 print(f"   {mod}: {pct}% < {floor}% floor")
-            return 1
-        print("\nAll modules at or above ratcheted floor "
-              "(floors are below acceptance; see gap above).")
+        if total_line_ok and not failed:
+            print("\nTotal line coverage and all module branch floors passed.")
 
-    return 1 if failed else 0
+    return 1 if failed or not total_line_ok else 0
 
 
 if __name__ == "__main__":
