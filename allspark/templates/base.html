@@ -495,15 +495,15 @@ table { border-collapse: collapse; width: 100%; }
 <!-- Mobile TopBar -->
 <div class="mobile-topbar">
   <div style="font-size:20px;font-weight:700;color:var(--primary-container);letter-spacing:-0.02em;">ALLSPARK</div>
-  <button onclick="document.getElementById('mobile-nav').classList.toggle('open')" style="color:var(--primary-container);" aria-label="{{ t('web_mobile_menu_open') }}">
+  <button id="mobile-nav-toggle" onclick="toggleMobileNav()" style="color:var(--primary-container);" aria-label="{{ t('web_mobile_menu_open') }}" aria-expanded="false" aria-controls="mobile-nav">
     <span class="material-symbols-outlined" aria-hidden="true">menu</span>
   </button>
 </div>
 
 <!-- Mobile Nav Overlay -->
-<div id="mobile-nav" class="mobile-nav-overlay">
+<div id="mobile-nav" class="mobile-nav-overlay" role="dialog" aria-modal="true" aria-label="{{ t('web_nav_menu_label') }}">
   <div style="display:flex;justify-content:flex-end;padding:12px;">
-    <button onclick="document.getElementById('mobile-nav').classList.toggle('open')" style="color:var(--primary-container);" aria-label="{{ t('web_mobile_menu_close') }}">
+    <button onclick="toggleMobileNav()" style="color:var(--primary-container);" aria-label="{{ t('web_mobile_menu_close') }}">
       <span class="material-symbols-outlined" aria-hidden="true">close</span>
     </button>
   </div>
@@ -872,6 +872,38 @@ async function openAbout() {
 function closeAbout() {
   const m = document.getElementById("about-modal");
   if (m) m.style.display = "none";
+}
+// SHA-152: mobile nav accessibility - sync aria-expanded, isolate background
+// content via inert, trap Tab + Esc, and restore focus to the toggle on close.
+function toggleMobileNav() {
+  const overlay = document.getElementById('mobile-nav');
+  const toggle = document.getElementById('mobile-nav-toggle');
+  if (!overlay || !toggle) return;
+  const willOpen = !overlay.classList.contains('open');
+  overlay.classList.toggle('open', willOpen);
+  toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  // Inert the page chrome so background content leaves the a11y tree + Tab order.
+  document.querySelectorAll('.mobile-topbar, .sidebar, .main-wrapper, .footer')
+    .forEach(el => { if (el !== overlay) el.toggleAttribute('inert', willOpen); });
+  if (willOpen) {
+    overlay._previouslyFocused = toggle;
+    if (!overlay._trap) {
+      overlay._trap = (e) => {
+        if (e.key === 'Escape') { toggleMobileNav(); return; }
+        if (e.key !== 'Tab') return;
+        const f = overlay.querySelectorAll('button, a, input, [tabindex]:not([tabindex="-1"])');
+        if (f.length < 2) { e.preventDefault(); return; }
+        if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+      };
+      overlay.addEventListener('keydown', overlay._trap);
+    }
+    const first = overlay.querySelector('button, a, input, [tabindex]:not([tabindex="-1"])');
+    if (first) first.focus();
+  } else if (overlay._previouslyFocused && document.body.contains(overlay._previouslyFocused)) {
+    overlay._previouslyFocused.focus();
+    overlay._previouslyFocused = null;
+  }
 }
 </script>
 {% block scripts %}{% endblock %}

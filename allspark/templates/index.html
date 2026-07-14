@@ -333,13 +333,13 @@ async function refreshDashboard() {
   container.innerHTML = data.resources.map(r => {
     const icon = resourceIcons[r.type] || "inventory_2";
     const label = resourceLabel(r.type);
-    const editBtn = `<span class="material-symbols-outlined" style="font-size:14px;cursor:pointer;color:var(--secondary);" title="${RES_I18N.edit_label}" onclick="event.stopPropagation();openResourceEdit('${r.type}',${r.amount||0},${r.daily_consumption||0},${r.daily_intake||0})">edit</span>`;
-    const keyAction = `if(event.key==='Enter'||event.key===' '){event.preventDefault();openResourceEdit('${r.type}',${r.amount||0},${r.daily_consumption||0},${r.daily_intake||0});}`;
+    const editBtn = `<span class="material-symbols-outlined" style="font-size:14px;cursor:pointer;color:var(--secondary);" title="${RES_I18N.edit_label}" onclick="event.stopPropagation();openResourceEdit('${r.type}',${r.amount||0},${r.daily_consumption||0},${r.daily_intake||0}, this)">edit</span>`;
+    const keyAction = `if(event.key==='Enter'||event.key===' '){event.preventDefault();openResourceEdit('${r.type}',${r.amount||0},${r.daily_consumption||0},${r.daily_intake||0}, this);}`;
     if (!r.configured) {
       // SHA-59: compact empty-state. Earlier every unconfigured card repeated
       // the long "set amount + daily use to calculate remaining time" hint,
       // crowding the dashboard. Now each card is a single dense line.
-      return '<div class="resource-card offline span-4" role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',0,0,0)" onkeydown="' + keyAction + '">' +
+      return '<div class="resource-card offline span-4" role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',0,0,0, this)" onkeydown="' + keyAction + '">' +
         '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value text-secondary">' + I18N.web_unconfigured + ' ' + editBtn + '</span></div>' +
         '<div class="card-status" style="font-size:13px;color:var(--secondary);">' + I18N.web_set_amount_hint_short + '</div>' +
         '<div class="card-remaining">' + escHtml(label) + '</div></div>';
@@ -355,7 +355,7 @@ async function refreshDashboard() {
     const remainingText = hasEstimate
       ? I18N.web_remaining_hours_fmt.replace('{h}', Math.round(r.remaining_hours))
       : I18N.web_remaining_unknown;
-    return '<div class="resource-card span-4" role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',' + (r.amount||0) + ',' + (r.daily_consumption||0) + ',' + (r.daily_intake||0) + ')" onkeydown="' + keyAction + '">' +
+    return '<div class="resource-card span-4" role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;" onclick="openResourceEdit(\'' + r.type + '\',' + (r.amount||0) + ',' + (r.daily_consumption||0) + ',' + (r.daily_intake||0) + ', this)" onkeydown="' + keyAction + '">' +
       '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + r.amount + r.unit + ' ' + editBtn + '</span></div>' +
       '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + statusColor + '"></div></div>' +
       '<div class="card-status">' + statusText + '</div>' +
@@ -570,7 +570,7 @@ const RES_I18N = {
   cancel: "{{ t('web_resource_edit_cancel') }}",
   done: "{{ t('web_resource_edit_done') }}",
 };
-function openResourceEdit(rtype, amount, consumption, intake) {
+function openResourceEdit(rtype, amount, consumption, intake, trigger) {
   let modal = document.getElementById("res-edit-modal");
   if (!modal) {
     modal = document.createElement("div");
@@ -601,8 +601,11 @@ function openResourceEdit(rtype, amount, consumption, intake) {
   document.getElementById("res-edit-intake").value = intake;
   document.getElementById("res-edit-save").onclick = () => saveResource(rtype);
   modal.style.display = "flex";
-  // SHA-152: focus management - save trigger, focus first input, trap Tab.
-  modal._previouslyFocused = document.activeElement;
+  // SHA-152: focus management - save the explicit trigger (passed as `this`
+  // from onclick/onkeydown) rather than document.activeElement, which is the
+  // <body> for mouse clicks and would lose the trigger. Fall back to
+  // activeElement only if no trigger was passed.
+  modal._previouslyFocused = trigger || document.activeElement;
   document.getElementById("res-edit-amount").focus();
   if (!modal._focusTrap) {
     modal._focusTrap = (e) => {
@@ -619,10 +622,18 @@ function openResourceEdit(rtype, amount, consumption, intake) {
 function closeResEdit() {
   const m = document.getElementById("res-edit-modal");
   if (m) m.style.display = "none";
-  // SHA-152: restore focus to the element that opened the modal.
-  if (m && m._previouslyFocused && typeof m._previouslyFocused.focus === "function") {
-    m._previouslyFocused.focus();
+  // SHA-152: restore focus to the trigger. Guard with document.body.contains
+  // so a re-rendered trigger (save path calls refreshDashboard first) does not
+  // leave focus on a detached node; fall back to the resource area.
+  if (m && m._previouslyFocused) {
+    const prev = m._previouslyFocused;
     m._previouslyFocused = null;
+    if (document.body.contains(prev) && typeof prev.focus === "function") {
+      prev.focus();
+    } else {
+      const card = document.querySelector(".resource-card");
+      if (card && typeof card.focus === "function") card.focus();
+    }
   }
 }
 async function saveResource(rtype) {
@@ -635,8 +646,11 @@ async function saveResource(rtype) {
       headers: {"content-type": "application/json"},
       body: JSON.stringify({type: rtype, amount, daily_consumption: consumption, daily_intake: intake}),
     });
-    closeResEdit();
+    // SHA-152: refresh first so the re-rendered resource card exists when
+    // closeResEdit restores focus (the saved trigger was detached by the
+    // re-render; closeResEdit falls back to the resource area).
     refreshDashboard();
+    closeResEdit();
   } catch(e) { notify(e); }
 }
 

@@ -28,7 +28,7 @@
       <h3 class="text-sm font-semibold text-on-surface flex items-center gap-1">
         <span class="material-symbols-outlined text-primary text-sm">snippet_folder</span> {{ t('web_repository_files') }}
       </h3>
-      <button class="md:hidden icon-btn" aria-label="{{ t('web_mobile_menu_open') }}" onclick="document.getElementById('file-tree').classList.toggle('hidden')"><span class="material-symbols-outlined" aria-hidden="true">menu</span></button>
+      <button class="md:hidden icon-btn" id="file-tree-toggle" aria-label="{{ t('web_repository_file_tree_toggle') }}" aria-expanded="false" aria-controls="file-tree" onclick="toggleFileTree()"><span class="material-symbols-outlined" aria-hidden="true">menu</span></button>
     </div>
     <ul class="text-sm p-1 flex-1 overflow-y-auto hidden md:block" id="file-tree">
       <li class="px-3 py-1 flex items-center gap-1.5 text-secondary hover:text-on-surface hover:bg-surface-container cursor-pointer transition-colors" onclick="showSection('knowledge')">
@@ -85,6 +85,16 @@
 
 {% block scripts %}
 <script>
+// SHA-152: file-tree toggle - sync aria-expanded (distinct from the global
+// mobile-menu button, which previously shared the same "打开菜单" label).
+function toggleFileTree() {
+  const tree = document.getElementById('file-tree');
+  const toggle = document.getElementById('file-tree-toggle');
+  if (!tree || !toggle) return;
+  const willShow = tree.classList.contains('hidden');
+  tree.classList.toggle('hidden', !willShow);
+  toggle.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+}
 const REPO_I18N = {
   export_disabled: "{{ t('web_repository_export_disabled') }}",
   import_disabled: "{{ t('web_repository_import_disabled') }}",
