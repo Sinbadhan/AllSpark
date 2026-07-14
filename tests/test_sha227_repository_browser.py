@@ -76,7 +76,8 @@ def test_repository_responsive_scan_and_states(
         _chrome_binary(), tmp_path / f"chrome-profile-{language}"
     ) as browser:
         browser.navigate(f"{base_url}/repository")
-        browser.wait_for("document.querySelectorAll('.repo-mobile-item').length > 0")
+        browser.evaluate("initialRepositoryLoad", await_promise=True)
+        assert browser.evaluate("document.querySelectorAll('.repo-mobile-item').length > 0")
         query = "mobile field guide" if language == "en" else "移动端长标题"
         browser.evaluate(
             f"_repoFilters.lang = '{language}'; "
@@ -140,6 +141,7 @@ def test_file_tree_is_native_and_keyboard_selectable(tmp_path: Path) -> None:
             {"width": 1280, "height": 768, "deviceScaleFactor": 1, "mobile": False},
         )
         browser.navigate(f"{base_url}/repository")
+        browser.evaluate("initialRepositoryLoad", await_promise=True)
         browser.wait_for("document.querySelector('.file-tree-item[aria-current]') !== null")
         initial = browser.evaluate(
             "Array.from(document.querySelectorAll('.file-tree-item[aria-current]')).map(b => b.dataset.section)"

@@ -122,8 +122,8 @@ const context = vm.createContext({{
 }});
 
 (async () => {{
-  const completion = vm.runInContext({json.dumps(script)}, context);
-  await completion;
+  vm.runInContext({json.dumps(script)}, context);
+  await vm.runInContext("initialRepositoryLoad", context);
   vm.runInContext("toggleFileTree()", context);
   process.stdout.write(JSON.stringify({{
     content: elements["repo-content"].innerHTML,

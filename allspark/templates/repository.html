@@ -677,6 +677,6 @@ function escHtml(s) {
 document.querySelectorAll('.file-tree-item').forEach(item => {
   item.addEventListener('click', () => showSection(item.dataset.section, item));
 });
-showSection("knowledge");
+const initialRepositoryLoad = showSection("knowledge");
 </script>
 {% endblock %}

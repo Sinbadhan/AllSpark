@@ -32,6 +32,9 @@ workflow and supported hardware scope are approved.
   3.10/3.11/3.12 and validates clean-wheel installation on the same matrix.
 
 **Quality (P1):**
+- Repository real-Chrome gates now await the complete initial knowledge load
+  before applying filters, eliminating a category-fetch race exposed by the
+  Python 3.10 CI job and preserving actionable JavaScript exception details.
 - SHA-226: Dashboard grid tracks and resource-card contents now shrink and
   wrap predictably instead of inheriting a wide min-content track from the tab
   bar. Phase, mode, resource type, value and status remain visible without a

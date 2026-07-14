@@ -162,7 +162,9 @@ class _Chrome:
         )
         result = message["result"]
         if "exceptionDetails" in result:
-            raise AssertionError(result["exceptionDetails"].get("text", "JavaScript failed"))
+            details = result["exceptionDetails"]
+            description = details.get("exception", {}).get("description")
+            raise AssertionError(description or details.get("text", "JavaScript failed"))
         return result["result"].get("value")
 
     def navigate(self, url: str) -> None:
@@ -277,7 +279,8 @@ def test_public_skf_import_is_inert_in_repository_and_dashboard(
 
         with _Chrome(_chrome_binary(), tmp_path / "chrome-profile") as browser:
             browser.navigate(f"{base_url}/repository")
-            browser.wait_for(
+            browser.evaluate("initialRepositoryLoad", await_promise=True)
+            assert browser.evaluate(
                 f"_repoEntries.some(entry => entry.id === {json.dumps(safe_id)})"
             )
             browser.evaluate(
