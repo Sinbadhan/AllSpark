@@ -37,7 +37,7 @@ python3 -m pytest tests/ -v --tb=short
 
 ## Tests and CI
 
-CI runs `ruff check`, `mypy`, and an import smoke benchmark (`scripts/bench_import.py --check`, advisory). It does **not** run `pytest` — the `tests/` tree is kept private (gitignored, excluded from sdist via `MANIFEST.in`), so most test files live only in local working copies, not on the public branch. Run the full suite locally from your working copy before opening a PR.
+CI runs `ruff check`, `mypy`, and `pytest` with coverage across Python 3.10/3.11/3.12 (the `tests/` tree is tracked in VCS since SHA-28), plus a per-module branch coverage gate (`scripts/check_coverage.py`) and a clean-wheel smoke matrix. Hardware/live-model tests auto-skip (gated behind `ALLSPARK_LIVE_*` env vars / `importorskip`). Run the full suite locally (`pytest tests/ -v`) before opening a PR.
 
 ## Pull request guidelines
 

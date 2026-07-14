@@ -6,11 +6,14 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
-### Audit remediation (SHA-158, 2026-07-11)
+### Audit remediation (SHA-158, in progress)
 
-Full publish-readiness audit (SHA-158) remediation - 15 issues closed across
-security, quality, UX, and packaging. Audit baseline Off track -> only
-real-hardware verification (SHA-33) remains.
+Publish-readiness audit (SHA-158) remediation. P0 security blockers closed
+(SHA-142/147/148/28); P1/P2/P3 code-level fixes landed across quality, UX,
+and packaging. **Audit baseline: still Off track** - 8 items remain open
+(SHA-151/152/196/143/179/180/181/33); SHA-179/180/181 are executable
+validations, not real-hardware-only. See Linear SHA-158 for the live queue
+and acceptance status.
 
 **Security (P0):**
 - SHA-142: Web auth boundary - token moved out of HTML to httpOnly+SameSite
@@ -29,8 +32,9 @@ real-hardware verification (SHA-33) remains.
   answer + 2 related links (not full-text concat); 50+ golden set.
 - SHA-149: System health score factors in core capabilities (LLM/modules);
   weather structured rendering (no raw JSON/null).
-- SHA-151: Coverage gate (`--cov-fail-under=60`) + collection-count gate;
-  init_wizard critical-path tests (10% -> 20%).
+- SHA-151: Coverage gate (`--cov-fail-under=61`) + collection-count gate +
+  per-module branch coverage gate (`scripts/check_coverage.py`, wired into
+  CI); critical-path branch coverage work in progress (see Linear SHA-151).
 - SHA-152: Web a11y - button semantics (lang cards/chips), modal dialog
   role/Esc/focus, icon aria-labels.
 
@@ -54,8 +58,12 @@ real-hardware verification (SHA-33) remains.
   conditional dep; CI clean-wheel smoke matrix (3.10/3.11/3.12).
 - SHA-145: Starlette/httpx2 deprecation warning cleared (httpx2 declared).
 
-Remaining: SHA-33 real-hardware verification (RPi/sensors/LLM/Docker/multi-node)
-- needs physical hardware, cannot be mocked/skipped.
+Remaining open (Linear SHA-158): SHA-151 (total line >=75% + negative/DOM
+tests), SHA-152 (browser-level a11y verification), SHA-196 (browser-level
+SKF stored-XSS regression + strict CSP), SHA-143 (doc consistency), SHA-179/
+180/181 (executable Docker / multi-node / loopback validations - not
+real-hardware-only), SHA-33 (real hardware matrix: RPi/sensors/LLM - needs
+physical hardware).
 
 ### Security
 - **H1**: Fixed `KnowledgeSigner._derive_key` bug — `getattr(self.db, "_db_path")`
