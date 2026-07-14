@@ -6,43 +6,64 @@ This project follows the spirit of [Keep a Changelog](https://keepachangelog.com
 
 ## [Unreleased]
 
-### Audit remediation (SHA-158, 2026-07-11)
+### Audit remediation (SHA-158, in progress)
 
-Full publish-readiness audit (SHA-158) remediation - 15 issues closed across
-security, quality, UX, and packaging. Audit baseline Off track -> only
-real-hardware verification (SHA-33) remains.
+Release-readiness remediation across security, quality, UX, packaging, and
+documentation. Linear SHA-158 is the live source for issue status; this section
+records shipped behavior and does not claim release readiness before the RC
+workflow and supported hardware scope are approved.
 
 **Security (P0):**
 - SHA-142: Web auth boundary - token moved out of HTML to httpOnly+SameSite
   cookie; `/login` + `/api/auth/login`; one-time bootstrap (init/complete 410
   after init); middleware always on (loopback local trust, non-loopback gated).
-- SHA-147: SKF persistent XSS - input sanitization (`_sanitize_kf_field`) +
-  output escaping (escHtml) on knowledge metadata fields.
+- SHA-147/SHA-196: SKF persistent XSS - import-boundary metadata sanitization,
+  output escaping, removal of dynamic row handlers, and a real-Chrome public
+  import -> API -> Repository/Dashboard list/detail regression. CSP is currently
+  Report-Only; enforcing migration is explicitly deferred to SHA-213.
 - SHA-148: Knowledge `expert_verified` signoff schema (reviewer/qualification/
   date/citation/content_hash/signoff_version) + content-hash invalidation;
   142 entries downgraded to field_tested; loader + verifier gating.
-- SHA-28: Full test suite tracked in VCS + CI pytest (was gitignored, 55 tests
-  -> 730 tracked); CI coverage gate + collection-count gate.
+- SHA-28: Full test suite tracked in VCS; CI runs it across Python
+  3.10/3.11/3.12 and validates clean-wheel installation on the same matrix.
 
 **Quality (P1):**
 - SHA-150: NL survival Q&A - FTS5 bm25 + title-substring re-rank; 1 main
   answer + 2 related links (not full-text concat); 50+ golden set.
 - SHA-149: System health score factors in core capabilities (LLM/modules);
   weather structured rendering (no raw JSON/null).
-- SHA-151: Coverage gate (`--cov-fail-under=60`) + collection-count gate;
-  init_wizard critical-path tests (10% -> 20%).
-- SHA-152: Web a11y - button semantics (lang cards/chips), modal dialog
-  role/Esc/focus, icon aria-labels.
+- SHA-151: JSON-backed gate requires >=75% total line coverage and >=90%
+  branch coverage on all eight critical-path modules, plus a ratcheted test
+  collection floor. Python 3.10 is the canonical coverage environment while
+  Python 3.11/3.12 continue to run the complete functional and collection gates.
+- SHA-152: Web a11y - native control semantics, dialog roles, focus traps,
+  deterministic focus restoration after async refresh, mobile-nav state/inert
+  synchronization, clean navigation names, live status/error announcements,
+  Repository filter focus continuity and native detail triggers. The macOS
+  VoiceOver core flow is verified; Windows + NVDA remains Testing/Experimental.
 
 **UX (P2):**
 - SHA-153: Repository browser - search/category/tier/verification/language
   filter + pagination + row detail modal + full ID tooltip.
+- SHA-212: Restored the Repository knowledge list after a missing runtime i18n
+  mapping caused every normal load to fail; real rendered-JavaScript tests cover
+  empty, zero-match, normal, and multi-page states.
 - SHA-154: Config page - real read-only view (about+health APIs); removed
   hardcoded configTemplates/SAVED editor chrome.
 - SHA-155: CLI cold-start - `render(g.title)` (no marker leak); jieba/
   VectorEngine log noise suppressed.
-- SHA-143: Doc/version/CI consistency (single source = CI output) +
-  `test_doc_consistency` guard.
+- SHA-143: Doc/version/CI consistency (workflow and executable gate constants
+  are the source of truth) plus `test_doc_consistency` drift guards.
+- SHA-180: Spark Network now has independent-process integration coverage for
+  signed transfer, tampered and unsigned rejection, disconnect/restart, size
+  rejection and recovery. A configured shared secret is enforced rather than
+  bypassable by omitting signatures.
+- SHA-181: Snapshots use SQLite online backup for WAL consistency, atomic
+  publication/replacement, full SHA-256 metadata verification, temp cleanup and
+  live-connection recovery after restore failures.
+- SHA-182: Experimental status now comes from the server-side module registry
+  and is shared by API, Web, CLI and health scoring; the public README defines
+  the same scoped support boundary.
 
 **Packaging/hygiene (P3):**
 - SHA-144: bench_import - dual metric (sum-of-means micro-bench + wall-clock
@@ -54,8 +75,14 @@ real-hardware verification (SHA-33) remains.
   conditional dep; CI clean-wheel smoke matrix (3.10/3.11/3.12).
 - SHA-145: Starlette/httpx2 deprecation warning cleared (httpx2 declared).
 
-Remaining: SHA-33 real-hardware verification (RPi/sensors/LLM/Docker/multi-node)
-- needs physical hardware, cannot be mocked/skipped.
+The macOS VoiceOver announcement gate for SHA-152 is evidenced at `d3c9a6c`.
+Windows + NVDA remains an explicit Testing/Experimental compatibility track and
+is excluded from the v1.0.3 Stable claim. The v1.0.3 support boundary is desktop
+PROCESS mode plus local core workflows and the VoiceOver-validated core Web
+flow; SHA-33 remains a post-release
+hardware-validation track and cannot expand Stable support without real-world
+evidence. SHA-213 (enforcing CSP) is documented follow-up hardening and is not
+represented as an active CSP defense in this release.
 
 ### Security
 - **H1**: Fixed `KnowledgeSigner._derive_key` bug — `getattr(self.db, "_db_path")`
@@ -64,17 +91,14 @@ Remaining: SHA-33 real-hardware verification (RPi/sensors/LLM/Docker/multi-node)
   per-node. Cross-node verification still requires a shared secret (v2.0 PKI per ADR 003).
 - **H2**: Spark Network TCP exchange server hardening — added
   `SPARKNET_MAX_INCOMING_BYTES` (50 MB) cap to prevent memory-exhaustion DoS;
-  wired soft signature verification on the receive path (entries carrying a
-  signature are verified against a configurable `network_shared_secret`,
-  mismatches rejected; unsigned entries still accepted as unverified for
-  backward compatibility); added connection/transfer logging; replaced silent
-  `except Exception: pass` with logged handlers.
+  a configured `network_shared_secret` now requires a valid signature for every
+  incoming entry, including rejection of missing signatures; added
+  connection/transfer logging and independent-process regressions.
 - **H3**: Web API bearer-token auth — when the Web UI binds a non-loopback host
   (`--host 0.0.0.0` or LAN IP), a bearer token is now required for all `/api/*`
   routes (auto-generated unless `--web-token` is given). `/api/init/*` stays
-  open so the init wizard can bootstrap. The token is injected into HTML
-  templates and the browser fetch wrapper adds the `Authorization` header
-  automatically.
+  open only for one-time bootstrap before initialization. Current behavior uses
+  an httpOnly, SameSite cookie and does not inject the credential into HTML.
 
 ### Changed
 - **L1/L2**: DI fixes — `commands/ai.py` VerifyCommand now uses
@@ -99,8 +123,8 @@ Remaining: SHA-33 real-hardware verification (RPi/sensors/LLM/Docker/multi-node)
 ### Documentation
 - Updated `CLAUDE.md` from stale v0.7.0 to v1.0.3 (version, test count,
   directory structure, mypy `check_untyped_defs` status, command class count).
-- `CONTRIBUTING.md`: corrected stale mypy allowlist note; documented that CI
-  does not run pytest and `tests/` is private.
+- `CONTRIBUTING.md`: corrected stale mypy/pytest claims and documented the
+  reproducible CI, coverage, collection, and clean-wheel gates.
 
 ## [1.0.3] - 2026-06-24
 

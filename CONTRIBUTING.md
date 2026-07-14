@@ -37,7 +37,16 @@ python3 -m pytest tests/ -v --tb=short
 
 ## Tests and CI
 
-CI runs `ruff check`, `mypy`, and an import smoke benchmark (`scripts/bench_import.py --check`, advisory). It does **not** run `pytest` — the `tests/` tree is kept private (gitignored, excluded from sdist via `MANIFEST.in`), so most test files live only in local working copies, not on the public branch. Run the full suite locally from your working copy before opening a PR.
+CI runs `ruff check`, `mypy`, and the complete tracked `pytest` suite on Python
+3.10/3.11/3.12. The canonical Python 3.10 coverage job requires at least 75%
+total line coverage, at least 90% branch coverage on the eight SHA-151
+critical-path modules, and a ratcheted collection-count floor. Python 3.11 and
+3.12 still run the complete suite and collection gate; coverage is collected
+once because coverage.py does not consistently trace Starlette TestClient
+portal threads across runtimes. CI also builds and installs a clean wheel on
+all supported Python versions and runs the import benchmark in advisory mode.
+The workflow and `scripts/check_coverage.py` are the source of truth for exact
+thresholds; do not copy a transient test count into documentation.
 
 ## Pull request guidelines
 

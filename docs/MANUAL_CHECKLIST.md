@@ -1,17 +1,20 @@
 # Manual Verification Checklist
 
 > **Purpose:** Cover what the automated `pytest tests/` suite cannot —
-> live LLM, voice/vision hardware, cross-node spark networking, Docker
-> elastic deployment, and long-running schedulers. Run before tagging
+> keyboard/screen-reader/zoom usability, live LLM, voice/vision hardware,
+> cross-node spark networking, Docker elastic deployment, and long-running
+> schedulers. Run before tagging
 > any minor or major release; record results in the release PR.
-> **Tracks:** SHA-36
+> **Tracks:** SHA-36, SHA-152, SHA-33
 
-CI on GitHub runs `ruff` + `mypy` + `pytest` (with a `--cov-fail-under` coverage
-gate and a test-collection count gate) on Python 3.10/3.11/3.12. The full
-`tests/` tree is tracked in version control (SHA-28), so CI reproduces the
-complete suite. This checklist covers what automated tests cannot: live LLM,
-voice/vision hardware, cross-node spark networking, Docker elastic deployment,
-and long-running schedulers.
+CI on GitHub runs `ruff` + `mypy` + the complete tracked `pytest` suite on
+Python 3.10/3.11/3.12. The canonical Python 3.10 coverage job feeds
+`scripts/check_coverage.py`, which enforces at least 75% total line coverage
+plus at least 90% branch coverage on the eight SHA-151 critical-path modules;
+every supported version also runs the collection-count floor to prevent silent
+test deletion. This checklist covers what automation cannot prove:
+assistive-technology and zoom usability, live LLM, voice/vision hardware,
+cross-node hardware, Docker deployment, and long-running schedulers.
 
 ---
 
@@ -25,6 +28,10 @@ and long-running schedulers.
 | 1.4 | Reset L1/L2/L3 | `reset 1` → confirm → `reset 2` → confirm → `reset 3` → confirm | each level honors 24h cooldown; rejected returns reason; L3 returns to wizard |
 | 1.5 | SKF export/import round-trip | `skf export ~/Desktop/test.skf` → fresh DB → `skf import ~/Desktop/test.skf` | same knowledge count after import; SHA256 verified |
 | 1.6 | Backup auto-snapshot | quit cleanly → check `~/.allspark/backups/` | latest snapshot has `_clean.db` and `_metadata.json` |
+| 1.7 | Keyboard-only Web flow | disconnect/ignore the pointer; complete init, mobile navigation, resource edit, Repository filter/detail, and modal close | every control is reachable with visible focus; modal Tab/Shift+Tab trap, Esc close, and trigger-focus restore all work |
+| 1.8 | macOS screen reader | run the same core Web flow with VoiceOver on macOS | landmarks, control names, selected/expanded state, validation errors, dialogs, and status changes are announced without duplicate or symbol-only names |
+| 1.8W | Windows screen reader (Testing) | run the same core Web flow with NVDA on Windows when that environment is available | record pass/fail evidence; until a real run passes, Windows + NVDA remains Experimental and must not be included in the Stable accessibility claim |
+| 1.9 | Browser zoom | set browser zoom to 200% on a 1280px-wide desktop viewport; repeat the core Web flow | no text/control overlap or clipped actions; no page-level horizontal scroll; data tables may use a clearly contained horizontal scroller |
 
 ## 2. Hardware-dependent (run when hardware available — SHA-33)
 
@@ -43,7 +50,7 @@ and long-running schedulers.
 |---:|------|-------|---------------|
 | 3.1 | UDP beacon discovery | two `allspark` processes on the same LAN | each shows the other in `network` within 30 s |
 | 3.2 | TCP knowledge exchange | initiator runs `network trade <peer> --offer foo --request bar` | proposal lands on peer; accept/reject persists |
-| 3.3 | Bluetooth fallback | LAN disabled, Bluetooth paired | discovery still completes; latency < 5 s round-trip |
+| 3.3 | Unsupported transport boundary | inspect Network status with LAN unavailable and radio detection enabled | Bluetooth/Wi-Fi Direct are not presented as working data transports; availability detection remains Experimental/Unavailable |
 
 ## 4. Docker elastic deploy (SHA-33 partial)
 
@@ -71,6 +78,11 @@ and long-running schedulers.
 3. Items not exercised because hardware/setup is unavailable: explicitly
    write "n/a — no GPU available" rather than leaving the box unchecked.
 4. Update this file when you add/remove a category.
+
+For v1.0.3, row 1.8 is release-blocking. Row 1.8W is a compatibility promotion
+gate rather than a tag blocker because Windows + NVDA is explicitly excluded
+from Stable support; an unavailable environment must be recorded as `not_run`,
+never converted into a pass from design review or automated DOM evidence.
 
 > Items in §2–§5 originate from SHA-36 and depend on environments
 > outside the macOS dev box. Add cells as fixtures arrive.

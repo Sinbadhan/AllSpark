@@ -498,6 +498,8 @@ net_error_no_response: 节点无响应
 net_error_no_database: 数据库不可用
 net_error_not_acked: 传输未确认
 net_error_no_entries: 没有可发送的知识条目
+net_error_signature_rejected: 接收节点拒绝了知识签名
+module_experimental_short: EXP
 network_usage: '用法: 网络 | 网络 scan | 网络 start | 网络 stop | 网络 send <节点> <知识ID>'
 network_usage_short: '用法: 网络 | 网络 scan | 网络 start | 网络 stop | 网络 send <节点> <ID>'
 vision_text_fallback: 仅文本回退
@@ -1238,6 +1240,8 @@ web_page_title_executions: 任务执行
 web_page_title_config: 配置
 web_mobile_menu_open: 打开菜单
 web_mobile_menu_close: 关闭菜单
+web_nav_menu_label: 导航菜单
+web_repository_file_tree_toggle: 切换文件树
 web_page_title_repository: 资料库
 web_login_title: ALLSPARK 登录
 web_login_hint: 请输入服务启动时打印的访问令牌

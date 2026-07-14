@@ -44,7 +44,8 @@ class TestSystemHealth:
             assert h["state"] in ("healthy", "degraded", "unavailable")
             f = h["factors"]
             for key in ("llm_loaded", "modules_total", "modules_loaded",
-                        "modules_unsupported", "critical_count", "warning_count"):
+                        "modules_unsupported", "modules_experimental",
+                        "critical_count", "warning_count"):
                 assert key in f, f"missing factor {key}"
         finally:
             if os.path.exists(path):
@@ -69,6 +70,7 @@ class TestSystemHealth:
             assert isinstance(mods, list) and len(mods) > 0
             for m in mods:
                 assert "status" in m, m
+                assert isinstance(m["experimental"], bool)
                 assert m["status"] in ("loaded", "available", "unsupported", "disabled")
         finally:
             if os.path.exists(path):

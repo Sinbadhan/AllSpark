@@ -47,8 +47,13 @@ dev = [
     # starlette 1.x TestClient requires httpx2 (httpx is deprecated; SHA-145).
     # Declared so CI fresh installs can collect the Web/TestClient test modules.
     "httpx2>=0.2,<3",
-    # Coverage gate (SHA-151): per-module reporting + fail-under floor in CI.
-    "pytest-cov>=4.0,<7",
+    # Coverage gate (SHA-151): JSON-backed total-line and per-module branch
+    # floors. pytest-cov 7 delegates subprocess measurement to coverage.py's
+    # explicit patch mechanism configured below.
+    "pytest-cov>=7.1,<8",
+    # SHA-196 browser gate drives an already-installed Chrome over the local
+    # DevTools protocol; it does not download browsers or contact the internet.
+    "websockets>=12,<17",
 ]
 rag = [
     "sentence-transformers>=2.7",
@@ -97,6 +102,12 @@ check_untyped_defs = true
 # Cleared in SHA-40: assignment, arg-type, operator, attr-defined (all four
 # previously-disabled codes are now enforced; mypy runs clean with no
 # disable_error_code overrides).
+
+[tool.coverage.run]
+branch = true
+source = ["allspark"]
+patch = ["subprocess"]
+omit = ["allspark/templates/*", "allspark/static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

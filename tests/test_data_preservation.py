@@ -52,6 +52,7 @@ class TestDataPreservationSnapshot:
         assert len(snapshots) > 0
         result = dp.restore_snapshot(snapshots[0]["path"])
         assert result["status"] == "ok"
+        assert result["checksum_verified"] is True
 
 
 class TestDataPreservationStatus:

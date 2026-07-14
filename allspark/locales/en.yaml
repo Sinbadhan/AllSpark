@@ -542,6 +542,8 @@ net_error_no_response: No response from node
 net_error_no_database: No database available
 net_error_not_acked: Transfer not acknowledged
 net_error_no_entries: No valid entries to send
+net_error_signature_rejected: The receiving node rejected the knowledge signature
+module_experimental_short: EXP
 network_usage: 'Usage: net | net scan | net start | net stop | net send <node> <knowledge_id>'
 network_usage_short: 'Usage: net | net scan | net start | net stop | net send <node>
   <ID>'
@@ -1301,6 +1303,8 @@ web_page_title_executions: Executions
 web_page_title_config: Config
 web_mobile_menu_open: Open menu
 web_mobile_menu_close: Close menu
+web_nav_menu_label: Navigation menu
+web_repository_file_tree_toggle: Toggle file tree
 web_page_title_repository: Repository
 web_login_title: ALLSPARK Login
 web_login_hint: Enter the access token printed at server startup.
