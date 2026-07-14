@@ -1,8 +1,10 @@
 import logging
+import re
 
 from allspark.container import ServiceContainer
 from allspark.core.i18n import t
 from allspark.core.models import OperatingMode
+from allspark.core.tokenizer import tokenize
 
 logger = logging.getLogger(__name__)
 
@@ -56,15 +58,6 @@ class RuleEngine:
         }
         self._assessment_cache_time = now
         return self._assessment_cache
-        self._assessment_cache = {
-            "mode": mode,
-            "warnings": warnings,
-            "assessment": assessment,
-            "phase": phase,
-            "resources": resources,
-        }
-        self._assessment_cache_time = now
-        return self._assessment_cache
 
     def process_input(self, user_input: str) -> str:
         intent = self.personality.classify_intent(user_input)
@@ -86,7 +79,9 @@ class RuleEngine:
             return self._handle_help()
         elif intent in ("water", "fire", "food", "shelter", "medical", "navigation"):
             if self.knowledge:
-                return self._handle_knowledge_query(intent, resources, warnings)
+                return self._handle_knowledge_query(
+                    user_input, intent, resources, warnings
+                )
             else:
                 return self.personality.format_response(
                     t("knowledge_module_not_loaded"),
@@ -220,7 +215,7 @@ class RuleEngine:
         ]
         return "\n".join(help_lines)
 
-    def _handle_knowledge_query(self, intent: str, resources: list,
+    def _handle_knowledge_query(self, user_input: str, intent: str, resources: list,
                                  warnings: list) -> str:
         assert self.knowledge is not None
         intent_map = {
@@ -231,18 +226,26 @@ class RuleEngine:
             "medical": t("intent_keywords_medical"),
             "navigation": t("intent_keywords_navigation"),
         }
-        query = intent_map.get(intent, intent)
-        entries = self.knowledge.get_relevant_knowledge(query, resources)
+        expansion_query = intent_map.get(intent, intent)
+        direct = self.knowledge.search_by_language(user_input, limit=5)
+        decision = self._direct_query_decision(
+            user_input, direct[0] if direct else None
+        )
+        if decision == "miss":
+            return self.personality.format_response(
+                t("no_knowledge_match"),
+                add_greeting=True
+            )
 
-        if not entries:
-            fallback = self.knowledge.search(intent, limit=5)
-            if fallback:
-                entries = fallback
+        expanded = self.knowledge.get_relevant_knowledge(expansion_query, resources)
+        if decision == "specific":
+            entries = self._merge_entries(direct, expanded)
+        else:
+            entries = self._merge_entries(expanded, direct)
 
         if not entries:
             return self.personality.format_response(
-                t("no_knowledge", topic=intent),
-                add_greeting=True
+                t("no_knowledge_match"), add_greeting=True
             )
 
         lines = []
@@ -256,6 +259,77 @@ class RuleEngine:
         lines.append(self.knowledge.format_answer(entries[:3]))
 
         return self.personality.format_response("\n".join(lines), add_greeting=True)
+
+    @staticmethod
+    def _merge_entries(primary: list, secondary: list) -> list:
+        seen = set()
+        merged = []
+        for entry in [*primary, *secondary]:
+            if entry.id not in seen:
+                seen.add(entry.id)
+                merged.append(entry)
+        return merged[:10]
+
+    @staticmethod
+    def _direct_query_decision(user_input: str, top_entry) -> str:
+        """Return specific, generic, or miss for rule-knowledge orchestration."""
+        stop_terms = {
+            "如何", "怎么", "怎样", "什么", "怎么办", "方法", "请问",
+            "可以", "能否", "哪里", "哪些",
+            "how", "what", "when", "where", "why", "to", "a", "an",
+            "the", "with", "using", "use",
+        }
+        query_terms = RuleEngine._compact_terms(
+            term.lower()
+            for term in tokenize(user_input).split()
+            if len(term) >= 2 and term.lower() not in stop_terms
+        )
+        object_terms = RuleEngine._explicit_object_terms(user_input)
+
+        if not top_entry:
+            return "miss" if object_terms else "generic"
+
+        content = " ".join(
+            [
+                top_entry.title,
+                top_entry.summary,
+                *top_entry.steps,
+                *top_entry.prerequisites,
+                *top_entry.warnings,
+                top_entry.category,
+                top_entry.subcategory,
+            ]
+        ).lower()
+        if any(term not in content for term in object_terms):
+            return "miss"
+        title = top_entry.title.lower()
+        title_matches = sum(term in title for term in query_terms)
+        return "specific" if object_terms or title_matches >= 2 else "generic"
+
+    @staticmethod
+    def _explicit_object_terms(user_input: str) -> list[str]:
+        lowered = user_input.lower()
+        terms = re.findall(
+            r"(?:使用|用)([a-z0-9\u4e00-\u9fff-]{1,24}?)"
+            r"(?:来|去|进行|取火|生火|点火|净水|过滤|搭建|止血|$)",
+            lowered,
+        )
+        terms.extend(
+            re.findall(
+                r"(?:with|using)\s+(?:(?:a|an|the)\s+)?([a-z0-9-]+)",
+                lowered,
+            )
+        )
+        return RuleEngine._compact_terms(term for term in terms if len(term) >= 2)
+
+    @staticmethod
+    def _compact_terms(terms) -> list[str]:
+        unique = list(dict.fromkeys(terms))
+        return [
+            term
+            for term in unique
+            if not any(term != other and term in other for other in unique)
+        ]
 
     def _handle_general(self, user_input: str, resources: list,
                         warnings: list, phase: int) -> str:

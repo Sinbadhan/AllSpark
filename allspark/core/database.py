@@ -470,18 +470,18 @@ class Database:
         except Exception as e:
             logger.warning("FTS query failed, falling back to LIKE: %s", e)
 
-        # Re-rank: entries whose title contains a query term (len>=2) rank first.
-        # Stable sort preserves bm25 order within each group, so a title match
-        # (e.g. 取火 in 打火石取火法) beats a body-only mention in a long broad
-        # entry (e.g. 儿童教育 mentioning 生火 in its summary). Substring (not
-        # token-equal) is used because jieba does not always segment the query
-        # and the title the same way (e.g. 打火石取火法 has no standalone 取火
-        # token). Case-insensitive so en "fire" matches title "Fire".
+        # Re-rank by title-term coverage. Counting matches, rather than using a
+        # binary title hit, lets a specific title such as 电池取火法 outrank a
+        # generic title that only shares 取火. Stable sort preserves bm25 order
+        # when coverage is equal. Substring matching handles Chinese segmentation
+        # differences and is case-insensitive for English.
         query_terms = [t.lower() for t in tokenize(query).split() if len(t) >= 2] if query else []
         if query_terms:
             fts_rows = sorted(
                 fts_rows,
-                key=lambda r: 0 if any(qt in r["title"].lower() for qt in query_terms) else 1,
+                key=lambda r: -sum(
+                    qt in r["title"].lower() for qt in query_terms
+                ),
             )
         for r in fts_rows:
             if r["id"] not in seen_ids:

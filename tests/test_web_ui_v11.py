@@ -13,6 +13,7 @@ import re
 import tempfile
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from allspark.adapters.web_ui import create_app
@@ -448,6 +449,39 @@ def test_all_five_pages_render_200():
             assert r.status_code == 200, f"{path_}: {r.status_code}"
             # No raw `{{ t(` markers — that would mean a missing key.
             assert "{{ t(" not in r.text, f"{path_}: unrendered i18n key"
+
+
+@pytest.mark.parametrize(
+    "language,message,expected_title",
+    [
+        ("zh", "用电池取火", "电池取火法"),
+        ("en", "How to start a fire with a battery?", "Battery Fire Starting"),
+    ],
+)
+def test_chat_keeps_specific_method_as_main_answer(
+    language, message, expected_title
+):
+    with TempDb() as path:
+        c = _client(path)
+        response = c.post(
+            "/api/chat", json={"message": message, "language": language}
+        )
+        assert response.status_code == 200
+        entry_lines = re.findall(
+            r"^\[[^\]]+\] (.+)$", response.json()["response"], re.MULTILINE
+        )
+        assert entry_lines
+        assert entry_lines[0] == expected_title
+
+
+def test_chat_does_not_fake_answer_for_unknown_specific_method():
+    with TempDb() as path:
+        c = _client(path)
+        response = c.post(
+            "/api/chat", json={"message": "如何用土豆生火", "language": "zh"}
+        ).json()["response"]
+        assert re.findall(r"^\[[^\]]+\] (.+)$", response, re.MULTILINE) == []
+        assert "未能找到" in response
 
 
 def test_system_page_includes_new_cards():

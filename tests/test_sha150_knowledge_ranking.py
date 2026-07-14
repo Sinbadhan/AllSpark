@@ -13,7 +13,7 @@ import pytest
 
 from allspark.bootstrap import ApplicationBootstrap
 from allspark.core.database import Database
-from allspark.core.i18n import get_language, set_language
+from allspark.core.i18n import get_language, set_language, t
 from allspark.infrastructure.hardware import FeatureFlags
 from allspark.services.knowledge_engine import KnowledgeEngine
 from allspark.services.knowledge_loader import load_all_knowledge
@@ -21,8 +21,9 @@ from allspark.services.rule_engine import RuleEngine
 
 
 def _load_knowledge(db):
-    for e in load_all_knowledge("zh"):
-        db.save_knowledge(e)
+    for language in ("zh", "en"):
+        for e in load_all_knowledge(language):
+            db.save_knowledge(e)
 
 
 def _entry_titles(resp: str) -> list[str]:
@@ -90,11 +91,52 @@ class TestCriticalRanking:
         assert any("净水" in t or "水" in t for t in titles[:3])
 
 
+class TestSpecificMethodRanking:
+    @pytest.mark.parametrize(
+        "language,query,expected_title",
+        [
+            ("zh", "电池取火法", "电池取火法"),
+            ("zh", "电池取火", "电池取火法"),
+            ("zh", "用电池取火", "电池取火法"),
+            ("en", "battery fire starting", "Battery Fire Starting"),
+            ("en", "How to start a fire with a battery?", "Battery Fire Starting"),
+        ],
+    )
+    def test_specific_method_is_the_main_answer(
+        self, rule_engine, language, query, expected_title
+    ):
+        previous = get_language()
+        set_language(language)
+        try:
+            titles = _entry_titles(rule_engine.process_input(query))
+        finally:
+            set_language(previous)
+        assert titles
+        assert titles[0] == expected_title
+
+    def test_original_query_reaches_knowledge_search(self, rule_engine, monkeypatch):
+        queries = []
+        original = rule_engine.knowledge.search_by_language
+
+        def capture(query, limit=10):
+            queries.append(query)
+            return original(query, limit)
+
+        monkeypatch.setattr(rule_engine.knowledge, "search_by_language", capture)
+        rule_engine.process_input("用电池取火")
+        assert queries[0] == "用电池取火"
+
+    def test_unknown_specific_method_does_not_get_generic_answer(self, rule_engine):
+        response = rule_engine.process_input("如何用土豆生火")
+        assert _entry_titles(response) == []
+        assert t("no_knowledge_match") in response
+
+
 # Domain coverage: ~50 phrasings; Top-3 (main + related) must contain a
 # domain-relevant entry. (Navigation has no knowledge entries in the base, so
 # it is not a golden domain.)
 DOMAIN_TERMS = {
-    "water": ["净水", "水源", "饮水", "取水", "水分", "煮沸"],
+    "water": ["净水", "水源", "饮水", "取水", "水分", "煮沸", "雨水", "收集"],
     "fire": ["取火", "火", "燃料", "生火"],
     "food": ["食用", "野菜", "食物", "狩猎", "可食", "觅食"],
     "shelter": ["庇护所", "避难所", "帐篷", "遮蔽", "住所"],
@@ -171,3 +213,19 @@ class TestRankingDirect:
         ke = KnowledgeEngine(ke_db)
         titles = [e.title for e in ke.search_by_language("火 生火 点火 取暖 燃料 取火", limit=5)]
         assert any("取火" in t for t in titles[:3]), titles[:3]
+
+    @pytest.mark.parametrize(
+        "language,query,expected",
+        [
+            ("zh", "用电池取火", "电池取火法"),
+            ("en", "How to start a fire with a battery?", "Battery Fire Starting"),
+        ],
+    )
+    def test_specific_title_term_coverage_wins(self, ke_db, language, query, expected):
+        previous = get_language()
+        set_language(language)
+        try:
+            results = KnowledgeEngine(ke_db).search_by_language(query, limit=5)
+        finally:
+            set_language(previous)
+        assert results[0].title == expected

@@ -28,6 +28,12 @@ workflow and supported hardware scope are approved.
   3.10/3.11/3.12 and validates clean-wheel installation on the same matrix.
 
 **Quality (P1):**
+- SHA-217: Rule-based survival Q&A now keeps the original user question in
+  retrieval and uses intent keywords only as recall expansion. Multi-term title
+  coverage promotes specific methods such as battery fire starting; FTS query
+  tokens are safely quoted so natural punctuation cannot break search. Explicit
+  unknown tool requests return the no-direct-match response instead of a
+  generic domain answer, with bilingual RuleEngine and Web API golden coverage.
 - SHA-219: Reset scope now comes from one executable matrix shared by CLI and
   Web descriptions. L2 clears diary/FTS, timeline and action plans while
   preserving language, hardware, knowledge and vectors; L3 enumerates SQLite
