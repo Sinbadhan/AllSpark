@@ -33,7 +33,7 @@ removable storage.
 | Sensor hub | blocked_by_hardware | I2C/GPIO/Serial sensors and GPS | Temperature/humidity/barometer/GPS readings, stale data handling, manual fallback. |
 | Data preservation on real media | software verified; external media environment-blocked | Removable storage or independent filesystem | WAL-consistent atomic snapshot/restore, full SHA-256 verification, valid-SQLite tamper rejection, interrupted creation cleanup and failed-replace reconnect pass. APFS disk-image creation did not complete in this desktop environment, so removable/independent media remains Experimental (SHA-181). |
 | Offline web assets | ready | Browser with network disabled | UI remains readable with local CSS/icon fallbacks. |
-| Web accessibility | zoom verified; screen readers pending | Chrome at 1280 px / 200%; macOS VoiceOver; Windows NVDA | Core dashboard, navigation, resource edit, and Repository flows pass 200% zoom after `421d040`; VoiceOver/NVDA announcement evidence is still required (SHA-152). |
+| Web accessibility | macOS VoiceOver + zoom verified; Windows NVDA testing | Chrome at 1280 px / 200%; macOS VoiceOver; future Windows + NVDA host | Core dashboard, navigation, resource edit, Repository filter/detail, dialogs and live status pass VoiceOver after `d3c9a6c`; 200% zoom passed after `421d040`. Windows + NVDA is `not_run` and remains Experimental (SHA-152). |
 
 ## 2026-07-14 Evidence
 
@@ -79,14 +79,42 @@ removable storage.
   controls have no overlap or page-level horizontal scroll; dialogs remain
   operable and use contained vertical scrolling where needed.
 - Automated regression: `1128 passed, 6 skipped`; Ruff and mypy pass locally.
-- Remaining boundary: keyboard behavior is automated and browser-verified, but
-  actual announcement quality still needs macOS VoiceOver and Windows NVDA
-  evidence before SHA-152 can close.
+- Remaining boundary at the time of this zoom run was real assistive-technology
+  evidence; the macOS VoiceOver portion is now recorded below. Windows + NVDA
+  remains a testing-stage compatibility track, not a v1.0.3 Stable claim.
+
+### SHA-152: macOS VoiceOver
+
+- Environment: macOS desktop, Google Chrome at 1280 x 768, system VoiceOver
+  enabled, isolated local RC database and server.
+- Commit: `d3c9a6c`.
+- Flow: Dashboard navigation and control names; resource editor title, labelled
+  numeric fields, Tab wrap, Escape close and trigger-focus restore; Repository
+  filter, result status, native detail trigger, detail dialog focus/trap/close
+  restore; About dialog; non-error live status notification.
+- Initial result: failed. Repository search re-rendered on every keystroke and
+  lost focus after the first character. Repository detail did not take, trap or
+  restore focus. Global toast, confirm/prompt and About layers lacked complete
+  live-region/dialog semantics. Decorative navigation glyphs polluted names.
+- Fix: preserve Repository search focus and cursor, expose native detail
+  buttons and live result counts, complete dialog focus lifecycle, mark status
+  and error toasts as live regions, and hide navigation glyphs from the
+  accessibility tree.
+- Final result: pass on the exercised macOS VoiceOver flow. Native accessibility
+  state showed clean navigation names, a four-character Repository query with
+  focus retained, dialog title/close focus, Tab containment, Escape close,
+  trigger restoration, and the live status message. Real-Chrome regression plus
+  static/runtime gates: `35 passed` for the focused SHA-152/SHA-212 set.
+- Boundary: no Windows + NVDA host was available. That row is `not_run`, remains
+  Testing/Experimental, and is excluded from the v1.0.3 Stable accessibility
+  claim until real evidence passes.
 
 ## v1.0.3 Support Decision
 
-The Stable candidate scope is desktop PROCESS mode and local core workflows.
-Docker/INTEGRATION, real model/GPU, voice, vision, Raspberry Pi hardware,
+The Stable candidate scope is desktop PROCESS mode, local core workflows and
+the macOS VoiceOver-validated core Web flow. Windows screen-reader compatibility
+(NVDA) remains Testing/Experimental. Docker/INTEGRATION, real model/GPU, voice,
+vision, Raspberry Pi hardware,
 physical sensors/GPS/power, cross-host networking and removable-media disaster
 recovery remain Experimental. Bluetooth and Wi-Fi Direct transports are not
 implemented in v1.0.3; channel detection must not be presented as transport.

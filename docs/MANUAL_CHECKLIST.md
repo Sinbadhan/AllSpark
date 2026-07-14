@@ -29,7 +29,8 @@ cross-node hardware, Docker deployment, and long-running schedulers.
 | 1.5 | SKF export/import round-trip | `skf export ~/Desktop/test.skf` → fresh DB → `skf import ~/Desktop/test.skf` | same knowledge count after import; SHA256 verified |
 | 1.6 | Backup auto-snapshot | quit cleanly → check `~/.allspark/backups/` | latest snapshot has `_clean.db` and `_metadata.json` |
 | 1.7 | Keyboard-only Web flow | disconnect/ignore the pointer; complete init, mobile navigation, resource edit, Repository filter/detail, and modal close | every control is reachable with visible focus; modal Tab/Shift+Tab trap, Esc close, and trigger-focus restore all work |
-| 1.8 | Screen readers | run the same core Web flow with VoiceOver on macOS and NVDA on Windows | landmarks, control names, selected/expanded state, validation errors, dialogs, and status changes are announced without duplicate or symbol-only names |
+| 1.8 | macOS screen reader | run the same core Web flow with VoiceOver on macOS | landmarks, control names, selected/expanded state, validation errors, dialogs, and status changes are announced without duplicate or symbol-only names |
+| 1.8W | Windows screen reader (Testing) | run the same core Web flow with NVDA on Windows when that environment is available | record pass/fail evidence; until a real run passes, Windows + NVDA remains Experimental and must not be included in the Stable accessibility claim |
 | 1.9 | Browser zoom | set browser zoom to 200% on a 1280px-wide desktop viewport; repeat the core Web flow | no text/control overlap or clipped actions; no page-level horizontal scroll; data tables may use a clearly contained horizontal scroller |
 
 ## 2. Hardware-dependent (run when hardware available — SHA-33)
@@ -77,6 +78,11 @@ cross-node hardware, Docker deployment, and long-running schedulers.
 3. Items not exercised because hardware/setup is unavailable: explicitly
    write "n/a — no GPU available" rather than leaving the box unchecked.
 4. Update this file when you add/remove a category.
+
+For v1.0.3, row 1.8 is release-blocking. Row 1.8W is a compatibility promotion
+gate rather than a tag blocker because Windows + NVDA is explicitly excluded
+from Stable support; an unavailable environment must be recorded as `not_run`,
+never converted into a pass from design review or automated DOM evidence.
 
 > Items in §2–§5 originate from SHA-36 and depend on environments
 > outside the macOS dev box. Add cells as fixtures arrive.

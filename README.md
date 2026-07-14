@@ -26,13 +26,16 @@ passes; code presence alone is not validation.
 
 | Status | Scope |
 |--------|-------|
-| Supported | Python 3.10-3.12; desktop PROCESS mode; CLI and Web UI; local SQLite; rule-based assessment; knowledge search/import/export; resources, goals, tasks, diary, governance; local snapshot/restore |
-| Experimental | Docker/INTEGRATION mode; real GGUF/LLM and GPU acceleration; microphone/STT/TTS; camera/vision; Raspberry Pi GPIO/I2C/Serial, sensors, power and hardware GPS; cross-host Spark Network; removable-media disaster recovery |
+| Supported | Python 3.10-3.12; desktop PROCESS mode; CLI and Web UI; local SQLite; rule-based assessment; knowledge search/import/export; resources, goals, tasks, diary, governance; local snapshot/restore; core Web flows with macOS VoiceOver |
+| Experimental | Windows screen-reader compatibility (NVDA, testing); Docker/INTEGRATION mode; real GGUF/LLM and GPU acceleration; microphone/STT/TTS; camera/vision; Raspberry Pi GPIO/I2C/Serial, sensors, power and hardware GPS; cross-host Spark Network; removable-media disaster recovery |
 | Not supported in v1.0.3 | Bluetooth and Wi-Fi Direct transports. The current Spark Network transport is TCP over LAN; radio availability detection is not a transport implementation. |
 
 Single-host, independent-process Spark Network exchange is covered by automated
 integration tests. It does not certify cross-host radios or field deployment.
 See [real-world validation](docs/REAL_WORLD_VALIDATION.md) for current evidence.
+Windows screen-reader compatibility remains a testing-stage capability until a
+real Windows + NVDA run is attached; it is not part of the v1.0.3 Stable
+accessibility claim.
 
 ---
 

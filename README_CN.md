@@ -25,12 +25,14 @@
 
 | 状态 | 范围 |
 |------|------|
-| 稳定支持 | Python 3.10-3.12；桌面 PROCESS 模式；CLI 与 Web UI；本地 SQLite；规则评估；知识搜索/导入/导出；资源、目标、任务、日记、治理；本地快照/恢复 |
-| Experimental | Docker/INTEGRATION；真实 GGUF/LLM 与 GPU；麦克风/STT/TTS；摄像头/视觉；树莓派 GPIO/I2C/串口、传感器、电力与硬件 GPS；跨主机火种网络；可移动介质灾难恢复 |
+| 稳定支持 | Python 3.10-3.12；桌面 PROCESS 模式；CLI 与 Web UI；本地 SQLite；规则评估；知识搜索/导入/导出；资源、目标、任务、日记、治理；本地快照/恢复；macOS VoiceOver 核心 Web 流程 |
+| Experimental | Windows 读屏兼容性（NVDA，测试阶段）；Docker/INTEGRATION；真实 GGUF/LLM 与 GPU；麦克风/STT/TTS；摄像头/视觉；树莓派 GPIO/I2C/串口、传感器、电力与硬件 GPS；跨主机火种网络；可移动介质灾难恢复 |
 | v1.0.3 不支持 | 蓝牙和 Wi-Fi Direct 传输。当前火种网络传输层是局域网 TCP；无线通道可用性探测不等于实现传输。 |
 
 单机独立进程间的火种网络交换已有自动化集成证据，但不能证明跨主机、无线电或野外部署可用。
 当前证据见[真实环境验证](docs/REAL_WORLD_VALIDATION.md)。
+Windows 读屏兼容性仍处于测试阶段；在真实 Windows + NVDA 证据附上前，
+不属于 v1.0.3 的稳定无障碍支持声明。
 
 ---
 

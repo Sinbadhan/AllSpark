@@ -111,7 +111,8 @@ def test_changelog_unreleased_does_not_overclaim_release_closure() -> None:
     assert not any(claim in unreleased for claim in forbidden)
     assert "Report-Only" in unreleased
     assert "SHA-213" in unreleased
-    assert "VoiceOver/NVDA" in unreleased
+    assert "macOS VoiceOver" in unreleased
+    assert "Windows + NVDA remains" in unreleased
     assert "SHA-33 remains a post-release" in unreleased
     assert "approve the SHA-33" not in unreleased
 
@@ -126,6 +127,10 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
     for content in (readme, readme_cn, validation):
         assert "PROCESS" in content
         assert "Experimental" in content
+
+    assert "Windows screen-reader compatibility (NVDA, testing)" in readme
+    assert "Windows 读屏兼容性（NVDA，测试阶段）" in readme_cn
+    assert "macOS VoiceOver + zoom verified; Windows NVDA testing" in validation
 
     assert "LAN/Bluetooth/WiFi Direct" not in readme
     assert "局域网/蓝牙/WiFi Direct" not in readme_cn
@@ -165,5 +170,7 @@ def test_manual_release_gate_covers_accessibility_and_transport_boundary() -> No
         assert required in manual
     assert "Bluetooth fallback" not in manual
     assert "not presented as working data transports" in manual
-    assert "VoiceOver/NVDA" in release
+    assert "macOS VoiceOver" in release
+    assert "Windows + NVDA" in release
+    assert "Testing/Experimental" in release
     assert "Automated DOM tests and screenshots do not substitute" in release

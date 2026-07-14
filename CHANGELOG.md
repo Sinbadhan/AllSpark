@@ -38,7 +38,9 @@ workflow and supported hardware scope are approved.
   Python 3.11/3.12 continue to run the complete functional and collection gates.
 - SHA-152: Web a11y - native control semantics, dialog roles, focus traps,
   deterministic focus restoration after async refresh, mobile-nav state/inert
-  synchronization, and executable JavaScript regressions.
+  synchronization, clean navigation names, live status/error announcements,
+  Repository filter focus continuity and native detail triggers. The macOS
+  VoiceOver core flow is verified; Windows + NVDA remains Testing/Experimental.
 
 **UX (P2):**
 - SHA-153: Repository browser - search/category/tier/verification/language
@@ -73,9 +75,11 @@ workflow and supported hardware scope are approved.
   conditional dep; CI clean-wheel smoke matrix (3.10/3.11/3.12).
 - SHA-145: Starlette/httpx2 deprecation warning cleared (httpx2 declared).
 
-The remaining release gate tracked in SHA-158 is honest VoiceOver/NVDA
-announcement evidence for SHA-152. The v1.0.3 support boundary is approved as
-desktop PROCESS mode plus local core workflows; SHA-33 remains a post-release
+The macOS VoiceOver announcement gate for SHA-152 is evidenced at `d3c9a6c`.
+Windows + NVDA remains an explicit Testing/Experimental compatibility track and
+is excluded from the v1.0.3 Stable claim. The v1.0.3 support boundary is desktop
+PROCESS mode plus local core workflows and the VoiceOver-validated core Web
+flow; SHA-33 remains a post-release
 hardware-validation track and cannot expand Stable support without real-world
 evidence. SHA-213 (enforcing CSP) is documented follow-up hardening and is not
 represented as an active CSP defense in this release.

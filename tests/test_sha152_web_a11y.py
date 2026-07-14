@@ -2,9 +2,9 @@
 
 Static assertions (a lightweight axe-equivalent) that interactive elements
 use native button semantics, labels are associated, modals have dialog
-semantics + Esc, and icon buttons expose aria-labels. Full VoiceOver/NVDA
-manual verification remains a follow-up, but these guard the code-level
-requirements against regression.
+semantics + Esc, and icon buttons expose aria-labels. macOS VoiceOver evidence
+is recorded for the release flow; Windows + NVDA remains a real-environment
+follow-up. These checks guard the code-level requirements against regression.
 """
 import re
 from pathlib import Path

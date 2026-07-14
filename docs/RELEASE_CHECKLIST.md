@@ -14,6 +14,9 @@ Use this checklist before tagging or publishing an AllSpark release.
   is attached to SHA-33.
 - Confirm Bluetooth and Wi-Fi Direct are not advertised as transports; v1.0.3
   implements LAN TCP transport and radio availability detection only.
+- Confirm the accessibility boundary is macOS VoiceOver for the validated core
+  Web flow. Windows + NVDA remains Testing/Experimental until real-environment
+  evidence passes and must not be advertised as Stable.
 
 ## 2. Update version references
 
@@ -45,8 +48,9 @@ Do not lower coverage or collection floors to make a release pass. Record the
 exact pytest, coverage, regression, and benchmark output in the release PR.
 Python 3.10 is the canonical coverage environment; CI still runs the complete
 test suite and collection gate independently on Python 3.11 and 3.12.
-Run §1 of `docs/MANUAL_CHECKLIST.md` and attach the keyboard, VoiceOver/NVDA,
-and 200% browser-zoom evidence to the release PR.
+Run §1 of `docs/MANUAL_CHECKLIST.md` and attach the keyboard, macOS VoiceOver,
+and 200% browser-zoom evidence to the release PR. Attach Windows + NVDA evidence
+only when promoting that compatibility out of Testing/Experimental.
 
 ## 4. Check package metadata
 
@@ -90,9 +94,10 @@ Verify no sensitive or generated files are staged:
   explicitly Experimental and excluded from Stable support.
 - The RC pull request is green on all Python versions, including the clean-wheel
   smoke matrix and real-Chrome SKF XSS gate.
-- SHA-152 contains completed keyboard-only, VoiceOver/NVDA, and 200% zoom
-  evidence. Automated DOM tests and screenshots do not substitute for these
-  assistive-technology checks.
+- SHA-152 contains completed keyboard-only, macOS VoiceOver, and 200% zoom
+  evidence. Automated DOM tests and screenshots do not substitute for the
+  VoiceOver assistive-technology run. Windows + NVDA is explicitly recorded as
+  `not_run`/Testing and excluded from the v1.0.3 Stable accessibility claim.
 - Deferred hardening is linked as follow-up work; Report-Only CSP must not be
   described as enforcing.
 
