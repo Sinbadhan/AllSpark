@@ -112,6 +112,7 @@ def _render_template(name: str, **context) -> str:
         or k.startswith("psych_")
         or k.startswith("mode_")
         or k.startswith("resource_")
+        or k.startswith("knowledge_")
         or k.startswith("q_")
     }
     context.setdefault("web_i18n", web_i18n)

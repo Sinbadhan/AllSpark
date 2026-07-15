@@ -6,7 +6,12 @@ from fastapi import HTTPException, Query
 
 from allspark.core.config import DEFAULT_DB_DIR
 from allspark.core.i18n import t
-from allspark.services.skf_manager import SKFPackage, export_skf, import_skf
+from allspark.services.skf_manager import (
+    SKFArchiveValidationError,
+    SKFPackage,
+    export_skf,
+    import_skf,
+)
 
 _SAFE_SKF_DIR = DEFAULT_DB_DIR / "skf"
 
@@ -61,6 +66,8 @@ def register_skf_routes(app, check):
             return result
         except HTTPException:
             raise
+        except SKFArchiveValidationError as e:
+            raise HTTPException(400, detail=str(e)) from e
         except Exception as e:
             raise HTTPException(500, t("error_skf_import_failed", detail=str(e)))
 

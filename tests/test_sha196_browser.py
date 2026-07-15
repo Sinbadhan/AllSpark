@@ -212,9 +212,14 @@ def test_public_skf_import_is_inert_in_repository_and_dashboard(
 ) -> None:
     sentinel = "PWNED_BROWSER_SENTINEL"
     raw_id = f'<img id="audit-xss-probe" src=x onerror="document.title=\'{sentinel}\'">'
-    raw_category = f'<svg id="category-probe" onload="document.title=\'{sentinel}\'"></svg>'
-    raw_subcategory = f'"><script>document.title="{sentinel}"</script>'
-    raw_verification = '<b id="verification-probe">unverified</b>'
+    # Keep hostile metadata within the transport's bounded scalar limits; the
+    # separate oversized-payload tests cover mandatory rejection.
+    raw_category = '<svg id="category-probe"></svg>'
+    raw_subcategory = '"><script>x</script>'
+    # Transport trust labels must be valid enum values. Content and display
+    # metadata remain hostile so this test continues to exercise output
+    # escaping without relying on an entry the schema must now reject.
+    raw_verification = "unverified"
 
     safe_dir = tmp_path / "skf"
     safe_dir.mkdir()
@@ -265,6 +270,11 @@ def test_public_skf_import_is_inert_in_repository_and_dashboard(
                 f"{urllib.parse.quote(str(bad_priority_path), safe='')}&verify=true"
             )
         assert invalid.value.code == 400
+        with pytest.raises(urllib.error.HTTPError) as missing:
+            urllib.request.urlopen(
+                f"{base_url}/api/knowledge/priority-probe", timeout=10
+            )
+        assert missing.value.code == 404
 
         detail_url = f"{base_url}/api/knowledge/{urllib.parse.quote(safe_id, safe='')}"
         with urllib.request.urlopen(detail_url, timeout=10) as response:

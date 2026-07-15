@@ -156,6 +156,15 @@ const REPO_I18N = {
   warnings: "{{ t('web_warnings') }}",
   verification_label: "{{ t('web_th_verification') }}",
   source: "{{ t('web_th_source') }}",
+  applicable: "{{ t('knowledge_applicable_when') }}",
+  contraindications: "{{ t('knowledge_contraindications') }}",
+  escalation: "{{ t('knowledge_escalation_label') }}",
+  risk: "{{ t('knowledge_risk_label') }}",
+  not_provided: "{{ t('knowledge_not_provided') }}",
+  references: "{{ t('knowledge_references_label') }}",
+  high_risk_short: "{{ t('knowledge_high_risk_short') }}",
+  local_verified: "{{ t('knowledge_local_verified_evidence') }}",
+  external_claim: "{{ t('knowledge_external_unverified_claim') }}",
 };
 const SKF_I18N = {
   path_hint: "{{ t('web_skf_path_placeholder') }}",
@@ -430,6 +439,14 @@ function _repoSelect(options, current, allLabel) {
     .join("");
 }
 
+function _repoVerificationSelect(entries, current) {
+  const labels = new Map(entries.map(e => [String(e.verification || ""), String(e.verification_label || "")]));
+  return [`<option value="">${escHtml(REPO_I18N.verification)}</option>`]
+    .concat([...labels.entries()].filter(([value]) => value).sort().map(([value, label]) =>
+      `<option value="${escHtml(value)}"${value === current ? ' selected' : ''}>${escHtml(label)}</option>`))
+    .join("");
+}
+
 async function loadKnowledgeTable(el) {
   _repoEl = el;
   const cats = await api("/api/knowledge/categories");
@@ -469,7 +486,6 @@ function _repoRender() {
   const pageItems = filtered.slice(start, start + _repoPageSize);
   const categories = [...new Set(_repoEntries.map(e => e.category))].sort();
   const tiers = [...new Set(_repoEntries.map(e => String(e.priority)))].sort();
-  const verifs = [...new Set(_repoEntries.map(e => e.verification).filter(Boolean))].sort();
   const selStyle = "background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 8px;border-radius:4px;font-size:12px;";
   const inpStyle = selStyle + "flex:1;min-width:140px;";
   const bar = `
@@ -477,7 +493,7 @@ function _repoRender() {
       <input id="repo-search" aria-label="${escHtml(REPO_I18N.search)}" placeholder="${escHtml(REPO_I18N.search)}" value="${escHtml(f.q)}" style="${inpStyle}"/>
       <select id="repo-f-cat" aria-label="${escHtml(REPO_I18N.category)}" style="${selStyle}">${_repoSelect(categories, f.category, REPO_I18N.category)}</select>
       <select id="repo-f-tier" aria-label="${escHtml(REPO_I18N.tier)}" style="${selStyle}">${_repoSelect(tiers, f.tier, REPO_I18N.tier)}</select>
-      <select id="repo-f-ver" aria-label="${escHtml(REPO_I18N.verification)}" style="${selStyle}">${_repoSelect(verifs, f.verification, REPO_I18N.verification)}</select>
+      <select id="repo-f-ver" aria-label="${escHtml(REPO_I18N.verification)}" style="${selStyle}">${_repoVerificationSelect(_repoEntries, f.verification)}</select>
       <select id="repo-f-lang" aria-label="${escHtml(REPO_I18N.language)}" style="${selStyle}">
         <option value="${_repoCurrentLang()}"${f.lang === _repoCurrentLang() ? ' selected' : ''}>${escHtml(_repoCurrentLang())}</option>
         <option value="all"${f.lang === 'all' ? ' selected' : ''}>${escHtml(REPO_I18N.bilingual)}</option>
@@ -488,14 +504,14 @@ function _repoRender() {
       <td class="p-3"><span class="text-primary hover:underline font-mono text-xs" title="${escHtml(e.id)}">${escHtml(e.id)}</span></td>
       <td class="p-3 text-on-surface"><button type="button" class="repo-detail-trigger text-primary hover:underline" aria-label="${escHtml(REPO_I18N.detail_title + ': ' + e.title)}" style="background:none;border:0;color:inherit;padding:0;font:inherit;text-align:left;cursor:pointer;">${escHtml(e.title)}</button></td>
       <td class="p-3 text-secondary">${escHtml(e.category)}</td>
-      <td class="p-3 text-secondary">${escHtml(String(e.verification || ""))}</td>
+      <td class="p-3 text-secondary"><strong>${e.high_risk ? `${escHtml(REPO_I18N.high_risk_short)} · ` : ""}${escHtml(String(e.verification_label || ""))}</strong></td>
       <td class="p-3 text-secondary text-right">${escHtml(String(e.priority))}</td>
     </tr>`).join("") : `<tr><td colspan="5" class="p-4 text-center text-secondary">${escHtml(REPO_I18N.no_match)}</td></tr>`;
   const mobileItems = pageItems.length ? pageItems.map(e => `
     <article class="repo-mobile-item" data-kid="${escHtml(e.id)}">
       <button type="button" class="repo-detail-trigger repo-mobile-title" aria-label="${escHtml(REPO_I18N.detail_title + ': ' + e.title)}">${escHtml(e.title)}</button>
       <div class="repo-mobile-meta">
-        <span data-meta="verification">${escHtml(REPO_I18N.verification)}: ${escHtml(String(e.verification || ""))}</span>
+        <span data-meta="verification">${e.high_risk ? `${escHtml(REPO_I18N.high_risk_short)} · ` : ""}${escHtml(String(e.verification_label || ""))}</span>
         <span data-meta="category">${escHtml(REPO_I18N.category)}: ${escHtml(e.category)}</span>
         <span data-meta="tier">${escHtml(REPO_I18N.tier)}: ${escHtml(String(e.priority))}</span>
       </div>
@@ -576,6 +592,17 @@ async function openRepoDetail(id) {
     const e = await api("/api/knowledge/" + encodeURIComponent(id));
     const steps = (e.steps || []).map(s => `<li>${escHtml(s)}</li>`).join("");
     const warns = (e.warnings || []).map(w => `<div class="text-warn text-sm">· ${escHtml(w)}</div>`).join("");
+    const applicable = (e.applicable_when || []).join("; ") || REPO_I18N.not_provided;
+    const contraindications = (e.contraindications || []).join("; ") || REPO_I18N.not_provided;
+    const referenceLine = r => `<li>${escHtml((r.title || r.organization || r.source_id || "") + " — " + (r.locator || ""))}</li>`;
+    const kv = (label, value) => `<div><strong>${escHtml(label)}:</strong> ${escHtml(String(value || ""))}</div>`;
+    const recordLine = r => `<li style="margin-bottom:8px;">${kv(I18N.knowledge_field_source, r.source_id)}${kv(I18N.knowledge_field_conditions, (r.conditions || []).join("; "))}${kv(I18N.knowledge_field_outcome, r.outcome)}${kv(I18N.knowledge_field_date, r.recorded_at)}${kv(I18N.knowledge_field_locator, r.locator)}</li>`;
+    const fingerprint = value => { const full = String(value || ""); const short = full.length > 30 ? full.slice(0, 20) + "…" + full.slice(-8) : full; return `<details><summary>${escHtml(short)}</summary><code style="overflow-wrap:anywhere;user-select:all;">${escHtml(full)}</code></details>`; };
+    const reviewLine = r => kv(I18N.knowledge_review_reviewer, r.reviewer) + kv(I18N.knowledge_review_qualification, r.qualification) + kv(I18N.knowledge_review_date, r.review_date) + kv(I18N.knowledge_review_citation, r.citation) + kv(I18N.knowledge_review_version, r.signoff_version) + `<div><strong>${escHtml(I18N.knowledge_review_fingerprint)}:</strong>${fingerprint(r.content_hash)}</div>`;
+    const localEvidence = (e.references || []).filter(r => r.trust_status === "local_verified").map(referenceLine)
+      .concat((e.field_records || []).filter(r => r.trust_status === "local_verified").map(recordLine)).join("");
+    const externalClaims = (e.references || []).filter(r => r.trust_status !== "local_verified").map(referenceLine)
+      .concat((e.field_records || []).filter(r => r.trust_status !== "local_verified").map(recordLine)).join("");
     modal.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-labelledby="repo-detail-title" style="max-width:520px;width:92%;max-height:80vh;overflow:auto;padding:20px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <h3 id="repo-detail-title" style="margin:0;font-size:16px;color:var(--primary-container);">${escHtml(e.title)}</h3>
@@ -583,9 +610,17 @@ async function openRepoDetail(id) {
       </div>
       <div class="text-sm text-secondary" style="margin-bottom:8px;">${escHtml(e.category)} / ${escHtml(e.subcategory || "")} · ${escHtml(e.id)}</div>
       <p class="text-sm" style="margin-bottom:10px;">${escHtml(e.summary)}</p>
-      ${steps ? `<div class="text-xs text-secondary uppercase tracking-wider" style="margin-bottom:4px;">${escHtml(REPO_I18N.steps)}</div><ol style="list-style:decimal inside;font-size:13px;margin-bottom:10px;">${steps}</ol>` : ""}
+      <div class="text-sm" style="margin-bottom:8px;"><strong>${escHtml(e.verification_label || "")}</strong> — ${escHtml(e.verification_explanation || "")}<br>${escHtml(e.source_label || "")}</div>
+      ${e.risk_notice ? `<div role="note" class="alert-card alert-critical text-sm" style="margin-bottom:8px;"><strong>${escHtml(REPO_I18N.risk)}</strong><span>${escHtml(e.risk_notice)}</span></div>` : ""}
+      <div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.applicable)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml(applicable)}</div>
+      <div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.contraindications)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml(contraindications)}</div>
+      ${e.escalation_help ? `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.escalation)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml(e.escalation_help)}</div>` : ""}
+      ${localEvidence ? `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.local_verified)}</div><ul class="text-sm">${localEvidence}</ul>` : ""}
+      ${externalClaims ? `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.external_claim)}</div><ul class="text-sm">${externalClaims}</ul>` : ""}
+      ${e.local_review?.reviewer ? `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(e.local_review.trust_label)}</div><div class="text-sm">${reviewLine(e.local_review)}</div>` : ""}
+      ${e.external_review_claim?.reviewer ? `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(e.external_review_claim.trust_label)}</div><div class="text-sm">${reviewLine(e.external_review_claim)}</div>` : ""}
       ${warns ? `<div class="text-xs text-secondary uppercase tracking-wider" style="margin-bottom:4px;">${escHtml(REPO_I18N.warnings)}</div>${warns}` : ""}
-      <div class="text-xs text-secondary" style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">${escHtml(REPO_I18N.verification_label)}: ${escHtml(e.verification || "")} · ${escHtml(REPO_I18N.source)}: ${escHtml(e.source || "")}</div>
+      ${steps ? `<div class="text-xs text-secondary uppercase tracking-wider" style="margin:8px 0 4px;">${escHtml(REPO_I18N.steps)}</div><ol style="list-style:decimal inside;font-size:13px;margin-bottom:10px;">${steps}</ol>` : ""}
     </div>`;
     document.getElementById("repo-detail-close").focus();
   } catch (ex) {

@@ -430,7 +430,7 @@ async function searchKnowledge() {
     '<div class="entry-meta">' + I18N.web_kb_meta_tier_fmt
         .replace('{tier}', escHtml(String(e.priority)))
         .replace('{category}', escHtml(e.category || ''))
-        .replace('{subcategory}', escHtml(e.subcategory || '')) + '</div>' +
+        .replace('{subcategory}', escHtml(e.subcategory || '')) + ' · ' + (e.high_risk ? escHtml(I18N.knowledge_high_risk_short) + ' · ' : '') + escHtml(e.verification_label || '') + '</div>' +
     '<div class="entry-summary">' + escHtml(I18N.web_kb_summary_short_fmt.replace('{summary}', (e.summary || "").substring(0, 100))) + '</div></div>'
   ).join("");
   // SHA-147: event delegation instead of inline onclick (avoid JS-string-context
@@ -450,18 +450,31 @@ async function showKnowledge(id) {
   let html = '<div class="back-btn" role="button" tabindex="0" data-index-action="back-to-results"><span class="material-symbols-outlined" style="font-size:14px;">arrow_back</span> ' + I18N.web_kb_back + '</div>';
   html += '<div class="kb-detail"><h3>' + escHtml(entry.title) + '</h3>';
   html += '<p class="text-sm mb-3">' + escHtml(entry.summary) + '</p>';
-  if (entry.steps && entry.steps.length) {
-    html += '<div class="section-label">' + I18N.web_steps + '</div><ol style="list-style:decimal inside;font-size:13px;">' + entry.steps.map(s => '<li>' + escHtml(s) + '</li>').join("") + '</ol>';
-  }
+  html += '<div class="kb-meta"><strong>' + escHtml(entry.verification_label || '') + '</strong> — ' + escHtml(entry.verification_explanation || '') + '<br>' + escHtml(entry.source_label || '') + '</div>';
+  if (entry.risk_notice) html += '<div role="note" class="alert-card alert-critical text-sm" style="margin:8px 0;"><strong>' + escHtml(I18N.knowledge_risk_label) + '</strong><span>' + escHtml(entry.risk_notice) + '</span></div>';
+  html += '<div class="section-label">' + escHtml(I18N.knowledge_applicable_when) + '</div><div class="text-sm mb-2">' + escHtml((entry.applicable_when || []).join('; ') || I18N.knowledge_not_provided) + '</div>';
+  html += '<div class="section-label warn">' + escHtml(I18N.knowledge_contraindications) + '</div><div class="text-sm mb-2">' + escHtml((entry.contraindications || []).join('; ') || I18N.knowledge_not_provided) + '</div>';
+  if (entry.escalation_help) html += '<div class="section-label warn">' + escHtml(I18N.knowledge_escalation_label) + '</div><div class="text-sm mb-2">' + escHtml(entry.escalation_help) + '</div>';
+  const localRefs = (entry.references || []).filter(r => r.trust_status === 'local_verified');
+  const externalRefs = (entry.references || []).filter(r => r.trust_status !== 'local_verified');
+  const localRecords = (entry.field_records || []).filter(r => r.trust_status === 'local_verified');
+  const externalRecords = (entry.field_records || []).filter(r => r.trust_status !== 'local_verified');
+  const renderRefs = refs => '<ul class="text-sm">' + refs.map(r => '<li>' + escHtml((r.title || r.organization || r.source_id || '') + ' — ' + (r.locator || '')) + '</li>').join('') + '</ul>';
+  const kv = (label, value) => '<div><strong>' + escHtml(label) + ':</strong> ' + escHtml(String(value || '')) + '</div>';
+  const renderRecords = records => '<div class="text-sm">' + records.map(r => '<div style="margin-bottom:8px;">' + kv(I18N.knowledge_field_source, r.source_id) + kv(I18N.knowledge_field_conditions, (r.conditions || []).join('; ')) + kv(I18N.knowledge_field_outcome, r.outcome) + kv(I18N.knowledge_field_date, r.recorded_at) + kv(I18N.knowledge_field_locator, r.locator) + '</div>').join('') + '</div>';
+  const renderFingerprint = value => { const full = String(value || ''); const short = full.length > 30 ? full.slice(0, 20) + '…' + full.slice(-8) : full; return '<details><summary>' + escHtml(short) + '</summary><code style="overflow-wrap:anywhere;user-select:all;">' + escHtml(full) + '</code></details>'; };
+  const renderReview = review => kv(I18N.knowledge_review_reviewer, review.reviewer) + kv(I18N.knowledge_review_qualification, review.qualification) + kv(I18N.knowledge_review_date, review.review_date) + kv(I18N.knowledge_review_citation, review.citation) + kv(I18N.knowledge_review_version, review.signoff_version) + '<div><strong>' + escHtml(I18N.knowledge_review_fingerprint) + ':</strong>' + renderFingerprint(review.content_hash) + '</div>';
+  if (localRefs.length || localRecords.length) html += '<div class="section-label">' + escHtml(I18N.knowledge_local_verified_evidence) + '</div>' + renderRefs(localRefs) + renderRecords(localRecords);
+  if (externalRefs.length || externalRecords.length) html += '<div class="section-label warn">' + escHtml(I18N.knowledge_external_unverified_claim) + '</div>' + renderRefs(externalRefs) + renderRecords(externalRecords);
+  if (entry.local_review && entry.local_review.reviewer) html += '<div class="section-label">' + escHtml(entry.local_review.trust_label) + '</div><div class="text-sm">' + renderReview(entry.local_review) + '</div>';
+  if (entry.external_review_claim && entry.external_review_claim.reviewer) html += '<div class="section-label warn">' + escHtml(entry.external_review_claim.trust_label) + '</div><div class="text-sm">' + renderReview(entry.external_review_claim) + '</div>';
   if (entry.warnings && entry.warnings.length) {
     html += '<div class="section-label warn">' + I18N.web_warnings + '</div>' + entry.warnings.map(w => '<div class="text-warn text-sm">· ' + escHtml(w) + '</div>').join("");
   }
-  html += '<div class="kb-meta">' + I18N.web_kb_meta_full_fmt
-      .replace('{tier}', escHtml(String(entry.priority)))
-      .replace('{category}', escHtml(entry.category || ''))
-      .replace('{subcategory}', escHtml(entry.subcategory || ''))
-      .replace('{verification}', escHtml(entry.verification || ''))
-      .replace('{source}', escHtml(entry.source || '')) + '</div></div>';
+  if (entry.steps && entry.steps.length) {
+    html += '<div class="section-label">' + I18N.web_steps + '</div><ol style="list-style:decimal inside;font-size:13px;">' + entry.steps.map(s => '<li>' + escHtml(s) + '</li>').join("") + '</ol>';
+  }
+  html += '</div>';
   container.innerHTML = html;
 }
 

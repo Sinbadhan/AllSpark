@@ -196,22 +196,9 @@ def register_core_routes(app, check):
     async def search_knowledge(q: str = Query(..., min_length=1), limit: int = 10):
         container, db = check()
         if container.get("knowledge"):
-            entries = container.get("knowledge").search_by_language(q, limit)
-            return [
-                {
-                    "id": e.id,
-                    "category": e.category,
-                    "subcategory": e.subcategory,
-                    "priority": e.priority,
-                    "title": e.title,
-                    "summary": e.summary,
-                    "steps": e.steps,
-                    "warnings": e.warnings,
-                    "verification": e.verification,
-                    "source": e.source,
-                }
-                for e in entries
-            ]
+            knowledge = container.get("knowledge")
+            entries = knowledge.search_by_language(q, limit)
+            return [knowledge.entry_payload(e, detail=False) for e in entries]
         return []
 
     @app.get("/api/knowledge/categories")
@@ -233,20 +220,9 @@ def register_core_routes(app, check):
             cats = container.get("knowledge").get_categories()
             if category not in cats:
                 raise HTTPException(404, f"Unknown category: '{category}'")
-            entries = container.get("knowledge").get_by_category(category, subcategory)
-            return [
-                {
-                    "id": e.id,
-                    "title": e.title,
-                    "summary": e.summary,
-                    "priority": e.priority,
-                    "category": e.category,
-                    "subcategory": e.subcategory,
-                    "verification": e.verification,
-                    "language": e.language,
-                }
-                for e in entries
-            ]
+            knowledge = container.get("knowledge")
+            entries = knowledge.get_by_category(category, subcategory)
+            return [knowledge.entry_payload(e, detail=False) for e in entries]
         return []
 
     # Knowledge IDs intentionally contain slashes (for example
@@ -258,20 +234,8 @@ def register_core_routes(app, check):
         entry = db.get_knowledge(kid)
         if not entry:
             raise HTTPException(404, "Knowledge entry not found")
-        return {
-            "id": entry.id,
-            "category": entry.category,
-            "subcategory": entry.subcategory,
-            "priority": entry.priority,
-            "title": entry.title,
-            "summary": entry.summary,
-            "steps": entry.steps,
-            "prerequisites": entry.prerequisites,
-            "warnings": entry.warnings,
-            "verification": entry.verification,
-            "source": entry.source,
-            "language": entry.language,
-        }
+        knowledge = container.get("knowledge")
+        return knowledge.entry_payload(entry)
 
     @app.post("/api/chat")
     async def chat(request: Request, message: str = Query(None), language: str = None):

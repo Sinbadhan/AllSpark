@@ -347,12 +347,12 @@ def validate_knowledge_entry_schema(entry: "KnowledgeEntry") -> None:
         "verification_claim": 32, "source_claim": 64, "language": 8,
     }
     required = {"id", "category", "title", "summary"}
-    for field, limit in scalar_limits.items():
-        value = getattr(entry, field)
+    for field_name, limit in scalar_limits.items():
+        value = getattr(entry, field_name)
         if not isinstance(value, str) or len(value) > limit:
-            raise KnowledgeValidationError(f"knowledge_{field}_invalid")
-        if field in required and not value.strip():
-            raise KnowledgeValidationError(f"knowledge_{field}_required")
+            raise KnowledgeValidationError(f"knowledge_{field_name}_invalid")
+        if field_name in required and not value.strip():
+            raise KnowledgeValidationError(f"knowledge_{field_name}_required")
     if entry.verification not in KNOWLEDGE_VERIFICATION_LEVELS:
         raise KnowledgeValidationError("knowledge_verification_invalid")
     if entry.language not in {"zh", "en"}:
@@ -373,13 +373,13 @@ def validate_knowledge_entry_schema(entry: "KnowledgeEntry") -> None:
         or not 0 <= entry.version <= 1_000_000
     ):
         raise KnowledgeValidationError("knowledge_version_invalid")
-    for field in ("steps", "prerequisites", "warnings"):
-        values = getattr(entry, field)
+    for field_name in ("steps", "prerequisites", "warnings"):
+        values = getattr(entry, field_name)
         if not isinstance(values, list) or len(values) > _KNOWLEDGE_CONTENT_LIST_MAX:
-            raise KnowledgeValidationError(f"knowledge_{field}_invalid_count")
+            raise KnowledgeValidationError(f"knowledge_{field_name}_invalid_count")
         for value in values:
             if not isinstance(value, str) or len(value) > _KNOWLEDGE_CONTENT_TEXT_MAX:
-                raise KnowledgeValidationError(f"knowledge_{field}_invalid_item")
+                raise KnowledgeValidationError(f"knowledge_{field_name}_invalid_item")
 
 
 _KNOWLEDGE_CONTENT_LIST_MAX = 128

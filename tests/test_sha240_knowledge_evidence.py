@@ -1,25 +1,25 @@
-import json
-import hashlib
 import copy
+import hashlib
 import hmac
-import sqlite3
+import json
 import socket
+import sqlite3
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 
 from allspark.core.database import Database
+from allspark.core.i18n import get_language, set_language
 from allspark.core.models import (
+    KNOWLEDGE_TRANSPORT_FIELDS,
     KnowledgeEntry,
     KnowledgeEvidenceValidationError,
-    KNOWLEDGE_TRANSPORT_FIELDS,
     compute_content_hash,
     derive_verification_level,
     knowledge_transport_payload,
     normalize_knowledge_evidence,
 )
-from allspark.core.i18n import get_language, set_language
 from allspark.services.knowledge_audit import audit_bundled_knowledge
 from allspark.services.knowledge_engine import KnowledgeEngine
 from allspark.services.knowledge_loader import load_knowledge
@@ -550,6 +550,21 @@ def test_skf_rejects_duplicate_members_and_compression_bomb(tmp_path: Path) -> N
         SKFPackage.import_from_file(str(bomb))
 
 
+def test_skf_rejects_unexpected_member_and_missing_manifest(tmp_path: Path) -> None:
+    unexpected = tmp_path / "unexpected-member.skf"
+    with ZipFile(unexpected, "w", ZIP_DEFLATED) as archive:
+        archive.writestr("manifest.json", json.dumps({"skf": {"version": "1.0"}}))
+        archive.writestr("unexpected.bin", "not allowed")
+    with pytest.raises(SKFArchiveValidationError, match="Unexpected SKF members"):
+        SKFPackage.import_from_file(str(unexpected))
+
+    missing_manifest = tmp_path / "missing-manifest.skf"
+    with ZipFile(missing_manifest, "w", ZIP_DEFLATED) as archive:
+        archive.writestr("knowledge.json", "[]")
+    with pytest.raises(SKFArchiveValidationError, match="Missing manifest"):
+        SKFPackage.import_from_file(str(missing_manifest))
+
+
 def test_skf_rejects_entry_count_content_and_archive_size_limits(
     tmp_path: Path, monkeypatch
 ) -> None:
@@ -642,6 +657,18 @@ def test_qa_and_dom_put_high_risk_boundaries_before_steps(language: str) -> None
         set_language(language, persist=False)
         entry = _entry(
             references=[_reference("a")], applicable_when=["condition"],
+            field_records=[_field_record(
+                local_status="external_claim", verified_by="", verified_at=""
+            )],
+            review_claim={
+                "reviewer": "External Reviewer",
+                "qualification": "Emergency physician",
+                "review_date": "2026-07-15",
+                "citation": "Manual section 2",
+                "content_hash": "a" * 64,
+                "signoff_version": 1,
+                "local_status": "external_claim",
+            },
             contraindications=["boundary"], steps=["action"],
         )
         rendered = KnowledgeEngine.entry_payload(entry)
@@ -650,6 +677,8 @@ def test_qa_and_dom_put_high_risk_boundaries_before_steps(language: str) -> None
         text = KnowledgeEngine(db).format_entry(entry)
         assert text.index(rendered["risk_notice"]) < text.index("1. action")
         assert text.index("Chapter 2, section 4") < text.index("1. action")
+        assert text.index("Succeeded without injury") < text.index("1. action")
+        assert text.index("External Reviewer") < text.index("1. action")
         index_html = Path("allspark/templates/index.html").read_text(encoding="utf-8")
         repo_html = Path("allspark/templates/repository.html").read_text(encoding="utf-8")
         assert index_html.index("entry.risk_notice") < index_html.index("entry.steps")

@@ -2,7 +2,13 @@ import logging
 
 from allspark.core.database import Database
 from allspark.core.i18n import get_language, t
-from allspark.core.models import ResourceType
+from allspark.core.models import (
+    ResourceType,
+    derive_verification_level,
+    is_high_risk_knowledge,
+    verified_field_records,
+    verified_references,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,21 +63,185 @@ class KnowledgeEngine:
         ).fetchall()
         return [r[0] for r in rows]
 
+    @staticmethod
+    def entry_payload(entry, *, detail: bool = True) -> dict:
+        """One derived truth contract for API, Repository and Q&A."""
+        level = derive_verification_level(entry)
+        source_keys = {
+            "pre_collapse": "knowledge_source_bundled",
+            "other_spark": "knowledge_source_external",
+            "self_learned": "knowledge_source_local_generated",
+            "self_learned_llm": "knowledge_source_ai_generated",
+        }
+        high_risk = is_high_risk_knowledge(entry)
+        local_references = verified_references(entry)
+        local_field_records = verified_field_records(entry)
+        verified_reference_ids = {id(value) for value in local_references}
+        verified_field_ids = {id(value) for value in local_field_records}
+        payload = {
+            "id": entry.id,
+            "category": entry.category,
+            "subcategory": entry.subcategory,
+            "priority": entry.priority,
+            "title": entry.title,
+            "summary": entry.summary,
+            "verification": level,
+            "verification_label": t(f"knowledge_verification_{level}_label"),
+            "verification_explanation": t(
+                f"knowledge_verification_{level}_explanation"
+            ),
+            "source": entry.source,
+            "source_label": t(source_keys.get(entry.source, "knowledge_source_other")),
+            "language": entry.language,
+            "high_risk": high_risk,
+            "risk_notice": (
+                t("knowledge_high_risk_unverified_notice")
+                if high_risk and level == "unverified" else ""
+            ),
+            "escalation_help": (
+                t("knowledge_escalation_help") if high_risk else ""
+            ),
+            "evidence_counts": {
+                "verified_references": len(local_references),
+                "verified_field_records": len(local_field_records),
+                "external_reference_claims": len(entry.references) - len(local_references),
+                "external_field_claims": len(entry.field_records) - len(local_field_records),
+                "local_expert_reviews": 1 if entry.is_signed_off() else 0,
+                "external_review_claims": 1 if entry.review_claim else 0,
+            },
+        }
+        if detail:
+            references = [
+                {
+                    **value,
+                    "trust_status": (
+                        "local_verified" if id(value) in verified_reference_ids
+                        else "external_claim"
+                    ),
+                    "trust_label": t(
+                        "knowledge_local_verified_evidence"
+                        if id(value) in verified_reference_ids
+                        else "knowledge_external_unverified_claim"
+                    ),
+                }
+                for value in entry.references
+            ]
+            field_records = [
+                {
+                    **value,
+                    "trust_status": (
+                        "local_verified" if id(value) in verified_field_ids
+                        else "external_claim"
+                    ),
+                    "trust_label": t(
+                        "knowledge_local_verified_evidence"
+                        if id(value) in verified_field_ids
+                        else "knowledge_external_unverified_claim"
+                    ),
+                }
+                for value in entry.field_records
+            ]
+            payload.update({
+                "steps": entry.steps,
+                "prerequisites": entry.prerequisites,
+                "warnings": entry.warnings,
+                "verification_claim": entry.verification_claim,
+                "source_claim": entry.source_claim,
+                "references": references,
+                "field_records": field_records,
+                "applicable_when": entry.applicable_when,
+                "contraindications": entry.contraindications,
+                "local_review": (
+                    {
+                        "reviewer": entry.reviewer,
+                        "qualification": entry.qualification,
+                        "review_date": entry.review_date,
+                        "citation": entry.citation,
+                        "content_hash": entry.content_hash,
+                        "signoff_version": entry.signoff_version,
+                        "trust_status": "local_verified",
+                        "trust_label": t("knowledge_local_verified_review"),
+                    }
+                    if entry.is_signed_off() else {}
+                ),
+                "external_review_claim": (
+                    {
+                        **entry.review_claim,
+                        "trust_status": "external_claim",
+                        "trust_label": t("knowledge_external_review_claim"),
+                    }
+                    if entry.review_claim else {}
+                ),
+            })
+        return payload
+
     def format_entry(self, entry) -> str:
+        payload = self.entry_payload(entry)
         lines = [f"[{entry.id}] {entry.title}"]
         lines.append(f"  {t('category')}: {entry.category}/{entry.subcategory} | {t('priority')}: {t('tier')} {entry.priority}")
         lines.append(f"  {entry.summary}")
-        if entry.steps:
-            lines.append(f"  {t('steps')}:")
-            for i, step in enumerate(entry.steps, 1):
-                lines.append(f"    {i}. {step}")
+        lines.append(
+            f"  {t('verification')}: {payload['verification_label']} — "
+            f"{payload['verification_explanation']}"
+        )
+        lines.append(f"  {t('source')}: {payload['source_label']}")
+        if payload["risk_notice"]:
+            lines.append(f"  {t('knowledge_risk_label')}: {payload['risk_notice']}")
+        lines.append(
+            f"  {t('knowledge_applicable_when')}: "
+            f"{'; '.join(entry.applicable_when) if entry.applicable_when else t('knowledge_not_provided')}"
+        )
+        lines.append(
+            f"  {t('knowledge_contraindications')}: "
+            f"{'; '.join(entry.contraindications) if entry.contraindications else t('knowledge_not_provided')}"
+        )
+        if payload["escalation_help"]:
+            lines.append(f"  {t('knowledge_escalation_label')}: {payload['escalation_help']}")
+        if payload["references"]:
+            lines.append(f"  {t('knowledge_references_label')}:")
+            for reference in payload["references"]:
+                name = (
+                    reference.get("title") or reference.get("organization")
+                    or reference.get("source_id") or t("knowledge_not_provided")
+                )
+                lines.append(
+                    f"    - {reference['trust_label']}: {name} — "
+                    f"{reference.get('locator', '')}"
+                )
+        if payload["field_records"]:
+            lines.append(f"  {t('knowledge_field_records_label')}:")
+            for record in payload["field_records"]:
+                lines.append(
+                    f"    - {record['trust_label']}: "
+                    f"{t('knowledge_field_source')}={record.get('source_id', '')}; "
+                    f"{t('knowledge_field_conditions')}="
+                    f"{'; '.join(record.get('conditions', []))}; "
+                    f"{t('knowledge_field_outcome')}={record.get('outcome', '')}; "
+                    f"{t('knowledge_field_date')}={record.get('recorded_at', '')}; "
+                    f"{t('knowledge_field_locator')}={record.get('locator', '')}"
+                )
+        for review in (payload["local_review"], payload["external_review_claim"]):
+            if review:
+                lines.append(
+                    f"  {review['trust_label']}: "
+                    f"{t('knowledge_review_reviewer')}={review.get('reviewer', '')}; "
+                    f"{t('knowledge_review_qualification')}="
+                    f"{review.get('qualification', '')}; "
+                    f"{t('knowledge_review_date')}={review.get('review_date', '')}; "
+                    f"{t('knowledge_review_citation')}={review.get('citation', '')}; "
+                    f"{t('knowledge_review_version')}={review.get('signoff_version', '')}; "
+                    f"{t('knowledge_review_fingerprint')}={review.get('content_hash', '')}"
+                )
         if entry.prerequisites:
             lines.append(f"  {t('prerequisites')}: {', '.join(entry.prerequisites)}")
         if entry.warnings:
             lines.append(f"  {t('warnings_label')}:")
             for w in entry.warnings:
                 lines.append(f"    - {w}")
-        lines.append(f"  {t('verification')}: {entry.verification} | {t('source')}: {entry.source}")
+        if entry.steps:
+            lines.append(f"  {t('steps')}:")
+            for i, step in enumerate(entry.steps, 1):
+                lines.append(f"    {i}. {step}")
         return "\n".join(lines)
 
     def format_answer(self, entries: list) -> str:
@@ -90,7 +260,10 @@ class KnowledgeEngine:
             lines.append("")
             lines.append(t("related_knowledge"))
             for e in related:
-                lines.append(f"  • [{e.id}] {e.title}")
+                payload = self.entry_payload(e)
+                lines.append(
+                    f"  • [{e.id}] {e.title} — {payload['verification_label']}"
+                )
         return "\n".join(lines)
 
     def get_relevant_knowledge(self, intent: str, resources: list = None) -> list:

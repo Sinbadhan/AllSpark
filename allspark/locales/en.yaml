@@ -1738,6 +1738,50 @@ web_th_size: SIZE
 web_th_when: WHEN
 web_steps: Steps
 web_warnings: Warnings
+knowledge_verification_unverified_label: Unverified
+knowledge_verification_unverified_explanation: No locally audited evidence currently establishes this claim.
+knowledge_verification_cross_ref_label: Cross-referenced
+knowledge_verification_cross_ref_explanation: Supported by at least two distinct, locally verified and locatable sources.
+knowledge_verification_field_tested_label: Field-tested
+knowledge_verification_field_tested_explanation: Supported by a complete locally verified field record.
+knowledge_verification_expert_verified_label: Expert verified
+knowledge_verification_expert_verified_explanation: Signed by a named qualified reviewer against this exact content and safety boundary.
+knowledge_verification_partially_verified_label: Unverified
+knowledge_verification_partially_verified_explanation: Provenance alone does not establish verification.
+knowledge_verification_conflict_label: Conflicting evidence
+knowledge_verification_conflict_explanation: Local review found conflicting claims; do not treat this as verified.
+knowledge_source_bundled: Bundled source claim
+knowledge_source_external: External AllSpark claim
+knowledge_source_local_generated: Locally generated experience summary
+knowledge_source_ai_generated: AI-generated experience summary
+knowledge_source_other: Other source claim
+knowledge_high_risk_unverified_notice: High-risk guidance without locally verified evidence. Treat it as unconfirmed and do not rely on it as the sole basis for action.
+knowledge_high_risk_short: High risk
+knowledge_risk_label: Evidence risk
+knowledge_applicable_when: Applicable when
+knowledge_contraindications: Contraindications
+knowledge_escalation_label: Escalation
+knowledge_escalation_help: Seek qualified emergency or medical help when available; do not delay urgent assistance to follow this entry.
+knowledge_not_provided: Not established
+knowledge_evidence_label: Evidence
+knowledge_references_label: Locatable references
+knowledge_field_records_label: Field records
+knowledge_local_verified_evidence: Locally verified evidence
+knowledge_external_unverified_claim: External, unverified claim
+knowledge_local_verified_review: Locally verified expert review
+knowledge_external_review_claim: External expert-review claim (not locally verified)
+knowledge_field_source: Source identity
+knowledge_field_conditions: Conditions
+knowledge_field_outcome: Outcome
+knowledge_field_date: Date
+knowledge_field_locator: Record locator
+knowledge_review_reviewer: Reviewer
+knowledge_review_qualification: Qualification
+knowledge_review_date: Review date
+knowledge_review_citation: Evidence locator
+knowledge_review_version: Signoff version
+knowledge_review_fingerprint: Content fingerprint
+net_error_invalid_payload: Invalid knowledge transfer payload
 web_loading_model: Loading model...
 web_model_loaded: 'Model loaded: {name}'
 web_model_error: 'Error: {msg}'
