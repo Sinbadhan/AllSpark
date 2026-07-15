@@ -67,7 +67,12 @@ VALID_TRIAGE_TYPES = {
 SCENARIO_REVIEW_STATUSES = {"pending_external_review", "approved", "rejected"}
 KNOWLEDGE_REVIEW_STATUSES = {"pending_external_review", "approved", "rejected"}
 QUALIFICATION_BY_HAZARD = {
-    "biological": {"biology", "environmental_health", "emergency_medicine"},
+    "biological": {
+        "biology",
+        "environmental_health",
+        "emergency_medicine",
+        "toxicology",
+    },
     "electrical": {"electrical_engineering"},
     "environmental": {"environmental_health", "survival_operations"},
     "explosion": {"fire_safety", "mechanical_engineering"},
@@ -204,10 +209,17 @@ def _validate_reviewer_signoffs(scenario: dict, hazards: list[str]) -> None:
     signoffs = scenario.get("reviewer_signoffs")
     if not isinstance(signoffs, list) or len(signoffs) > 16:
         raise SafetyScenarioValidationError("reviewer_signoffs must be a bounded list")
-    if scenario["review_status"] != "approved":
+    review_status = scenario["review_status"]
+    if review_status == "pending_external_review":
+        if signoffs:
+            raise SafetyScenarioValidationError(
+                "pending scenario cannot contain reviewer signoffs"
+            )
         return
     if not signoffs:
-        raise SafetyScenarioValidationError("approved scenario requires reviewer signoffs")
+        raise SafetyScenarioValidationError(
+            f"{review_status} scenario requires reviewer signoffs"
+        )
     covered: set[str] = set()
     for index, signoff in enumerate(signoffs):
         prefix = f"reviewer_signoffs[{index}]"
@@ -222,6 +234,7 @@ def _validate_reviewer_signoffs(scenario: dict, hazards: list[str]) -> None:
             "scope",
             "covered_hazards",
             "reviewed_at",
+            "decision",
             "conclusion",
             "reservations",
             "content_hash",
@@ -245,6 +258,12 @@ def _validate_reviewer_signoffs(scenario: dict, hazards: list[str]) -> None:
             value = signoff.get(field)
             if not isinstance(value, str) or not value.strip() or len(value) > _MAX_STRING:
                 raise SafetyScenarioValidationError(f"{prefix}.{field} is required")
+        if signoff.get("decision") not in {"approved", "rejected"}:
+            raise SafetyScenarioValidationError(f"{prefix}.decision is invalid")
+        if signoff["decision"] != review_status:
+            raise SafetyScenarioValidationError(
+                f"{prefix}.decision does not match review status"
+            )
         signoff_hazards = _string_list(
             signoff.get("covered_hazards"), f"{prefix}.covered_hazards"
         )
@@ -275,7 +294,7 @@ def _validate_reviewer_signoffs(scenario: dict, hazards: list[str]) -> None:
         if signoff.get("content_hash") != scenario_content_hash(scenario):
             raise SafetyScenarioValidationError(f"{prefix} content hash mismatch")
         covered.update(signoff_hazards)
-    if covered != set(hazards):
+    if review_status == "approved" and covered != set(hazards):
         raise SafetyScenarioValidationError("reviewer signoffs do not cover all hazards")
 
 

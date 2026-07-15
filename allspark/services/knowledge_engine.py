@@ -13,6 +13,16 @@ from allspark.core.models import (
 logger = logging.getLogger(__name__)
 
 
+def _risk_qualification_label(value: object) -> str:
+    code = value if isinstance(value, str) else ""
+    key = f"knowledge_risk_qualification_{code}"
+    label = t(key)
+    if label != key:
+        return label
+    readable = code.replace("_", " ").strip() or t("knowledge_not_provided")
+    return t("knowledge_risk_qualification_unknown", qualification=readable)
+
+
 class KnowledgeEngine:
     def __init__(self, db: Database, vector_engine=None, external_kb=None):
         self.db = db
@@ -95,8 +105,19 @@ class KnowledgeEngine:
             "language": entry.language,
             "high_risk": high_risk,
             "risk_level": entry.risk_level or "pending_review",
+            "risk_level_label": t(
+                f"knowledge_risk_level_{entry.risk_level or 'pending_review'}"
+            ),
             "hazards": entry.hazards or ["unknown"],
+            "hazard_labels": [
+                t(f"knowledge_hazard_{hazard}")
+                for hazard in (entry.hazards or ["unknown"])
+            ],
             "risk_review_status": entry.review_status or "pending_external_review",
+            "risk_review_status_label": t(
+                "knowledge_risk_review_status_"
+                f"{entry.review_status or 'pending_external_review'}"
+            ),
             "risk_review_counts": {
                 "local": len(entry.risk_reviews),
                 "external_claims": len(entry.risk_review_claims),
@@ -154,8 +175,28 @@ class KnowledgeEngine:
                 "warnings": entry.warnings,
                 "verification_claim": entry.verification_claim,
                 "source_claim": entry.source_claim,
-                "risk_reviews": entry.risk_reviews,
-                "risk_review_claims": entry.risk_review_claims,
+                "risk_reviews": [
+                    {
+                        **review,
+                        "qualification_label": _risk_qualification_label(
+                            review.get("qualification_type")
+                        ),
+                        "trust_status": "local_verified",
+                        "trust_label": t("knowledge_local_risk_review"),
+                    }
+                    for review in entry.risk_reviews
+                ],
+                "risk_review_claims": [
+                    {
+                        **review,
+                        "qualification_label": _risk_qualification_label(
+                            review.get("qualification_type")
+                        ),
+                        "trust_status": "external_claim",
+                        "trust_label": t("knowledge_external_risk_review_claim"),
+                    }
+                    for review in entry.risk_review_claims
+                ],
                 "references": references,
                 "field_records": field_records,
                 "applicable_when": entry.applicable_when,
@@ -194,6 +235,14 @@ class KnowledgeEngine:
             f"{payload['verification_explanation']}"
         )
         lines.append(f"  {t('source')}: {payload['source_label']}")
+        lines.append(
+            f"  {t('knowledge_risk_classification_label')}: "
+            f"{payload['risk_review_status_label']} · {payload['risk_level_label']}"
+        )
+        lines.append(
+            f"  {t('knowledge_hazards_label')}: "
+            f"{', '.join(payload['hazard_labels'])}"
+        )
         if payload["risk_notice"]:
             lines.append(f"  {t('knowledge_risk_label')}: {payload['risk_notice']}")
         lines.append(
@@ -241,6 +290,24 @@ class KnowledgeEngine:
                     f"{t('knowledge_review_version')}={review.get('signoff_version', '')}; "
                     f"{t('knowledge_review_fingerprint')}={review.get('content_hash', '')}"
                 )
+        for review in [*payload["risk_reviews"], *payload["risk_review_claims"]]:
+            lines.append(
+                f"  {review['trust_label']}: "
+                f"{t('knowledge_review_reviewer')}={review.get('reviewer', '')}; "
+                f"{t('knowledge_review_qualification')}="
+                f"{review.get('qualification_label', '')}; "
+                f"{t('knowledge_risk_qualification_evidence')}="
+                f"{review.get('qualification_evidence', '')}; "
+                f"{t('knowledge_hazards_label')}="
+                f"{', '.join(review.get('covered_hazards', []))}; "
+                f"{t('knowledge_review_date')}={review.get('reviewed_at', '')}; "
+                f"{t('knowledge_risk_conclusion')}="
+                f"{review.get('conclusion', '')}; "
+                f"{t('knowledge_risk_reservations')}="
+                f"{'; '.join(review.get('reservations', [])) or t('knowledge_not_provided')}; "
+                f"{t('knowledge_review_fingerprint')}="
+                f"{review.get('classification_hash', '')}"
+            )
         if entry.prerequisites:
             lines.append(f"  {t('prerequisites')}: {', '.join(entry.prerequisites)}")
         if entry.warnings:

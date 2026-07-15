@@ -160,6 +160,8 @@ const REPO_I18N = {
   contraindications: "{{ t('knowledge_contraindications') }}",
   escalation: "{{ t('knowledge_escalation_label') }}",
   risk: "{{ t('knowledge_risk_label') }}",
+  risk_classification: "{{ t('knowledge_risk_classification_label') }}",
+  hazards: "{{ t('knowledge_hazards_label') }}",
   not_provided: "{{ t('knowledge_not_provided') }}",
   references: "{{ t('knowledge_references_label') }}",
   high_risk_short: "{{ t('knowledge_high_risk_short') }}",
@@ -599,11 +601,12 @@ async function openRepoDetail(id) {
     const recordLine = r => `<li style="margin-bottom:8px;">${kv(I18N.knowledge_field_source, r.source_id)}${kv(I18N.knowledge_field_conditions, (r.conditions || []).join("; "))}${kv(I18N.knowledge_field_outcome, r.outcome)}${kv(I18N.knowledge_field_date, r.recorded_at)}${kv(I18N.knowledge_field_locator, r.locator)}</li>`;
     const fingerprint = value => { const full = String(value || ""); const short = full.length > 30 ? full.slice(0, 20) + "…" + full.slice(-8) : full; return `<details><summary>${escHtml(short)}</summary><code style="overflow-wrap:anywhere;user-select:all;">${escHtml(full)}</code></details>`; };
     const reviewLine = r => kv(I18N.knowledge_review_reviewer, r.reviewer) + kv(I18N.knowledge_review_qualification, r.qualification) + kv(I18N.knowledge_review_date, r.review_date) + kv(I18N.knowledge_review_citation, r.citation) + kv(I18N.knowledge_review_version, r.signoff_version) + `<div><strong>${escHtml(I18N.knowledge_review_fingerprint)}:</strong>${fingerprint(r.content_hash)}</div>`;
+    const riskReviewLine = r => kv(I18N.knowledge_review_reviewer, r.reviewer) + kv(I18N.knowledge_review_qualification, r.qualification_label) + kv(I18N.knowledge_risk_qualification_evidence, r.qualification_evidence) + kv(REPO_I18N.hazards, (r.covered_hazards || []).map(h => I18N[`knowledge_hazard_${h}`] || h).join("; ")) + kv(I18N.knowledge_review_date, r.reviewed_at) + kv(I18N.knowledge_risk_conclusion, r.conclusion) + kv(I18N.knowledge_risk_reservations, (r.reservations || []).join("; ") || REPO_I18N.not_provided) + `<div><strong>${escHtml(I18N.knowledge_review_fingerprint)}:</strong>${fingerprint(r.classification_hash)}</div>`;
     const localEvidence = (e.references || []).filter(r => r.trust_status === "local_verified").map(referenceLine)
       .concat((e.field_records || []).filter(r => r.trust_status === "local_verified").map(recordLine)).join("");
     const externalClaims = (e.references || []).filter(r => r.trust_status !== "local_verified").map(referenceLine)
       .concat((e.field_records || []).filter(r => r.trust_status !== "local_verified").map(recordLine)).join("");
-    modal.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-labelledby="repo-detail-title" style="max-width:520px;width:92%;max-height:80vh;overflow:auto;padding:20px;">
+    modal.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-labelledby="repo-detail-title" style="max-width:520px;width:92%;max-height:80vh;overflow:auto;overflow-wrap:anywhere;padding:20px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <h3 id="repo-detail-title" style="margin:0;font-size:16px;color:var(--primary-container);">${escHtml(e.title)}</h3>
         <button id="repo-detail-close" class="icon-btn" aria-label="${escHtml(REPO_I18N.close)}" data-repo-action="close-detail"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
@@ -611,6 +614,8 @@ async function openRepoDetail(id) {
       <div class="text-sm text-secondary" style="margin-bottom:8px;">${escHtml(e.category)} / ${escHtml(e.subcategory || "")} · ${escHtml(e.id)}</div>
       <p class="text-sm" style="margin-bottom:10px;">${escHtml(e.summary)}</p>
       <div class="text-sm" style="margin-bottom:8px;"><strong>${escHtml(e.verification_label || "")}</strong> — ${escHtml(e.verification_explanation || "")}<br>${escHtml(e.source_label || "")}</div>
+      <div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.risk_classification)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml(e.risk_review_status_label || "")} · ${escHtml(e.risk_level_label || "")}</div>
+      <div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.hazards)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml((e.hazard_labels || []).join("; ") || REPO_I18N.not_provided)}</div>
       ${e.risk_notice ? `<div role="note" class="alert-card alert-critical text-sm" style="margin-bottom:8px;"><strong>${escHtml(REPO_I18N.risk)}</strong><span>${escHtml(e.risk_notice)}</span></div>` : ""}
       <div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.applicable)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml(applicable)}</div>
       <div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.contraindications)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml(contraindications)}</div>
@@ -619,6 +624,8 @@ async function openRepoDetail(id) {
       ${externalClaims ? `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.external_claim)}</div><ul class="text-sm">${externalClaims}</ul>` : ""}
       ${e.local_review?.reviewer ? `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(e.local_review.trust_label)}</div><div class="text-sm">${reviewLine(e.local_review)}</div>` : ""}
       ${e.external_review_claim?.reviewer ? `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(e.external_review_claim.trust_label)}</div><div class="text-sm">${reviewLine(e.external_review_claim)}</div>` : ""}
+      ${(e.risk_reviews || []).map(r => `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(r.trust_label)}</div><div class="text-sm">${riskReviewLine(r)}</div>`).join("")}
+      ${(e.risk_review_claims || []).map(r => `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(r.trust_label)}</div><div class="text-sm">${riskReviewLine(r)}</div>`).join("")}
       ${warns ? `<div class="text-xs text-secondary uppercase tracking-wider" style="margin-bottom:4px;">${escHtml(REPO_I18N.warnings)}</div>${warns}` : ""}
       ${steps ? `<div class="text-xs text-secondary uppercase tracking-wider" style="margin:8px 0 4px;">${escHtml(REPO_I18N.steps)}</div><ol style="list-style:decimal inside;font-size:13px;margin-bottom:10px;">${steps}</ol>` : ""}
     </div>`;

@@ -1,11 +1,37 @@
+import copy
 from pathlib import Path
 
 from allspark.core.database import Database
-from allspark.core.models import KnowledgeEntry
+from allspark.core.models import (
+    KnowledgeEntry,
+    compute_risk_classification_hash,
+    externalize_knowledge_evidence,
+)
 from tests.test_sha196_browser import _Chrome, _chrome_binary, _serve
 from tests.test_web_ui_v11 import _client
 
 ENTRY_ID = "medical/sha240/unverified"
+APPROVED_RISK_ID = "engineering/sha241/approved-risk"
+EXTERNAL_RISK_ID = "engineering/sha241/external-risk"
+
+
+def _risk_review(entry: KnowledgeEntry, hazard: str) -> dict:
+    qualification = {
+        "fire": "fire_safety",
+        "structural": "structural_engineering",
+    }[hazard]
+    return {
+        "signoff_version": 1,
+        "reviewer_id": f"reviewer-{hazard}",
+        "reviewer": f"Named {hazard} reviewer",
+        "qualification_type": qualification,
+        "qualification_evidence": f"registry:{qualification}:001",
+        "covered_hazards": [hazard],
+        "reviewed_at": "2026-07-16",
+        "conclusion": "approved",
+        "reservations": [],
+        "classification_hash": compute_risk_classification_hash(entry),
+    }
 
 
 def _seed(path: Path) -> None:
@@ -50,6 +76,50 @@ def _seed(path: Path) -> None:
         contraindications=["When trained emergency help is immediately available"],
         language="en",
     ))
+    approved = KnowledgeEntry(
+        id=APPROVED_RISK_ID,
+        category="engineering",
+        subcategory="fire_structure",
+        priority=1,
+        title="Approved multi-reviewer risk entry",
+        summary="Risk review context must precede the action.",
+        steps=["Reviewed engineering action."],
+        references=[
+            {
+                "source_id": "fire-authority",
+                "title": "Fire authority manual",
+                "locator": "Section 4.2",
+                "local_status": "verified",
+                "verified_by": "local-auditor",
+                "verified_at": "2026-07-16",
+            },
+            {
+                "source_id": "structure-authority",
+                "title": "Structural safety manual",
+                "locator": "Chapter 7",
+                "local_status": "verified",
+                "verified_by": "local-auditor",
+                "verified_at": "2026-07-16",
+            },
+        ],
+        risk_level="high",
+        hazards=["fire", "structural"],
+        review_status="approved",
+        language="en",
+    )
+    approved.risk_reviews = [
+        _risk_review(approved, "fire"),
+        _risk_review(approved, "structural"),
+    ]
+    db.save_knowledge(approved)
+    external = copy.deepcopy(approved)
+    external.id = EXTERNAL_RISK_ID
+    external.title = "External risk-review claim"
+    classification_hash = compute_risk_classification_hash(external)
+    for review in external.risk_reviews:
+        review["classification_hash"] = classification_hash
+    externalize_knowledge_evidence(external)
+    db.save_knowledge(external)
     db.close()
 
 
@@ -85,6 +155,20 @@ def test_repository_api_summary_and_detail_contract(tmp_path: Path) -> None:
     assert detail["applicable_when"]
     assert detail["contraindications"]
     assert detail["risk_notice"]
+    assert detail["risk_review_status"] == "pending_external_review"
+    assert detail["hazards"] == ["unknown"]
+
+    approved = client.get(f"/api/knowledge/{APPROVED_RISK_ID}").json()
+    assert approved["risk_review_status"] == "approved"
+    assert approved["verification"] == "cross_ref"
+    assert approved["risk_notice"] == ""
+    assert approved["hazards"] == ["fire", "structural"]
+    assert len(approved["risk_reviews"]) == 2
+    assert approved["risk_review_claims"] == []
+    external = client.get(f"/api/knowledge/{EXTERNAL_RISK_ID}").json()
+    assert external["risk_review_status"] == "pending_external_review"
+    assert external["risk_reviews"] == []
+    assert len(external["risk_review_claims"]) == 2
 
 
 def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, request) -> None:
@@ -123,6 +207,8 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
               const text = dialog.textContent;
               return {
                 risk: text.includes('High-risk guidance'),
+                riskStatus: text.includes('Risk classification pending external review'),
+                unknownHazard: text.includes('Hazards not yet classified'),
                 applicable: text.includes('Applicable when'),
                 contraindications: text.includes('Contraindications'),
                 reference: text.includes('Chapter 3, section 2'),
@@ -130,6 +216,8 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
                 externalReview: text.includes('External expert-review claim'),
                 fullHash: text.includes('sha256:' + 'a'.repeat(64)),
                 order: [
+                  text.indexOf('Risk classification pending external review'),
+                  text.indexOf('Hazards not yet classified'),
                   text.indexOf('High-risk guidance'),
                   text.indexOf('Applicable when'),
                   text.indexOf('Contraindications'),
@@ -140,7 +228,8 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
               };
             })()"""
         )
-        assert state["risk"] and state["applicable"] and state["contraindications"]
+        assert state["risk"] and state["riskStatus"] and state["unknownHazard"]
+        assert state["applicable"] and state["contraindications"]
         assert state["reference"] and state["externalClaim"] and state["externalReview"]
         assert state["fullHash"] and state["closeFocused"]
         assert state["order"] == sorted(state["order"])
@@ -149,6 +238,118 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
             f"document.activeElement?.closest('[data-kid]')?.dataset.kid === '{ENTRY_ID}'"
         )
 
+        for entry_id, title, expected in (
+            (
+                APPROVED_RISK_ID,
+                "Approved multi-reviewer risk entry",
+                {
+                    "status": "Risk classification externally reviewed",
+                    "hazards": ["Fire hazard", "Structural failure"],
+                    "local": True,
+                    "external": False,
+                    "step": "Reviewed engineering action.",
+                },
+            ),
+            (
+                EXTERNAL_RISK_ID,
+                "External risk-review claim",
+                {
+                    "status": "Risk classification pending external review",
+                    "hazards": ["Fire hazard", "Structural failure"],
+                    "local": False,
+                    "external": True,
+                    "step": "Reviewed engineering action.",
+                },
+            ),
+        ):
+            browser.evaluate(
+                f"_repoFilters.q = {title!r}; _repoRender(); "
+                f"(() => {{ const button = document.querySelector('[data-kid=\"{entry_id}\"] .repo-detail-trigger'); button.focus(); button.click(); }})()"
+            )
+            browser.wait_for("document.querySelector('#repo-detail-modal [role=dialog]') !== null")
+            browser.evaluate(
+                "document.querySelectorAll('#repo-detail-modal details').forEach(e => e.open = true)"
+            )
+            risk_state = browser.evaluate(
+                f"""(() => {{
+                  const dialog = document.querySelector('#repo-detail-modal [role=dialog]');
+                  const text = dialog.textContent;
+                  const step = {expected['step']!r};
+                  const hashes = Array.from(dialog.querySelectorAll('code')).map(e => e.textContent.trim());
+                  return {{
+                    status: text.includes({expected['status']!r}),
+                    hazards: {expected['hazards']!r}.every(value => text.includes(value)),
+                    local: text.includes('Local risk-classification review'),
+                    external: text.includes('External risk-review claim (not locally trusted)'),
+                    naturalQualifications: text.includes('Qualification: Fire safety specialist') && text.includes('Qualification: Structural engineer'),
+                    fullHashes: hashes.filter(value => /^sha256:[0-9a-f]{{64}}$/.test(value)).length,
+                    visibleHashes: Array.from(dialog.querySelectorAll('details[open] code')).filter(e => e.getClientRects().length > 0 && /^sha256:[0-9a-f]{{64}}$/.test(e.textContent.trim())).length,
+                    order: [text.indexOf('Risk classification'), text.indexOf('Potential hazards'), text.indexOf({('Local risk-classification review' if expected['local'] else 'External risk-review claim (not locally trusted)')!r}), text.indexOf(step)],
+                    closeFocused: document.activeElement?.id === 'repo-detail-close',
+                  }};
+                }})()"""
+            )
+            assert risk_state["status"] and risk_state["hazards"]
+            assert risk_state["local"] is expected["local"]
+            assert risk_state["external"] is expected["external"]
+            assert risk_state["naturalQualifications"]
+            assert risk_state["fullHashes"] == 2
+            assert risk_state["visibleHashes"] == 2
+            assert risk_state["order"] == sorted(risk_state["order"])
+            assert risk_state["closeFocused"]
+            browser.evaluate("document.getElementById('repo-detail-close').click()")
+            assert browser.evaluate(
+                f"document.activeElement?.closest('[data-kid]')?.dataset.kid === '{entry_id}'"
+            )
+
+        browser.navigate(f"{base_url}/")
+        browser.evaluate(f"showKnowledge('{ENTRY_ID}')", await_promise=True)
+        desktop_pending = browser.evaluate(
+            """(() => {
+              const text = document.querySelector('#knowledge-detail .kb-detail').textContent;
+              return {
+                status: text.includes('Risk classification pending external review'),
+                hazard: text.includes('Hazards not yet classified'),
+                order: [text.indexOf('Risk classification pending external review'), text.indexOf('Hazards not yet classified'), text.indexOf('Act only after checking the warnings.')],
+              };
+            })()"""
+        )
+        assert desktop_pending["status"] and desktop_pending["hazard"]
+        assert desktop_pending["order"] == sorted(desktop_pending["order"])
+        for entry_id, expected_local, expected_external in (
+            (APPROVED_RISK_ID, True, False),
+            (EXTERNAL_RISK_ID, False, True),
+        ):
+            browser.evaluate(f"showKnowledge('{entry_id}')", await_promise=True)
+            browser.evaluate(
+                "document.querySelectorAll('#knowledge-detail details').forEach(e => e.open = true)"
+            )
+            desktop_qa = browser.evaluate(
+                """(() => {
+                  const detail = document.querySelector('#knowledge-detail .kb-detail');
+                  const text = detail.textContent;
+                  const hashes = Array.from(detail.querySelectorAll('details[open] code'));
+                  return {
+                    fits: document.documentElement.scrollWidth <= innerWidth + 1,
+                    local: text.includes('Local risk-classification review'),
+                    external: text.includes('External risk-review claim (not locally trusted)'),
+                    hazards: text.includes('Fire hazard') && text.includes('Structural failure'),
+                    naturalQualifications: text.includes('Qualification: Fire safety specialist') && text.includes('Qualification: Structural engineer'),
+                    visibleHashes: hashes.filter(e => e.getClientRects().length > 0 && /^sha256:[0-9a-f]{64}$/.test(e.textContent.trim())).length,
+                    order: [text.indexOf('Risk classification'), text.indexOf('Potential hazards'), text.indexOf(text.includes('Local risk-classification review') ? 'Local risk-classification review' : 'External risk-review claim (not locally trusted)'), text.indexOf('Reviewed engineering action.')],
+                  };
+                })()"""
+            )
+            assert desktop_qa["fits"] and desktop_qa["hazards"]
+            assert desktop_qa["naturalQualifications"]
+            assert desktop_qa["local"] is expected_local
+            assert desktop_qa["external"] is expected_external
+            assert desktop_qa["visibleHashes"] == 2
+            assert desktop_qa["order"] == sorted(desktop_qa["order"])
+
+        browser.navigate(f"{base_url}/repository")
+        browser.evaluate("initialRepositoryLoad", await_promise=True)
+        browser.evaluate("_repoFilters.q = 'Unverified emergency action'; _repoRender()")
         browser.call(
             "Emulation.setDeviceMetricsOverride",
             {"width": 320, "height": 568, "deviceScaleFactor": 1, "mobile": True},
@@ -170,14 +371,53 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
                 dialog: dialog.getBoundingClientRect().width <= innerWidth,
                 scrollable: dialog.scrollHeight >= dialog.clientHeight,
                 closeVisible: !!document.getElementById('repo-detail-close'),
+                riskStatus: dialog.textContent.includes('Risk classification pending external review'),
+                unknownHazard: dialog.textContent.includes('Hazards not yet classified'),
+                order: [dialog.textContent.indexOf('Risk classification pending external review'), dialog.textContent.indexOf('Hazards not yet classified'), dialog.textContent.indexOf('Act only after checking the warnings.')],
               };
             })()"""
         )
-        assert fit == {"page": True, "dialog": True, "scrollable": True, "closeVisible": True}
+        assert fit["page"] and fit["dialog"] and fit["scrollable"] and fit["closeVisible"]
+        assert fit["riskStatus"] and fit["unknownHazard"]
+        assert fit["order"] == sorted(fit["order"])
         browser.evaluate("document.getElementById('repo-detail-close').click()")
         assert browser.evaluate(
             f"document.activeElement?.closest('[data-kid]')?.dataset.kid === '{ENTRY_ID}'"
         )
+
+        for entry_id, title in (
+            (APPROVED_RISK_ID, "Approved multi-reviewer risk entry"),
+            (EXTERNAL_RISK_ID, "External risk-review claim"),
+        ):
+            browser.evaluate(
+                f"_repoFilters.q = {title!r}; _repoRender(); "
+                f"document.querySelector('[data-kid=\"{entry_id}\"] .repo-detail-trigger').click()"
+            )
+            browser.wait_for("document.querySelector('#repo-detail-modal [role=dialog]') !== null")
+            browser.evaluate(
+                "document.querySelectorAll('#repo-detail-modal details').forEach(e => e.open = true)"
+            )
+            mobile_risk_fit = browser.evaluate(
+                """(() => {
+                  const dialog = document.querySelector('#repo-detail-modal [role=dialog]');
+                  const codes = Array.from(dialog.querySelectorAll('code'));
+                  return {
+                    page: document.documentElement.scrollWidth <= innerWidth + 1,
+                    dialog: dialog.scrollWidth <= dialog.clientWidth + 1,
+                    widths: [dialog.clientWidth, dialog.scrollWidth],
+                    offenders: Array.from(dialog.querySelectorAll('*')).filter(e => e.scrollWidth > e.clientWidth + 1).map(e => [e.tagName, e.className, e.clientWidth, e.scrollWidth]).slice(0, 8),
+                    fullHashes: codes.filter(e => /^sha256:[0-9a-f]{64}$/.test(e.textContent.trim())).length,
+                    visibleHashes: codes.filter(e => e.closest('details')?.open && e.getClientRects().length > 0 && /^sha256:[0-9a-f]{64}$/.test(e.textContent.trim())).length,
+                    naturalQualifications: dialog.textContent.includes('Qualification: Fire safety specialist') && dialog.textContent.includes('Qualification: Structural engineer'),
+                  };
+                })()"""
+            )
+            assert mobile_risk_fit["page"] is True
+            assert mobile_risk_fit["dialog"] is True, mobile_risk_fit
+            assert mobile_risk_fit["fullHashes"] == 2
+            assert mobile_risk_fit["visibleHashes"] == 2
+            assert mobile_risk_fit["naturalQualifications"]
+            browser.evaluate("document.getElementById('repo-detail-close').click()")
 
         browser.navigate(f"{base_url}/")
         browser.evaluate(
@@ -193,7 +433,11 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
                 fits: document.documentElement.scrollWidth <= innerWidth + 1,
                 externalClaim: text.includes('External, unverified claim'),
                 externalReview: text.includes('External expert-review claim'),
+                riskStatus: text.includes('Risk classification pending external review'),
+                unknownHazard: text.includes('Hazards not yet classified'),
                 order: [
+                  text.indexOf('Risk classification pending external review'),
+                  text.indexOf('Hazards not yet classified'),
                   text.indexOf('High-risk guidance'),
                   text.indexOf('Applicable when'),
                   text.indexOf('Contraindications'),
@@ -205,4 +449,38 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
         )
         assert index_state["fits"] and index_state["externalClaim"]
         assert index_state["externalReview"]
+        assert index_state["riskStatus"] and index_state["unknownHazard"]
         assert index_state["order"] == sorted(index_state["order"])
+
+        for entry_id, expected_local, expected_external in (
+            (APPROVED_RISK_ID, True, False),
+            (EXTERNAL_RISK_ID, False, True),
+        ):
+            browser.evaluate(f"showKnowledge('{entry_id}')", await_promise=True)
+            browser.evaluate(
+                "document.querySelectorAll('#knowledge-detail details').forEach(e => e.open = true)"
+            )
+            qa_risk = browser.evaluate(
+                """(() => {
+                  const detail = document.querySelector('#knowledge-detail .kb-detail');
+                  const text = detail.textContent;
+                  const hashes = Array.from(detail.querySelectorAll('code')).map(e => e.textContent.trim());
+                  return {
+                    fits: document.documentElement.scrollWidth <= innerWidth + 1,
+                    local: text.includes('Local risk-classification review'),
+                    external: text.includes('External risk-review claim (not locally trusted)'),
+                    hazards: text.includes('Fire hazard') && text.includes('Structural failure'),
+                    naturalQualifications: text.includes('Qualification: Fire safety specialist') && text.includes('Qualification: Structural engineer'),
+                    fullHashes: hashes.filter(value => /^sha256:[0-9a-f]{64}$/.test(value)).length,
+                    visibleHashes: Array.from(detail.querySelectorAll('details[open] code')).filter(e => e.getClientRects().length > 0 && /^sha256:[0-9a-f]{64}$/.test(e.textContent.trim())).length,
+                    order: [text.indexOf('Risk classification'), text.indexOf('Potential hazards'), text.indexOf(text.includes('Local risk-classification review') ? 'Local risk-classification review' : 'External risk-review claim (not locally trusted)'), text.indexOf('Reviewed engineering action.')],
+                  };
+                })()"""
+            )
+            assert qa_risk["fits"] and qa_risk["hazards"]
+            assert qa_risk["naturalQualifications"]
+            assert qa_risk["local"] is expected_local
+            assert qa_risk["external"] is expected_external
+            assert qa_risk["fullHashes"] == 2
+            assert qa_risk["visibleHashes"] == 2
+            assert qa_risk["order"] == sorted(qa_risk["order"])

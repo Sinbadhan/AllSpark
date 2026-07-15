@@ -557,8 +557,15 @@ def _validate_risk_reviews(
             raise KnowledgeValidationError("knowledge_risk_review_conclusion_invalid")
         if local and conclusion != entry.review_status:
             raise KnowledgeValidationError("knowledge_risk_review_decision_mismatch")
-        if review["classification_hash"] != compute_risk_classification_hash(entry):
+        classification_hash = review["classification_hash"]
+        if local and classification_hash != compute_risk_classification_hash(entry):
             raise KnowledgeValidationError("knowledge_risk_review_hash_mismatch")
+        if not local and (
+            not classification_hash.startswith("sha256:")
+            or len(classification_hash) != 71
+            or any(value not in "0123456789abcdef" for value in classification_hash[7:])
+        ):
+            raise KnowledgeValidationError("knowledge_risk_review_hash_invalid")
         all_covered.update(covered)
     return all_covered
 

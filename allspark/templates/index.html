@@ -123,7 +123,7 @@
 .alert-card .alert-msg { font-size: 13px; color: var(--on-surface); }
 .module-section { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; }
 .module-section h3 { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); text-transform: uppercase; margin-bottom: 8px; }
-.kb-detail { background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+.kb-detail { background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; overflow-wrap: anywhere; }
 .kb-detail h3 { color: var(--primary); font-weight: 600; margin-bottom: 8px; }
 .kb-detail .kb-meta { font-size: 11px; color: var(--secondary); margin-top: 8px; }
 .kb-detail .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); text-transform: uppercase; margin-bottom: 4px; }
@@ -451,6 +451,8 @@ async function showKnowledge(id) {
   html += '<div class="kb-detail"><h3>' + escHtml(entry.title) + '</h3>';
   html += '<p class="text-sm mb-3">' + escHtml(entry.summary) + '</p>';
   html += '<div class="kb-meta"><strong>' + escHtml(entry.verification_label || '') + '</strong> — ' + escHtml(entry.verification_explanation || '') + '<br>' + escHtml(entry.source_label || '') + '</div>';
+  html += '<div class="section-label">' + escHtml(I18N.knowledge_risk_classification_label) + '</div><div class="text-sm mb-2">' + escHtml(entry.risk_review_status_label || '') + ' · ' + escHtml(entry.risk_level_label || '') + '</div>';
+  html += '<div class="section-label warn">' + escHtml(I18N.knowledge_hazards_label) + '</div><div class="text-sm mb-2">' + escHtml((entry.hazard_labels || []).join('; ') || I18N.knowledge_not_provided) + '</div>';
   if (entry.risk_notice) html += '<div role="note" class="alert-card alert-critical text-sm" style="margin:8px 0;"><strong>' + escHtml(I18N.knowledge_risk_label) + '</strong><span>' + escHtml(entry.risk_notice) + '</span></div>';
   html += '<div class="section-label">' + escHtml(I18N.knowledge_applicable_when) + '</div><div class="text-sm mb-2">' + escHtml((entry.applicable_when || []).join('; ') || I18N.knowledge_not_provided) + '</div>';
   html += '<div class="section-label warn">' + escHtml(I18N.knowledge_contraindications) + '</div><div class="text-sm mb-2">' + escHtml((entry.contraindications || []).join('; ') || I18N.knowledge_not_provided) + '</div>';
@@ -464,10 +466,13 @@ async function showKnowledge(id) {
   const renderRecords = records => '<div class="text-sm">' + records.map(r => '<div style="margin-bottom:8px;">' + kv(I18N.knowledge_field_source, r.source_id) + kv(I18N.knowledge_field_conditions, (r.conditions || []).join('; ')) + kv(I18N.knowledge_field_outcome, r.outcome) + kv(I18N.knowledge_field_date, r.recorded_at) + kv(I18N.knowledge_field_locator, r.locator) + '</div>').join('') + '</div>';
   const renderFingerprint = value => { const full = String(value || ''); const short = full.length > 30 ? full.slice(0, 20) + '…' + full.slice(-8) : full; return '<details><summary>' + escHtml(short) + '</summary><code style="overflow-wrap:anywhere;user-select:all;">' + escHtml(full) + '</code></details>'; };
   const renderReview = review => kv(I18N.knowledge_review_reviewer, review.reviewer) + kv(I18N.knowledge_review_qualification, review.qualification) + kv(I18N.knowledge_review_date, review.review_date) + kv(I18N.knowledge_review_citation, review.citation) + kv(I18N.knowledge_review_version, review.signoff_version) + '<div><strong>' + escHtml(I18N.knowledge_review_fingerprint) + ':</strong>' + renderFingerprint(review.content_hash) + '</div>';
+  const renderRiskReview = review => kv(I18N.knowledge_review_reviewer, review.reviewer) + kv(I18N.knowledge_review_qualification, review.qualification_label) + kv(I18N.knowledge_risk_qualification_evidence, review.qualification_evidence) + kv(I18N.knowledge_hazards_label, (review.covered_hazards || []).map(h => I18N['knowledge_hazard_' + h] || h).join('; ')) + kv(I18N.knowledge_review_date, review.reviewed_at) + kv(I18N.knowledge_risk_conclusion, review.conclusion) + kv(I18N.knowledge_risk_reservations, (review.reservations || []).join('; ') || I18N.knowledge_not_provided) + '<div><strong>' + escHtml(I18N.knowledge_review_fingerprint) + ':</strong>' + renderFingerprint(review.classification_hash) + '</div>';
   if (localRefs.length || localRecords.length) html += '<div class="section-label">' + escHtml(I18N.knowledge_local_verified_evidence) + '</div>' + renderRefs(localRefs) + renderRecords(localRecords);
   if (externalRefs.length || externalRecords.length) html += '<div class="section-label warn">' + escHtml(I18N.knowledge_external_unverified_claim) + '</div>' + renderRefs(externalRefs) + renderRecords(externalRecords);
   if (entry.local_review && entry.local_review.reviewer) html += '<div class="section-label">' + escHtml(entry.local_review.trust_label) + '</div><div class="text-sm">' + renderReview(entry.local_review) + '</div>';
   if (entry.external_review_claim && entry.external_review_claim.reviewer) html += '<div class="section-label warn">' + escHtml(entry.external_review_claim.trust_label) + '</div><div class="text-sm">' + renderReview(entry.external_review_claim) + '</div>';
+  (entry.risk_reviews || []).forEach(review => { html += '<div class="section-label">' + escHtml(review.trust_label) + '</div><div class="text-sm">' + renderRiskReview(review) + '</div>'; });
+  (entry.risk_review_claims || []).forEach(review => { html += '<div class="section-label warn">' + escHtml(review.trust_label) + '</div><div class="text-sm">' + renderRiskReview(review) + '</div>'; });
   if (entry.warnings && entry.warnings.length) {
     html += '<div class="section-label warn">' + I18N.web_warnings + '</div>' + entry.warnings.map(w => '<div class="text-warn text-sm">· ' + escHtml(w) + '</div>').join("");
   }

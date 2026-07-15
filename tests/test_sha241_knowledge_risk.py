@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from allspark.core.database import Database
+from allspark.core.i18n import get_language, set_language
 from allspark.core.models import (
     KnowledgeEntry,
     KnowledgeValidationError,
@@ -15,7 +16,7 @@ from allspark.core.models import (
     normalize_knowledge_risk_metadata,
     validate_knowledge_entry_schema,
 )
-from allspark.services.knowledge_engine import KnowledgeEngine
+from allspark.services.knowledge_engine import KnowledgeEngine, _risk_qualification_label
 from allspark.services.knowledge_loader import load_knowledge
 from allspark.services.knowledge_verifier import KnowledgeSigner
 from allspark.services.safety_scenario_audit import audit_bundled_risk_metadata
@@ -250,3 +251,79 @@ def test_normalize_all_empty_is_idempotent() -> None:
     assert entry.risk_level == "pending_review"
     assert entry.hazards == ["unknown"]
     assert entry.review_status == "pending_external_review"
+
+
+@pytest.mark.parametrize(
+    (
+        "language",
+        "status_text",
+        "hazard_text",
+        "classification_text",
+        "qualification_text",
+    ),
+    [
+        (
+            "zh",
+            "风险分类已完成外部复核",
+            "火灾危害",
+            "风险分类",
+            "消防安全专业人员",
+        ),
+        (
+            "en",
+            "Risk classification externally reviewed",
+            "Fire hazard",
+            "Risk classification",
+            "Fire safety specialist",
+        ),
+    ],
+)
+def test_api_cli_and_dom_show_risk_context_before_actions(
+    language: str,
+    status_text: str,
+    hazard_text: str,
+    classification_text: str,
+    qualification_text: str,
+    tmp_path: Path,
+) -> None:
+    previous = get_language()
+    try:
+        set_language(language, persist=False)
+        entry = _approved_entry()
+        payload = KnowledgeEngine.entry_payload(entry)
+        assert payload["risk_review_status_label"] == status_text
+        assert hazard_text in payload["hazard_labels"]
+        assert payload["risk_reviews"][0]["qualification_label"] == qualification_text
+        db = Database(tmp_path / f"cli-{language}.db")
+        output = KnowledgeEngine(db).format_entry(entry)
+        db.close()
+        assert output.index(classification_text) < output.index("1. Do the reviewed action")
+        assert hazard_text in output
+        assert qualification_text in output
+        assert "External risk-review claim" not in output
+        repo = Path("allspark/templates/repository.html").read_text(encoding="utf-8")
+        index = Path("allspark/templates/index.html").read_text(encoding="utf-8")
+        assert repo.index("REPO_I18N.risk_classification") < repo.index("${steps ?")
+        assert index.index("knowledge_risk_classification_label") < index.index(
+            "entry.steps && entry.steps.length"
+        )
+    finally:
+        set_language(previous, persist=False)
+
+
+@pytest.mark.parametrize(
+    ("language", "expected"),
+    [
+        ("zh", "无法识别的资质（future specialist）"),
+        ("en", "Unrecognized qualification (future specialist)"),
+    ],
+)
+def test_unknown_qualification_has_readable_localized_fallback(
+    language: str, expected: str
+) -> None:
+    previous = get_language()
+    try:
+        set_language(language, persist=False)
+        assert _risk_qualification_label("future_specialist") == expected
+    finally:
+        set_language(previous, persist=False)

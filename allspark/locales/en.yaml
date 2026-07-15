@@ -1758,6 +1758,44 @@ knowledge_source_other: Other source claim
 knowledge_high_risk_unverified_notice: High-risk guidance without locally verified evidence. Treat it as unconfirmed and do not rely on it as the sole basis for action.
 knowledge_high_risk_short: High risk
 knowledge_risk_label: Evidence risk
+knowledge_risk_classification_label: Risk classification
+knowledge_hazards_label: Potential hazards
+knowledge_risk_level_pending_review: Risk level pending external review
+knowledge_risk_level_low: Low classified risk
+knowledge_risk_level_medium: Medium classified risk
+knowledge_risk_level_high: High classified risk
+knowledge_risk_level_critical: Critical classified risk
+knowledge_risk_review_status_pending_external_review: Risk classification pending external review
+knowledge_risk_review_status_approved: Risk classification externally reviewed
+knowledge_risk_review_status_rejected: Risk classification rejected by review
+knowledge_hazard_biological: Biological hazard
+knowledge_hazard_electrical: Electrical hazard
+knowledge_hazard_environmental: Environmental exposure
+knowledge_hazard_explosion: Explosion hazard
+knowledge_hazard_fire: Fire hazard
+knowledge_hazard_mechanical: Mechanical hazard
+knowledge_hazard_medical: Medical harm
+knowledge_hazard_structural: Structural failure
+knowledge_hazard_toxic: Toxic exposure
+knowledge_hazard_unknown: Hazards not yet classified
+knowledge_hazard_violence: Violence escalation
+knowledge_local_risk_review: Local risk-classification review
+knowledge_external_risk_review_claim: External risk-review claim (not locally trusted)
+knowledge_risk_qualification_evidence: Qualification evidence
+knowledge_risk_conclusion: Review conclusion
+knowledge_risk_reservations: Reservations
+knowledge_risk_qualification_biology: Biologist
+knowledge_risk_qualification_environmental_health: Environmental health specialist
+knowledge_risk_qualification_emergency_medicine: Emergency medicine clinician
+knowledge_risk_qualification_electrical_engineering: Electrical engineer
+knowledge_risk_qualification_survival_operations: Survival operations specialist
+knowledge_risk_qualification_fire_safety: Fire safety specialist
+knowledge_risk_qualification_mechanical_engineering: Mechanical engineer
+knowledge_risk_qualification_structural_engineering: Structural engineer
+knowledge_risk_qualification_toxicology: Toxicologist
+knowledge_risk_qualification_cross_domain_panel: Cross-domain review panel
+knowledge_risk_qualification_violence_prevention: Violence-prevention specialist
+knowledge_risk_qualification_unknown: Unrecognized qualification ({qualification})
 knowledge_applicable_when: Applicable when
 knowledge_contraindications: Contraindications
 knowledge_escalation_label: Escalation

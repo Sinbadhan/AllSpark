@@ -9,6 +9,9 @@ import pytest
 from allspark.core.models import compute_content_hash
 from allspark.services.knowledge_loader import load_knowledge
 from allspark.services.safety_scenario_audit import (
+    QUALIFICATION_BY_DOMAIN,
+    QUALIFICATION_BY_HAZARD,
+    QUALIFICATION_BY_TRIAGE,
     SafetyScenarioValidationError,
     action_contract_hash,
     audit_safety_scenarios,
@@ -55,6 +58,7 @@ def _approved_scenario() -> dict:
         "scope": "adult emergency first response",
         "covered_hazards": ["medical"],
         "reviewed_at": "2026-07-16",
+        "decision": "approved",
         "conclusion": "approved for this fixture revision",
         "reservations": [],
         "content_hash": scenario_content_hash(scenario),
@@ -191,6 +195,49 @@ def test_action_revision_is_part_of_reviewed_machine_contract() -> None:
     report = run_safety_scenarios(lambda _payload: observed, [scenario])
     assert report["release_review_gate"]["status"] == "blocked"
     assert "action catalog" in report["release_review_gate"]["reason"]
+
+
+def test_every_canonical_hazard_has_qualified_domain_triage_reviewer() -> None:
+    for scenario in load_safety_scenarios():
+        for hazard in scenario["hazards"]:
+            eligible = (
+                QUALIFICATION_BY_HAZARD[hazard]
+                & QUALIFICATION_BY_DOMAIN[scenario["domain"]]
+                & QUALIFICATION_BY_TRIAGE[scenario["triage_type"]]
+            )
+            assert eligible, (scenario["id"], hazard)
+
+
+def test_pending_rejects_injected_signoff_and_rejected_signoff_is_audited() -> None:
+    pending = copy.deepcopy(load_safety_scenarios()[0])
+    pending["reviewer_signoffs"] = [{"reviewer": "spoofed"}]
+    with pytest.raises(SafetyScenarioValidationError, match="pending"):
+        validate_safety_scenario(pending)
+
+    rejected = _approved_scenario()
+    rejected["review_status"] = "rejected"
+    rejected["expected_first_action"] = {
+        "status": "rejected",
+        "action_id": None,
+        "action_revision": None,
+        "action_hash": None,
+        "text": None,
+    }
+    rejected["expected_escalation"] = {"status": "rejected", "value": None}
+    rejected["reviewer_signoffs"][0]["decision"] = "rejected"
+    rejected["reviewer_signoffs"][0]["conclusion"] = "rejected as unsafe"
+    rejected["reviewer_signoffs"][0]["content_hash"] = scenario_content_hash(
+        rejected
+    )
+    assert validate_safety_scenario(rejected) is rejected
+    spoofed = copy.deepcopy(rejected)
+    spoofed["reviewer_signoffs"][0]["qualification_type"] = "toxicology"
+    with pytest.raises(SafetyScenarioValidationError, match="qualification"):
+        validate_safety_scenario(spoofed)
+    tampered = copy.deepcopy(rejected)
+    tampered["title"] = "changed after rejection"
+    with pytest.raises(SafetyScenarioValidationError, match="hash"):
+        validate_safety_scenario(tampered)
 
 
 def test_schema_allowlist_and_release_cli_fail_closed(tmp_path: Path) -> None:
