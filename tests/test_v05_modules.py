@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from allspark.core.database import Database
@@ -88,6 +90,8 @@ class TestEnvironmentAssessor:
             type=ResourceType.POWER, current_amount=10.0, unit="Wh",
             daily_consumption=50.0, daily_intake=0.0,
             estimated_remaining_hours=5.0, last_updated="",
+            amount_known=True, consumption_known=True, intake_known=True,
+            source="user_input", as_of=datetime.now().isoformat(),
         )
         db.upsert_resource(r)
         env = EnvironmentAssessor(db=db)
@@ -100,6 +104,8 @@ class TestEnvironmentAssessor:
             type=ResourceType.WATER, current_amount=1.0, unit="L",
             daily_consumption=3.0, daily_intake=0.0,
             estimated_remaining_hours=8.0, last_updated="",
+            amount_known=True, consumption_known=True, intake_known=True,
+            source="user_input", as_of=datetime.now().isoformat(),
         )
         db.upsert_resource(r)
         env = EnvironmentAssessor(db=db)

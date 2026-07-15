@@ -4,6 +4,7 @@ from allspark.commands.base import BaseCommand
 from allspark.container import ServiceContainer
 from allspark.core.i18n import render, t
 from allspark.core.models import OperatingMode, ResourceType
+from allspark.services.resource_manager import ResourceValidationError
 
 
 class StatusCommand(BaseCommand):
@@ -59,14 +60,18 @@ class StatusCommand(BaseCommand):
         res_table.add_column(t("field_status"), justify="center")
 
         for r in resources:
-            is_offline = r.current_amount == 0 and r.daily_consumption == 0
+            is_offline = not r.amount_known
+            rates_complete = resource_mgr.has_complete_rate_data(r)
 
             if r.type == ResourceType.POWER:
                 name = t("res_power_table")
                 if is_offline:
                     res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
                     continue
-                if r.estimated_remaining_hours < 0:
+                if not rates_complete:
+                    avail = t("resource_remaining_unknown")
+                    status = "◇"
+                elif r.estimated_remaining_hours < 0:
                     avail = t("res_sustained")
                     status = "🟢"
                 else:
@@ -78,7 +83,10 @@ class StatusCommand(BaseCommand):
                 if is_offline:
                     res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
                     continue
-                if r.estimated_remaining_hours < 0:
+                if not rates_complete:
+                    avail = t("resource_remaining_unknown")
+                    status = "◇"
+                elif r.estimated_remaining_hours < 0:
                     avail = t("res_sustained")
                     status = "🟢"
                 else:
@@ -91,36 +99,49 @@ class StatusCommand(BaseCommand):
                 if is_offline:
                     res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
                     continue
-                if r.estimated_remaining_hours < 0:
+                if not rates_complete:
+                    days = 0.0
+                    avail = t("resource_remaining_unknown")
+                    status = "◇"
+                elif r.estimated_remaining_hours < 0:
                     avail = t("res_sustained")
                     status = "🟢"
                 else:
                     days = r.estimated_remaining_hours / 24.0
                     avail = t("res_unit_days", days=days)
                     status = "🟢" if days > 14 else "🟡" if days > 5 else "🔴"
-                res_table.add_row(name, f"{r.current_amount:.0f}kcal", t("res_unit_days", days=days), status)
+                res_table.add_row(name, f"{r.current_amount:.0f}kcal", avail, status)
             elif r.type == ResourceType.FIRE:
                 name = t("res_fire_table")
                 if is_offline:
                     res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
                     continue
-                status = "🟢" if r.current_amount > 20 else "🟡" if r.current_amount > 10 else "🔴"
-                fire_avail = t("res_unit_days", days=r.current_amount / r.daily_consumption) if r.daily_consumption > 0 else t("res_infinite")
+                status = "◇" if not rates_complete else "🟢" if r.current_amount > 20 else "🟡" if r.current_amount > 10 else "🔴"
+                fire_avail = t("resource_remaining_unknown") if not rates_complete else t("res_unit_days", days=r.estimated_remaining_hours / 24.0) if r.estimated_remaining_hours >= 0 else t("res_sustained")
                 res_table.add_row(name, t("fire_unit", count=r.current_amount), fire_avail, status)
             elif r.type == ResourceType.STORAGE:
                 name = t("res_storage_table")
                 if is_offline:
                     res_table.add_row(name, f"[dim]{t('resource_offline')}[/]", "--", "◇")
                     continue
-                total = r.daily_consumption
-                used = r.daily_intake
-                pct = ((total - used) / total * 100) if total > 0 else 0
-                status = "🟢" if pct > 30 else "🟡" if pct > 10 else "🔴"
-                res_table.add_row(name, f"{used:.0f}/{total:.0f}GB", f"{pct:.1f}%", status)
+                if not rates_complete:
+                    res_table.add_row(
+                        name,
+                        f"{r.current_amount:.1f}GB",
+                        t("resource_remaining_unknown"),
+                        "◇",
+                    )
+                else:
+                    remaining = (
+                        t("res_sustained")
+                        if r.estimated_remaining_hours < 0
+                        else t("res_unit_hours", hours=r.estimated_remaining_hours)
+                    )
+                    res_table.add_row(name, f"{r.current_amount:.1f}GB", remaining, "◇")
 
         self.console.print(res_table)
 
-        has_data = any(r.current_amount > 0 for r in resources)
+        has_data = any(r.amount_known for r in resources)
         if not has_data:
             self.console.print(f"[dim]{t('resource_offline_hint')}[/]")
         else:
@@ -204,17 +225,54 @@ class SetCommand(BaseCommand):
             self.console.print(f"[red]{t('unknown_resource_type', type=args[0])}[/]")
             return
 
+        if args[1].lower() in ("unknown", "未知"):
+            try:
+                people_count = args[2] if len(args) > 2 else 1
+                input_kind = args[3].lower() if len(args) > 3 else "observed"
+                if input_kind not in {"observed", "estimate", "观测", "估算"}:
+                    raise ResourceValidationError("input_kind", "invalid_input_kind")
+                source = "estimate" if input_kind in {"estimate", "估算"} else "user_input"
+                resource_mgr.mark_unknown(
+                    rtype,
+                    people_count=people_count,
+                    source=source,
+                )
+            except (ValueError, ResourceValidationError) as exc:
+                reason = exc.reason if isinstance(exc, ResourceValidationError) else "not_numeric"
+                self.console.print(f"[red]{t(f'error_resource_{reason}', field='people_count')}[/]")
+                return
+            self.console.print(t("resource_marked_unknown", type=t(f"resource_{rtype.value}")))
+            return
+
         try:
             amount = float(args[1])
             consumption = float(args[2]) if len(args) > 2 else None
             intake = float(args[3]) if len(args) > 3 else None
+            people_count = args[4] if len(args) > 4 else 1
+            capacity = (
+                float(args[5])
+                if rtype == ResourceType.STORAGE and len(args) > 5
+                else None
+            )
+            kind_index = 6 if rtype == ResourceType.STORAGE else 5
+            input_kind = args[kind_index].lower() if len(args) > kind_index else "observed"
         except ValueError:
             self.console.print(f"[red]{t('invalid_numeric')}[/]")
             return
 
-        from allspark.services.resource_manager import ResourceValidationError
         try:
-            resource_mgr.update_resource(rtype, amount, consumption, intake)
+            if input_kind not in {"observed", "estimate", "观测", "估算"}:
+                raise ResourceValidationError("input_kind", "invalid_input_kind")
+            source = "estimate" if input_kind in {"estimate", "估算"} else "user_input"
+            resource_mgr.update_resource(
+                rtype,
+                amount,
+                consumption,
+                intake,
+                people_count=people_count,
+                capacity=capacity,
+                source=source,
+            )
         except ResourceValidationError as exc:
             self.console.print(
                 f"[red]{t(f'error_resource_{exc.reason}', field=exc.field)}[/]"
@@ -224,8 +282,11 @@ class SetCommand(BaseCommand):
         if updated is None:
             return
         self.console.print(f"[green]{t('set_updated_with_unit', type=t(f'resource_{rtype.value}'), amount=updated.current_amount, unit=updated.unit)}[/]")
-        if resource_mgr.has_remaining_estimate(updated):
+        remaining_status = resource_mgr.remaining_status(updated)
+        if remaining_status == "finite":
             self.console.print(t("set_remaining_hours", hours=updated.estimated_remaining_hours))
+        elif remaining_status == "sustained":
+            self.console.print(t("res_sustained"))
         else:
             self.console.print(f"[dim]{t('resource_remaining_unknown')}[/]")
 

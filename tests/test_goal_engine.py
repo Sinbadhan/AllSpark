@@ -84,6 +84,7 @@ class TestGoalEngineAutoGenerate:
             type=ResourceType.WATER, current_amount=2.0, unit="L",
             daily_consumption=3.0, daily_intake=0.0,
             estimated_remaining_hours=16.0, last_updated="",
+            amount_known=True, consumption_known=True, intake_known=True,
         )
         db.upsert_resource(water)
 
@@ -99,6 +100,7 @@ class TestGoalEngineAutoGenerate:
             type=ResourceType.WATER, current_amount=2.0, unit="L",
             daily_consumption=3.0, daily_intake=0.0,
             estimated_remaining_hours=16.0, last_updated="",
+            amount_known=True, consumption_known=True, intake_known=True,
         )
         db.upsert_resource(water)
 

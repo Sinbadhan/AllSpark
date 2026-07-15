@@ -1,6 +1,7 @@
 """Core API routes: status, resources, knowledge, chat, experience, llm, tasks, modules."""
 
 import json
+from typing import Any
 
 from fastapi import HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -30,14 +31,33 @@ class ResourceUpdateRequest:
 
 def _resource_payload(resource_mgr, r):
     configured = resource_mgr.is_configured(r)
-    has_estimate = resource_mgr.has_remaining_estimate(r)
+    remaining_status = resource_mgr.remaining_status(r)
+    has_estimate = remaining_status == "finite"
     return {
         "type": r.type.value,
         "amount": r.current_amount,
         "unit": r.unit,
+        "unit_label": t(f"resource_unit_{r.type.value}"),
         "daily_consumption": r.daily_consumption,
         "daily_intake": r.daily_intake,
+        "amount_known": r.amount_known,
+        "consumption_known": r.consumption_known,
+        "intake_known": r.intake_known,
+        "capacity": r.capacity,
+        "capacity_known": r.capacity_known,
+        "source": r.source,
+        "source_label": t(f"resource_source_{r.source}"),
+        "as_of": r.as_of,
+        "last_updated": r.last_updated,
+        "people_count": r.people_count,
+        "amount_per_person": (
+            r.current_amount / r.people_count if r.amount_known and r.people_count else None
+        ),
+        "remaining_hours_per_person": (
+            r.estimated_remaining_hours if has_estimate and r.people_count else None
+        ),
         "remaining_hours": r.estimated_remaining_hours if has_estimate else None,
+        "remaining_status": remaining_status,
         "configured": configured,
         "offline": not configured,
         "status": "configured" if configured else "unconfigured",
@@ -79,25 +99,74 @@ def register_core_routes(app, check):
         container, db = check()
         consumption = None
         intake = None
+        source = "user_input"
+        people_count = 1
+        as_of = None
+        unknown = False
+        amount_known = None
+        consumption_known = None
+        intake_known = None
+        confirm_outlier = False
+        capacity = None
+        capacity_known = None
+        data: dict[str, Any] = {}
+        input_kind = "observed"
         if type is None or amount is None:
             data = await request.json()
             type = data.get("type", type)
             amount = data.get("amount", amount)
             consumption = data.get("daily_consumption", None)
             intake = data.get("daily_intake", None)
+            people_count = data.get("people_count", people_count)
+            as_of = data.get("as_of", None)
+            unknown = data.get("unknown", False) is True
+            amount_known = data.get("amount_known", None)
+            consumption_known = data.get("consumption_known", None)
+            intake_known = data.get("intake_known", None)
+            confirm_outlier = data.get("confirm_outlier", False)
+            capacity = data.get("capacity", None)
+            capacity_known = data.get("capacity_known", None)
+            input_kind = data.get("input_kind", "observed")
         from allspark.core.models import ResourceType
         from allspark.services.resource_manager import ResourceValidationError
         try:
             rtype = ResourceType(type)
         except (TypeError, ValueError):
             raise HTTPException(400, t("error_invalid_resource_type", type=type))
-        kwargs: dict[str, float] = {}
+        kwargs: dict[str, Any] = {}
         try:
+            resource_mgr = container.get("resource_manager")
+            if "source" in data:
+                raise ResourceValidationError("source", "source_controlled")
+            if not isinstance(input_kind, str) or input_kind not in {"observed", "estimate"}:
+                raise ResourceValidationError("input_kind", "invalid_input_kind")
+            source = "estimate" if input_kind == "estimate" else "user_input"
+            if unknown:
+                resource_mgr.mark_unknown(
+                    rtype,
+                    source=source,
+                    people_count=people_count,
+                    as_of=as_of,
+                )
+                return {"status": "ok", "resource_status": "unknown"}
             if consumption is not None:
-                kwargs["consumption"] = float(consumption)
+                kwargs["consumption"] = consumption
             if intake is not None:
-                kwargs["intake"] = float(intake)
-            container.get("resource_manager").update_resource(rtype, float(amount), **kwargs)
+                kwargs["intake"] = intake
+            resource_mgr.update_resource(
+                rtype,
+                amount,
+                **kwargs,
+                source=source,
+                people_count=people_count,
+                as_of=as_of,
+                amount_known=amount_known,
+                consumption_known=consumption_known,
+                intake_known=intake_known,
+                capacity=capacity,
+                capacity_known=capacity_known,
+                confirm_outlier=confirm_outlier,
+            )
         except (TypeError, ValueError, ResourceValidationError) as exc:
             if isinstance(exc, ResourceValidationError):
                 detail = t(f"error_resource_{exc.reason}", field=exc.field)

@@ -61,10 +61,30 @@ class TestIndexA11y:
         assert 'for="res-edit-consumption"' in t
         assert 'for="res-edit-intake"' in t
 
+    def test_resource_editor_uses_progressive_disclosure_and_known_segments(self):
+        t = _read("index.html")
+        assert '<details id="res-edit-advanced"' in t
+        assert 'data-resource-known-field="amount"' in t
+        assert 'data-resource-known-value="true"' in t
+        assert 'data-resource-known-value="false"' in t
+        assert 'role="group" aria-labelledby="res-edit-amount-label"' in t
+        assert "resourceFieldKnown(\"amount\")" in t
+        assert "type=\"checkbox\"" not in t
+
+    def test_resource_editor_actions_are_sticky_and_dynamic_viewport_safe(self):
+        t = _read("index.html")
+        assert ".resource-edit-actions" in t
+        assert 'if (known !== true) input.value = ""' in t
+        assert "web_resource_per_person_unknown" in t
+        assert "position: sticky" in t
+        assert "max-height:calc(100dvh - 32px)" in t
+        assert "scroll-padding-bottom:88px" in t
+        assert 'getClientRects().length > 0' in t
+
     def test_modal_esc_handler_and_focus(self):
         t = _read("index.html")
         assert "Escape" in t  # Esc closes modal
-        assert 'getElementById("res-edit-amount").focus()' in t  # focus on open
+        assert 'data-resource-input-kind][aria-pressed="true"]' in t
 
     def test_modal_focus_trap_and_restore(self):
         t = _read("index.html")
@@ -78,16 +98,25 @@ class TestIndexA11y:
         assert 'getAttribute("data-resource-type") === resourceType' in t
         assert "await refreshDashboard()" in t
 
+    def test_shared_confirmation_dialog_stacks_above_resource_editor(self):
+        base = _read("base.html")
+        index = _read("index.html")
+        assert "z-index: 10000" in base
+        assert "z-index:9999" in index
+
     def test_open_resource_edit_saves_explicit_trigger(self):
         t = _read("index.html")
         # SHA-152/SHA-213: delegated click/keyboard handlers pass their actual
         # data-action target, so mouse clicks do not fall back to <body> and the
         # CSP contract does not require inline `this` handlers.
-        assert "function openResourceEdit(rtype, amount, consumption, intake, trigger)" in t
+        assert "function openResourceEdit(rtype, amount, consumption, intake," in t
         assert "modal._previouslyFocused = trigger || document.activeElement" in t
         assert "function openResourceFromTarget(target)" in t
         assert t.count("openResourceFromTarget(target)") >= 3
         assert "target,\n  );" in t
+        assert 'data-resource-source="${escHtml(String(r.source || \'\'))}"' in t
+        assert 'source === "estimate" ? "estimate" : "observed"' in t
+        assert 'select:not([disabled])' in t
 
 
 class TestMobileNavA11y:

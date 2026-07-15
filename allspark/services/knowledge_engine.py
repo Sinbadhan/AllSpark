@@ -97,9 +97,12 @@ class KnowledgeEngine:
         entries = self.search_by_language(intent, limit=5)
         if not entries and resources:
             for r in resources:
-                if r.type == ResourceType.WATER and r.estimated_remaining_hours < 72:
+                if not r.amount_known:
+                    continue
+                rates_known = r.consumption_known and r.intake_known
+                if r.type == ResourceType.WATER and rates_known and r.estimated_remaining_hours < 72:
                     entries.extend(self.search_by_language("水 净水 水源 water purify", limit=3))
-                elif r.type == ResourceType.FOOD and r.estimated_remaining_hours < 120:
+                elif r.type == ResourceType.FOOD and rates_known and r.estimated_remaining_hours < 120:
                     entries.extend(self.search_by_language("食物 可食用 狩猎 food edible", limit=3))
                 elif r.type == ResourceType.FIRE and r.current_amount < 10:
                     entries.extend(self.search_by_language("火 生火 点火 fire ignite", limit=3))

@@ -29,6 +29,30 @@
 .resource-card .card-value { min-width: 0; font-size: 13px; text-align: right; overflow-wrap: anywhere; }
 .resource-card .card-status { min-width: 0; font-size: 24px; font-weight: 700; color: var(--on-surface); margin-top: auto; overflow-wrap: anywhere; }
 .resource-card .card-remaining { min-width: 0; font-size: 11px; color: var(--secondary); overflow-wrap: anywhere; }
+.q-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.q-chip {
+  padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 11px;
+  color: var(--on-surface-variant); cursor: pointer; transition: all 0.15s; background: var(--bg); font: inherit;
+}
+.q-chip:hover { border-color: var(--primary-container); }
+.q-chip:focus-visible { outline: 2px solid var(--primary-container); outline-offset: 2px; }
+.q-chip.selected { border-color: var(--primary-container); background: rgba(255,107,53,0.12); color: var(--primary-container); }
+.resource-edit-field { margin-bottom: 12px; }
+.resource-edit-field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+.resource-edit-field-head > label { min-width: 0; font-size: 12px; color: var(--secondary); }
+.resource-edit-field-head .q-chips { flex: 0 0 auto; flex-wrap: nowrap; }
+.resource-edit-field-head .q-chip { padding: 3px 8px; }
+.resource-edit-input { width: 100%; background: var(--surface-low); border: 1px solid var(--surface-container-high); color: var(--on-surface); padding: 6px 10px; border-radius: 4px; }
+.resource-edit-input:disabled { opacity: 0.55; cursor: not-allowed; }
+.resource-edit-advanced { border: 1px solid var(--surface-container-high); border-radius: 6px; margin-top: 4px; }
+.resource-edit-advanced > summary { cursor: pointer; padding: 9px 10px; color: var(--primary-container); font-size: 12px; font-weight: 600; }
+.resource-edit-advanced > summary:focus-visible { outline: 2px solid var(--primary-container); outline-offset: 2px; }
+.resource-edit-advanced-body { padding: 2px 10px 0; }
+.resource-edit-actions {
+  position: sticky; bottom: -20px; z-index: 2; display: flex; gap: 8px; justify-content: flex-end;
+  margin: 12px -20px -20px; padding: 12px 20px 20px; border-top: 1px solid var(--surface-container-high);
+  background: var(--surface-dim);
+}
 .task-card {
   background: var(--surface-dim); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 12px; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.15s;
@@ -331,7 +355,7 @@ async function refreshDashboard() {
   container.innerHTML = data.resources.map(r => {
     const icon = resourceIcons[r.type] || "inventory_2";
     const label = resourceLabel(r.type);
-    const resourceAttrs = `data-index-action="resource-edit" data-resource-type="${escHtml(String(r.type || ''))}" data-resource-amount="${Number(r.amount) || 0}" data-resource-consumption="${Number(r.daily_consumption) || 0}" data-resource-intake="${Number(r.daily_intake) || 0}"`;
+    const resourceAttrs = `data-index-action="resource-edit" data-resource-type="${escHtml(String(r.type || ''))}" data-resource-amount="${Number(r.amount) || 0}" data-resource-consumption="${Number(r.daily_consumption) || 0}" data-resource-intake="${Number(r.daily_intake) || 0}" data-resource-amount-known="${r.amount_known === true}" data-resource-consumption-known="${r.consumption_known === true}" data-resource-intake-known="${r.intake_known === true}" data-resource-capacity="${Number(r.capacity) || 0}" data-resource-capacity-known="${r.capacity_known === true}" data-resource-people="${Number(r.people_count) || 1}" data-resource-unit-label="${escHtml(String(r.unit_label || r.unit || ''))}" data-resource-source="${escHtml(String(r.source || ''))}" data-resource-source-label="${escHtml(String(r.source_label || ''))}" data-resource-as-of="${escHtml(String(r.as_of || ''))}"`;
     const editBtn = `<span class="material-symbols-outlined" style="font-size:14px;cursor:pointer;color:var(--secondary);" title="${RES_I18N.edit_label}" ${resourceAttrs}>edit</span>`;
     if (!r.configured) {
       // SHA-59: compact empty-state. Earlier every unconfigured card repeated
@@ -342,22 +366,26 @@ async function refreshDashboard() {
         '<div class="card-status" style="font-size:13px;color:var(--secondary);">' + I18N.web_set_amount_hint_short + '</div>' +
         '<div class="card-remaining">' + escHtml(label) + '</div></div>';
     }
-    const hasEstimate = r.remaining_hours !== null && r.remaining_hours !== undefined;
-    const pct = hasEstimate ? Math.min(100, Math.max(0, (r.remaining_hours / 168) * 100)) : 0;
-    const statusColor = !hasEstimate ? "#888" : pct > 70 ? "#44cc44" : pct > 30 ? "#ffaa00" : "#ff4444";
-    const statusText = !hasEstimate
+    const remainingStatus = r.remaining_status || "unknown";
+    const hasEstimate = remainingStatus === "finite";
+    const sustained = remainingStatus === "sustained";
+    const pct = sustained ? 100 : hasEstimate ? Math.min(100, Math.max(0, (r.remaining_hours / 168) * 100)) : 0;
+    const statusColor = sustained ? "#44cc44" : !hasEstimate ? "#888" : pct > 70 ? "#44cc44" : pct > 30 ? "#ffaa00" : "#ff4444";
+    const statusText = sustained ? I18N.web_status_ok : !hasEstimate
       ? I18N.web_status_unknown
       : pct > 70 ? I18N.web_status_ok
       : pct > 30 ? I18N.web_status_low
       : I18N.web_status_critical;
-    const remainingText = hasEstimate
+    const remainingText = sustained
+      ? I18N.web_remaining_sustained
+      : hasEstimate
       ? I18N.web_remaining_hours_fmt.replace('{h}', Math.round(r.remaining_hours))
       : I18N.web_remaining_unknown;
     return '<div class="resource-card span-4" ' + resourceAttrs + ' role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;">' +
-      '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + r.amount + r.unit + ' ' + editBtn + '</span></div>' +
+      '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + r.amount + (r.unit_label || r.unit) + ' ' + editBtn + '</span></div>' +
       '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + statusColor + '"></div></div>' +
-      '<div class="card-status">' + statusText + '</div>' +
-      '<div class="card-remaining">' + remainingText + '</div></div>';
+      '<div class="card-status">' + statusText + ' · ' + escHtml(String(r.source_label || '-')) + '</div>' +
+      '<div class="card-remaining">' + remainingText + ' · ' + RES_I18N.perPerson.replace('{amount}', Number(r.amount_per_person || 0).toFixed(2)).replace('{unit}', escHtml(String(r.unit_label || r.unit || ''))) + '</div></div>';
   }).join("");
 
   // Warnings
@@ -567,23 +595,145 @@ const RES_I18N = {
   save: "{{ t('web_resource_edit_save') }}",
   cancel: "{{ t('web_resource_edit_cancel') }}",
   done: "{{ t('web_resource_edit_done') }}",
+  people: "{{ t('web_resource_edit_people') }}",
+  unitHint: "{{ t('web_resource_unit_hint') }}",
+  fieldKnown: "{{ t('web_resource_field_known') }}",
+  perPerson: "{{ t('web_resource_per_person') }}",
+  perPersonUnknown: "{{ t('web_resource_per_person_unknown') }}",
+  valueRequired: "{{ t('web_resource_value_required') }}",
+  provenance: "{{ t('web_resource_provenance') }}",
+  outlierConfirm: "{{ t('web_resource_outlier_confirm') }}",
+  groupConsumption: "{{ t('web_resource_group_consumption') }}",
+  capacity: "{{ t('web_resource_capacity') }}",
+  fieldUnknown: "{{ t('web_resource_field_unknown') }}",
+  advanced: "{{ t('web_resource_advanced') }}",
+  advancedHint: "{{ t('web_resource_advanced_hint') }}",
+  inputKind: "{{ t('web_resource_input_kind') }}",
+  inputObserved: "{{ t('web_resource_input_observed') }}",
+  inputEstimate: "{{ t('web_resource_input_estimate') }}",
 };
-function openResourceEdit(rtype, amount, consumption, intake, trigger) {
+const RESOURCE_CONTRACTS = {
+  power: {unit: "Wh", example: "{{ t('web_resource_example_power') }}", max: 1000000, range: "{{ t('web_resource_range_power') }}"},
+  water: {unit: "L", example: "{{ t('web_resource_example_water') }}", max: 100000, range: "{{ t('web_resource_range_water') }}"},
+  food: {unit: "kcal", example: "{{ t('web_resource_example_food') }}", max: 100000000, range: "{{ t('web_resource_range_food') }}"},
+  fire: {unit: "{{ t('resource_unit_fire') }}", example: "{{ t('web_resource_example_fire') }}", max: 100000, range: "{{ t('web_resource_range_fire') }}"},
+  storage: {unit: "GB", example: "{{ t('web_resource_example_storage') }}", max: 100000, range: "{{ t('web_resource_range_storage') }}"},
+};
+function updateResourceConversion() {
+  const modal = document.getElementById("res-edit-modal");
+  if (!modal) return;
+  const amountInput = document.getElementById("res-edit-amount");
+  const amount = Number(amountInput.value);
+  const people = Math.max(1, Number(document.getElementById("res-edit-people").value || 1));
+  const unit = RESOURCE_CONTRACTS[modal._resourceType]?.unit || "";
+  document.getElementById("res-edit-conversion").textContent =
+    resourceFieldKnown("amount") && amountInput.value.trim() !== "" && Number.isFinite(amount)
+      ? RES_I18N.perPerson.replace("{amount}", (amount / people).toFixed(2)).replace("{unit}", unit)
+      : RES_I18N.perPersonUnknown;
+}
+function setResourceFieldKnown(field, known) {
+  const modal = document.getElementById("res-edit-modal");
+  if (!modal) return;
+  modal.querySelectorAll(`[data-resource-known-field="${field}"]`).forEach(button => {
+    const selected = button.dataset.resourceKnownValue === String(known === true);
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
+  const input = document.getElementById(`res-edit-${field}`);
+  if (known !== true) input.value = "";
+  input.disabled = known !== true;
+  input.setAttribute("aria-disabled", known === true ? "false" : "true");
+  if (field === "amount") updateResourceConversion();
+}
+function resourceFieldKnown(field) {
+  return document.querySelector(
+    `[data-resource-known-field="${field}"][data-resource-known-value="true"]`
+  )?.getAttribute("aria-pressed") === "true";
+}
+function formatResourceAsOf(value) {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString(document.documentElement.lang || undefined);
+}
+function setResourceInputKind(kind) {
+  const modal = document.getElementById("res-edit-modal");
+  if (!modal) return;
+  modal._inputKind = kind === "estimate" ? "estimate" : "observed";
+  modal.querySelectorAll("[data-resource-input-kind]").forEach(button => {
+    const selected = button.dataset.resourceInputKind === modal._inputKind;
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
+}
+function openResourceEdit(rtype, amount, consumption, intake, amountKnown, consumptionKnown, intakeKnown, capacity, capacityKnown, people, source, sourceLabel, asOf, trigger) {
   let modal = document.getElementById("res-edit-modal");
   if (!modal) {
     modal = document.createElement("div");
     modal.id = "res-edit-modal";
     modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;";
     modal.innerHTML = `
-      <div class="card" role="dialog" aria-modal="true" aria-labelledby="res-edit-title" style="max-width:380px;width:90%;padding:20px;">
+      <div class="card" role="dialog" aria-modal="true" aria-labelledby="res-edit-title" style="max-width:420px;width:90%;padding:20px;max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto;overscroll-behavior:contain;scroll-padding-bottom:88px;">
         <h3 id="res-edit-title" style="margin:0 0 12px;">${RES_I18N.edit_label}</h3>
-        <label for="res-edit-amount" style="font-size:12px;color:var(--secondary);">${RES_I18N.amount}</label>
-        <input id="res-edit-amount" type="number" step="any" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;margin:4px 0 10px;border-radius:4px;"/>
-        <label for="res-edit-consumption" style="font-size:12px;color:var(--secondary);">${RES_I18N.consumption}</label>
-        <input id="res-edit-consumption" type="number" step="any" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;margin:4px 0 10px;border-radius:4px;"/>
-        <label for="res-edit-intake" style="font-size:12px;color:var(--secondary);">${RES_I18N.intake}</label>
-        <input id="res-edit-intake" type="number" step="any" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;margin:4px 0 10px;border-radius:4px;"/>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+        <div id="res-edit-unit-hint" style="font-size:12px;color:var(--secondary);margin-bottom:8px;"></div>
+        <div id="res-edit-provenance" style="font-size:11px;color:var(--secondary);margin-bottom:10px;"></div>
+        <div id="res-edit-input-kind-label" style="font-size:12px;color:var(--secondary);">${RES_I18N.inputKind}</div>
+        <div class="q-chips" role="group" aria-labelledby="res-edit-input-kind-label" style="margin:4px 0 10px;">
+          <button type="button" class="q-chip" data-resource-input-kind="observed" aria-pressed="true">${RES_I18N.inputObserved}</button>
+          <button type="button" class="q-chip" data-resource-input-kind="estimate" aria-pressed="false">${RES_I18N.inputEstimate}</button>
+        </div>
+        <div class="resource-edit-field">
+          <div class="resource-edit-field-head">
+            <label id="res-edit-amount-label" for="res-edit-amount">${RES_I18N.amount}</label>
+            <div class="q-chips" role="group" aria-labelledby="res-edit-amount-label">
+              <button type="button" class="q-chip" data-resource-known-field="amount" data-resource-known-value="true" aria-pressed="false">${RES_I18N.fieldKnown}</button>
+              <button type="button" class="q-chip" data-resource-known-field="amount" data-resource-known-value="false" aria-pressed="true">${RES_I18N.fieldUnknown}</button>
+            </div>
+          </div>
+          <input id="res-edit-amount" class="resource-edit-input" type="number" min="0" max="1000000000000" step="any"/>
+        </div>
+        <div id="res-edit-conversion" style="font-size:11px;color:var(--secondary);margin-bottom:10px;"></div>
+        <div class="resource-edit-field">
+          <div class="resource-edit-field-head"><label for="res-edit-people">${RES_I18N.people}</label></div>
+          <input id="res-edit-people" class="resource-edit-input" type="number" min="1" max="10000" step="1"/>
+        </div>
+        <details id="res-edit-advanced" class="resource-edit-advanced">
+          <summary>${RES_I18N.advanced}</summary>
+          <div class="resource-edit-advanced-body">
+            <div style="font-size:11px;color:var(--secondary);margin-bottom:10px;">${RES_I18N.advancedHint}</div>
+            <div class="resource-edit-field">
+              <div class="resource-edit-field-head">
+                <label id="res-edit-consumption-label" for="res-edit-consumption">${RES_I18N.consumption}</label>
+                <div class="q-chips" role="group" aria-labelledby="res-edit-consumption-label">
+                  <button type="button" class="q-chip" data-resource-known-field="consumption" data-resource-known-value="true" aria-pressed="false">${RES_I18N.fieldKnown}</button>
+                  <button type="button" class="q-chip" data-resource-known-field="consumption" data-resource-known-value="false" aria-pressed="true">${RES_I18N.fieldUnknown}</button>
+                </div>
+              </div>
+              <input id="res-edit-consumption" class="resource-edit-input" type="number" min="0" step="any"/>
+            </div>
+            <div class="resource-edit-field">
+              <div class="resource-edit-field-head">
+                <label id="res-edit-intake-label" for="res-edit-intake">${RES_I18N.intake}</label>
+                <div class="q-chips" role="group" aria-labelledby="res-edit-intake-label">
+                  <button type="button" class="q-chip" data-resource-known-field="intake" data-resource-known-value="true" aria-pressed="false">${RES_I18N.fieldKnown}</button>
+                  <button type="button" class="q-chip" data-resource-known-field="intake" data-resource-known-value="false" aria-pressed="true">${RES_I18N.fieldUnknown}</button>
+                </div>
+              </div>
+              <input id="res-edit-intake" class="resource-edit-input" type="number" min="0" step="any"/>
+            </div>
+            <div id="res-edit-capacity-wrap" class="resource-edit-field">
+              <div class="resource-edit-field-head">
+                <label id="res-edit-capacity-label" for="res-edit-capacity">${RES_I18N.capacity}</label>
+                <div class="q-chips" role="group" aria-labelledby="res-edit-capacity-label">
+                  <button type="button" class="q-chip" data-resource-known-field="capacity" data-resource-known-value="true" aria-pressed="false">${RES_I18N.fieldKnown}</button>
+                  <button type="button" class="q-chip" data-resource-known-field="capacity" data-resource-known-value="false" aria-pressed="true">${RES_I18N.fieldUnknown}</button>
+                </div>
+              </div>
+              <input id="res-edit-capacity" class="resource-edit-input" type="number" min="0" step="any"/>
+            </div>
+          </div>
+        </details>
+        <div class="resource-edit-actions">
           <button class="action-btn action-outline" data-index-action="close-resource-edit">${RES_I18N.cancel}</button>
           <button class="action-btn action-primary" id="res-edit-save" data-index-action="save-resource">${RES_I18N.save}</button>
         </div>
@@ -591,24 +741,42 @@ function openResourceEdit(rtype, amount, consumption, intake, trigger) {
     modal.addEventListener("click", e => { if (e.target === modal) closeResEdit(); });
     modal.addEventListener("keydown", e => { if (e.key === "Escape") closeResEdit(); });
     document.body.appendChild(modal);
+    modal.querySelectorAll("[data-resource-known-field]").forEach(button => button.addEventListener("click", () => setResourceFieldKnown(button.dataset.resourceKnownField, button.dataset.resourceKnownValue === "true")));
+    document.getElementById("res-edit-amount").addEventListener("input", updateResourceConversion);
+    document.getElementById("res-edit-people").addEventListener("input", updateResourceConversion);
+    modal.querySelectorAll("[data-resource-input-kind]").forEach(button => button.addEventListener("click", () => setResourceInputKind(button.dataset.resourceInputKind)));
   }
+  modal._resourceType = rtype;
   const title = resourceLabel(rtype);
   document.getElementById("res-edit-title").textContent = `${RES_I18N.edit_label}: ${title}`;
   document.getElementById("res-edit-amount").value = amount;
   document.getElementById("res-edit-consumption").value = consumption;
   document.getElementById("res-edit-intake").value = intake;
+  document.getElementById("res-edit-people").value = people || 1;
+  document.getElementById("res-edit-capacity").value = capacity || 0;
+  document.getElementById("res-edit-capacity-wrap").style.display = rtype === "storage" ? "block" : "none";
+  document.getElementById("res-edit-advanced").open = false;
+  const contract = RESOURCE_CONTRACTS[rtype] || {unit: "", example: ""};
+  document.getElementById("res-edit-unit-hint").textContent = RES_I18N.unitHint.replace("{unit}", contract.unit) + " · " + contract.example + " · " + contract.range;
+  document.getElementById("res-edit-provenance").textContent = RES_I18N.provenance.replace("{source}", sourceLabel || "-").replace("{as_of}", formatResourceAsOf(asOf));
+  setResourceInputKind(source === "estimate" ? "estimate" : "observed");
+  document.getElementById("res-edit-consumption-label").textContent = ["water", "food"].includes(rtype) ? RES_I18N.groupConsumption : RES_I18N.consumption;
+  setResourceFieldKnown("amount", amountKnown === true);
+  setResourceFieldKnown("consumption", consumptionKnown === true);
+  setResourceFieldKnown("intake", intakeKnown === true);
+  setResourceFieldKnown("capacity", rtype === "storage" && capacityKnown === true);
+  updateResourceConversion();
   modal.style.display = "flex";
   // SHA-152: focus management - save the explicit trigger (passed as `this`
   // from onclick/onkeydown) rather than document.activeElement, which is the
   // <body> for mouse clicks and would lose the trigger. Fall back to
   // activeElement only if no trigger was passed.
   modal._previouslyFocused = trigger || document.activeElement;
-  modal._resourceType = rtype;
-  document.getElementById("res-edit-amount").focus();
+  modal.querySelector('[data-resource-input-kind][aria-pressed="true"]').focus();
   if (!modal._focusTrap) {
     modal._focusTrap = (e) => {
       if (e.key !== "Tab" || modal.style.display !== "flex") return;
-      const focusable = modal.querySelectorAll("input, button, [tabindex]:not([tabindex='-1'])");
+      const focusable = Array.from(modal.querySelectorAll("summary, input:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex='-1'])")).filter(element => element.getClientRects().length > 0);
       if (!focusable.length) return;
       const first = focusable[0], last = focusable[focusable.length - 1];
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -639,14 +807,52 @@ function closeResEdit() {
   }
 }
 async function saveResource(rtype) {
+  const amountKnown = resourceFieldKnown("amount");
+  const consumptionKnown = resourceFieldKnown("consumption");
+  const intakeKnown = resourceFieldKnown("intake");
+  const capacityKnown = rtype === "storage" && resourceFieldKnown("capacity");
   const amount = parseFloat(document.getElementById("res-edit-amount").value);
   const consumption = parseFloat(document.getElementById("res-edit-consumption").value);
   const intake = parseFloat(document.getElementById("res-edit-intake").value);
+  const capacity = parseFloat(document.getElementById("res-edit-capacity").value);
+  if (
+    (amountKnown && !Number.isFinite(amount)) ||
+    (consumptionKnown && !Number.isFinite(consumption)) ||
+    (intakeKnown && !Number.isFinite(intake)) ||
+    (capacityKnown && !Number.isFinite(capacity))
+  ) {
+    notify(new Error(RES_I18N.valueRequired));
+    return;
+  }
+  const contract = RESOURCE_CONTRACTS[rtype];
+  const hasOutlier = [
+    amountKnown ? amount : 0,
+    consumptionKnown ? consumption : 0,
+    intakeKnown ? intake : 0,
+    capacityKnown ? capacity : 0,
+  ].some(value => value > contract.max);
+  const confirmOutlier = hasOutlier
+    ? await confirmDialog(RES_I18N.outlierConfirm.replace("{range}", contract.range))
+    : false;
+  if (hasOutlier && !confirmOutlier) return;
   try {
-    await fetch("/api/resources", {
+    await api("/api/resources", {
       method: "POST",
       headers: {"content-type": "application/json"},
-      body: JSON.stringify({type: rtype, amount, daily_consumption: consumption, daily_intake: intake}),
+      body: JSON.stringify({
+        type: rtype,
+        amount_known: amountKnown,
+        consumption_known: consumptionKnown,
+        intake_known: intakeKnown,
+        amount: amountKnown ? amount : null,
+        daily_consumption: consumptionKnown ? consumption : null,
+        daily_intake: intakeKnown ? intake : null,
+        capacity_known: capacityKnown,
+        capacity: capacityKnown ? capacity : null,
+        people_count: Number(document.getElementById("res-edit-people").value || 1),
+        confirm_outlier: confirmOutlier,
+        input_kind: document.getElementById("res-edit-modal")._inputKind,
+      }),
     });
     // SHA-152: refresh first so the re-rendered resource card exists when
     // closeResEdit restores focus (the saved trigger was detached by the
@@ -741,6 +947,15 @@ function openResourceFromTarget(target) {
     Number(target.dataset.resourceAmount || 0),
     Number(target.dataset.resourceConsumption || 0),
     Number(target.dataset.resourceIntake || 0),
+    target.dataset.resourceAmountKnown === "true",
+    target.dataset.resourceConsumptionKnown === "true",
+    target.dataset.resourceIntakeKnown === "true",
+    Number(target.dataset.resourceCapacity || 0),
+    target.dataset.resourceCapacityKnown === "true",
+    Number(target.dataset.resourcePeople || 1),
+    target.dataset.resourceSource || "",
+    target.dataset.resourceSourceLabel || "",
+    target.dataset.resourceAsOf || "",
     target,
   );
 }

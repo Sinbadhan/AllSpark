@@ -64,7 +64,9 @@ def test_calculate_stress_modes_and_power(tracker):
     # low power -> +0.4
     tracker.db.upsert_resource(Resource(type=ResourceType.POWER, current_amount=10, unit="Wh",
                                         daily_consumption=10, daily_intake=0,
-                                        estimated_remaining_hours=3.0, last_updated=""))
+                                        estimated_remaining_hours=3.0, last_updated="",
+                                        amount_known=True, consumption_known=True,
+                                        intake_known=True))
     assert tracker._calculate_stress() >= 0.7
 
 

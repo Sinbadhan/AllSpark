@@ -107,7 +107,12 @@ def test_resource_save_waits_for_refresh_and_focuses_same_card(tmp_path: Path) -
 const vm = require("node:vm");
 const events = [];
 const previous = {focus() { events.push("detached-focus"); }};
-const modal = {style: {display: "flex"}, _previouslyFocused: previous, _resourceType: "water"};
+const modal = {
+  style: {display: "flex"},
+  _previouslyFocused: previous,
+  _resourceType: "water",
+  _inputKind: "estimate",
+};
 function card(type) {
   return {
     type, focused: false,
@@ -120,6 +125,8 @@ const inputs = {
   "res-edit-amount": {value: "10"},
   "res-edit-consumption": {value: "2"},
   "res-edit-intake": {value: "1"},
+  "res-edit-capacity": {value: "0"},
+  "res-edit-people": {value: "2"},
 };
 const document = {
   body: {contains: () => false},
@@ -129,7 +136,11 @@ const document = {
 const context = vm.createContext({
   document,
   console,
-  fetch: async () => { events.push("fetch"); return {}; },
+  api: async () => { events.push("fetch"); return {}; },
+  confirmDialog: async () => true,
+  resourceFieldKnown: () => true,
+  RESOURCE_CONTRACTS: {water: {max: 100000, range: "0-100000 L"}},
+  RES_I18N: {outlierConfirm: "Confirm {range}"},
   refreshDashboard: async () => {
     events.push("refresh-start");
     await Promise.resolve();

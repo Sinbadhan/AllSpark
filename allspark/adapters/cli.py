@@ -130,7 +130,7 @@ class SparkCLI:
                 console.print(f"  {icon} [{style}]{w['message']}[/]")
 
         resources = resource_mgr.get_all_resources()
-        has_data = any(r.current_amount > 0 for r in resources)
+        has_data = any(r.amount_known for r in resources)
         if not has_data:
             console.print(f"\n[dim]{t('resource_offline_hint')}[/]")
 

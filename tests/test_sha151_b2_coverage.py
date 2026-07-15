@@ -6,13 +6,19 @@ meaningful branch gains toward the 90% acceptance; SHA-151 stays open until
 acceptance-gap table printed by scripts/check_coverage.py).
 """
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 import pytest
 
 from allspark.core.database import Database
 from allspark.core.i18n import set_language
-from allspark.core.models import KnowledgeEntry, OperatingMode, Resource, ResourceType
+from allspark.core.models import (
+    RESOURCE_UNITS,
+    KnowledgeEntry,
+    OperatingMode,
+    Resource,
+    ResourceType,
+)
 from allspark.services.knowledge_engine import KnowledgeEngine
 from allspark.services.knowledge_loader import load_all_knowledge
 from allspark.services.resource_manager import ResourceManager
@@ -125,22 +131,108 @@ def test_format_answer_with_related_links(ke: KnowledgeEngine) -> None:
 # ─── get_relevant_knowledge (covers resource-fallback loop, lines 98-105) ────
 
 
-def test_get_relevant_knowledge_with_low_resources_triggers_fallback(ke: KnowledgeEngine) -> None:
-    # Empty initial match + resources below thresholds -> water/food/fire
-    # fallback searches (covers all three elif branches).
+def test_get_relevant_knowledge_with_known_low_resources_triggers_each_fallback(
+    ke: KnowledgeEngine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    hit = _entry(id="fallback-hit", title="应急知识")
+    search = MagicMock(side_effect=[[], [hit], [hit], [hit]])
+    monkeypatch.setattr(ke, "search_by_language", search)
     resources = [
         Resource(type=ResourceType.WATER, current_amount=50.0, unit="L",
                  daily_consumption=10.0, daily_intake=0.0,
-                 estimated_remaining_hours=48.0, last_updated=""),       # < 72h
+                 estimated_remaining_hours=48.0, last_updated="",
+                 amount_known=True, consumption_known=True,
+                 intake_known=True),                                    # < 72h
         Resource(type=ResourceType.FOOD, current_amount=5.0, unit="kcal",
                  daily_consumption=10.0, daily_intake=0.0,
-                 estimated_remaining_hours=100.0, last_updated=""),      # < 120h
-        Resource(type=ResourceType.FIRE, current_amount=5.0, unit="kg",
+                 estimated_remaining_hours=100.0, last_updated="",
+                 amount_known=True, consumption_known=True,
+                 intake_known=True),                                    # < 120h
+        Resource(type=ResourceType.FIRE, current_amount=5.0, unit="uses",
                  daily_consumption=10.0, daily_intake=0.0,
-                 estimated_remaining_hours=200.0, last_updated=""),      # < 10 amount
+                 estimated_remaining_hours=200.0, last_updated="",
+                 amount_known=True),                                    # < 10 amount
     ]
     result = ke.get_relevant_knowledge("zzznomatchxyz", resources=resources)
-    assert isinstance(result, list)
+    assert [entry.id for entry in result] == ["fallback-hit"]
+    assert search.call_args_list == [
+        call("zzznomatchxyz", limit=5),
+        call("水 净水 水源 water purify", limit=3),
+        call("食物 可食用 狩猎 food edible", limit=3),
+        call("火 生火 点火 fire ignite", limit=3),
+    ]
+
+
+def test_get_relevant_knowledge_skips_unknown_partial_and_threshold_boundaries(
+    ke: KnowledgeEngine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    search = MagicMock(return_value=[])
+    monkeypatch.setattr(ke, "search_by_language", search)
+    resources = [
+        # Unknown amount always fails closed, even if a stale estimate is low.
+        Resource(
+            type=ResourceType.WATER,
+            current_amount=1.0,
+            unit="L",
+            estimated_remaining_hours=1.0,
+        ),
+        # Partial water/food rates cannot trigger a remaining-time decision.
+        Resource(
+            type=ResourceType.WATER,
+            current_amount=1.0,
+            unit="L",
+            estimated_remaining_hours=1.0,
+            amount_known=True,
+            consumption_known=True,
+            intake_known=False,
+        ),
+        Resource(
+            type=ResourceType.FOOD,
+            current_amount=1.0,
+            unit="kcal",
+            estimated_remaining_hours=1.0,
+            amount_known=True,
+            consumption_known=False,
+            intake_known=True,
+        ),
+        # Exact thresholds are not below the trigger boundary.
+        Resource(
+            type=ResourceType.WATER,
+            current_amount=1.0,
+            unit="L",
+            estimated_remaining_hours=72.0,
+            amount_known=True,
+            consumption_known=True,
+            intake_known=True,
+        ),
+        Resource(
+            type=ResourceType.FOOD,
+            current_amount=1.0,
+            unit="kcal",
+            estimated_remaining_hours=120.0,
+            amount_known=True,
+            consumption_known=True,
+            intake_known=True,
+        ),
+        Resource(
+            type=ResourceType.FIRE,
+            current_amount=10.0,
+            unit="uses",
+            amount_known=True,
+        ),
+        # A fully known non-matching resource still continues the loop safely.
+        Resource(
+            type=ResourceType.POWER,
+            current_amount=1.0,
+            unit="Wh",
+            amount_known=True,
+            consumption_known=True,
+            intake_known=True,
+        ),
+    ]
+
+    assert ke.get_relevant_knowledge("zzznomatchxyz", resources=resources) == []
+    search.assert_called_once_with("zzznomatchxyz", limit=5)
 
 
 def test_get_relevant_knowledge_no_resources(ke: KnowledgeEngine) -> None:
@@ -162,12 +254,15 @@ def rm(tmp_path: Path) -> ResourceManager:
 
 def _res(
     rtype: ResourceType, current: float = 100.0, consumption: float = 10.0,
-    intake: float = 0.0, hours: float = 100.0,
+    intake: float = 0.0, hours: float = 100.0, capacity: float = 0.0,
+    capacity_known: bool = False,
 ) -> Resource:
     return Resource(
-        type=rtype, current_amount=current, unit="x",
+        type=rtype, current_amount=current, unit=RESOURCE_UNITS[rtype],
         daily_consumption=consumption, daily_intake=intake,
         estimated_remaining_hours=hours, last_updated="",
+        amount_known=True, consumption_known=True, intake_known=True,
+        capacity=capacity, capacity_known=capacity_known,
     )
 
 
@@ -225,14 +320,14 @@ def test_check_warnings_fire_critical_and_warning(rm: ResourceManager) -> None:
 
 
 def test_check_warnings_storage_critical(rm: ResourceManager) -> None:
-    # pct = (1 - 97/100)*100 = 3% < 5 -> critical
-    rm.db.upsert_resource(_res(ResourceType.STORAGE, current=0, consumption=100, intake=97, hours=0))
+    # Canonical contract: 3 GB remaining of 100 GB total -> 3% < 5%.
+    rm.db.upsert_resource(_res(ResourceType.STORAGE, current=3, consumption=2, intake=1, hours=72, capacity=100, capacity_known=True))
     assert any(w["level"] == "critical" for w in rm.check_warnings())
 
 
 def test_check_warnings_storage_warning(rm: ResourceManager) -> None:
-    # pct = (1 - 92/100)*100 = 8% < 10 -> warning, not <5
-    rm.db.upsert_resource(_res(ResourceType.STORAGE, current=0, consumption=100, intake=92, hours=0))
+    # Canonical contract: 8 GB remaining of 100 GB total -> warning, not critical.
+    rm.db.upsert_resource(_res(ResourceType.STORAGE, current=8, consumption=2, intake=1, hours=192, capacity=100, capacity_known=True))
     warnings = rm.check_warnings()
     assert any(w["level"] == "warning" for w in warnings)
     assert not any(w["level"] == "critical" for w in warnings)
@@ -249,10 +344,9 @@ def test_estimate_remaining_fire_zero_consumption_sustained(rm: ResourceManager)
     assert rm._estimate_remaining(r) == rm.SUSTAINED
 
 
-def test_estimate_remaining_storage_returns_zero(rm: ResourceManager) -> None:
-    # STORAGE matches no branch -> 0.0 (covers the final return at line 83).
-    r = _res(ResourceType.STORAGE, current=0, consumption=100, intake=0, hours=0)
-    assert rm._estimate_remaining(r) == 0.0
+def test_estimate_remaining_storage_uses_remaining_and_net_growth(rm: ResourceManager) -> None:
+    r = _res(ResourceType.STORAGE, current=80, consumption=10, intake=2, hours=0)
+    assert rm._estimate_remaining(r) == 240.0
 
 
 def test_has_remaining_estimate_per_type(rm: ResourceManager) -> None:
@@ -260,7 +354,7 @@ def test_has_remaining_estimate_per_type(rm: ResourceManager) -> None:
     assert rm.has_remaining_estimate(_res(ResourceType.WATER, consumption=0)) is False
     assert rm.has_remaining_estimate(_res(ResourceType.POWER, consumption=10, intake=20)) is False
     assert rm.has_remaining_estimate(_res(ResourceType.FIRE, consumption=5)) is True
-    assert rm.has_remaining_estimate(_res(ResourceType.STORAGE, consumption=10)) is False
+    assert rm.has_remaining_estimate(_res(ResourceType.STORAGE, consumption=10)) is True
 
 
 def test_consume_resource_and_none_path(rm: ResourceManager) -> None:

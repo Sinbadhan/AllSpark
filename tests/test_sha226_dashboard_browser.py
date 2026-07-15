@@ -92,11 +92,11 @@ def test_dashboard_mobile_core_states_do_not_overflow(
                   mode: 'standard',
                   warnings: [],
                   resources: [
-                    {type:'power', amount:123456789.25, unit:'kWh/day-equivalent-storage', remaining_hours:1, configured:true},
-                    {type:'water', amount:98765, unit:'litres-of-purified-water', remaining_hours:60, configured:true},
-                    {type:'food', amount:50, unit:'kg', remaining_hours:200, configured:true},
-                    {type:'fire', amount:8, unit:'hours-of-safe-combustion', remaining_hours:8, configured:true},
-                    {type:'storage', amount:4, unit:'long-term-containers', remaining_hours:null, configured:true},
+                    {type:'power', amount:123456789.25, unit:'kWh/day-equivalent-storage', remaining_hours:1, remaining_status:'finite', configured:true},
+                    {type:'water', amount:98765, unit:'litres-of-purified-water', remaining_hours:60, remaining_status:'finite', configured:true},
+                    {type:'food', amount:50, unit:'kg', remaining_hours:200, remaining_status:'finite', configured:true},
+                    {type:'fire', amount:8, unit:'hours-of-safe-combustion', remaining_hours:8, remaining_status:'finite', configured:true},
+                    {type:'storage', amount:4, unit:'long-term-containers', remaining_hours:null, remaining_status:'unknown', configured:true},
                   ],
                 };
                 if (path === '/api/tasks') return [];
@@ -118,9 +118,10 @@ def test_dashboard_mobile_core_states_do_not_overflow(
             state = browser.evaluate(_LAYOUT_STATE)
             _assert_layout(state, width)
             assert any(
-                status in state["statuses"]
-                for status in ("CRITICAL", "危急")
-            )
+                marker in status
+                for status in state["statuses"]
+                for marker in ("CRITICAL", "危急")
+            ), state["statuses"]
             assert I18N_POWER_SUSTAINED[language] in state["statuses"]
 
 

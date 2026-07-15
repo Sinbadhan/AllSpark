@@ -79,17 +79,19 @@ class DailyBriefing:
 
         for r in resources:
             icon = icons.get(r.type, "📦")
-            is_offline = r.current_amount == 0 and r.daily_consumption == 0
+            is_offline = not r.amount_known
             res_name = t(f"resource_{r.type.value}")
 
             if is_offline:
                 lines.append(f"  {icon} {res_name}: [dim]{t('resource_offline')}[/]")
                 continue
 
+            rates_complete = self._has_complete_rate_data(r)
+
             remaining = ""
-            if r.estimated_remaining_hours < 0:
+            if rates_complete and r.estimated_remaining_hours < 0:
                 remaining = f" ({t('res_sustained')})"
-            elif r.estimated_remaining_hours > 0:
+            elif rates_complete and r.estimated_remaining_hours > 0:
                 hours = r.estimated_remaining_hours
                 if hours < 24:
                     remaining = f" ({hours:.0f}h)"
@@ -99,7 +101,7 @@ class DailyBriefing:
             status = ""
             if r.current_amount == 0:
                 status = " ⚠️"
-            elif r.estimated_remaining_hours > 0 and r.estimated_remaining_hours < 24:
+            elif rates_complete and 0 < r.estimated_remaining_hours < 24:
                 status = " ⚡"
 
             lines.append(
@@ -107,6 +109,15 @@ class DailyBriefing:
             )
 
         return "\n".join(lines)
+
+    def _has_complete_rate_data(self, resource) -> bool:
+        if self.resource_mgr:
+            return bool(self.resource_mgr.has_complete_rate_data(resource))
+        return bool(
+            resource.amount_known
+            and resource.consumption_known
+            and resource.intake_known
+        )
 
     def _warning_section(self) -> str:
         warnings = []
@@ -200,7 +211,7 @@ class DailyBriefing:
 
         resources = self.db.get_all_resources()
         for r in resources:
-            if r.current_amount == 0 and r.daily_consumption == 0:
+            if not r.amount_known:
                 keywords = _SURVIVAL_KNOWLEDGE_MAP.get(r.type, [])
                 priority_cats.extend(keywords)
 
@@ -306,12 +317,12 @@ class DailyBriefing:
             parts = []
             for r in resources:
                 icon = icons.get(r.type, "📦")
-                is_offline = r.current_amount == 0 and r.daily_consumption == 0
+                is_offline = not r.amount_known
                 if is_offline:
                     continue
                 res_name = t(f"resource_{r.type.value}")
                 remaining = ""
-                if r.estimated_remaining_hours > 0:
+                if self._has_complete_rate_data(r) and r.estimated_remaining_hours > 0:
                     hours = r.estimated_remaining_hours
                     remaining = f"({hours / 24:.1f}d)" if hours >= 24 else f"({hours:.0f}h)"
                 parts.append(f"{icon}{res_name}:{r.current_amount:.0f}{r.unit}{remaining}")

@@ -221,7 +221,7 @@ class EnvironmentAssessor:
         for resource_type in _REQUIRED_RESOURCES:
             resource = resources.get(resource_type)
             status = self._resource_status(resource)
-            observed_at = resource.last_updated if resource else None
+            observed_at = resource.as_of if resource else None
             stale = status != "unknown" and self._is_stale(
                 observed_at, _RESOURCE_MAX_AGE
             )
@@ -229,7 +229,7 @@ class EnvironmentAssessor:
                 "status": status,
                 "observed_at": observed_at,
                 "stale": stale,
-                "source": "database" if status != "unknown" else "unknown",
+                "source": resource.source if resource and status != "unknown" else "unknown",
             }
             if status != "unknown" and observed_at:
                 observed_values.append(observed_at)
@@ -254,7 +254,7 @@ class EnvironmentAssessor:
         }
 
     def _resource_status(self, resource: Resource | None) -> str:
-        if resource is None or not self._is_configured(resource):
+        if resource is None or not self._has_complete_rate_data(resource):
             return "unknown"
         if resource.current_amount <= 0:
             return "zero"
@@ -265,10 +265,15 @@ class EnvironmentAssessor:
     def _is_configured(self, resource: Resource) -> bool:
         if self.resource_mgr:
             return bool(self.resource_mgr.is_configured(resource))
-        return not (
-            resource.current_amount == 0
-            and resource.daily_consumption == 0
-            and resource.daily_intake == 0
+        return bool(resource.amount_known)
+
+    def _has_complete_rate_data(self, resource: Resource) -> bool:
+        if self.resource_mgr:
+            return bool(self.resource_mgr.has_complete_rate_data(resource))
+        return bool(
+            resource.amount_known
+            and resource.consumption_known
+            and resource.intake_known
         )
 
     def _assess_threats(

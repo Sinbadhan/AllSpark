@@ -376,7 +376,16 @@ class RuleEngine:
                 context_parts.append(f"[Alert] {w['message']}")
         if resources:
             for r in resources[:5]:
-                context_parts.append(f"[{r.type.value}] {r.current_amount}{r.unit}, ~{r.estimated_remaining_hours}h left")
+                if not self.resource_mgr.has_complete_rate_data(r):
+                    continue
+                remaining = (
+                    "sustained"
+                    if self.resource_mgr.remaining_status(r) == "sustained"
+                    else f"~{r.estimated_remaining_hours}h left"
+                )
+                context_parts.append(
+                    f"[{r.type.value}] {r.current_amount}{r.unit}, {remaining}"
+                )
 
         context = "\n".join(context_parts) if context_parts else ""
 

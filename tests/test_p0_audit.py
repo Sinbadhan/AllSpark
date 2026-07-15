@@ -394,7 +394,9 @@ def test_longtail_psychology_stress_includes_low_power():
     try:
         rm = ResourceManager(db)
         rm.init_defaults()
-        rm.update_resource(ResourceType.POWER, 5.0, consumption=120.0)
+        rm.update_resource(
+            ResourceType.POWER, 5.0, consumption=120.0, intake=0.0
+        )
         psych = PsychologyTracker(db)
         state = psych.assess_state()
         assert state["stress_index"] > 0, "Power stress should register when power < 6h remaining"

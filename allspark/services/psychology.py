@@ -18,9 +18,10 @@ _SELF_HARM_KEYWORDS_EN = ["suicide", "kill myself", "end my life", "don't want t
 
 
 class PsychologyTracker:
-    def __init__(self, db, personality=None):
+    def __init__(self, db, personality=None, resource_mgr=None):
         self.db = db
         self.personality = personality
+        self.resource_mgr = resource_mgr
         self._interaction_count = 0
         self._last_interaction_time = None
         self._sentiment_samples = []
@@ -101,7 +102,19 @@ class PsychologyTracker:
             from allspark.core.models import ResourceType
 
             power = self.db.get_resource(ResourceType.POWER)
-            if power and power.estimated_remaining_hours > 0:
+            rates_complete = bool(
+                power
+                and (
+                    self.resource_mgr.has_complete_rate_data(power)
+                    if self.resource_mgr
+                    else (
+                        power.amount_known
+                        and power.consumption_known
+                        and power.intake_known
+                    )
+                )
+            )
+            if rates_complete and power and power.estimated_remaining_hours > 0:
                 if power.estimated_remaining_hours < 6:
                     stress += 0.4
                 elif power.estimated_remaining_hours < 24:

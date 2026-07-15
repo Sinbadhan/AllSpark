@@ -244,6 +244,222 @@ def test_resource_post_rejects_invalid_values_without_writing(payload):
         assert c.get("/api/resources").json() == before
 
 
+def test_resource_api_exposes_field_certainty_people_provenance_and_time():
+    with TempDb() as path:
+        c = _client(path)
+        response = c.post(
+            "/api/resources",
+            json={
+                "type": "water",
+                "amount": 12,
+                "amount_known": True,
+                "daily_consumption": 3,
+                "consumption_known": True,
+                "daily_intake": None,
+                "intake_known": False,
+                "people_count": 3,
+                "as_of": "2026-07-15T12:00:00+08:00",
+            },
+        )
+        assert response.status_code == 200
+        water = next(item for item in c.get("/api/resources").json() if item["type"] == "water")
+        assert water["unit"] == "L"
+        assert water["amount_known"] is True
+        assert water["consumption_known"] is True
+        assert water["intake_known"] is False
+        assert water["source"] == "user_input"
+        assert water["source_label"] in {"User input", "用户输入"}
+        assert water["as_of"] == "2026-07-15T12:00:00+08:00"
+        assert water["people_count"] == 3
+        assert water["amount_per_person"] == 4
+        assert water["remaining_hours_per_person"] is None
+
+        complete = c.post(
+            "/api/resources",
+            json={
+                "type": "water",
+                "amount": 12,
+                "daily_consumption": 3,
+                "daily_intake": 1,
+                "people_count": 3,
+                "input_kind": "estimate",
+            },
+        )
+        assert complete.status_code == 200
+        water = next(item for item in c.get("/api/resources").json() if item["type"] == "water")
+        assert water["remaining_hours_per_person"] == 144
+        assert water["source"] == "estimate"
+
+
+def test_resource_api_rejects_spoofed_source_and_unconfirmed_outlier():
+    with TempDb() as path:
+        c = _client(path)
+        before = c.get("/api/resources").json()
+        spoof = c.post(
+            "/api/resources",
+            json={"type": "power", "amount": 100, "source": "sensor"},
+        )
+        assert spoof.status_code == 422
+        invalid_kind = c.post(
+            "/api/resources",
+            json={"type": "power", "amount": 100, "input_kind": "sensor"},
+        )
+        assert invalid_kind.status_code == 422
+        outlier = c.post(
+            "/api/resources",
+            json={"type": "water", "amount": 100_001},
+        )
+        assert outlier.status_code == 422
+        assert c.get("/api/resources").json() == before
+
+        confirmed = c.post(
+            "/api/resources",
+            json={"type": "water", "amount": 100_001, "confirm_outlier": True},
+        )
+        assert confirmed.status_code == 200
+
+
+def test_storage_capacity_round_trip_and_nonstorage_rejection():
+    with TempDb() as path:
+        c = _client(path)
+        storage = c.post(
+            "/api/resources",
+            json={
+                "type": "storage",
+                "amount": 80,
+                "daily_consumption": 2,
+                "daily_intake": 1,
+                "capacity": 100,
+                "capacity_known": True,
+            },
+        )
+        assert storage.status_code == 200
+        payload = next(item for item in c.get("/api/resources").json() if item["type"] == "storage")
+        assert payload["capacity"] == 100
+        assert payload["capacity_known"] is True
+
+        nonstorage = c.post(
+            "/api/resources",
+            json={"type": "food", "amount": 10, "capacity": 20, "capacity_known": True},
+        )
+        assert nonstorage.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        {"people_count": True},
+        {"people_count": 1.5},
+        {"people_count": "2.0"},
+        {"as_of": True},
+        {"as_of": 123},
+        {"as_of": {}},
+        {"as_of": "2999-01-01T00:00:00Z"},
+        {"input_kind": {}},
+        {"source": {}},
+    ],
+)
+def test_resource_api_malformed_metadata_returns_422_without_write(metadata):
+    with TempDb() as path:
+        c = _client(path)
+        before = c.get("/api/resources").json()
+        response = c.post(
+            "/api/resources",
+            json={"type": "water", "amount": 10, **metadata},
+        )
+        assert response.status_code == 422
+        assert response.json()["status"] == "error"
+        assert c.get("/api/resources").json() == before
+
+
+def test_resource_api_localizes_fire_unit_without_changing_storage_unit():
+    from allspark.core.i18n import set_language
+
+    with TempDb() as path:
+        c = _client(path)
+        set_language("zh", persist=False)
+        fire_zh = next(item for item in c.get("/api/resources").json() if item["type"] == "fire")
+        assert fire_zh["unit"] == "uses"
+        assert fire_zh["unit_label"] == "次"
+        set_language("en", persist=False)
+        fire_en = next(item for item in c.get("/api/resources").json() if item["type"] == "fire")
+        assert fire_en["unit"] == "uses"
+        assert fire_en["unit_label"] == "uses"
+        set_language("zh", persist=False)
+
+
+@pytest.mark.parametrize(
+    ("resource_type", "field", "value"),
+    [
+        ("water", "amount", True),
+        ("water", "amount", False),
+        ("water", "daily_consumption", True),
+        ("water", "daily_consumption", False),
+        ("water", "daily_intake", True),
+        ("water", "daily_intake", False),
+        ("storage", "capacity", True),
+        ("storage", "capacity", False),
+    ],
+)
+def test_resource_api_rejects_boolean_numeric_fields_without_write(
+    resource_type, field, value
+):
+    with TempDb() as path:
+        c = _client(path)
+        before = c.get("/api/resources").json()
+        payload = {"type": resource_type, "amount": 10, field: value}
+        if field == "capacity":
+            payload["capacity_known"] = True
+        response = c.post("/api/resources", json=payload)
+        assert response.status_code == 422
+        assert c.get("/api/resources").json() == before
+
+
+def test_resource_api_exposes_unknown_finite_and_sustained_states():
+    with TempDb() as path:
+        c = _client(path)
+        assert c.post(
+            "/api/resources",
+            json={"type": "power", "amount": 100, "daily_consumption": 10, "daily_intake": 10},
+        ).status_code == 200
+        assert c.post(
+            "/api/resources",
+            json={"type": "water", "amount": 12, "daily_consumption": 3, "daily_intake": 1},
+        ).status_code == 200
+        assert c.post(
+            "/api/resources",
+            json={"type": "storage", "amount": 80, "capacity": 100, "capacity_known": True},
+        ).status_code == 200
+        payload = {item["type"]: item for item in c.get("/api/resources").json()}
+        assert payload["power"]["remaining_status"] == "sustained"
+        assert payload["power"]["remaining_hours"] is None
+        assert payload["water"]["remaining_status"] == "finite"
+        assert payload["water"]["remaining_hours"] == 144
+        assert payload["storage"]["remaining_status"] == "unknown"
+        assert payload["storage"]["remaining_hours"] is None
+
+
+def test_resource_web_contract_distinguishes_remaining_states_and_provenance():
+    template = Path("allspark/templates/index.html").read_text(encoding="utf-8")
+    assert 'remainingStatus = r.remaining_status || "unknown"' in template
+    assert 'remainingStatus === "sustained"' in template
+    assert "I18N.web_remaining_sustained" in template
+    assert 'data-resource-source="${escHtml(String(r.source || \'\'))}"' in template
+    assert 'role="group" aria-labelledby="res-edit-input-kind-label"' in template
+    assert 'data-resource-input-kind="observed" aria-pressed="true"' in template
+    assert 'data-resource-input-kind="estimate" aria-pressed="false"' in template
+    assert ".q-chip:focus-visible" in template
+    assert '<details id="res-edit-advanced"' in template
+    assert 'data-resource-known-value="false" aria-pressed="true"' in template
+    assert "resource-edit-actions" in template
+    assert 'if (known !== true) input.value = ""' in template
+    assert "RES_I18N.perPersonUnknown" in template
+    assert "RES_I18N.valueRequired" in template
+    assert template.index("modal._resourceType = rtype") < template.index(
+        'setResourceFieldKnown("amount", amountKnown === true)'
+    )
+
+
 def test_briefing_endpoints_reachable():
     with TempDb() as path:
         c = _client(path)

@@ -114,7 +114,11 @@ class MissionPlanner:
         if resources:
             from allspark.core.models import ResourceType
             for r in resources:
-                if r.type == ResourceType.WATER and r.estimated_remaining_hours < 72:
+                if (
+                    r.type == ResourceType.WATER
+                    and self.resource_mgr.has_remaining_estimate(r)
+                    and r.estimated_remaining_hours < 72
+                ):
                     now = datetime.now().isoformat()
                     task = Task(
                         id=f"task-urgent-water-{datetime.now().strftime('%H%M%S')}",
@@ -126,7 +130,11 @@ class MissionPlanner:
                     )
                     self.db.save_task(task)
                     return [task]
-                if r.type == ResourceType.FOOD and r.estimated_remaining_hours < 48:
+                if (
+                    r.type == ResourceType.FOOD
+                    and self.resource_mgr.has_remaining_estimate(r)
+                    and r.estimated_remaining_hours < 48
+                ):
                     now = datetime.now().isoformat()
                     task = Task(
                         id=f"task-urgent-food-{datetime.now().strftime('%H%M%S')}",

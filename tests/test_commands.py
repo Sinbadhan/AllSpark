@@ -195,6 +195,43 @@ class TestSetCommand:
         assert dispatcher.dispatch("set", ["water", value, "2"]) is True
         assert db.get_resource(ResourceType.WATER) == before
 
+    def test_execute_unknown_with_bad_people_count_does_not_write(self, dispatcher, db):
+        from allspark.core.models import ResourceType
+
+        before = db.get_resource(ResourceType.WATER)
+        assert dispatcher.dispatch("set", ["water", "unknown", "bad_count"]) is True
+        assert db.get_resource(ResourceType.WATER) == before
+
+    def test_execute_resource_validation_error_does_not_write(self, dispatcher, db):
+        from allspark.core.models import ResourceType
+
+        before = db.get_resource(ResourceType.WATER)
+        assert dispatcher.dispatch("set", ["water", "10", "2", "0", "0"]) is True
+        assert db.get_resource(ResourceType.WATER) == before
+
+    def test_execute_storage_capacity_people_and_estimate(self, dispatcher, db):
+        from allspark.core.models import ResourceType
+
+        assert dispatcher.dispatch(
+            "set", ["storage", "80", "2", "1", "4", "100", "estimate"]
+        ) is True
+        resource = db.get_resource(ResourceType.STORAGE)
+        assert resource.current_amount == 80
+        assert resource.capacity == 100
+        assert resource.capacity_known is True
+        assert resource.people_count == 4
+        assert resource.source == "estimate"
+
+    def test_execute_sustained_resource_is_not_reported_unknown(self, dispatcher, db):
+        from allspark.core.models import ResourceType
+
+        assert dispatcher.dispatch(
+            "set", ["water", "10", "2", "2", "1", "observed"]
+        ) is True
+        resource = db.get_resource(ResourceType.WATER)
+        assert resource.estimated_remaining_hours == -1
+        assert resource.source == "user_input"
+
 
 # ─── LangCommand Tests ──────────────────────────────────────────────────────
 

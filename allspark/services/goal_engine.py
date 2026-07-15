@@ -150,19 +150,27 @@ class GoalEngine:
 
         if prefix == "water":
             water = resources.get(ResourceType.WATER)
+            if water is None or not self._has_complete_rate_data(water):
+                return False
             if water and water.estimated_remaining_hours > 0:
                 return water.estimated_remaining_hours < 72
-            return water is not None and water.current_amount > 0
+            return False
 
         if prefix == "food":
             food = resources.get(ResourceType.FOOD)
+            if food is None or not self._has_complete_rate_data(food):
+                return False
             if food and food.estimated_remaining_hours > 0:
                 return food.estimated_remaining_hours < 120
-            return food is not None and food.current_amount > 0
+            return False
 
         if prefix == "power":
             power = resources.get(ResourceType.POWER)
-            if power and power.estimated_remaining_hours > 0:
+            if (
+                power
+                and self._has_complete_rate_data(power)
+                and power.estimated_remaining_hours > 0
+            ):
                 return power.estimated_remaining_hours < 24
             return False
 
@@ -176,6 +184,15 @@ class GoalEngine:
             return phase >= 3
 
         return False
+
+    def _has_complete_rate_data(self, resource) -> bool:
+        if self.resource_mgr:
+            return bool(self.resource_mgr.has_complete_rate_data(resource))
+        return bool(
+            resource.amount_known
+            and resource.consumption_known
+            and resource.intake_known
+        )
 
     def _create_goal_from_template(self, template) -> Goal:
         now = datetime.now()

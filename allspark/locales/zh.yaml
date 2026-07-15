@@ -19,6 +19,11 @@ resource_water: 饮水
 resource_food: 食物
 resource_fire: 火源
 resource_storage: 存储
+resource_unit_power: Wh
+resource_unit_water: L
+resource_unit_food: kcal
+resource_unit_fire: 次
+resource_unit_storage: GB
 warning_critical: 危急
 warning_low: 紧张
 warning_power_critical: ⚠️ 电力危急！预计仅剩 {hours:.1f} 小时
@@ -90,9 +95,9 @@ map_added: ✓ 已添加：{name} ({id})
 map_deleted: ✓ 已删除：{id}
 map_no_type: 没有类型为 '{type}' 的地点
 map_usage: '用法: map | map add | map remove <id> | map <类型>'
-set_usage: '用法: 设置 <资源类型> <值> [消耗率] [充入率]'
-set_types: '资源类型: power/water/food/fire/storage'
-set_example: '示例: 设置 power 100 120 50'
+set_usage: '用法: 设置 <资源类型> <余量> [群体日消耗] [预计日获取] [人数] [storage总容量] [observed|estimate]'
+set_types: '单位: power=Wh, water=L, food=kcal, fire=次, storage=GB；人数 1–10000'
+set_example: '示例: 设置 power 100 120 50 2 estimate'
 set_unknown_type: 未知资源类型：{type}
 set_invalid_value: 数值格式错误
 set_updated: ✓ {type} 已更新：{amount}{unit}
@@ -153,7 +158,7 @@ res_power_fmt: ⚡ 电力：{amount:.0f}Wh | 预计续航 {hours:.1f}h | 消耗 
 res_water_fmt: 💧 饮水：{amount:.1f}L | 预计 {days:.1f}天 | 消耗 {consumption:.1f}L/天
 res_food_fmt: 🍞 食物：{amount:.0f}kcal | 预计 {days:.1f}天 | 消耗 {consumption:.0f}kcal/天
 res_fire_fmt: 🔥 火源：{amount:.0f}次 | 消耗 {consumption:.0f}次/天
-res_storage_fmt: 💾 存储：{used:.0f}/{total:.0f}GB | 剩余 {pct:.1f}%
+res_storage_fmt: 💾 存储：剩余 {remaining:.0f}/{total:.0f}GB | {pct:.1f}% 可用
 advice_economy_1: 已自动切换至节能模式，LLM 已禁用
 advice_economy_2: 仅规则引擎运行，回答生存相关问题
 advice_economy_3: 建议：检查太阳能板/手摇发电机是否可用
@@ -346,9 +351,9 @@ task_usage_msg: '用法: 任务 | 任务 完成 <id> | 任务 开始 <id> | 任�
 map_add_cancelled: 已取消
 map_no_type_locations: 没有类型为 '{type}' 的地点
 map_usage_msg: '用法: map | map add | map remove <id> | map <类型>'
-set_usage_msg: '用法: 设置 <资源类型> <值> [消耗率] [充入率]'
-set_types_msg: '资源类型: power/water/food/fire/storage'
-set_example_msg: '示例: 设置 power 100 120 50'
+set_usage_msg: '用法: 设置 <资源类型> <余量> [群体日消耗] [预计日获取] [人数] [storage总容量] [observed|estimate]'
+set_types_msg: '单位/预期范围: power Wh 0–1,000,000；water L 0–100,000；food kcal 0–100,000,000；fire 次 0–100,000；storage GB 0–100,000；人数 1–10000'
+set_example_msg: '示例: 设置 power 100 120 50 2 estimate'
 psych_assessment_title: 🧠 心理自评问卷
 psych_score_result: 评分：{score} | 状态：{state}
 psych_advice: 💡 {advice}
@@ -621,7 +626,7 @@ gps_usage: '用法: gps | gps set <纬度> <经度> [海拔] | gps track | gps r
 voice_recording: 录音中 (5秒)...
 voice_recording_diary: 录音日记中 (10秒)...
 voice_usage: '用法: 语音 | 语音 load [模型] | 语音 transcribe [文件] | 语音 speak <文本> | 语音 diary'
-set_example_zh: '      设置 water 10 2'
+set_example_zh: '      设置 storage 80 2 1 4 100 observed'
 lang_current: '当前语言: {lang} | 支持: zh, en'
 web_port_in_use: ❌ 端口 {port} 已被占用
 web_switching_port: 🔄 切换到端口 {port}
@@ -1318,6 +1323,7 @@ web_unconfigured: 未配置
 web_set_amount_hint: 设置数量与每日消耗后即可计算剩余时间
 web_set_amount_hint_short: 未配置，点击编辑
 web_remaining_unknown: 剩余时间未知
+web_remaining_sustained: 持续可用
 
 # ─── Web System / Executions / Config / Repository ───────────────────────
 web_system_title: 系统监控
@@ -1490,13 +1496,45 @@ web_briefing_collapsed: 展开简报
 web_briefing_loading: 简报生成中…
 web_briefing_short_label: 一句话摘要
 web_briefing_full_label: 完整简报
-web_resource_edit_label: 矫正资源
+web_resource_edit_label: 更新资源
 web_resource_edit_amount: 当前余量
 web_resource_edit_consumption: 日消耗
 web_resource_edit_intake: 日补充
 web_resource_edit_save: 保存
 web_resource_edit_cancel: 取消
 web_resource_edit_done: 已更新
+web_resource_edit_people: 覆盖人数
+web_resource_unit_hint: "规范单位：{unit}"
+web_resource_per_person: "人均 {amount} {unit}"
+web_resource_per_person_unknown: "人均：暂时未知"
+web_resource_value_required: "请为标记为已知的字段输入数值"
+web_resource_field_known: 已知
+web_resource_field_unknown: 暂时未知
+web_resource_advanced: 详细估算
+web_resource_advanced_hint: 可选填每日消耗与补充，用于计算可维持时间；暂时不确定时请选择“暂时未知”。
+web_resource_provenance: "来源：{source} · 快照时间：{as_of}"
+web_resource_outlier_confirm: "数值超出预期范围（{range}），请确认单位后继续。"
+web_resource_group_consumption: 当前人数对应的群体日消耗
+web_resource_capacity: 存储总容量（GB）
+web_resource_input_kind: 该数值如何获得？
+web_resource_input_observed: 直接观察或清点
+web_resource_input_estimate: 用户估算
+web_resource_range_power: 预期范围 0–1,000,000 Wh
+web_resource_range_water: 预期范围 0–100,000 L
+web_resource_range_food: 预期范围 0–100,000,000 kcal
+web_resource_range_fire: 预期范围 0–100,000 次
+web_resource_range_storage: 预期范围 0–100,000 GB
+web_resource_example_power: "示例：500 Wh"
+web_resource_example_water: "示例：20 L"
+web_resource_example_food: "示例：12,000 kcal"
+web_resource_example_fire: "示例：10 次"
+web_resource_example_storage: "示例：64 GB"
+resource_source_user_input: 用户输入
+resource_source_sensor: 传感器读数
+resource_source_estimate: 显式估算
+resource_source_migration: 迁移数据（未核实）
+resource_source_system: 系统派生更新
+resource_source_mixed: 混合来源（含较早数据）
 web_task_action_start: 开始
 web_task_action_complete: 完成
 web_task_action_fail: 标记失败
@@ -1683,6 +1721,22 @@ error_resource_not_finite: "{field} 必须是有限数值；资源数据未更�
 error_resource_negative: "{field} 不能为负数；纠正库存请使用显式盘点操作。"
 error_resource_not_positive: "消耗资源时 {field} 必须大于零。"
 error_resource_too_large: "{field} 超出支持的安全上限，请检查单位和数值。"
+error_resource_required: "除非显式标记资源未知，否则必须填写 {field}。"
+error_resource_invalid_source: "{field} 必须是 user_input、sensor、estimate、migration 或 system。"
+error_resource_people_range: "{field} 必须是 1 到 10000 的整数。"
+error_resource_invalid_timestamp: "{field} 必须是 ISO-8601 时间。"
+error_resource_source_controlled: "{field} 由受信输入路径分配，API 调用方不能自行声明。"
+error_resource_not_boolean: "{field} 必须为 true 或 false。"
+error_resource_invalid_input_kind: "input_kind 必须为 observed 或 estimate。"
+error_resource_not_integer: "{field} 必须是整数。"
+error_resource_future_timestamp: "{field} 不能是未来时间。"
+power_runtime_unknown: 电力消耗和补充均已知后才能估算续航与推荐模式。
+error_resource_outlier_confirmation: "{field} 超出预期范围，请确认单位并以 confirm_outlier=true 重新提交。"
+error_resource_capacity_storage_only: "capacity 仅适用于存储资源。"
+error_resource_capacity_below_remaining: "存储总容量不能小于当前剩余空间。"
+error_resource_unknown_inventory: "库存未知；消耗前请先记录当前量。"
+resource_marked_unknown: "已将{type}显式标记为未知，需要执行信息采集行动。"
+resource_amount_known_rate_unknown: "{label}：{amount}{unit}；日消耗/补充未知，暂不估算剩余时间"
 error_service_not_available: 服务「{name}」不可用
 error_module_not_found: 模块 '{name}' 不存在
 error_module_unsupported: 硬件不支持 '{name}'

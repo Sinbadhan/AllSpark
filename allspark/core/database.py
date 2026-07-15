@@ -61,7 +61,15 @@ class Database:
                 daily_consumption REAL DEFAULT 0,
                 daily_intake REAL DEFAULT 0,
                 estimated_remaining_hours REAL DEFAULT 0,
-                last_updated TEXT NOT NULL
+                last_updated TEXT NOT NULL,
+                amount_known INTEGER NOT NULL DEFAULT 0,
+                consumption_known INTEGER NOT NULL DEFAULT 0,
+                intake_known INTEGER NOT NULL DEFAULT 0,
+                source TEXT NOT NULL DEFAULT 'migration',
+                people_count INTEGER NOT NULL DEFAULT 1,
+                as_of TEXT NOT NULL DEFAULT '',
+                capacity REAL NOT NULL DEFAULT 0,
+                capacity_known INTEGER NOT NULL DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS tasks (
@@ -291,6 +299,23 @@ class Database:
 
     def _migrate(self):
         cur = self.conn.cursor()
+        # Pre-contract resource rows have no trustworthy provenance. Preserve
+        # their raw values but migrate all field certainty to explicit unknown.
+        for col, ctype in [
+            ("amount_known", "INTEGER NOT NULL DEFAULT 0"),
+            ("consumption_known", "INTEGER NOT NULL DEFAULT 0"),
+            ("intake_known", "INTEGER NOT NULL DEFAULT 0"),
+            ("source", "TEXT NOT NULL DEFAULT 'migration'"),
+            ("people_count", "INTEGER NOT NULL DEFAULT 1"),
+            ("as_of", "TEXT NOT NULL DEFAULT ''"),
+            ("capacity", "REAL NOT NULL DEFAULT 0"),
+            ("capacity_known", "INTEGER NOT NULL DEFAULT 0"),
+        ]:
+            try:
+                cur.execute(f"SELECT {col} FROM resources LIMIT 1")
+            except sqlite3.OperationalError:
+                cur.execute(f"ALTER TABLE resources ADD COLUMN {col} {ctype}")
+                self.conn.commit()
         try:
             cur.execute("SELECT language FROM knowledge LIMIT 1")
         except sqlite3.OperationalError:
@@ -338,11 +363,25 @@ class Database:
     # --- Resources ---
 
     def upsert_resource(self, r: Resource):
+        from allspark.core.models import RESOURCE_UNITS
+
+        canonical_unit = RESOURCE_UNITS[r.type]
+        if r.unit != canonical_unit:
+            raise ValueError(
+                f"resource {r.type.value} requires canonical unit {canonical_unit}"
+            )
         self.conn.execute(
-            "INSERT OR REPLACE INTO resources VALUES (?,?,?,?,?,?,?)",
+            """INSERT OR REPLACE INTO resources
+               (type, current_amount, unit, daily_consumption, daily_intake,
+                estimated_remaining_hours, last_updated, amount_known,
+                consumption_known, intake_known, source, people_count, as_of,
+                capacity, capacity_known)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (r.type.value, r.current_amount, r.unit,
              r.daily_consumption, r.daily_intake,
-             r.estimated_remaining_hours, self._now())
+             r.estimated_remaining_hours, self._now(),
+             int(r.amount_known), int(r.consumption_known), int(r.intake_known),
+             r.source, r.people_count, r.as_of, r.capacity, int(r.capacity_known))
         )
         self.conn.commit()
 
@@ -359,7 +398,15 @@ class Database:
             daily_consumption=row["daily_consumption"],
             daily_intake=row["daily_intake"],
             estimated_remaining_hours=row["estimated_remaining_hours"],
-            last_updated=row["last_updated"]
+            last_updated=row["last_updated"],
+            amount_known=bool(row["amount_known"]),
+            consumption_known=bool(row["consumption_known"]),
+            intake_known=bool(row["intake_known"]),
+            source=row["source"],
+            people_count=row["people_count"],
+            as_of=row["as_of"],
+            capacity=row["capacity"],
+            capacity_known=bool(row["capacity_known"]),
         )
 
     def get_all_resources(self) -> list[Resource]:
@@ -371,7 +418,15 @@ class Database:
             daily_consumption=r["daily_consumption"],
             daily_intake=r["daily_intake"],
             estimated_remaining_hours=r["estimated_remaining_hours"],
-            last_updated=r["last_updated"]
+            last_updated=r["last_updated"],
+            amount_known=bool(r["amount_known"]),
+            consumption_known=bool(r["consumption_known"]),
+            intake_known=bool(r["intake_known"]),
+            source=r["source"],
+            people_count=r["people_count"],
+            as_of=r["as_of"],
+            capacity=r["capacity"],
+            capacity_known=bool(r["capacity_known"]),
         ) for r in rows]
 
     # --- Tasks ---

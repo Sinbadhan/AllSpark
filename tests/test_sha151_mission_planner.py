@@ -55,7 +55,9 @@ def test_suggest_tasks_urgent_water_and_food(planner):
     # No active tasks; low water -> urgent water task.
     db.upsert_resource(Resource(type=ResourceType.WATER, current_amount=10, unit="L",
                                 daily_consumption=10, daily_intake=0,
-                                estimated_remaining_hours=48.0, last_updated=""))
+                                estimated_remaining_hours=48.0, last_updated="",
+                                amount_known=True, consumption_known=True,
+                                intake_known=True))
     result = mp.suggest_tasks(resources=db.get_all_resources())
     assert result and "water" in result[0].title.lower() or result
 
@@ -64,7 +66,9 @@ def test_suggest_tasks_urgent_water_and_food(planner):
     db.conn.commit()
     db.upsert_resource(Resource(type=ResourceType.FOOD, current_amount=10, unit="kcal",
                                 daily_consumption=20, daily_intake=0,
-                                estimated_remaining_hours=40.0, last_updated=""))
+                                estimated_remaining_hours=40.0, last_updated="",
+                                amount_known=True, consumption_known=True,
+                                intake_known=True))
     result2 = mp.suggest_tasks(resources=db.get_all_resources())
     assert result2
 

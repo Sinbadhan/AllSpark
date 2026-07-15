@@ -16,7 +16,8 @@ from allspark.services.power_monitor import PowerMonitor
 def _power(current=100.0, consumption=50.0, intake=0.0, hours=48.0) -> Resource:
     return Resource(type=ResourceType.POWER, current_amount=current, unit="Wh",
                     daily_consumption=consumption, daily_intake=intake,
-                    estimated_remaining_hours=hours, last_updated="")
+                    estimated_remaining_hours=hours, last_updated="",
+                    amount_known=True, consumption_known=True, intake_known=True)
 
 
 def test_read_simulated_with_db():
@@ -101,16 +102,19 @@ def test_estimate_hours_branches():
     assert m._estimate_hours(_power(consumption=10, intake=20)) == m.SUSTAINED
     # WATER
     w = Resource(type=ResourceType.WATER, current_amount=100, unit="L",
-                 daily_consumption=10, daily_intake=0, estimated_remaining_hours=0, last_updated="")
+                 daily_consumption=10, daily_intake=0, estimated_remaining_hours=0, last_updated="",
+                 amount_known=True, consumption_known=True, intake_known=True)
     assert m._estimate_hours(w) == 240.0
     # FIRE consumption 0 -> sustained
-    f = Resource(type=ResourceType.FIRE, current_amount=5, unit="kg",
-                 daily_consumption=0, daily_intake=0, estimated_remaining_hours=0, last_updated="")
+    f = Resource(type=ResourceType.FIRE, current_amount=5, unit="uses",
+                 daily_consumption=0, daily_intake=0, estimated_remaining_hours=0, last_updated="",
+                 amount_known=True, consumption_known=True, intake_known=True)
     assert m._estimate_hours(f) == m.SUSTAINED
-    # unknown type (STORAGE) -> 0.0
+    # STORAGE uses remaining GB / net daily growth.
     s = Resource(type=ResourceType.STORAGE, current_amount=10, unit="GB",
-                 daily_consumption=100, daily_intake=0, estimated_remaining_hours=0, last_updated="")
-    assert m._estimate_hours(s) == 0.0
+                 daily_consumption=100, daily_intake=0, estimated_remaining_hours=0, last_updated="",
+                 amount_known=True, consumption_known=True, intake_known=True)
+    assert m._estimate_hours(s) == (10 / 100) * 24
 
 
 def test_estimate_runtime_with_and_without_db(tmp_path):
@@ -122,7 +126,7 @@ def test_estimate_runtime_with_and_without_db(tmp_path):
     db.close()
     m2 = PowerMonitor()
     r2 = m2.estimate_runtime()
-    assert r2["mode_recommendation"] == "hibernation"
+    assert r2["mode_recommendation"] == "unknown"
 
 
 def test_recommend_mode_all_branches():

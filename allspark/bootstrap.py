@@ -274,7 +274,10 @@ class ApplicationBootstrap:
 
         if registry.should_load("power_monitor"):
             from allspark.services.power_monitor import PowerMonitor
-            pm = PowerMonitor(db=self.db)
+            pm = PowerMonitor(
+                db=self.db,
+                resource_manager=container.get("resource_manager"),
+            )
             container.register("power_monitor", pm)
             registry.register("power_monitor", pm)
 
@@ -378,6 +381,7 @@ class ApplicationBootstrap:
             psych = PsychologyTracker(
                 db=self.db,
                 personality=personality,
+                resource_mgr=resource_mgr,
             )
             container.register("psychology", psych)
             registry.register("psychology", psych)

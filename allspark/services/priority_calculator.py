@@ -169,7 +169,11 @@ class PriorityCalculator(BaseService):
             }
             for rtype in category_resource_map.get(obj.category, []):
                 r = self.db.get_resource(rtype)
-                if r and r.estimated_remaining_hours > 0:
+                if (
+                    r
+                    and self._resource_mgr.has_complete_rate_data(r)
+                    and r.estimated_remaining_hours > 0
+                ):
                     threshold = _URGENCY_THRESHOLDS.get(rtype, 72)
                     ratio = r.estimated_remaining_hours / threshold
                     if ratio < 1.0:

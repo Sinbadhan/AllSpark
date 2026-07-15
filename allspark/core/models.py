@@ -12,6 +12,15 @@ class ResourceType(Enum):
     STORAGE = "storage"
 
 
+RESOURCE_UNITS = {
+    ResourceType.POWER: "Wh",
+    ResourceType.WATER: "L",
+    ResourceType.FOOD: "kcal",
+    ResourceType.FIRE: "uses",
+    ResourceType.STORAGE: "GB",
+}
+
+
 class OperatingMode(Enum):
     PROACTIVE = "proactive"
     STANDARD = "standard"
@@ -147,6 +156,14 @@ class Resource:
     daily_intake: float = 0.0
     estimated_remaining_hours: float = 0.0
     last_updated: str = ""
+    amount_known: bool = False
+    consumption_known: bool = False
+    intake_known: bool = False
+    source: str = "migration"
+    people_count: int = 1
+    as_of: str = ""
+    capacity: float = 0.0
+    capacity_known: bool = False
 
 
 @dataclass

@@ -3,6 +3,7 @@ import pytest
 
 from allspark.core.database import Database
 from allspark.core.models import (
+    RESOURCE_UNITS,
     KnowledgeEntry,
     Resource,
     ResourceType,
@@ -38,7 +39,7 @@ class TestDatabaseResources:
 
     def test_get_all_resources(self, db):
         for rtype in ResourceType:
-            r = Resource(type=rtype, current_amount=10.0, unit="u",
+            r = Resource(type=rtype, current_amount=10.0, unit=RESOURCE_UNITS[rtype],
                          daily_consumption=1.0, daily_intake=0.0,
                          estimated_remaining_hours=10.0, last_updated="")
             db.upsert_resource(r)

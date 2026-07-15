@@ -42,7 +42,9 @@ class PowerCommand(BaseCommand):
                 self.console.print(f"[dim]{t('power_from_db')}[/]")
 
             runtime = pm.estimate_runtime()
-            if "estimated_hours" in runtime:
+            if runtime.get("estimated_hours") is None:
+                self.console.print(f"\n[dim]{t('power_runtime_unknown')}[/]")
+            else:
                 self.console.print(f"\n[dim]{t('est_runtime', hours=runtime['estimated_hours'], mode=runtime.get('mode_recommendation', '?'))}[/]")
 
             self.console.print(f"\n[dim]{t('power_usage')}[/]")

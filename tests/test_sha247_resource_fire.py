@@ -10,7 +10,9 @@ def test_fire_remaining_uses_daily_consumption(tmp_path):
     manager = ResourceManager(db)
     manager.init_defaults()
 
-    manager.update_resource(ResourceType.FIRE, 10.0, consumption=2.0)
+    manager.update_resource(
+        ResourceType.FIRE, 10.0, consumption=2.0, intake=0.0
+    )
 
     fire = db.get_resource(ResourceType.FIRE)
     assert fire is not None
@@ -34,6 +36,10 @@ def test_fire_remaining_boundaries(amount, daily_consumption, expected_hours, tm
         current_amount=amount,
         unit="uses",
         daily_consumption=daily_consumption,
+        daily_intake=0.0,
+        amount_known=True,
+        consumption_known=True,
+        intake_known=True,
     )
 
     assert manager._estimate_remaining(fire) == expected_hours

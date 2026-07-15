@@ -33,8 +33,9 @@ class PowerSource:
 
 
 class PowerMonitor:
-    def __init__(self, db=None):
+    def __init__(self, db=None, resource_manager=None):
         self.db = db
+        self.resource_manager = resource_manager
         self._running = False
         self._monitor_thread: Optional[threading.Thread] = None
         self._current_reading = PowerReading(timestamp="")
@@ -129,7 +130,13 @@ class PowerMonitor:
     def _read_simulated(self) -> PowerReading:
         if self.db:
             power = self.db.get_resource(ResourceType.POWER)
-            if power and power.current_amount > 0:
+            manager = self._get_resource_manager()
+            if (
+                power
+                and power.amount_known
+                and power.current_amount > 0
+                and manager.has_complete_rate_data(power)
+            ):
                 hours = power.estimated_remaining_hours
                 pct = min(100, max(0, (hours / 72.0) * 100))
                 return PowerReading(
@@ -141,6 +148,17 @@ class PowerMonitor:
                     battery_percent=round(pct, 1),
                     charging=power.daily_intake > power.daily_consumption,
                     source="from_db",
+                )
+            if power and power.amount_known and power.current_amount > 0:
+                return PowerReading(
+                    timestamp=datetime.now().isoformat(),
+                    voltage_v=0.0,
+                    current_a=0.0,
+                    power_w=0.0,
+                    energy_wh=power.current_amount,
+                    battery_percent=0.0,
+                    charging=False,
+                    source="from_db_partial",
                 )
 
         return PowerReading(
@@ -158,10 +176,14 @@ class PowerMonitor:
         try:
             power = self.db.get_resource(ResourceType.POWER)
             if power and reading.energy_wh > 0:
-                power.current_amount = reading.energy_wh
-                if reading.charging and reading.power_w > 0:
-                    power.daily_intake = reading.power_w * 24
-                self.db.upsert_resource(power)
+                manager = self._get_resource_manager()
+                manager.merge_resource_observation(
+                    ResourceType.POWER,
+                    amount=reading.energy_wh,
+                    intake=reading.power_w * 24 if reading.charging and reading.power_w > 0 else None,
+                    source="sensor",
+                    as_of=reading.timestamp,
+                )
         except Exception as e:
             logger.warning(f"DB update error: {e}")
 
@@ -243,18 +265,24 @@ class PowerMonitor:
         if self.db:
             power = self.db.get_resource(ResourceType.POWER)
             if power:
-                power.current_amount = energy_wh
-                if daily_consumption is not None:
-                    power.daily_consumption = daily_consumption
-                if daily_intake is not None:
-                    power.daily_intake = daily_intake
-                power.estimated_remaining_hours = self._estimate_hours(power)
-                self.db.upsert_resource(power)
+                self._get_resource_manager().merge_resource_observation(
+                    ResourceType.POWER,
+                    amount=energy_wh,
+                    consumption=daily_consumption,
+                    intake=daily_intake,
+                    source="user_input",
+                    as_of=datetime.now().isoformat(),
+                )
 
         pct = 0.0
         if self.db:
             power = self.db.get_resource(ResourceType.POWER)
-            if power and power.estimated_remaining_hours > 0:
+            manager = self._get_resource_manager()
+            if (
+                power
+                and manager.has_complete_rate_data(power)
+                and power.estimated_remaining_hours > 0
+            ):
                 pct = min(100, max(0, (power.estimated_remaining_hours / 72.0) * 100))
 
         reading = PowerReading(
@@ -275,38 +303,35 @@ class PowerMonitor:
     # Sentinel: -1 means "sustained / cannot estimate".
     SUSTAINED = -1.0
 
+    def _get_resource_manager(self):
+        if self.resource_manager is not None:
+            return self.resource_manager
+        from allspark.services.resource_manager import ResourceManager
+
+        return ResourceManager(self.db)
+
     def _estimate_hours(self, power) -> float:
-        from allspark.core.models import ResourceType
-        if power.type == ResourceType.POWER:
-            if power.daily_consumption <= power.daily_intake:
-                return self.SUSTAINED
-            net_hourly = (power.daily_consumption - power.daily_intake) / 24.0
-            if net_hourly <= 0:
-                return self.SUSTAINED
-            return power.current_amount / net_hourly
-        elif power.type in (ResourceType.WATER, ResourceType.FOOD):
-            if power.daily_consumption <= 0:
-                return self.SUSTAINED
-            return (power.current_amount / power.daily_consumption) * 24.0
-        elif power.type == ResourceType.FIRE:
-            if power.daily_consumption <= 0:
-                return self.SUSTAINED
-            return power.current_amount * 24.0
-        return 0.0
+        return self._get_resource_manager().estimate_remaining(power)
 
     def estimate_runtime(self) -> dict:
         self.get_current_reading()
         if self.db:
             power = self.db.get_resource(ResourceType.POWER)
-            if power:
+            manager = self._get_resource_manager()
+            if power and manager.has_complete_rate_data(power):
+                mode = (
+                    "proactive"
+                    if power.estimated_remaining_hours == self.SUSTAINED
+                    else self._recommend_mode(power.estimated_remaining_hours)
+                )
                 return {
                     "energy_wh": power.current_amount,
                     "consumption_wh_per_day": power.daily_consumption,
                     "intake_wh_per_day": power.daily_intake,
                     "estimated_hours": power.estimated_remaining_hours,
-                    "mode_recommendation": self._recommend_mode(power.estimated_remaining_hours),
+                    "mode_recommendation": mode,
                 }
-        return {"estimated_hours": 0, "mode_recommendation": "hibernation"}
+        return {"estimated_hours": None, "mode_recommendation": "unknown"}
 
     def _recommend_mode(self, hours: float) -> str:
         if hours >= 72:

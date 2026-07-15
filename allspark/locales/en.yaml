@@ -19,6 +19,11 @@ resource_water: Water
 resource_food: Food
 resource_fire: Fire
 resource_storage: Storage
+resource_unit_power: Wh
+resource_unit_water: L
+resource_unit_food: kcal
+resource_unit_fire: uses
+resource_unit_storage: GB
 warning_critical: CRITICAL
 warning_low: LOW
 warning_power_critical: ⚠️ POWER CRITICAL! Estimated {hours:.1f} hours remaining
@@ -113,9 +118,9 @@ map_added: '✓ Added: {name} ({id})'
 map_deleted: '✓ Deleted: {id}'
 map_no_type: No locations of type '{type}'
 map_usage: 'Usage: map | map add | map remove <id> | map <type>'
-set_usage: 'Usage: set <resource_type> <value> [consumption] [intake]'
-set_types: 'Resource types: power/water/food/fire/storage'
-set_example: 'Example: set power 100 120 50'
+set_usage: 'Usage: set <type> <remaining> [group_daily_consumption] [daily_intake] [people] [storage_capacity] [observed|estimate]'
+set_types: 'Units: power=Wh, water=L, food=kcal, fire=uses, storage=GB; people 1–10000'
+set_example: 'Example: set power 100 120 50 2 estimate'
 set_unknown_type: 'Unknown resource type: {type}'
 set_invalid_value: Invalid numeric format
 set_updated: '✓ {type} updated: {amount}{unit}'
@@ -180,7 +185,7 @@ res_power_fmt: '⚡ Power: {amount:.0f}Wh | Est. {hours:.1f}h | Consumption {con
 res_water_fmt: '💧 Water: {amount:.1f}L | Est. {days:.1f} days | Consumption {consumption:.1f}L/day'
 res_food_fmt: '🍞 Food: {amount:.0f}kcal | Est. {days:.1f} days | Consumption {consumption:.0f}kcal/day'
 res_fire_fmt: '🔥 Fire: {amount:.0f} ignitions | Consumption {consumption:.0f}/day'
-res_storage_fmt: '💾 Storage: {used:.0f}/{total:.0f}GB | {pct:.1f}% free'
+res_storage_fmt: '💾 Storage: {remaining:.0f}/{total:.0f}GB remaining | {pct:.1f}% free'
 advice_economy_1: Switched to economy mode, LLM disabled
 advice_economy_2: Only rule engine running, answering survival questions
 advice_economy_3: 'Suggestion: Check if solar panel / hand-crank generator is available'
@@ -380,9 +385,9 @@ task_usage_msg: 'Usage: tasks | tasks done <id> | tasks start <id> | tasks fail 
 map_add_cancelled: Cancelled
 map_no_type_locations: No locations of type '{type}'
 map_usage_msg: 'Usage: map | map add | map remove <id> | map <type>'
-set_usage_msg: 'Usage: set <resource_type> <value> [consumption] [intake]'
-set_types_msg: 'Resource types: power/water/food/fire/storage'
-set_example_msg: 'Example: set power 100 120 50'
+set_usage_msg: 'Usage: set <type> <remaining> [group_daily_consumption] [daily_intake] [people] [storage_capacity] [observed|estimate]'
+set_types_msg: 'Units/ranges: power Wh 0–1,000,000; water L 0–100,000; food kcal 0–100,000,000; fire uses 0–100,000; storage GB 0–100,000; people 1–10000'
+set_example_msg: 'Example: set power 100 120 50 2 estimate'
 psych_assessment_title: 🧠 Self-Assessment
 psych_score_result: 'Score: {score} | State: {state}'
 psych_advice: 💡 {advice}
@@ -668,7 +673,7 @@ voice_recording: Recording 5 seconds...
 voice_recording_diary: Recording voice diary (10 seconds)...
 voice_usage: 'Usage: voice | voice load [model] | voice transcribe [file] | voice
   speak <text> | voice diary'
-set_example_zh: '      set water 10 2'
+set_example_zh: '      set storage 80 2 1 4 100 observed'
 lang_current: 'Current language: {lang} | Supported: zh, en'
 web_port_in_use: ❌ Port {port} is already in use
 web_switching_port: 🔄 Switching to port {port}
@@ -1379,6 +1384,7 @@ web_unconfigured: UNCONFIGURED
 web_set_amount_hint: Set amount and daily use to calculate remaining time
 web_set_amount_hint_short: Unconfigured — click to edit
 web_remaining_unknown: Remaining time unknown
+web_remaining_sustained: Sustained
 
 # ─── Web System / Executions / Config / Repository ───────────────────────
 web_system_title: System Monitor
@@ -1551,13 +1557,45 @@ web_briefing_collapsed: Show briefing
 web_briefing_loading: Generating briefing…
 web_briefing_short_label: One-line summary
 web_briefing_full_label: Full briefing
-web_resource_edit_label: Adjust resource
+web_resource_edit_label: Update resource
 web_resource_edit_amount: Current amount
 web_resource_edit_consumption: Daily consumption
 web_resource_edit_intake: Daily intake
 web_resource_edit_save: Save
 web_resource_edit_cancel: Cancel
 web_resource_edit_done: Updated
+web_resource_edit_people: People covered
+web_resource_unit_hint: "Canonical unit: {unit}"
+web_resource_per_person: "{amount} {unit} per person"
+web_resource_per_person_unknown: "Per person: unknown for now"
+web_resource_value_required: "Enter a value for every field marked Known"
+web_resource_field_known: Known
+web_resource_field_unknown: Unknown for now
+web_resource_advanced: Detailed estimate
+web_resource_advanced_hint: Optionally set daily consumption and intake to estimate duration. Choose “Unknown for now” when uncertain.
+web_resource_provenance: "Source: {source} · Snapshot as of: {as_of}"
+web_resource_outlier_confirm: "This exceeds the expected range ({range}). Confirm the unit and continue?"
+web_resource_group_consumption: Daily group consumption for the selected people
+web_resource_capacity: Total storage capacity (GB)
+web_resource_input_kind: How was this value obtained?
+web_resource_input_observed: Directly observed or counted
+web_resource_input_estimate: Estimated by the user
+web_resource_range_power: Expected 0–1,000,000 Wh
+web_resource_range_water: Expected 0–100,000 L
+web_resource_range_food: Expected 0–100,000,000 kcal
+web_resource_range_fire: Expected 0–100,000 uses
+web_resource_range_storage: Expected 0–100,000 GB
+web_resource_example_power: "Example: 500 Wh"
+web_resource_example_water: "Example: 20 L"
+web_resource_example_food: "Example: 12,000 kcal"
+web_resource_example_fire: "Example: 10 uses"
+web_resource_example_storage: "Example: 64 GB"
+resource_source_user_input: User input
+resource_source_sensor: Sensor reading
+resource_source_estimate: Explicit estimate
+resource_source_migration: Migrated data (unverified)
+resource_source_system: System-derived update
+resource_source_mixed: Mixed sources (includes older data)
 web_task_action_start: Start
 web_task_action_complete: Complete
 web_task_action_fail: Mark failed
@@ -1744,6 +1782,22 @@ error_resource_not_finite: "{field} must be a finite number. No resource data wa
 error_resource_negative: "{field} cannot be negative. Use an explicit inventory correction instead."
 error_resource_not_positive: "{field} must be greater than zero to consume a resource."
 error_resource_too_large: "{field} exceeds the supported safety limit. Check the unit and value."
+error_resource_required: "{field} is required unless this resource is explicitly marked unknown."
+error_resource_invalid_source: "{field} must be user_input, sensor, estimate, migration, or system."
+error_resource_people_range: "{field} must be a whole number from 1 to 10000."
+error_resource_invalid_timestamp: "{field} must be an ISO-8601 timestamp."
+error_resource_source_controlled: "{field} is assigned by the trusted input path and cannot be claimed by API callers."
+error_resource_not_boolean: "{field} must be true or false."
+error_resource_invalid_input_kind: "input_kind must be observed or estimate."
+error_resource_not_integer: "{field} must be a whole number."
+error_resource_future_timestamp: "{field} cannot be in the future."
+power_runtime_unknown: Runtime and mode recommendation are unknown until power use and intake are both known.
+error_resource_outlier_confirmation: "{field} exceeds the expected range. Confirm the unit and resend with confirm_outlier=true."
+error_resource_capacity_storage_only: "capacity is only valid for storage resources."
+error_resource_capacity_below_remaining: "capacity cannot be less than the recorded remaining storage."
+error_resource_unknown_inventory: "Inventory is unknown; record an amount before consuming it."
+resource_marked_unknown: "{type} explicitly marked unknown. A fact-finding action is required."
+resource_amount_known_rate_unknown: "{label}: {amount}{unit}; daily use/intake unknown, so remaining time is not estimated"
 error_service_not_available: Service '{name}' not available
 error_module_not_found: Module '{name}' does not exist
 error_module_unsupported: Hardware does not support '{name}'

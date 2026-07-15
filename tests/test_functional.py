@@ -126,7 +126,9 @@ class TestResourceManager:
 
     def test_update_resource(self, resource_mgr):
         resource_mgr.init_defaults()
-        resource_mgr.update_resource(ResourceType.WATER, 10.0, consumption=2.0)
+        resource_mgr.update_resource(
+            ResourceType.WATER, 10.0, consumption=2.0, intake=0.0
+        )
         r = resource_mgr.db.get_resource(ResourceType.WATER)
         assert r.current_amount == 10.0
         assert r.daily_consumption == 2.0
@@ -134,7 +136,9 @@ class TestResourceManager:
 
     def test_warnings_critical(self, resource_mgr):
         resource_mgr.init_defaults()
-        resource_mgr.update_resource(ResourceType.POWER, 37.0, consumption=120.0)
+        resource_mgr.update_resource(
+            ResourceType.POWER, 37.0, consumption=120.0, intake=0.0
+        )
         warnings = resource_mgr.check_warnings()
         assert len(warnings) > 0
 
@@ -171,17 +175,25 @@ class TestSurvivalAssessment:
 
     def test_bottleneck_with_low_resources(self, db, resource_mgr):
         resource_mgr.init_defaults()
-        resource_mgr.update_resource(ResourceType.WATER, 3.0, consumption=2.0)
+        resource_mgr.update_resource(
+            ResourceType.WATER, 3.0, consumption=2.0, intake=0.0
+        )
         survival = SurvivalAssessmentEngine(db, resource_mgr)
         result = survival.assess()
         assert result["bottleneck"] is not None
 
     def test_no_bottleneck_with_plenty(self, db, resource_mgr):
         resource_mgr.init_defaults()
-        resource_mgr.update_resource(ResourceType.WATER, 100.0, consumption=2.0)
-        resource_mgr.update_resource(ResourceType.FOOD, 50000.0, consumption=2000.0)
+        resource_mgr.update_resource(
+            ResourceType.WATER, 100.0, consumption=2.0, intake=0.0
+        )
+        resource_mgr.update_resource(
+            ResourceType.FOOD, 50000.0, consumption=2000.0, intake=0.0
+        )
         resource_mgr.update_resource(ResourceType.POWER, 200.0, consumption=50.0, intake=0.0)
-        resource_mgr.update_resource(ResourceType.FIRE, 50.0, consumption=3.0)
+        resource_mgr.update_resource(
+            ResourceType.FIRE, 50.0, consumption=3.0, intake=0.0
+        )
         survival = SurvivalAssessmentEngine(db, resource_mgr)
         result = survival.assess()
         assert result["bottleneck"] is None
@@ -569,9 +581,15 @@ class TestEndToEndWorkflow:
     def test_full_survival_session(self, db, resource_mgr, survival):
         resource_mgr.init_defaults()
 
-        resource_mgr.update_resource(ResourceType.WATER, 5.0, consumption=2.0)
-        resource_mgr.update_resource(ResourceType.FOOD, 3000.0, consumption=2000.0)
-        resource_mgr.update_resource(ResourceType.POWER, 20.0, consumption=120.0)
+        resource_mgr.update_resource(
+            ResourceType.WATER, 5.0, consumption=2.0, intake=0.0
+        )
+        resource_mgr.update_resource(
+            ResourceType.FOOD, 3000.0, consumption=2000.0, intake=0.0
+        )
+        resource_mgr.update_resource(
+            ResourceType.POWER, 20.0, consumption=120.0, intake=0.0
+        )
 
         assessment = survival.assess()
         assert assessment["phase"] == 0
@@ -605,7 +623,9 @@ class TestEndToEndWorkflow:
 
     def test_resource_depletion_triggers_critical(self, db, resource_mgr):
         resource_mgr.init_defaults()
-        resource_mgr.update_resource(ResourceType.POWER, 3.0, consumption=120.0)
+        resource_mgr.update_resource(
+            ResourceType.POWER, 3.0, consumption=120.0, intake=0.0
+        )
         warnings = resource_mgr.check_warnings()
         assert any(w["level"] == "critical" for w in warnings)
 
@@ -616,11 +636,15 @@ class TestEndToEndWorkflow:
         mode, _ = resource_mgr.update_operating_mode()
         assert mode in (OperatingMode.PROACTIVE, OperatingMode.STANDARD)
 
-        resource_mgr.update_resource(ResourceType.POWER, 30.0, consumption=120.0)
+        resource_mgr.update_resource(
+            ResourceType.POWER, 30.0, consumption=120.0, intake=0.0
+        )
         mode, _ = resource_mgr.update_operating_mode()
         assert mode in (OperatingMode.STANDARD, OperatingMode.ECONOMY)
 
-        resource_mgr.update_resource(ResourceType.POWER, 2.0, consumption=120.0)
+        resource_mgr.update_resource(
+            ResourceType.POWER, 2.0, consumption=120.0, intake=0.0
+        )
         mode, _ = resource_mgr.update_operating_mode()
         assert mode == OperatingMode.HIBERNATION
 
