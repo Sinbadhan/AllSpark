@@ -117,7 +117,7 @@ class TestDatabaseKnowledge:
         for i in range(3):
             k = KnowledgeEntry(
                 id=f"water_{i}", category="water", subcategory="test",
-                priority=2, title=f"Water Tip {i}", summary="",
+                priority=2, title=f"Water Tip {i}", summary=f"Water summary {i}",
                 steps=[], prerequisites=[], warnings=[],
                 verification="unverified", source="pre_collapse",
                 version=1, language="zh",
@@ -167,7 +167,7 @@ class TestDatabaseAggregation:
             cat = "water" if i < 2 else "fire"
             k = KnowledgeEntry(
                 id=f"cat_{cat}_{i}", category=cat, subcategory="",
-                priority=1, title=f"{cat} tip {i}", summary="",
+                priority=1, title=f"{cat} tip {i}", summary=f"{cat} summary {i}",
                 steps=[], prerequisites=[], warnings=[],
                 verification="unverified", source="pre_collapse",
                 version=1, language="zh",
@@ -182,7 +182,7 @@ class TestDatabaseAggregation:
         assert db.get_knowledge_count() == 0
         k = KnowledgeEntry(
             id="cnt1", category="food", subcategory="",
-            priority=1, title="Test", summary="",
+            priority=1, title="Test", summary="Count aggregation fixture",
             steps=[], prerequisites=[], warnings=[],
             verification="unverified", source="pre_collapse",
             version=1, language="zh",
@@ -194,7 +194,7 @@ class TestDatabaseAggregation:
         for cat in ["water", "fire", "food"]:
             k = KnowledgeEntry(
                 id=f"dist_{cat}", category=cat, subcategory="",
-                priority=1, title=f"{cat}", summary="",
+                priority=1, title=f"{cat}", summary=f"{cat} distinct category fixture",
                 steps=[], prerequisites=[], warnings=[],
                 verification="unverified", source="pre_collapse",
                 version=1, language="zh",
@@ -207,7 +207,7 @@ class TestDatabaseAggregation:
         for i in range(3):
             k = KnowledgeEntry(
                 id=f"id_{i}", category="test", subcategory="",
-                priority=1, title=f"Test {i}", summary="",
+                priority=1, title=f"Test {i}", summary=f"Knowledge id fixture {i}",
                 steps=[], prerequisites=[], warnings=[],
                 verification="unverified", source="pre_collapse",
                 version=1, language="zh",

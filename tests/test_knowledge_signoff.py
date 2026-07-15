@@ -19,6 +19,8 @@ def _signed_entry() -> KnowledgeEntry:
         reviewer="Dr. Survival", qualification="Wilderness MD",
         review_date="2026-07-10", citation="WHO Drinking-water Guidelines",
         signoff_version=1,
+        risk_level="pending_review", hazards=["unknown"],
+        review_status="pending_external_review",
     )
     e.content_hash = compute_content_hash(e)
     return e
@@ -55,6 +57,8 @@ class TestSignoffSchema:
             id="test/water/boil", category="survival", subcategory="water",
             priority=1, title="Boil Water", summary="Boil water to purify it",
             steps=["Boil for 3 min"], warnings=["Hot surface"],
+            risk_level="pending_review", hazards=["unknown"],
+            review_status="pending_external_review",
         )
         assert compute_content_hash(e1) == compute_content_hash(e2)
 
@@ -73,6 +77,8 @@ class TestLoaderGuard:
         probe = KnowledgeEntry(
             id="x", category="survival", subcategory="water", priority=1,
             title="T", summary="S",
+            risk_level="pending_review", hazards=["unknown"],
+            review_status="pending_external_review",
         )
         entry = _dict_to_entry({
             "id": "x", "category": "survival", "subcategory": "water",
@@ -81,6 +87,8 @@ class TestLoaderGuard:
             "reviewer": "Dr", "qualification": "Wilderness MD",
             "review_date": "2026-07-15", "citation": "Manual section 2",
             "signoff_version": 1,
+            "risk_level": "pending_review", "hazards": ["unknown"],
+            "review_status": "pending_external_review",
             "content_hash": compute_content_hash(probe),
         })
         assert entry.verification == "expert_verified"
