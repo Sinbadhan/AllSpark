@@ -6,7 +6,13 @@ import re
 from dataclasses import dataclass, field
 from enum import Enum
 
-from allspark.core.models import KnowledgeEntry
+from allspark.core.models import (
+    KnowledgeEntry,
+    canonical_source_id,
+    derive_verification_level,
+    knowledge_transport_payload,
+    verified_references,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +109,7 @@ class KnowledgeVerifier:
         report.overall_passed = hard_checks_passed and report.level in {
             VerificationLevel.EXPERT_VERIFIED.value,
             VerificationLevel.CROSS_REFERENCED.value,
+            VerificationLevel.FIELD_TESTED.value,
         }
         if not report.overall_passed:
             failed = [r.step for r in report.results if not r.passed]
@@ -148,6 +155,14 @@ class KnowledgeVerifier:
                 details={"invalid_priority": entry.priority},
             )
 
+        if entry.verification not in VALID_VERIFICATIONS:
+            return VerificationResult(
+                step=VerificationStep.FORMAT_CHECK.value,
+                passed=False,
+                message=f"Invalid verification level: {entry.verification}",
+                details={"invalid_verification": entry.verification},
+            )
+
         msg = "Format check passed"
         if warnings:
             msg += f" (warnings: {', '.join(warnings)})"
@@ -161,7 +176,7 @@ class KnowledgeVerifier:
 
     def _step_source_check(self, entry: KnowledgeEntry) -> VerificationResult:
         source = entry.source or "unknown"
-        verification_claim = entry.verification or "unverified"
+        verification_claim = entry.verification_claim or entry.verification or "unverified"
 
         if source in TRUSTED_SOURCES:
             trust = "high"
@@ -237,33 +252,20 @@ class KnowledgeVerifier:
         )
 
     def _step_cross_reference(self, entry: KnowledgeEntry) -> VerificationResult:
-        # SHA-250: database presence, category similarity, and keyword overlap
-        # are discovery signals, not evidence.  The current KnowledgeEntry
-        # schema cannot represent two independent, locatable references; that
-        # evidence model belongs to SHA-240.  Until then this step must fail
-        # closed instead of fabricating support from search results.
-        if not self.db:
-            return VerificationResult(
-                step=VerificationStep.CROSS_REFERENCE.value,
-                passed=False,
-                message="Cross-reference evidence not established: no database available",
-                details={
-                    "skipped": True,
-                    "supporting_count": 0,
-                    "supporting": [],
-                    "reason": "independent_locatable_references_required",
-                },
-            )
-
+        supporting = verified_references(entry)
+        passed = len(supporting) >= 2
         return VerificationResult(
             step=VerificationStep.CROSS_REFERENCE.value,
-            passed=False,
-            message="No auditable independent references available",
+            passed=passed,
+            message=(
+                f"Established {len(supporting)} locally verified independent references"
+                if passed else "No auditable independent references available"
+            ),
             details={
                 "skipped": False,
-                "supporting_count": 0,
-                "supporting": [],
-                "reason": "independent_locatable_references_required",
+                "supporting_count": len(supporting),
+                "supporting": supporting,
+                "reason": "local_verified_evidence_required",
             },
         )
 
@@ -279,14 +281,15 @@ class KnowledgeVerifier:
         has_conflicts = consistency_result and not consistency_result.passed
         has_support = self._has_auditable_support(cross_ref_result)
 
+        derived_level = derive_verification_level(entry)
         if has_conflicts:
             level = VerificationLevel.CONFLICT
-        elif source_trust == "high" and entry.is_signed_off():
+        elif derived_level == VerificationLevel.EXPERT_VERIFIED.value:
             level = VerificationLevel.EXPERT_VERIFIED
-        elif has_support:
+        elif derived_level == VerificationLevel.FIELD_TESTED.value:
+            level = VerificationLevel.FIELD_TESTED
+        elif has_support and derived_level == VerificationLevel.CROSS_REFERENCED.value:
             level = VerificationLevel.CROSS_REFERENCED
-        elif source_trust == "high":
-            level = VerificationLevel.PARTIALLY_VERIFIED
         else:
             level = VerificationLevel.UNVERIFIED
 
@@ -322,14 +325,14 @@ class KnowledgeVerifier:
             source_id = reference.get("source_id")
             locator = reference.get("locator")
             if (
-                reference.get("independent") is not True
+                reference.get("local_status") != "verified"
                 or not isinstance(source_id, str)
                 or not source_id.strip()
                 or not isinstance(locator, str)
                 or not locator.strip()
             ):
                 return False
-            source_ids.add(source_id.strip())
+            source_ids.add(canonical_source_id(source_id))
         return len(source_ids) >= 2
 
     def _is_contradictory(self, text_a: str, text_b: str) -> bool:
@@ -425,15 +428,17 @@ class KnowledgeSigner:
         return results
 
     def _entry_payload(self, entry: KnowledgeEntry) -> str:
-        """Create a canonical string representation of an entry for signing."""
-        parts = [
-            entry.id or "",
-            entry.title or "",
-            entry.summary or "",
-            entry.category or "",
-            str(entry.priority),
-            entry.source or "",
-            json.dumps(entry.steps or [], ensure_ascii=False, sort_keys=True),
-            json.dumps(entry.warnings or [], ensure_ascii=False, sort_keys=True),
-        ]
-        return "|".join(parts)
+        """Canonical versioned Spark transfer envelope for signing.
+
+        There is intentionally no implicit legacy fallback: the old delimiter
+        payload omitted safety-critical fields. A future migration may expose
+        a separately named offline verifier, but network receive remains v2.
+        """
+        envelope = {
+            "schema": "allspark.knowledge-transfer",
+            "signature_version": 2,
+            "entry": knowledge_transport_payload(entry),
+        }
+        return json.dumps(
+            envelope, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        )

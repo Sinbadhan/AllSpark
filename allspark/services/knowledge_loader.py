@@ -4,7 +4,11 @@ from pathlib import Path
 import yaml
 
 from allspark.core.i18n import t
-from allspark.core.models import KnowledgeEntry
+from allspark.core.models import (
+    KnowledgeEntry,
+    derive_verification_level,
+    normalize_knowledge_evidence,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +44,14 @@ def _dict_to_entry(d: dict) -> KnowledgeEntry:
         steps=d.get("steps", []),
         prerequisites=d.get("prerequisites", []),
         warnings=d.get("warnings", []),
-        verification=d.get("verification", "unverified"),
+        verification="unverified",
         source=d.get("source", "pre_collapse"),
+        verification_claim=d.get("verification", "unverified"),
+        references=d.get("references", []),
+        field_records=d.get("field_records", []),
+        applicable_when=d.get("applicable_when", []),
+        contraindications=d.get("contraindications", []),
+        review_claim=d.get("review_claim", {}),
         language=d.get("language", "zh"),
         # SHA-148: auditable signoff fields (all empty/0 by default).
         reviewer=d.get("reviewer", ""),
@@ -51,15 +61,14 @@ def _dict_to_entry(d: dict) -> KnowledgeEntry:
         content_hash=d.get("content_hash", ""),
         signoff_version=d.get("signoff_version", 0),
     )
-    # SHA-148: expert_verified is a signed-off claim. A YAML entry that claims
-    # expert_verified without a valid (reviewer + version + content-pinned)
-    # signoff is downgraded to field_tested so the label is never overstated.
-    if entry.verification == "expert_verified" and not entry.is_signed_off():
-        logger.warning(
-            "Knowledge %s claims expert_verified without valid signoff; "
-            "downgrading to field_tested", entry.id,
+    normalize_knowledge_evidence(entry)
+    entry.verification = derive_verification_level(entry)
+    if entry.verification_claim != entry.verification:
+        logger.debug(
+            "Knowledge %s claims %s without local auditable evidence; "
+            "deriving %s",
+            entry.id, entry.verification_claim, entry.verification,
         )
-        entry.verification = "field_tested"
     return entry
 
 

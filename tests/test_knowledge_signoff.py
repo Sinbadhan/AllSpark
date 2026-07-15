@@ -66,7 +66,7 @@ class TestLoaderGuard:
             "priority": 1, "title": "T", "summary": "S",
             "verification": "expert_verified", "source": "pre_collapse",
         })
-        assert entry.verification == "field_tested"
+        assert entry.verification == "unverified"
         assert entry.is_signed_off() is False
 
     def test_keeps_expert_verified_with_valid_signoff(self):
@@ -78,7 +78,9 @@ class TestLoaderGuard:
             "id": "x", "category": "survival", "subcategory": "water",
             "priority": 1, "title": "T", "summary": "S",
             "verification": "expert_verified", "source": "pre_collapse",
-            "reviewer": "Dr", "signoff_version": 1,
+            "reviewer": "Dr", "qualification": "Wilderness MD",
+            "review_date": "2026-07-15", "citation": "Manual section 2",
+            "signoff_version": 1,
             "content_hash": compute_content_hash(probe),
         })
         assert entry.verification == "expert_verified"
@@ -86,7 +88,7 @@ class TestLoaderGuard:
 
 
 class TestVerifierGate:
-    def test_unsigned_high_trust_is_only_partially_verified(self):
+    def test_unsigned_high_trust_is_unverified(self):
         # A provenance claim without auditable cross-reference or controlled
         # field records cannot become field_tested or expert_verified.
         verifier = KnowledgeVerifier(db=None)
@@ -97,7 +99,7 @@ class TestVerifierGate:
             source="pre_collapse", language="zh",
         )
         report = verifier.verify_entry(entry)
-        assert report.level == "partially_verified"
+        assert report.level == "unverified"
 
     def test_signed_high_trust_gets_expert_verified(self):
         # Expert signoff is a separate controlled evidence path; the skipped

@@ -297,7 +297,7 @@ class ApplicationBootstrap:
         from allspark.services.knowledge_loader import load_knowledge
 
         for entry in load_knowledge(tier=-1):
-            self.db.save_knowledge(entry)
+            self.db.save_bundled_knowledge(entry)
 
         if vector_engine and vector_engine.is_available():
             vector_engine.reindex_all()

@@ -17,13 +17,14 @@ from allspark.services.knowledge_verifier import (
 
 def _entry(id="v1", title="T", summary="S", category="survival", priority=1,
            source="pre_collapse", verification="unverified", steps=None,
-           warnings=None, reviewer="", signoff_version=0, content_hash="") -> KnowledgeEntry:
+           warnings=None, reviewer="", signoff_version=0, content_hash="",
+           references=None) -> KnowledgeEntry:
     return KnowledgeEntry(
         id=id, category=category, subcategory="sub", priority=priority,
         title=title, summary=summary, steps=steps or [], prerequisites=[],
         warnings=warnings or [], verification=verification, source=source,
         version=1, language="zh", reviewer=reviewer, signoff_version=signoff_version,
-        content_hash=content_hash,
+        content_hash=content_hash, references=references or [],
     )
 
 
@@ -121,9 +122,9 @@ def test_cross_reference_no_db_skips():
     v = KnowledgeVerifier()
     r = v.verify_entry(_entry())
     cr = next(x for x in r.results if x.step == "cross_reference")
-    assert cr.details.get("skipped") is True
+    assert cr.details.get("skipped") is False
     assert cr.passed is False
-    assert cr.message == "Cross-reference evidence not established: no database available"
+    assert cr.message == "No auditable independent references available"
     assert cr.details["supporting_count"] == 0
     level = next(x for x in r.results if x.step == "level_assign")
     assert level.details["has_support"] is False
@@ -201,15 +202,19 @@ def test_level_assign_accepts_only_two_independent_locatable_sources():
             {
                 "skipped": False,
                 "supporting": [
-                    {"source_id": "who", "locator": "WHO:guide:1", "independent": True},
-                    {"source_id": "red-cross", "locator": "ARC:manual:2", "independent": True},
+                    {"source_id": "who", "title": "WHO", "locator": "WHO:guide:1", "local_status": "verified", "verified_by": "r", "verified_at": "2026-07-15"},
+                    {"source_id": "red-cross", "title": "ARC", "locator": "ARC:manual:2", "local_status": "verified", "verified_by": "r", "verified_at": "2026-07-15"},
                 ],
             },
         ),
     ]
 
     result = KnowledgeVerifier()._step_level_assign(
-        _entry(id="candidate", source="unknown"), report
+        _entry(
+            id="candidate",
+            source="unknown",
+            references=report.results[-1].details["supporting"],
+        ), report
     )
 
     assert result.details["has_support"] is True
@@ -234,7 +239,7 @@ def test_level_assign_unverified_for_low_trust():
 def test_level_assign_never_auto_assigns_field_tested():
     v = KnowledgeVerifier()
     r = v.verify_entry(_entry(source="pre_collapse", verification="field_tested"))
-    assert r.level == VerificationLevel.PARTIALLY_VERIFIED.value
+    assert r.level == VerificationLevel.UNVERIFIED.value
     assert r.level != VerificationLevel.FIELD_TESTED.value
 
 

@@ -13,6 +13,9 @@ from allspark.core.models import (
     Resource,
     ResourceType,
     Task,
+    compute_source_content_hash,
+    derive_verification_level,
+    normalize_knowledge_evidence,
 )
 from allspark.core.tokenizer import tokenize, tokenize_query
 
@@ -20,6 +23,26 @@ logger = logging.getLogger(__name__)
 
 
 class Database:
+    @staticmethod
+    def _json_list(r, column: str) -> list:
+        if column not in r.keys() or not r[column]:
+            return []
+        try:
+            value = json.loads(r[column])
+        except (TypeError, ValueError):
+            return []
+        return value if isinstance(value, list) else []
+
+    @staticmethod
+    def _json_dict(r, column: str) -> dict:
+        if column not in r.keys() or not r[column]:
+            return {}
+        try:
+            value = json.loads(r[column])
+        except (TypeError, ValueError):
+            return {}
+        return value if isinstance(value, dict) else {}
+
     @staticmethod
     def _row_to_entry(r) -> KnowledgeEntry:
         return KnowledgeEntry(
@@ -38,6 +61,18 @@ class Database:
             citation=r["citation"] if "citation" in r.keys() else "",
             content_hash=r["content_hash"] if "content_hash" in r.keys() else "",
             signoff_version=r["signoff_version"] if "signoff_version" in r.keys() else 0,
+            references=Database._json_list(r, "evidence_references"),
+            field_records=Database._json_list(r, "field_records"),
+            applicable_when=Database._json_list(r, "applicable_when"),
+            contraindications=Database._json_list(r, "contraindications"),
+            verification_claim=(
+                r["verification_claim"] if "verification_claim" in r.keys() else ""
+            ),
+            source_claim=r["source_claim"] if "source_claim" in r.keys() else "",
+            source_content_hash=(
+                r["source_content_hash"] if "source_content_hash" in r.keys() else ""
+            ),
+            review_claim=Database._json_dict(r, "review_claim"),
         )
 
     def __init__(self, db_path: Optional[Path] = None):
@@ -104,7 +139,15 @@ class Database:
                 review_date TEXT DEFAULT '',
                 citation TEXT DEFAULT '',
                 content_hash TEXT DEFAULT '',
-                signoff_version INTEGER DEFAULT 0
+                signoff_version INTEGER DEFAULT 0,
+                evidence_references TEXT DEFAULT '[]',
+                field_records TEXT DEFAULT '[]',
+                applicable_when TEXT DEFAULT '[]',
+                contraindications TEXT DEFAULT '[]',
+                verification_claim TEXT DEFAULT '',
+                source_claim TEXT DEFAULT '',
+                source_content_hash TEXT DEFAULT '',
+                review_claim TEXT DEFAULT '{}'
             );
 
             CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_fts USING fts5(
@@ -344,12 +387,35 @@ class Database:
             ("citation", "TEXT DEFAULT ''"),
             ("content_hash", "TEXT DEFAULT ''"),
             ("signoff_version", "INTEGER DEFAULT 0"),
+            ("evidence_references", "TEXT DEFAULT '[]'"),
+            ("field_records", "TEXT DEFAULT '[]'"),
+            ("applicable_when", "TEXT DEFAULT '[]'"),
+            ("contraindications", "TEXT DEFAULT '[]'"),
+            ("verification_claim", "TEXT DEFAULT ''"),
+            ("source_claim", "TEXT DEFAULT ''"),
+            ("source_content_hash", "TEXT DEFAULT ''"),
+            ("review_claim", "TEXT DEFAULT '{}'"),
         ]:
             try:
                 cur.execute(f"SELECT {col} FROM knowledge LIMIT 1")
             except sqlite3.OperationalError:
                 cur.execute(f"ALTER TABLE knowledge ADD COLUMN {col} {ctype}")
                 self.conn.commit()
+
+        # SHA-240: provenance and legacy labels are claims, not evidence. Keep
+        # the old label for audit, then recompute the persisted level from the
+        # new local evidence schema. This also migrates the invalid historical
+        # ``experience_based`` value to unverified.
+        for row in cur.execute("SELECT * FROM knowledge").fetchall():
+            entry = self._row_to_entry(row)
+            if not entry.verification_claim and entry.verification != "unverified":
+                entry.verification_claim = entry.verification
+            derived = derive_verification_level(entry)
+            cur.execute(
+                "UPDATE knowledge SET verification=?, verification_claim=? WHERE id=?",
+                (derived, entry.verification_claim, entry.id),
+            )
+        self.conn.commit()
 
         for col, ctype in [
             ("latitude", "REAL DEFAULT 0"),
@@ -485,21 +551,33 @@ class Database:
     # --- Knowledge ---
 
     def save_knowledge(self, k: KnowledgeEntry):
+        normalize_knowledge_evidence(k)
+        k.verification = derive_verification_level(k)
         steps_json = json.dumps(k.steps, ensure_ascii=False)
         prereq_json = json.dumps(k.prerequisites, ensure_ascii=False)
         warn_json = json.dumps(k.warnings, ensure_ascii=False)
+        references_json = json.dumps(k.references, ensure_ascii=False, sort_keys=True)
+        field_records_json = json.dumps(k.field_records, ensure_ascii=False, sort_keys=True)
+        applicable_json = json.dumps(k.applicable_when, ensure_ascii=False)
+        contraindications_json = json.dumps(k.contraindications, ensure_ascii=False)
+        review_claim_json = json.dumps(k.review_claim, ensure_ascii=False, sort_keys=True)
         self.conn.execute(
             """INSERT OR REPLACE INTO knowledge
                (id, category, subcategory, priority, title, summary, steps,
                 prerequisites, warnings, verification, source, version,
                 language, reviewer, qualification, review_date, citation,
-                content_hash, signoff_version)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                content_hash, signoff_version, evidence_references, field_records,
+                applicable_when, contraindications, verification_claim, source_claim,
+                source_content_hash, review_claim)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (k.id, k.category, k.subcategory, k.priority, k.title,
              k.summary, steps_json, prereq_json, warn_json,
              k.verification, k.source, k.version, k.language,
              k.reviewer, k.qualification, k.review_date, k.citation,
-             k.content_hash, k.signoff_version)
+             k.content_hash, k.signoff_version, references_json,
+             field_records_json, applicable_json, contraindications_json,
+             k.verification_claim, k.source_claim, k.source_content_hash,
+             review_claim_json)
         )
         self.conn.execute(
             "DELETE FROM knowledge_fts WHERE id=?", (k.id,)
@@ -511,6 +589,52 @@ class Database:
              tokenize(k.subcategory))
         )
         self.conn.commit()
+
+    def save_bundled_knowledge(self, incoming: KnowledgeEntry) -> None:
+        """Idempotently refresh bundled content without erasing local evidence.
+
+        Local evidence/signoff survives only while the exact repository source
+        payload and version remain unchanged. A changed payload is a new claim
+        and therefore starts unverified.
+        """
+        incoming_hash = compute_source_content_hash(incoming)
+        existing = self.get_knowledge(incoming.id)
+        unchanged = False
+        if existing:
+            if existing.source_content_hash:
+                unchanged = existing.source_content_hash == incoming_hash
+            else:
+                probe = KnowledgeEntry(
+                    id=existing.id,
+                    category=existing.category,
+                    subcategory=existing.subcategory,
+                    priority=existing.priority,
+                    title=existing.title,
+                    summary=existing.summary,
+                    steps=existing.steps,
+                    prerequisites=existing.prerequisites,
+                    warnings=existing.warnings,
+                    source=incoming.source,
+                    version=existing.version,
+                    language=existing.language,
+                    applicable_when=incoming.applicable_when,
+                    contraindications=incoming.contraindications,
+                )
+                unchanged = compute_source_content_hash(probe) == incoming_hash
+        if existing and unchanged:
+            incoming.references = existing.references
+            incoming.field_records = existing.field_records
+            incoming.review_claim = existing.review_claim
+            incoming.applicable_when = existing.applicable_when
+            incoming.contraindications = existing.contraindications
+            incoming.reviewer = existing.reviewer
+            incoming.qualification = existing.qualification
+            incoming.review_date = existing.review_date
+            incoming.citation = existing.citation
+            incoming.content_hash = existing.content_hash
+            incoming.signoff_version = existing.signoff_version
+        incoming.source_content_hash = incoming_hash
+        self.save_knowledge(incoming)
 
     def get_knowledge(self, kid: str) -> Optional[KnowledgeEntry]:
         row = self.conn.execute(
