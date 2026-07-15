@@ -50,6 +50,7 @@ from tests.regression._harness import (
     Recorder,
     blocking_records,
     http_probe,
+    initialization_payload,
     render_summary,
     web_server,
 )
@@ -64,12 +65,10 @@ def _run_lang(c: httpx.Client, recorder: Recorder, lang: str, *, fresh_init: boo
     H("GET", "/api/init/hardware")
     H("GET", "/api/init/models")
     if fresh_init:
-        from tests.assessment_helpers import valid_initial_assessment
-
         H(
             "POST",
             "/api/init/complete",
-            json={"language": lang, "survivor_name": "TestRunner", "assessment": valid_initial_assessment()},
+            json=initialization_payload(c, language=lang),
         )
     H("POST", "/api/system/language", json={"language": lang})
 

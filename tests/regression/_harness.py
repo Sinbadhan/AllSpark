@@ -306,6 +306,37 @@ def http_probe(
 # DB seeding — many suites need an "already initialized" DB to skip the wizard.
 # ---------------------------------------------------------------------------
 
+def initialization_payload(
+    client,
+    *,
+    language: str = "zh",
+    survivor_name: str = "TestRunner",
+) -> dict:
+    """Build the current preview-bound initialization contract."""
+    from tests.assessment_helpers import valid_initial_assessment
+
+    assessment = valid_initial_assessment(confirmed=False)
+    preview = client.post(
+        "/api/init/assessment/preview",
+        json={"language": language, "assessment": assessment},
+        timeout=15,
+    )
+    if preview.status_code != 200:
+        raise RuntimeError(
+            f"assessment preview failed: {preview.status_code} {preview.text[:200]}"
+        )
+    body = preview.json()
+    assessment["as_of"] = body["summary"]["as_of"]
+    assessment["confirmed"] = True
+    return {
+        "language": language,
+        "survivor_name": survivor_name,
+        "assessment": assessment,
+        "plan_id": body["plan"]["id"],
+        "primary_action_id": body["plan"]["primary_candidate_ids"][0],
+    }
+
+
 def seed_initialized_db(db_path: Path, *, language: str = "zh", survivor_name: str = "TestRunner") -> None:
     """Stand up a fresh DB that has gone through the init wizard.
 
@@ -313,8 +344,6 @@ def seed_initialized_db(db_path: Path, *, language: str = "zh", survivor_name: s
     proceed to feature-level probes without LLM weights on disk.
     """
     import httpx
-
-    from tests.assessment_helpers import valid_initial_assessment
 
     if db_path.exists():
         db_path.unlink()
@@ -324,11 +353,9 @@ def seed_initialized_db(db_path: Path, *, language: str = "zh", survivor_name: s
             c.get("/api/init/hardware", timeout=10)
             r = c.post(
                 "/api/init/complete",
-                json={
-                    "language": language,
-                    "survivor_name": survivor_name,
-                    "assessment": valid_initial_assessment(),
-                },
+                json=initialization_payload(
+                    c, language=language, survivor_name=survivor_name
+                ),
                 timeout=15,
             )
             if r.status_code != 200:

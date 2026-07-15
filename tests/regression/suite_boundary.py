@@ -31,14 +31,13 @@ from tests.regression._harness import (
     Recorder,
     blocking_records,
     http_probe,
+    initialization_payload,
     render_summary,
     web_server,
 )
 
 
 def main() -> int:
-    from tests.assessment_helpers import valid_initial_assessment
-
     db = REPORTS_DIR / "_boundary_session.db"
     if db.exists():
         db.unlink()
@@ -55,7 +54,9 @@ def main() -> int:
                 H(
                     "POST",
                     "/api/init/complete",
-                    json={"language": "zh", "survivor_name": "Alice", "assessment": valid_initial_assessment()},
+                    json=initialization_payload(
+                        c, language="zh", survivor_name="Alice"
+                    ),
                     label="init/zh",
                 )
                 H("GET", "/api/init/status", label="post-init")
@@ -93,7 +94,9 @@ def main() -> int:
                 H(
                     "POST",
                     "/api/init/complete",
-                    json={"language": "en", "survivor_name": "Bob", "assessment": valid_initial_assessment()},
+                    json=initialization_payload(
+                        c, language="en", survivor_name="Bob"
+                    ),
                     label="init/en",
                 )
                 H("GET", "/api/system/about", label="about/en")
