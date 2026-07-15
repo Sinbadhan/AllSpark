@@ -23,6 +23,17 @@ archives. AllSpark does not intentionally write tokens through its application
 logger, nor log diary bodies, health answers, location coordinates, or database
 contents, but operators must still inspect every captured stream before sharing.
 
+The Experimental crisis-support path keeps its bounded, ten-minute
+confirmation state only in process memory and isolates it by conversation ID.
+Anonymous or invalid IDs do not share pending state. It does not write the
+triggering text, the user's safety answer, or an intervention event to the
+diary, timeline, governance records, or network, and it has no automatic
+notification channel. Locally configured
+crisis contacts may themselves be sensitive and must be protected with the
+same device and file controls as the rest of `config.toml`. A future save or
+share workflow requires separate, explicit consent and is not implemented in
+v1.0.3.
+
 ## Permission model
 
 On POSIX systems, AllSpark migrates its managed data, backup, and snapshot

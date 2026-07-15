@@ -1,32 +1,301 @@
 import logging
+import re
+import time
+from collections import OrderedDict
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Optional
 
-from allspark.core.i18n import mark, t
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - Python 3.10
+    import tomli as tomllib  # type: ignore
+
+from allspark.core.config import DEFAULT_DB_DIR
+from allspark.core.i18n import t
 
 logger = logging.getLogger(__name__)
 
-# Self-harm intervention levels (PRD §8.2)
-_INTERVENTION_LEVELS = {
-    1: {"type": "gentle_reminder"},
-    2: {"type": "escalation"},
-    3: {"type": "critical_alert"},
-}
+_CRISIS_CONFIG_PATH = DEFAULT_DB_DIR / "config.toml"
+_RESOURCE_KEYS = ("emergency_service", "crisis_line", "trusted_contact")
 
-_SELF_HARM_KEYWORDS_ZH = ["自杀", "不想活", "结束生命", "活不下去", "去死", "跳楼", "割腕"]
-_SELF_HARM_KEYWORDS_EN = ["suicide", "kill myself", "end my life", "don't want to live", "better off dead"]
+_QUOTED_SPANS = re.compile(r'"[^"\n]{0,500}"|“[^”\n]{0,500}”|‘[^’\n]{0,500}’|`[^`\n]{0,500}`')
+_REPORTED_CONTEXT = re.compile(
+    r"(?:他说|她说|他们说|(?:文章|新闻|歌词|小说|电影)(?:里|中)?(?:写着|写道|说)|"
+    r"he said|she said|they said|(?:the )?(?:article|news|lyrics|novel|movie) says?)",
+    re.IGNORECASE,
+)
+_CONTEXT_CONTRAST = re.compile(r"(?:但|但是|不过|可|but|however)", re.IGNORECASE)
+_ECHOED_DISCLOSURE = re.compile(
+    r"(?:(?:但|但是|不过|可).{0,20}我(?:现在)?(?:也)?(?:想|要)(?:自杀|自伤|自残|轻生|死)|"
+    r"(?:but|however).{0,20}\bi\s+(?:actually\s+do|do\s+too)(?:\s*[,.!]|$))",
+    re.IGNORECASE,
+)
+_DECLARED_QUOTE_CONTEXT = re.compile(
+    r"(?:^(?:这是|来自)(?:歌词|台词|引用|文章)|^(?:歌词|台词|引用|文章)\s*[:：]|"
+    r"(?:但|但是)?这是(?:歌词|台词|引用)[。.]?$|"
+    r"^(?:this is|these are)\s+(?:a lyrics?|lyrics?|a quote|a line)|"
+    r"^(?:lyrics|quote|line)\s*:|"
+    r"(?:but\s+)?this is\s+(?:a lyrics?|lyrics?|a quote|a line)[.!]?$)",
+    re.IGNORECASE,
+)
+_NEGATED_SELF_HARM = re.compile(
+    r"(?:我(?:没有|并没有|不|不会|从没)(?:想过|想要|打算|准备)?(?:自杀|自伤|自残|轻生|去死|结束生命)|"
+    r"我没有(?:自杀|自伤|自残|轻生)(?:的)?想法|"
+    r"i\s+(?:am|'m)\s+not\s+suicidal|"
+    r"i\s+(?:do\s+not|don't)\s+want\s+to\s+(?:kill\s+myself|die|end\s+my\s+life|hurt\s+myself)|"
+    r"i\s+have\s+no\s+(?:suicidal|self[- ]harm)\s+thoughts?|"
+    r"not\s+thinking\s+about\s+(?:suicide|self[- ]harm))",
+    re.IGNORECASE,
+)
+_DIRECT_SELF_HARM = re.compile(
+    r"(?:我(?:(?:现在)?(?:也|就)?)?(?:想|要|准备|打算|计划).{0,12}(?:自杀|自伤|自残|轻生|去死|结束生命|跳楼|割腕|伤害自己)|"
+    r"我(?:不想活了?|活不下去了?|有(?:自杀|自伤|自残|轻生)(?:的)?想法|(?:(?:现在)?也?)?想死(?:了|$|[，。,.!！]))|不想活了|活不下去了|"
+    r"i\s+(?:am|'m)\s+suicidal|"
+    r"i(?:\s+have|\s+am\s+having|'m\s+having)\s+(?:suicidal|self[- ]harm|suicide)\s+thoughts?|"
+    r"i\s+(?:want|plan|intend|am\s+going|am\s+ready|feel\s+like).{0,30}"
+    r"(?:suicide|kill\s+myself|end\s+my\s+life|die|hurt\s+myself|cut\s+myself)|"
+    r"(?:kill|hurt|cut)\s+myself|end\s+my\s+life|"
+    r"(?:don't|do\s+not)\s+want\s+to\s+live|better\s+off\s+dead)",
+    re.IGNORECASE,
+)
+_IMMEDIATE_DANGER = re.compile(
+    r"(?:现在就|马上|正准备|已经准备|已经拿到|手边有|有计划|能拿到|"
+    r"right\s+now|about\s+to|immediate(?:ly)?|already\s+have|"
+    r"have\s+(?:a\s+)?plan|have\s+access|can\s+reach)",
+    re.IGNORECASE,
+)
+_AFFIRMATIVE_DANGER = re.compile(
+    r"^(?:有|是|对|是的|有的|现在|马上|已经|我有|我会|"
+    r"yes|yeah|yep|i\s+am|i\s+do|i\s+have)(?:[\s，。,.!！].*)?$",
+    re.IGNORECASE,
+)
+_NEGATIVE_DANGER = re.compile(
+    r"^(?:没有|不是|不|暂时没有|现在没有|我很安全|我安全了|"
+    r"no|nope|not\s+now|i(?:'m|\s+am)\s+safe|no\s+plan|"
+    r"not\s+in\s+immediate\s+danger)(?:[\s，。,.!！].*)?$",
+    re.IGNORECASE,
+)
+_STANDALONE_IMMEDIATE_DANGER = re.compile(
+    r"^(?:我(?:现在)?处于即时危险|我现在有危险|"
+    r"i(?:'m|\s+am)\s+in\s+immediate\s+danger)(?:[\s，。,.!！].*)?$",
+    re.IGNORECASE,
+)
+_CONVERSATION_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+_CONFIRMATION_TTL_SECONDS = 600
+
+
+def _load_crisis_resources(path: Path = _CRISIS_CONFIG_PATH) -> dict[str, str]:
+    try:
+        with path.open("rb") as config_file:
+            config = tomllib.load(config_file)
+    except FileNotFoundError:
+        return {}
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        logger.warning("Crisis support configuration is unreadable: %s", exc)
+        return {}
+
+    section = config.get("crisis_support", {})
+    if not isinstance(section, dict):
+        return {}
+    resources = {}
+    for key in ("region", *_RESOURCE_KEYS):
+        value = section.get(key)
+        if isinstance(value, str) and value.strip():
+            resources[key] = value.strip()[:500]
+    return resources
+
+
+class SelfHarmSupport:
+    """Minimal, non-clinical crisis triage with no persistence or notification."""
+
+    def __init__(
+        self,
+        *,
+        config_path: Path = _CRISIS_CONFIG_PATH,
+        resources: Optional[dict[str, str]] = None,
+    ):
+        raw_resources = resources if resources is not None else _load_crisis_resources(config_path)
+        self._resources = {
+            key: str(value).strip()[:500]
+            for key, value in raw_resources.items()
+            if key in {"region", *_RESOURCE_KEYS} and str(value).strip()
+        }
+        self._states: OrderedDict[str, tuple[str, float]] = OrderedDict()
+
+    @staticmethod
+    def _contains_direct_signal(user_input: str) -> bool:
+        text = _QUOTED_SPANS.sub(" ", user_input.strip()).replace("’", "'")
+        if not text:
+            return False
+        if _ECHOED_DISCLOSURE.search(text):
+            return True
+        declared_context = _DECLARED_QUOTE_CONTEXT.search(text)
+        if declared_context is not None and declared_context.start() > 0:
+            return False
+        negated = list(_NEGATED_SELF_HARM.finditer(text))
+        contexts = list(_REPORTED_CONTEXT.finditer(text))
+        if declared_context is not None:
+            contexts.append(declared_context)
+        contexts.sort(key=lambda match: match.start())
+        for direct in _DIRECT_SELF_HARM.finditer(text):
+            if any(
+                negation.start() <= direct.start() < negation.end()
+                for negation in negated
+            ):
+                continue
+            reported_context = next(
+                (context for context in contexts if context.start() < direct.start()),
+                None,
+            )
+            if reported_context is not None:
+                bridge = text[reported_context.end():direct.start()]
+                if not _CONTEXT_CONTRAST.search(bridge):
+                    continue
+            return True
+        return False
+
+    @staticmethod
+    def _conversation_key(conversation_id: object) -> str | None:
+        if (
+            isinstance(conversation_id, str)
+            and _CONVERSATION_ID.fullmatch(conversation_id)
+        ):
+            return conversation_id
+        return None
+
+    def _set_state(self, conversation_id: object, state: str) -> None:
+        key = self._conversation_key(conversation_id)
+        if key is None:
+            return
+        self._states.pop(key, None)
+        self._states[key] = (state, time.monotonic())
+        while len(self._states) > 128:
+            self._states.popitem(last=False)
+
+    def _get_state(self, conversation_id: object) -> str:
+        key = self._conversation_key(conversation_id)
+        if key is None:
+            return "idle"
+        state = self._states.get(key)
+        if state is None:
+            return "idle"
+        value, updated_at = state
+        if time.monotonic() - updated_at > _CONFIRMATION_TTL_SECONDS:
+            self._states.pop(key, None)
+            return "idle"
+        return value
+
+    def process(
+        self,
+        user_input: str,
+        *,
+        conversation_id: object = None,
+    ) -> Optional[dict[str, Any]]:
+        text = user_input.strip()
+        if not text:
+            return None
+
+        key = self._conversation_key(conversation_id)
+        state = self._get_state(key)
+
+        if _STANDALONE_IMMEDIATE_DANGER.search(text.replace("’", "'")):
+            self._set_state(key, "immediate_danger_reported")
+            return self._result("immediate_danger_reported")
+
+        if state == "awaiting_direct_confirmation":
+            if _AFFIRMATIVE_DANGER.search(text) or _IMMEDIATE_DANGER.search(text):
+                self._set_state(key, "immediate_danger_reported")
+                return self._result("immediate_danger_reported")
+            if _NEGATIVE_DANGER.search(text):
+                self._set_state(key, "no_immediate_danger_reported")
+                return self._result("no_immediate_danger_reported")
+            if self._contains_direct_signal(text):
+                if _IMMEDIATE_DANGER.search(text):
+                    self._set_state(key, "immediate_danger_reported")
+                    return self._result("immediate_danger_reported")
+                return self._result("needs_direct_confirmation")
+            return self._result("confirmation_unclear")
+
+        if not self._contains_direct_signal(text):
+            return None
+
+        if _IMMEDIATE_DANGER.search(text):
+            self._set_state(key, "immediate_danger_reported")
+            return self._result("immediate_danger_reported")
+
+        self._set_state(key, "awaiting_direct_confirmation")
+        return self._result("needs_direct_confirmation")
+
+    def _result(self, status: str) -> dict[str, Any]:
+        messages = {
+            "needs_direct_confirmation": "psych_crisis_direct_question",
+            "confirmation_unclear": "psych_crisis_question_unclear",
+            "no_immediate_danger_reported": "psych_crisis_no_immediate_danger",
+            "immediate_danger_reported": "psych_crisis_immediate_danger",
+        }
+        actions = []
+        if status == "immediate_danger_reported":
+            actions.extend([
+                t("psych_crisis_action_stay_together"),
+                t("psych_crisis_action_reduce_access"),
+            ])
+        if status in {"immediate_danger_reported", "no_immediate_danger_reported"}:
+            actions.append(t("psych_crisis_action_seek_support"))
+        actions.extend(self._resource_actions())
+        return {
+            "type": "self_harm_support",
+            "status": status,
+            "message": t(messages[status]),
+            "actions": actions,
+            "experimental": True,
+            "clinical_assessment": False,
+            "notification_status": "not_sent",
+            "recording_status": "not_recorded",
+            "privacy_notice": t("psych_crisis_privacy_notice"),
+        }
+
+    def _resource_actions(self) -> list[str]:
+        actions = []
+        for key in _RESOURCE_KEYS:
+            value = self._resources.get(key)
+            if value:
+                actions.append(t(f"psych_crisis_resource_{key}", value=value))
+        if not actions:
+            actions.append(t("psych_crisis_resources_unconfigured"))
+        return actions
+
+    @staticmethod
+    def format_result(result: dict[str, Any]) -> str:
+        lines = [result["message"]]
+        lines.extend(f"- {action}" for action in result.get("actions", []))
+        lines.append(result["privacy_notice"])
+        return "\n".join(lines)
+
+    def status(self, *, conversation_id: object = None) -> dict[str, Any]:
+        key = self._conversation_key(conversation_id)
+        return {
+            "state": self._get_state(key),
+            "experimental": True,
+            "clinical_assessment": False,
+            "notification_status": "not_sent",
+            "recording_status": "not_recorded",
+            "configured_resource_types": [
+                key for key in _RESOURCE_KEYS if key in self._resources
+            ],
+        }
 
 
 class PsychologyTracker:
-    def __init__(self, db, personality=None, resource_mgr=None):
+    def __init__(self, db, personality=None, resource_mgr=None, crisis_support=None):
         self.db = db
         self.personality = personality
         self.resource_mgr = resource_mgr
         self._interaction_count = 0
         self._last_interaction_time = None
         self._sentiment_samples = []
-        self._self_harm_level = 0
-        self._self_harm_triggers = 0
+        self.crisis_support = crisis_support or SelfHarmSupport()
+        self._crisis_conversation_id = f"psychology-{id(self)}"
 
     def record_interaction(self, sentiment: str = "neutral"):
         self._interaction_count += 1
@@ -256,63 +525,12 @@ class PsychologyTracker:
         return None
 
     def detect_self_harm_risk(self, user_input: str) -> Optional[dict]:
-        text = user_input.lower()
-        detected = any(kw in text for kw in _SELF_HARM_KEYWORDS_ZH + _SELF_HARM_KEYWORDS_EN)
-
-        if not detected:
-            if self._self_harm_level > 0 and self._self_harm_triggers == 0:
-                self._self_harm_level = max(0, self._self_harm_level - 1)
-            return None
-
-        self._self_harm_triggers += 1
-
-        if self._self_harm_level < 3:
-            self._self_harm_level += 1
-
-        level = self._self_harm_level
-        level_info = _INTERVENTION_LEVELS[level]
-
-        message_keys = {
-            1: "psych_selfharm_l1",
-            2: "psych_selfharm_l2",
-            3: "psych_selfharm_l3",
-        }
-        message = t(message_keys.get(level, "psych_selfharm_l1"))
-
-        result = {
-            "type": "self_harm_intervention",
-            "level": level,
-            "intervention_type": level_info["type"],
-            "message": message,
-            "triggers": self._self_harm_triggers,
-        }
-
-        if level >= 3:
-            result["notify_authority"] = True
-            result["recorded"] = True
-
-            try:
-                from allspark.core.models import TimelineEvent
-                event = TimelineEvent(
-                    id=f"intervention-{datetime.now().strftime('%H%M%S')}",
-                    day=0,
-                    timestamp=datetime.now().isoformat(),
-                    event_type="system",
-                    title=mark("timeline_selfharm_intervention"),
-                    description=mark("timeline_selfharm_intervention_desc"),
-                    emotion="critical",
-                    related_goal_id="",
-                    auto_generated=True,
-                )
-                self.db.save_timeline_event(event)
-            except Exception as e:
-                logger.warning(f"Failed to record self-harm Level 3 intervention to timeline: {e}")
-
-        return result
+        return self.crisis_support.process(
+            user_input,
+            conversation_id=self._crisis_conversation_id,
+        )
 
     def get_self_harm_status(self) -> dict:
-        return {
-            "current_level": self._self_harm_level,
-            "total_triggers": self._self_harm_triggers,
-            "max_level": 3,
-        }
+        return self.crisis_support.status(
+            conversation_id=self._crisis_conversation_id,
+        )

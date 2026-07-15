@@ -917,9 +917,18 @@ psych_intervention_support: 'I''ve noticed your mood has been low recently.
   If you''d like, share your feelings with me,
 
   or do something that helps you relax.'
-psych_selfharm_l1: I noticed you might be considering extreme choices. Want to talk?
-psych_selfharm_l2: Your life matters to this group's survival.
-psych_selfharm_l3: Highest authority notified. Remember, seeking help is brave.
+psych_crisis_direct_question: Are you thinking about suicide or harming yourself right now, and are you in immediate danger or able to access a way to hurt yourself?
+psych_crisis_question_unclear: I did not understand the safety answer. Are you in immediate danger right now, or able to access a way to hurt yourself? Please answer yes or no.
+psych_crisis_no_immediate_danger: Thank you for answering. You reported no immediate danger. This is not a clinical assessment; please still reach out to a trusted person or qualified professional.
+psych_crisis_immediate_danger: You reported immediate danger. Act now and use the safest available local help.
+psych_crisis_action_stay_together: Do not stay alone. Ask a nearby trusted person to stay with you, or stay with the person at risk.
+psych_crisis_action_reduce_access: Move away from weapons, medicines, heights, vehicles, or other ways of self-harm. Ask another person to secure them when that can be done safely.
+psych_crisis_action_seek_support: Contact a local emergency service, crisis service, health worker, or trusted person now.
+psych_crisis_resource_emergency_service: 'Configured local emergency service: {value}'
+psych_crisis_resource_crisis_line: 'Configured local crisis service: {value}'
+psych_crisis_resource_trusted_contact: 'Configured trusted contact: {value}'
+psych_crisis_resources_unconfigured: No local crisis contacts are configured in AllSpark. Use the emergency or crisis service available where you are, or ask a nearby trusted person for help now.
+psych_crisis_privacy_notice: AllSpark did not diagnose you, notify anyone, or save this exchange to the timeline. Psychology support remains Experimental.
 diary_cmd: Write diary
 chat_cmd: Chat with AllSpark
 briefing_cmd: View daily briefing
@@ -1897,8 +1906,6 @@ error_skf_path_traversal: SKF paths must stay under ~/.allspark/skf
 error_gps_invalid: Invalid GPS coordinates
 error_gps_lat_range: Latitude must be between -90 and 90
 error_gps_lng_range: Longitude must be between -180 and 180
-timeline_selfharm_intervention: Self-harm intervention Level 3 triggered
-timeline_selfharm_intervention_desc: Highest authority notified
 psych_stable: Stable
 psych_crisis: Crisis
 psych_companion: Companion

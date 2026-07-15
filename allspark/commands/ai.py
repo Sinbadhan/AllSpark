@@ -44,6 +44,17 @@ class LLMCommand(BaseCommand):
 
         if subcmd in ("chat", "问") and len(args) > 1:
             message = " ".join(args[1:])
+            crisis_support = self.container.get("crisis_support")
+            if crisis_support:
+                safety = crisis_support.process(message, conversation_id="cli")
+                if safety is not None:
+                    self.console.print(
+                        Panel(
+                            crisis_support.format_result(safety),
+                            title=t("title_allspark_ai"),
+                        )
+                    )
+                    return
             if not llm.available:
                 self.console.print(f"[red]{t('llm_not_available')}[/]")
                 return

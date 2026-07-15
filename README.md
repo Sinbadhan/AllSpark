@@ -27,7 +27,7 @@ passes; code presence alone is not validation.
 | Status | Scope |
 |--------|-------|
 | Supported | Python 3.10-3.12; desktop PROCESS mode; CLI and Web UI; local SQLite; rule-based assessment; knowledge search/import/export; resources, goals, tasks and diary; local snapshot/restore; core Web flows with macOS VoiceOver |
-| Experimental | Governance/RBAC (disabled until member identity and server-side authorization are verified); Windows screen-reader compatibility (NVDA, testing); Docker/INTEGRATION mode; real GGUF/LLM and GPU acceleration; microphone/STT/TTS; camera/vision; Raspberry Pi GPIO/I2C/Serial, sensors, power and hardware GPS; cross-host Spark Network; removable-media disaster recovery |
+| Experimental | Psychology and non-clinical crisis support (independent qualified expert review pending); Governance/RBAC (disabled until member identity and server-side authorization are verified); Windows screen-reader compatibility (NVDA, testing); Docker/INTEGRATION mode; real GGUF/LLM and GPU acceleration; microphone/STT/TTS; camera/vision; Raspberry Pi GPIO/I2C/Serial, sensors, power and hardware GPS; cross-host Spark Network; removable-media disaster recovery |
 | Not supported in v1.0.3 | Bluetooth and Wi-Fi Direct transports. The current Spark Network transport is TCP over LAN; radio availability detection is not a transport implementation. |
 
 Single-host, independent-process Spark Network exchange is covered by automated
@@ -50,7 +50,7 @@ accessibility claim.
 | Personality System | Crisis/Stable/Companion/Multiplayer/Renaissance — 5 adaptive modes |
 | Experience Accumulation | Experience recording → pattern recognition → knowledge entry loop |
 | Daily Briefing | Auto-generated survival report: resources + warnings + goals + tasks + knowledge tip |
-| Psychology Tracking (Experimental) | Loneliness/stress index + self-assessment questionnaire + intervention triggers |
+| Psychology Tracking (Experimental) | Non-clinical loneliness/stress prompts and self-assessment; explicit self-harm language enters private, deterministic safety confirmation before rules/LLM. No diagnosis, automatic notification, or silent timeline recording; qualified external review is pending. |
 
 ### 🎯 Goal & Mission System
 | Feature | Description |

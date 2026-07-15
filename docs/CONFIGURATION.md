@@ -144,6 +144,26 @@ SKF packages and network exchange payloads should be treated as untrusted inputs
 
 Current network features are best treated as LAN/local-trust prototypes. Disaster-channel transports such as Bluetooth, LoRa, or SD-card exchange require additional validation and security design.
 
+## Local crisis-support resources
+
+Psychology and crisis support remain Experimental and non-clinical. The
+deterministic safety prompt works offline and never contacts a service by
+itself. Configure locally appropriate contacts in `~/.allspark/config.toml`:
+
+```toml
+[crisis_support]
+region = "Your region"
+emergency_service = "Local emergency number or radio procedure"
+crisis_line = "Local crisis service"
+trusted_contact = "Trusted person and offline contact method"
+```
+
+Every field is optional. Values are displayed exactly as local operator data;
+AllSpark does not verify, dial, message, or transmit them. If no contact is
+configured, the product says so and gives a location-neutral fallback instead
+of assuming a country or hardcoding a regional hotline. See
+[the crisis-support boundary](CRISIS_SUPPORT.md).
+
 ## Environment variables
 
 The current project primarily uses code defaults, local files, and runtime state. Documented variables:

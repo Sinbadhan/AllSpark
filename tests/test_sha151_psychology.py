@@ -107,25 +107,27 @@ def test_check_and_trigger_intervention_companion(tracker):
     assert r["type"] == "companion_mode"
 
 
-def test_detect_self_harm_no_risk_decrements_level(tracker):
-    tracker._self_harm_level = 2
+def test_detect_self_harm_no_signal_leaves_support_idle(tracker):
     assert tracker.detect_self_harm_risk("我很好") is None
-    assert tracker._self_harm_level == 1
+    assert tracker.get_self_harm_status()["state"] == "idle"
 
 
-def test_detect_self_harm_escalates_to_level3(tracker):
+def test_detect_self_harm_repetition_does_not_create_risk_level(tracker):
     r1 = tracker.detect_self_harm_risk("我不想活了")
-    assert r1["level"] == 1
-    r2 = tracker.detect_self_harm_risk("suicide")
-    assert r2["level"] == 2
-    r3 = tracker.detect_self_harm_risk("kill myself")
-    assert r3["level"] == 3
-    assert r3.get("notify_authority") is True
+    r2 = tracker.detect_self_harm_risk("我不想活了")
+    assert r1["status"] == "needs_direct_confirmation"
+    assert r2["status"] == "needs_direct_confirmation"
+    for result in (r1, r2):
+        assert "level" not in result
+        assert "triggers" not in result
+        assert result["notification_status"] == "not_sent"
+        assert result["recording_status"] == "not_recorded"
 
 
 def test_get_self_harm_status(tracker):
     tracker.detect_self_harm_risk("我不想活了")
     s = tracker.get_self_harm_status()
-    assert s["current_level"] == 1
-    assert s["total_triggers"] == 1
-    assert s["max_level"] == 3
+    assert s["state"] == "awaiting_direct_confirmation"
+    assert s["clinical_assessment"] is False
+    assert s["notification_status"] == "not_sent"
+    assert s["recording_status"] == "not_recorded"

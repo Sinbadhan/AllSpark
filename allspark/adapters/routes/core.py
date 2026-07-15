@@ -250,15 +250,24 @@ def register_core_routes(app, check):
         return knowledge.entry_payload(entry)
 
     @app.post("/api/chat")
-    async def chat(request: Request, message: str = Query(None), language: str = None):
+    async def chat(
+        request: Request,
+        message: str = Query(None),
+        language: str = None,
+        conversation_id: str = None,
+    ):
         container, db = check()
         if message is None:
             data = await request.json()
             message = data.get("message", "")
             language = data.get("language", language)
+            conversation_id = data.get("conversation_id", conversation_id)
         if language:
             set_language(language)
-        response = container.get("rule_engine").process_input(message)
+        response = container.get("rule_engine").process_input(
+            message,
+            conversation_id=conversation_id,
+        )
         assessment = container.get("survival_engine").assess()
         return {
             "response": response,
@@ -269,18 +278,36 @@ def register_core_routes(app, check):
         }
 
     @app.post("/api/chat/stream")
-    async def chat_stream(request: Request, message: str = Query(None), language: str = None):
+    async def chat_stream(
+        request: Request,
+        message: str = Query(None),
+        language: str = None,
+        conversation_id: str = None,
+    ):
         container, db = check()
         if message is None:
             data = await request.json()
             message = data.get("message", "")
             language = data.get("language", language)
+            conversation_id = data.get("conversation_id", conversation_id)
         if language:
             set_language(language)
 
         llm = _get_service(app, "llm")
         if not llm or not llm.available:
-            return JSONResponse({"response": container.get("rule_engine").process_input(message)})
+            return JSONResponse({
+                "response": container.get("rule_engine").process_input(
+                    message,
+                    conversation_id=conversation_id,
+                )
+            })
+
+        safety_response = container.get("rule_engine").process_safety_input(
+            message,
+            conversation_id=conversation_id,
+        )
+        if safety_response is not None:
+            return JSONResponse({"response": safety_response, "safety": True})
 
         survival = _get_service(app, "survival_engine")
         assessment = None

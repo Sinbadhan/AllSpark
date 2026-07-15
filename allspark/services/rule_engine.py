@@ -5,6 +5,7 @@ from allspark.container import ServiceContainer
 from allspark.core.i18n import t
 from allspark.core.models import OperatingMode, ResourceType
 from allspark.core.tokenizer import tokenize
+from allspark.services.psychology import SelfHarmSupport
 from allspark.services.system_health import assess_system_health
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ class RuleEngine:
         self.survival = container.get("survival_engine")
         self.planner = container.get("mission_planner")
         self.llm = container.get("llm")
+        self.crisis_support = container.get("crisis_support") or SelfHarmSupport()
         self._assessment_cache: dict | None = None
         self._assessment_cache_time = 0.0
         self._assessment_cache_ttl = 60
@@ -60,7 +62,19 @@ class RuleEngine:
         self._assessment_cache_time = now
         return self._assessment_cache
 
-    def process_input(self, user_input: str) -> str:
+    def process_input(
+        self,
+        user_input: str,
+        *,
+        conversation_id: str | None = None,
+    ) -> str:
+        safety_response = self.process_safety_input(
+            user_input,
+            conversation_id=conversation_id,
+        )
+        if safety_response is not None:
+            return safety_response
+
         intent = self.personality.classify_intent(user_input)
         needs_fresh = intent in ("status", "resource")
         cached = self._refresh_assessment(force=needs_fresh)
@@ -90,6 +104,20 @@ class RuleEngine:
                 )
         else:
             return self._handle_general(user_input, resources, warnings, phase)
+
+    def process_safety_input(
+        self,
+        user_input: str,
+        *,
+        conversation_id: str | None = None,
+    ) -> str | None:
+        result = self.crisis_support.process(
+            user_input,
+            conversation_id=conversation_id,
+        )
+        if result is None:
+            return None
+        return self.crisis_support.format_result(result)
 
     def _handle_status(self, assessment: dict, mode: OperatingMode,
                        warnings: list) -> str:

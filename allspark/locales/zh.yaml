@@ -880,9 +880,18 @@ psych_intervention_support: '我观察到你最近的情绪偏低落。
   如果你愿意，可以和我分享你的感受，
 
   或者做一些让自己感到放松的事。'
-psych_selfharm_l1: 我注意到你可能在考虑极端选择。想聊聊吗？
-psych_selfharm_l2: 你的生命对这个群体的生存很重要。
-psych_selfharm_l3: 已通知最高权限者。请记住，寻求帮助是勇敢的表现。
+psych_crisis_direct_question: 你现在是否正在考虑自杀或伤害自己？是否处于即时危险中，或能够接触到伤害自己的手段？
+psych_crisis_question_unclear: 我没有理解你的安全状况。你现在是否处于即时危险中，或能够接触到伤害自己的手段？请回答“是”或“否”。
+psych_crisis_no_immediate_danger: 谢谢你回答。你表示目前没有即时危险。这不是临床评估；仍请联系可信任的人或合格专业人员。
+psych_crisis_immediate_danger: 你表示目前存在即时危险。请立即行动，并使用所在地可获得的最安全援助。
+psych_crisis_action_stay_together: 不要独处。请附近可信任的人陪着你；如果你在帮助他人，请留在对方身边。
+psych_crisis_action_reduce_access: 远离武器、药物、高处、车辆或其他可能用于自伤的手段；在确保安全的前提下，请他人代为保管。
+psych_crisis_action_seek_support: 立即联系当地紧急服务、危机援助、医务人员或可信任的人。
+psych_crisis_resource_emergency_service: '已配置的当地紧急服务：{value}'
+psych_crisis_resource_crisis_line: '已配置的当地危机援助：{value}'
+psych_crisis_resource_trusted_contact: '已配置的可信任联系人：{value}'
+psych_crisis_resources_unconfigured: 火种尚未配置当地危机联系人。请使用你所在地可用的紧急或危机服务，或立即向附近可信任的人求助。
+psych_crisis_privacy_notice: 火种没有进行诊断、没有通知任何人，也没有把本次交流写入时间线；心理支持仍为 Experimental。
 diary_cmd: 写日记
 chat_cmd: 和火种聊天
 briefing_cmd: 查看每日简报
@@ -1836,8 +1845,6 @@ error_skf_path_traversal: SKF 路径必须在 ~/.allspark/skf 目录下
 error_gps_invalid: GPS 坐标无效
 error_gps_lat_range: 纬度需在 -90 到 90 之间
 error_gps_lng_range: 经度需在 -180 到 180 之间
-timeline_selfharm_intervention: 自我伤害干预 Level 3 已触发
-timeline_selfharm_intervention_desc: 最高权限已通知
 psych_stable: 稳定
 psych_crisis: 危机
 psych_companion: 陪伴

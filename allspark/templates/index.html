@@ -561,6 +561,20 @@ function backToResults() {
 document.getElementById("knowledge-search").addEventListener("keydown", e => { if (e.key === "Enter") searchKnowledge(); });
 
 // Chat
+const chatConversationId = (() => {
+  const key = "allspark-chat-conversation";
+  try {
+    let value = sessionStorage.getItem(key);
+    if (!value) {
+      value = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      sessionStorage.setItem(key, value);
+    }
+    return value;
+  } catch (_) {
+    return null;
+  }
+})();
+
 async function sendChat() {
   const input = document.getElementById("chat-input");
   const msg = input.value.trim();
@@ -569,7 +583,7 @@ async function sendChat() {
   addChatMsg("user", msg);
   addChatMsg("system", "...");
   try {
-    const data = await api("/api/chat", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({message: msg}) });
+    const data = await api("/api/chat", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({message: msg, conversation_id: chatConversationId}) });
     document.querySelector("#chat-messages .chat-msg.system:last-child .bubble").textContent = data.response;
   } catch(e) {
     document.querySelector("#chat-messages .chat-msg.system:last-child .bubble").textContent = I18N.web_model_error.replace('{msg}', e.message);

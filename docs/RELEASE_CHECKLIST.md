@@ -17,6 +17,9 @@ Use this checklist before tagging or publishing an AllSpark release.
 - Confirm the accessibility boundary is macOS VoiceOver for the validated core
   Web flow. Windows + NVDA remains Testing/Experimental until real-environment
   evidence passes and must not be advertised as Stable.
+- Confirm psychology and crisis support remain Experimental. They may not be
+  advertised as clinically validated or promoted until SHA-260 contains a
+  traceable review from a qualified mental-health or crisis-intervention expert.
 
 ## 2. Update version references
 
@@ -119,6 +122,9 @@ Verify no sensitive or generated files are staged:
   responses; all rendered scripts carry the matching per-request nonce,
   `script-src-attr 'none'` is active, and the seven-page Chrome violation gate
   passes for the exact candidate commit.
+- SHA-260 confirms deterministic self-harm safety triage runs before rule/LLM
+  chat, makes no unsupported notification or recording claim, and includes the
+  external expert-review state. Automation is not expert sign-off.
 
 ## 8. Tag and publish
 

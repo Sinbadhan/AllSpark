@@ -34,6 +34,14 @@ workflow and supported hardware scope are approved.
   3.10/3.11/3.12 and validates clean-wheel installation on the same matrix.
 
 **Quality (P1):**
+- SHA-260: Experimental psychology support no longer turns repeated keywords
+  into clinical-looking levels or claims an authority was notified. Explicit
+  first-person self-harm language now enters a private deterministic safety
+  confirmation before Web, streaming, CLI or voice LLM paths; confirmation
+  state is bounded, session-isolated, expires in ten minutes and is never
+  silently written to the timeline. Local contacts are optional offline
+  configuration, with an honest location-neutral fallback. Qualified external
+  crisis/mental-health review remains required before support promotion.
 - Repository real-Chrome gates now await the complete initial knowledge load
   before applying filters, eliminating a category-fetch race exposed by the
   Python 3.10 CI job and preserving actionable JavaScript exception details.

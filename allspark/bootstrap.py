@@ -23,6 +23,7 @@ from allspark.services.llm_engine import LLMEngine
 from allspark.services.map_system import MapSystem
 from allspark.services.mission_planner import MissionPlanner
 from allspark.services.personality import PersonalitySystem
+from allspark.services.psychology import SelfHarmSupport
 from allspark.services.resource_manager import ResourceManager
 from allspark.services.rule_engine import RuleEngine
 from allspark.services.scheduler import create_default_scheduler
@@ -250,6 +251,10 @@ class ApplicationBootstrap:
         experience = ExperienceEngine(self.db, llm=llm)
         self.container.register("experience", experience)
 
+        # Safety triage is lightweight and always available, even when the
+        # broader Experimental psychology module is disabled by hardware.
+        self.container.register("crisis_support", SelfHarmSupport())
+
         # RuleEngine — core decision engine, registered via factory to keep
         # _register_core_services free of cross-service wiring.
         self.container.register_factory(
@@ -451,6 +456,7 @@ class ApplicationBootstrap:
                 db=self.db,
                 personality=personality,
                 resource_mgr=resource_mgr,
+                crisis_support=container.require("crisis_support"),
             )
             container.register("psychology", psych)
             registry.register("psychology", psych)
@@ -485,6 +491,7 @@ class ApplicationBootstrap:
                 db=self.db,
                 diary=diary_svc,
                 llm_engine=llm,
+                crisis_support=container.require("crisis_support"),
             )
             container.register("voice", voice)
             registry.register("voice", voice)

@@ -234,7 +234,7 @@ class SparkCLI:
         if self.dispatcher.dispatch(cmd, args):
             return
 
-        response = self.engine.process_input(user_input)
+        response = self.engine.process_input(user_input, conversation_id="cli")
         console.print(response)
 
 

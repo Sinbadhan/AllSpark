@@ -78,11 +78,19 @@ class VADRecorder:
 
 
 class VoiceManager:
-    def __init__(self, db=None, diary=None, llm_engine=None, dispatcher=None):
+    def __init__(
+        self,
+        db=None,
+        diary=None,
+        llm_engine=None,
+        dispatcher=None,
+        crisis_support=None,
+    ):
         self.db = db
         self.diary = diary
         self.llm_engine = llm_engine
         self.dispatcher = dispatcher
+        self.crisis_support = crisis_support
         self._whisper_model = None
         self._tts_engine = None
         self._is_listening = False
@@ -223,6 +231,16 @@ class VoiceManager:
 
         session = self._get_or_create_session()
         session.add_turn("user", command_text)
+
+        if self.crisis_support:
+            safety = self.crisis_support.process(
+                command_text,
+                conversation_id=session.session_id,
+            )
+            if safety is not None:
+                response = self.crisis_support.format_result(safety)
+                session.add_turn("assistant", response)
+                return response
 
         # Command dispatch: first token as command, rest as args.
         if self.dispatcher:
