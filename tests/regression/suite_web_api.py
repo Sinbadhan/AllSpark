@@ -5,7 +5,7 @@ Coverage (mapped to PRD §三 modules):
   M2  Mission planner        /api/tasks, /api/tasks/{id}/{action}
   M3  Knowledge engine       /api/knowledge/*
   M4  Personality            /api/system/personality
-  M5  Governance             /api/governance/*
+  M5  Governance boundary    /api/governance/* (Experimental, fail closed)
   M6  Spark network          /api/network/*
   M7  Resource self-mgmt     /api/resources, /api/power/*
   M8  Multilingual           /api/system/language, /api/system/about
@@ -161,17 +161,29 @@ def _run_lang(c: httpx.Client, recorder: Recorder, lang: str, *, fresh_init: boo
     H("GET", "/api/verify/stats")
     H("POST", "/api/verify/batch?mode=unverified")
 
-    # ------------ Governance / trade (M5) ------------
-    H("GET", "/api/governance/status")
-    H("GET", "/api/governance/members")
+    # ------------ Governance boundary / trade (M5) ------------
+    governance_boundary = {
+        "expect_ok": False,
+        "expect_degraded": True,
+        "allowlist_reason": "governance has no authenticated member subject",
+    }
+    H("GET", "/api/governance/status", **governance_boundary)
+    H("GET", "/api/governance/members", **governance_boundary)
     H("POST", "/api/governance/member/add",
-      json={"name": "Alice", "role": "expert", "domains": ["medical"]})
-    H("GET", "/api/governance/assess")
-    H("GET", "/api/governance/recommend")
+      json={"name": "Alice", "role": "expert", "domains": ["medical"]},
+      **governance_boundary)
+    H("GET", "/api/governance/assess", **governance_boundary)
+    H("GET", "/api/governance/recommend", **governance_boundary)
     H("GET", "/api/trade/status")
     H("GET", "/api/trade/list")
     # Body-shape contract guards (regression: B-4)
-    H("POST", "/api/governance/member/add", json={}, expect_ok=False, label="gov-addmember-empty")
+    H(
+        "POST",
+        "/api/governance/member/add",
+        json={},
+        label="gov-addmember-disabled",
+        **governance_boundary,
+    )
     H("POST", "/api/trade/propose", json={}, expect_ok=False, label="trade-propose-empty")
 
     # ------------ HTML pages (M9) ------------

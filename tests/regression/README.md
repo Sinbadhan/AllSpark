@@ -52,7 +52,7 @@ python -m tests.regression.suite_html_render
 | M2 任务规划 | ✅ `/api/tasks*` | ✅ `tasks` | ⚪ | ⚪ | task 状态机不深 |
 | M3 知识引擎 | ✅ `/api/knowledge/*` | ✅ `know`, `map`, `exp` | ⚪ | ⚪ | FTS5 走通；vector 未触 |
 | M4 人格系统 | ✅ `/api/system/personality` | ⚪ | ⚪ | ⚪ | 仅 happy + invalid 值 |
-| M5 权限治理 | ✅ `/api/governance/*` | ✅ `community`, `trade` | ⚪ | ✅ repository | 冲突调解仅创建未走完 |
+| M5 权限治理 | Experimental：`/api/governance/*` 服务端 fail closed | `community` 明确不可用；`trade` 为 Experimental | ⚪ | repository 不宣称 RBAC 可用 | 无可验证成员身份前保持禁用 |
 | M6 火种通信 | ✅ `/api/network/*` | ✅ `network` | ⚪ | ⚪ | **未跨进程握手** |
 | M7 资源自管理 | ✅ `/api/resources` | ✅ `resource`, `set` | ✅ 资源衰减 | ✅ index | |
 | M8 多语言 | ✅ `/api/system/language` | ✅ `lang` | ✅ 中途切换 | ✅ 双语渲染 | |

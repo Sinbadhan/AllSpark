@@ -2006,6 +2006,10 @@ error_operating_mode_unknown: '''{mode}'' is not a known operating mode.'
 error_operating_use_one_of: 'Use one of: {modes}'
 error_unknown_task_action: 'Unknown action ''{action}''. Use start | complete | fail.'
 # routes/governance.py
+governance_access_status: Governance status · Experimental
+governance_access_unavailable: Governance is unavailable in the v1 Stable boundary.
+governance_access_unavailable_detail: Community roles are not bound to an authenticated member, so Web and CLI governance operations are disabled rather than presenting unenforced permissions.
+governance_access_unavailable_next: Use the supported single-operator survival workflow. Governance remains Experimental until identity and server-side authorization are verified.
 error_name_required: Name required
 error_body_name: 'Body must contain {name: ''<member-name>''}.'
 error_member_id_required: member_id required

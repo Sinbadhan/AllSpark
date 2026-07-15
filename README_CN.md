@@ -25,8 +25,8 @@
 
 | 状态 | 范围 |
 |------|------|
-| 稳定支持 | Python 3.10-3.12；桌面 PROCESS 模式；CLI 与 Web UI；本地 SQLite；规则评估；知识搜索/导入/导出；资源、目标、任务、日记、治理；本地快照/恢复；macOS VoiceOver 核心 Web 流程 |
-| Experimental | Windows 读屏兼容性（NVDA，测试阶段）；Docker/INTEGRATION；真实 GGUF/LLM 与 GPU；麦克风/STT/TTS；摄像头/视觉；树莓派 GPIO/I2C/串口、传感器、电力与硬件 GPS；跨主机火种网络；可移动介质灾难恢复 |
+| 稳定支持 | Python 3.10-3.12；桌面 PROCESS 模式；CLI 与 Web UI；本地 SQLite；规则评估；知识搜索/导入/导出；资源、目标、任务和日记；本地快照/恢复；macOS VoiceOver 核心 Web 流程 |
+| Experimental | 治理/RBAC（成员身份和服务端授权完成验证前保持禁用）；Windows 读屏兼容性（NVDA，测试阶段）；Docker/INTEGRATION；真实 GGUF/LLM 与 GPU；麦克风/STT/TTS；摄像头/视觉；树莓派 GPIO/I2C/串口、传感器、电力与硬件 GPS；跨主机火种网络；可移动介质灾难恢复 |
 | v1.0.3 不支持 | 蓝牙和 Wi-Fi Direct 传输。当前火种网络传输层是局域网 TCP；无线通道可用性探测不等于实现传输。 |
 
 单机独立进程间的火种网络交换已有自动化集成证据，但不能证明跨主机、无线电或野外部署可用。
@@ -75,14 +75,12 @@ Windows 读屏兼容性仍处于测试阶段；在真实 Windows + NVDA 证据�
 | 知识交易（Experimental） | 提议/接受/拒绝/评估 节点间知识交换协议 |
 | 图像识别（Experimental） | 多模态分析路径；摄像头与目标模型运行时未认证 |
 
-### 👥 多人与治理
+### 👥 多人与治理（Experimental，已禁用）
 | 功能 | 描述 |
 |------|------|
-| 权限系统 | 指挥官/专家/执行者/观察者 — 4级角色 + 权限矩阵 |
-| 动态角色 | 基于贡献和技能自动推荐角色晋升 |
-| 冲突调解 | 创建 → AI 调解 → 解决 全流程 |
-| 生存价值 | 5维评估（仅指挥官，仅供参考） |
-| 组织评估 | 自动评估结构合理性，建议分组/角色补充 |
+| 权限系统（Experimental） | 原型代码包含角色矩阵，但 Web/CLI 操作者尚未绑定社区成员，因此当前不是实际执行的 RBAC 安全边界。 |
+| 治理操作（Unavailable） | v1 的 Web 与 CLI 成员、角色和冲突操作均服务端 fail closed。 |
+| 生存价值（Unavailable） | v1 产品不暴露；没有经过验证的成员身份时，无法执行“仅指挥官可见”。 |
 
 ### 🌍 环境与导航
 | 功能 | 描述 |
@@ -288,7 +286,7 @@ AllSpark/
 | 1 — MVP | 规则引擎 + Tier 0 知识 + CLI + 5维资源 + 人格 + 地图 | ✅ |
 | 2 — 智能 | jieba 分词 + 本地 LLM + 经验 + Web UI + Tier 1-2 + i18n | 核心完成；LLM Experimental |
 | 3 — 连接 | SKF 包 + 知识验证 + 火种网络 + 图像识别 | SKF 完成；网络/视觉 Experimental |
-| 4 — 多人 | 权限系统 + 动态角色 + 冲突调解 + 知识交易 + Tier 3 | ✅ |
+| 4 — 多人 | Experimental 治理原型 + 知识交易 + Tier 3 知识 | Experimental |
 | 5 — 硬件 | 电源监控 + 传感器 + 数据保存 + 启动优化 | 本地数据保存完成；硬件 Experimental |
 | 6 — 目标与环境 | 目标引擎 + 三级重置 + 每日简报 + 时间线 + 日记 + 天气 + 心理 + GPS + 环境 + 语音 | 核心完成；物理 I/O Experimental |
 | 7 — 架构与Docker | ServiceContainer 依赖注入 + Command 命令模式 + Bootstrap + i18n 纯净化 + Docker 弹性部署 | 架构完成；Docker Experimental |

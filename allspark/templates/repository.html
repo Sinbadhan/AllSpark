@@ -326,14 +326,10 @@ function setSkfResult(level, msg) {
 
 /* === Community / Trade === */
 const COMM_I18N = {
-  status: "{{ t('web_community_status') }}",
-  no_members: "{{ t('web_community_no_members') }}",
-  member_add: "{{ t('web_community_member_add') }}",
-  name_ph: "{{ t('web_community_member_name') }}",
-  role_ph: "{{ t('web_community_member_role') }}",
-  add: "{{ t('web_community_member_save') }}",
-  assess: "{{ t('web_community_assess') }}",
-  recommend: "{{ t('web_community_recommend') }}",
+  status: "{{ t('governance_access_status') }}",
+  unavailable: "{{ t('governance_access_unavailable') }}",
+  unavailable_detail: "{{ t('governance_access_unavailable_detail') }}",
+  unavailable_next: "{{ t('governance_access_unavailable_next') }}",
   trade: "{{ t('web_trade_title') }}",
   no_trades: "{{ t('web_trade_no_trades') }}",
 };
@@ -342,55 +338,24 @@ function renderCommunityPanel() {
   return `
     <div class="p-4">
       <div style="display:grid;gap:16px;">
-        <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:12px;">
-          <h4 style="margin:0 0 8px;">${COMM_I18N.status}</h4>
-          <pre id="community-status" style="white-space:pre-wrap;margin:0;font-family:JetBrains Mono,monospace;font-size:11px;color:var(--on-surface-variant);">…</pre>
+        <div role="status" style="border-left:3px solid var(--warning);padding:4px 12px;">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+            <span class="material-symbols-outlined text-sm" aria-hidden="true">warning</span>
+            <h4 style="margin:0;">${COMM_I18N.status}</h4>
+          </div>
+          <p style="margin:0 0 6px;color:var(--on-surface);">${COMM_I18N.unavailable}</p>
+          <p class="text-sm" style="margin:0;color:var(--on-surface-variant);">${COMM_I18N.unavailable_detail}</p>
+          <p class="text-sm" style="margin:6px 0 0;color:var(--on-surface-variant);">${COMM_I18N.unavailable_next}</p>
         </div>
         <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:12px;">
-          <h4 style="margin:0 0 8px;">${COMM_I18N.member_add}</h4>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <input id="member-name" placeholder="${COMM_I18N.name_ph}" style="flex:1;min-width:160px;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
-            <input id="member-role" placeholder="${COMM_I18N.role_ph}" value="executor" style="flex:1;min-width:160px;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
-            <button class="action-btn action-primary" data-repo-action="add-member">${COMM_I18N.add}</button>
-          </div>
-          <div id="member-list" class="text-sm" style="margin-top:8px;color:var(--on-surface-variant);"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:12px;">
-            <h4 style="margin:0 0 8px;">${COMM_I18N.assess}</h4>
-            <pre id="community-assess" style="white-space:pre-wrap;margin:0;font-family:JetBrains Mono,monospace;font-size:11px;color:var(--on-surface-variant);">…</pre>
-          </div>
-          <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:12px;">
-            <h4 style="margin:0 0 8px;">${COMM_I18N.trade}</h4>
-            <div id="trade-list" class="text-sm" style="color:var(--on-surface-variant);">${COMM_I18N.no_trades}</div>
-          </div>
+          <h4 style="margin:0 0 8px;">${COMM_I18N.trade}</h4>
+          <div id="trade-list" class="text-sm" style="color:var(--on-surface-variant);">${COMM_I18N.no_trades}</div>
         </div>
       </div>
     </div>`;
 }
 
 async function loadCommunityData() {
-  try {
-    const status = await api("/api/governance/status");
-    document.getElementById("community-status").textContent = JSON.stringify(status, null, 2);
-  } catch(e) { document.getElementById("community-status").textContent = String(e); }
-  try {
-    const data = await api("/api/governance/members");
-    const list = data.members || data || [];
-    const el = document.getElementById("member-list");
-    if (!Array.isArray(list) || !list.length) { el.textContent = COMM_I18N.no_members; }
-    else {
-      el.innerHTML = list.map(m =>
-        `<div style="padding:4px 0;border-bottom:1px solid var(--surface-container-high);">
-           <strong>${escHtml(m.name || m.id || '')}</strong> · ${escHtml(m.role || '-')}
-         </div>`
-      ).join("");
-    }
-  } catch(e) {}
-  try {
-    const a = await api("/api/governance/assess");
-    document.getElementById("community-assess").textContent = JSON.stringify(a, null, 2);
-  } catch(e) {}
   try {
     const trades = await api("/api/trade/list");
     const list = trades.trades || trades || [];
@@ -403,26 +368,6 @@ async function loadCommunityData() {
       ).join("");
     }
   } catch(e) {}
-}
-
-async function addMember() {
-  const name = document.getElementById("member-name").value.trim();
-  const role = document.getElementById("member-role").value.trim() || "executor";
-  if (!name) return;
-  try {
-    const r = await fetch("/api/governance/member/add", {
-      method: "POST",
-      headers: {"content-type": "application/json"},
-      body: JSON.stringify({name, role}),
-    });
-    const data = await r.json();
-    if (data.status === "error") {
-      toast(data.error + (data.detail ? ': ' + data.detail : ''), "error");
-      return;
-    }
-    document.getElementById("member-name").value = "";
-    loadCommunityData();
-  } catch(e) { notify(e); }
 }
 
 let _repoEl = null;
@@ -730,7 +675,6 @@ document.addEventListener("click", event => {
   else if (action === "skf-export") doSkfExport();
   else if (action === "skf-import") doSkfImport();
   else if (action === "skf-info") doSkfInfo(target.dataset.mode);
-  else if (action === "add-member") addMember();
   else if (action === "go-page") _repoGo(Number(target.dataset.page));
   else if (action === "close-detail") closeRepoDetail();
   else if (action === "download-model") downloadModel(target.dataset.model);

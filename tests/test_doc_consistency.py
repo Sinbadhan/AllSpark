@@ -190,6 +190,7 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
 
     experimental_feature_rows = {
         readme: (
+            ("Permission System (Experimental)", "governance"),
             ("Psychology Tracking", "psychology"),
             ("Weather-Goal Linkage", "weather"),
             ("Knowledge Trading", "trade_engine"),
@@ -198,6 +199,7 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
             ("Map System", "offline_map"),
         ),
         readme_cn: (
+            ("权限系统（Experimental）", "governance"),
             ("心理追踪", "psychology"),
             ("天气-目标联动", "weather"),
             ("知识交易", "trade_engine"),
@@ -211,6 +213,15 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
             assert module_name in EXPERIMENTAL_MODULES
             row = next(line for line in content.splitlines() if line.startswith(f"| {feature_name}"))
             assert "Experimental" in row, f"{feature_name} must match the release registry"
+
+    supported_en = next(
+        line for line in readme.splitlines() if line.startswith("| Supported |")
+    )
+    supported_zh = next(
+        line for line in readme_cn.splitlines() if line.startswith("| 稳定支持 |")
+    )
+    assert "governance" not in supported_en.lower()
+    assert "治理" not in supported_zh
 
 
 def test_manual_release_gate_covers_accessibility_and_transport_boundary() -> None:

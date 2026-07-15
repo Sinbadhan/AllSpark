@@ -26,8 +26,8 @@ passes; code presence alone is not validation.
 
 | Status | Scope |
 |--------|-------|
-| Supported | Python 3.10-3.12; desktop PROCESS mode; CLI and Web UI; local SQLite; rule-based assessment; knowledge search/import/export; resources, goals, tasks, diary, governance; local snapshot/restore; core Web flows with macOS VoiceOver |
-| Experimental | Windows screen-reader compatibility (NVDA, testing); Docker/INTEGRATION mode; real GGUF/LLM and GPU acceleration; microphone/STT/TTS; camera/vision; Raspberry Pi GPIO/I2C/Serial, sensors, power and hardware GPS; cross-host Spark Network; removable-media disaster recovery |
+| Supported | Python 3.10-3.12; desktop PROCESS mode; CLI and Web UI; local SQLite; rule-based assessment; knowledge search/import/export; resources, goals, tasks and diary; local snapshot/restore; core Web flows with macOS VoiceOver |
+| Experimental | Governance/RBAC (disabled until member identity and server-side authorization are verified); Windows screen-reader compatibility (NVDA, testing); Docker/INTEGRATION mode; real GGUF/LLM and GPU acceleration; microphone/STT/TTS; camera/vision; Raspberry Pi GPIO/I2C/Serial, sensors, power and hardware GPS; cross-host Spark Network; removable-media disaster recovery |
 | Not supported in v1.0.3 | Bluetooth and Wi-Fi Direct transports. The current Spark Network transport is TCP over LAN; radio availability detection is not a transport implementation. |
 
 Single-host, independent-process Spark Network exchange is covered by automated
@@ -78,14 +78,12 @@ accessibility claim.
 | Knowledge Trading (Experimental) | Propose/accept/reject/evaluate inter-node knowledge exchange protocol |
 | Image Recognition (Experimental) | Multi-modal analysis path; camera and target model runtime are not certified |
 
-### 👥 Multiplayer & Governance
+### 👥 Multiplayer & Governance (Experimental, Disabled)
 | Feature | Description |
 |---------|-------------|
-| Permission System | Commander/Specialist/Executor/Observer — 4-tier roles + permission matrix |
-| Dynamic Roles | Auto-recommend role promotion based on contribution and skills |
-| Conflict Mediation | Create → AI mediation → resolution full workflow |
-| Survival Value | 5-dimensional assessment (commander-only, advisory only) |
-| Organization Assessment | Auto-evaluate structure rationality, suggest grouping/role additions |
+| Permission System (Experimental) | A role matrix exists in prototype code, but no request or CLI subject is bound to a community member; it is not an enforced RBAC boundary. |
+| Governance operations (Unavailable) | Web and CLI member, role and conflict operations fail closed in v1. |
+| Survival Value (Unavailable) | Not exposed in the v1 product; a commander-only claim cannot be enforced without authenticated member identity. |
 
 ### 🌍 Environment & Navigation
 | Feature | Description |
@@ -292,7 +290,7 @@ AllSpark/
 | 1 — MVP | Rule engine + Tier 0 knowledge + CLI + 5D resources + personality + map | ✅ |
 | 2 — Intelligence | jieba tokenizer + local LLM + experience + Web UI + Tier 1-2 + i18n | Core complete; LLM Experimental |
 | 3 — Connectivity | SKF pack + knowledge verification + AllSpark Network + image recognition | SKF complete; network/vision Experimental |
-| 4 — Multiplayer | Permission system + dynamic roles + conflict mediation + knowledge trading + Tier 3 | ✅ |
+| 4 — Multiplayer | Experimental governance prototypes + knowledge trading + Tier 3 knowledge | Experimental |
 | 5 — Hardware | Power monitor + sensors + data preservation + boot optimization | Local preservation complete; hardware Experimental |
 | 6 — Goals & Environment | Goal engine + 3-level reset + daily briefing + timeline + diary + weather + psychology + GPS + environment + voice | Core complete; physical I/O Experimental |
 | 7 — Architecture & Docker | ServiceContainer DI + Command pattern + Bootstrap + i18n purification + Docker elastic deployment | Architecture complete; Docker Experimental |

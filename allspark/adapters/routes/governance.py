@@ -28,154 +28,63 @@ def _split_csv(s: str | None) -> list[str]:
     return [x.strip() for x in s.split(",") if x.strip()]
 
 
+def _governance_unavailable():
+    return error_response(
+        t("governance_access_unavailable"),
+        status=503,
+        detail=t("governance_access_unavailable_detail"),
+        next_action=t("governance_access_unavailable_next"),
+    )
+
+
 def register_governance_routes(app, check):
     @app.get("/api/governance/status")
     async def governance_status():
-        container, db = check()
-        gov_svc = _require_service(app, 'governance')
-        return gov_svc.get_status()
+        return _governance_unavailable()
 
     @app.post("/api/governance/member/add")
     async def governance_member_add(request: Request):
-        container, db = check()
-        gov_svc = _require_service(app, 'governance')
-        body = await _safe_json(request)
-        name = (body.get("name") or "").strip()
-        if not name:
-            return error_response(
-                t("error_name_required"),
-                detail=t("error_body_name"),
-            )
-        role = (body.get("role") or "executor").strip()
-        domains = body.get("domains") or []
-        if isinstance(domains, str):
-            domains = _split_csv(domains)
-        member = gov_svc.add_member(name, role=role, domains=list(domains))
-        return {"status": "ok", "member": {"id": member.id, "name": member.name, "role": member.role, "is_commander": member.is_commander}}
+        return _governance_unavailable()
 
     @app.post("/api/governance/member/remove")
     async def governance_member_remove(request: Request):
-        container, db = check()
-        gov_svc = _require_service(app, 'governance')
-        body = await _safe_json(request)
-        member_id = (body.get("member_id") or "").strip()
-        if not member_id:
-            return error_response(t("error_member_id_required"),
-                                  detail=t("error_body_member_id"))
-        if gov_svc.remove_member(member_id):
-            return {"status": "ok"}
-        return error_response(t("error_cannot_remove_member"), detail=t("error_member_not_found_detail", member_id=member_id))
+        return _governance_unavailable()
 
     @app.post("/api/governance/member/role")
     async def governance_member_role(request: Request):
-        container, db = check()
-        gov_svc = _require_service(app, 'governance')
-        body = await _safe_json(request)
-        member_id = (body.get("member_id") or "").strip()
-        role = (body.get("role") or "").strip()
-        if not member_id or not role:
-            return error_response(
-                t("error_member_id_and_role_required"),
-                detail=t("error_body_member_id_role"),
-            )
-        domains = body.get("domains")
-        if isinstance(domains, str):
-            domains = _split_csv(domains)
-        if gov_svc.assign_role(member_id, role, list(domains) if domains is not None else None):
-            return {"status": "ok"}
-        return error_response(t("error_cannot_assign_role"), detail=t("error_invalid_member_or_role", member_id=member_id, role=role))
+        return _governance_unavailable()
 
     @app.get("/api/governance/members")
     async def governance_members():
-        container, db = check()
-        gov_svc = _require_service(app, 'governance')
-        members = gov_svc.get_all_members()
-        return {"members": [
-            {"id": m.id, "name": m.name, "role": m.role, "domains": m.domains,
-             "skills": m.skills, "health_status": m.health_status,
-             "psychological_stability": m.psychological_stability,
-             "contribution_score": m.contribution_score,
-             "is_commander": m.is_commander}
-            for m in members
-        ]}
+        return _governance_unavailable()
 
     @app.get("/api/governance/assess")
     async def governance_assess():
-        container, db = check()
-        gov_svc = _require_service(app, 'governance')
-        return gov_svc.assess_organization()
+        return _governance_unavailable()
 
     @app.get("/api/governance/recommend")
     async def governance_recommend():
-        container, db = check()
-        gov_svc = _require_service(app, 'governance')
-        return {"recommendations": gov_svc.recommend_roles()}
+        return _governance_unavailable()
 
     @app.get("/api/governance/survival-value")
-    async def governance_survival_value(member_id: str = Query(...)):
-        container, db = check()
-        gov_svc = _require_service(app, 'governance')
-        result = gov_svc.calculate_survival_value(member_id)
-        if not result:
-            return error_response(t("error_cannot_remove_member"), detail=t("error_member_not_found_detail", member_id=member_id))
-        return result
+    async def governance_survival_value(member_id: str | None = Query(None)):
+        return _governance_unavailable()
 
     @app.post("/api/governance/conflict/create")
     async def governance_conflict_create(request: Request):
-        container, db = check()
-        gov_svc = _require_service(app, 'governance')
-        body = await _safe_json(request)
-        title = (body.get("title") or "").strip()
-        parties_raw = body.get("parties")
-        if not title or not parties_raw:
-            return error_response(
-                t("error_title_and_parties_required"),
-                detail=t("error_body_title_parties"),
-            )
-        parties = parties_raw if isinstance(parties_raw, list) else _split_csv(parties_raw)
-        conflict = gov_svc.create_conflict(title, body.get("description", ""), parties)
-        return {"status": "ok", "conflict_id": conflict.id}
+        return _governance_unavailable()
 
     @app.post("/api/governance/conflict/mediate")
     async def governance_conflict_mediate(request: Request):
-        container, db = check()
-        gov_svc = _require_service(app, 'governance')
-        body = await _safe_json(request)
-        conflict_id = (body.get("conflict_id") or "").strip()
-        if not conflict_id:
-            return error_response(t("error_conflict_id_required"),
-                                  detail=t("error_body_conflict_id"))
-        result = gov_svc.mediate_conflict(conflict_id)
-        if not result:
-            return error_response(t("error_conflict_not_found"), detail=t("error_conflict_not_found_detail", conflict_id=conflict_id))
-        return result
+        return _governance_unavailable()
 
     @app.post("/api/governance/conflict/resolve")
     async def governance_conflict_resolve(request: Request):
-        container, db = check()
-        gov_svc = _require_service(app, 'governance')
-        body = await _safe_json(request)
-        conflict_id = (body.get("conflict_id") or "").strip()
-        if not conflict_id:
-            return error_response(t("error_conflict_id_required"),
-                                  detail=t("error_body_conflict_id_resolution"))
-        resolution = body.get("resolution") or "Resolved"
-        if gov_svc.resolve_conflict(conflict_id, resolution):
-            return {"status": "ok"}
-        return error_response(t("error_cannot_resolve_conflict"), detail=t("error_conflict_not_found_detail", conflict_id=conflict_id))
+        return _governance_unavailable()
 
     @app.get("/api/governance/conflicts")
     async def governance_conflicts():
-        container, db = check()
-        gov_svc = _require_service(app, 'governance')
-        conflicts = gov_svc.get_all_conflicts()
-        return {"conflicts": [
-            {"id": c.id, "title": c.title, "parties": c.parties,
-             "status": c.status, "mediator": c.mediator,
-             "resolution": c.resolution, "created_at": c.created_at,
-             "resolved_at": c.resolved_at}
-            for c in conflicts
-        ]}
+        return _governance_unavailable()
 
     @app.get("/api/trade/status")
     async def trade_status():

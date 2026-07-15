@@ -2,6 +2,7 @@ from rich.table import Table
 
 from allspark.commands.base import BaseCommand
 from allspark.core.i18n import t
+from allspark.infrastructure.module_loader import PRODUCT_DISABLED_MODULES
 
 
 class GovernanceCommand(BaseCommand):
@@ -9,16 +10,16 @@ class GovernanceCommand(BaseCommand):
     ALIASES = ("社区", "gov", "成员")
 
     def _get_gov(self):
+        if "governance" in PRODUCT_DISABLED_MODULES:
+            return None
         gov = self.container.get("governance")
-        if not gov:
-            from allspark.services.governance import GovernanceEngine
-            llm = self.container.get("llm")
-            gov = GovernanceEngine(db=self.db, llm_engine=llm)
-            self.container.register("governance", gov)
         return gov
 
     def execute(self, args: list[str]) -> None:
         gov = self._get_gov()
+        if gov is None:
+            self.console.print(f"[yellow]{t('governance_access_unavailable')}[/]")
+            return
 
         if not args:
             status = gov.get_status()

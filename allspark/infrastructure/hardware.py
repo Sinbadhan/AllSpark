@@ -279,7 +279,9 @@ def compute_feature_flags(tier: HardwareTier, gpu_available: bool = False) -> Fe
         flags.kolibri = True
         flags.multimodal = gpu_available
         flags.self_learning = True
-        flags.governance = True
+        # No governance feature flag may enable the module until requests have
+        # a verifiable member identity and server-side authorization boundary.
+        flags.governance = False
         flags.trade_engine = gpu_available
         flags.power_monitor = True
         flags.sensor_hub = gpu_available
@@ -300,7 +302,7 @@ def compute_feature_flags(tier: HardwareTier, gpu_available: bool = False) -> Fe
         flags.kolibri = True
         flags.multimodal = True
         flags.self_learning = True
-        flags.governance = True
+        flags.governance = False
         flags.trade_engine = True
         flags.power_monitor = True
         flags.sensor_hub = True

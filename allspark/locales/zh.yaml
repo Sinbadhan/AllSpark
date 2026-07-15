@@ -1945,6 +1945,10 @@ error_operating_mode_unknown: '''{mode}'' 不是已知的运行模式。'
 error_operating_use_one_of: '请使用以下之一：{modes}'
 error_unknown_task_action: 未知操作 ''{action}''。请使用 start | complete | fail。
 # routes/governance.py
+governance_access_status: 治理状态 · Experimental
+governance_access_unavailable: 治理功能不在 v1 Stable 支持边界内。
+governance_access_unavailable_detail: 社区角色尚未绑定经过验证的成员身份，因此 Web 与 CLI 治理操作保持禁用，不把未执行的权限矩阵呈现为安全边界。
+governance_access_unavailable_next: 请使用已支持的单操作者生存流程；身份与服务端授权完成验证前，治理功能保持 Experimental。
 error_name_required: 缺少 name
 error_body_name: '请求体需包含 {name: ''<成员名称>''}。'
 error_member_id_required: 缺少 member_id

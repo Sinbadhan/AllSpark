@@ -70,6 +70,7 @@ EXPERIMENTAL_MODULES = frozenset({
     "spark_network",
     "vision_engine",
     "multimodal",
+    "governance",
     "trade_engine",
     "power_monitor",
     "sensor_hub",
@@ -81,6 +82,11 @@ EXPERIMENTAL_MODULES = frozenset({
     "environment",
     "voice",
 })
+
+# These capabilities stay unavailable even when a legacy profile or direct
+# caller sets the old hardware flag. Governance currently has no authenticated
+# CommunityMember subject, so loading it would expose an unenforced RBAC claim.
+PRODUCT_DISABLED_MODULES = frozenset({"governance"})
 
 DEPENDENCY_IMPORTS = {
     "knowledge_vector": ("sentence_transformers",),
@@ -128,9 +134,10 @@ CONFIGURATION_REQUIRED = frozenset({
 class ModuleRegistry:
     def __init__(self, flags: FeatureFlags):
         self.flags = flags
+        self.flags.governance = False
         self._modules: dict[str, ModuleDef] = {}
         self._loaded: dict[str, Any] = {}
-        self._disabled: set[str] = set()
+        self._disabled: set[str] = set(PRODUCT_DISABLED_MODULES)
         for mod in MODULE_DEFINITIONS:
             self._modules[mod.name] = ModuleDef(
                 name=mod.name,
@@ -181,7 +188,7 @@ class ModuleRegistry:
         return True
 
     def enable(self, module_name: str) -> bool:
-        if module_name not in self._modules:
+        if module_name not in self._modules or module_name in PRODUCT_DISABLED_MODULES:
             return False
         self._disabled.discard(module_name)
         return True
@@ -391,6 +398,7 @@ class ModuleRegistry:
         for k, v in flags_dict.items():
             if hasattr(flags, k):
                 setattr(flags, k, v)
+        flags.governance = False
         if "recommended_deploy_mode" not in flags_dict:
             flags.recommended_deploy_mode = flags.deploy_mode
         if "docker_eligible" not in flags_dict:
@@ -405,7 +413,7 @@ class ModuleRegistry:
         disabled_json = profile.get("disabled_modules", "[]")
         try:
             disabled = json.loads(disabled_json)
-            registry._disabled = set(disabled)
+            registry._disabled = set(disabled) | set(PRODUCT_DISABLED_MODULES)
         except (json.JSONDecodeError, TypeError):
             pass
 
