@@ -2,11 +2,16 @@ from rich.table import Table
 
 from allspark.commands.base import BaseCommand
 from allspark.core.i18n import t
+from allspark.services.resource_manager import ResourceValidationError
 
 
 class PowerCommand(BaseCommand):
     COMMAND_NAME = "power"
     ALIASES = ("电力", "电量")
+
+    @staticmethod
+    def _measurement(value, unit: str = "") -> str:
+        return t("power_value_unknown") if value is None else f"{value}{unit}"
 
     def _get_pm(self):
         pm = self.container.get("power_monitor")
@@ -27,12 +32,22 @@ class PowerCommand(BaseCommand):
             table.add_column(t("field_value"))
             table.add_row(t("field_monitoring"), f"✅ {t('field_active_status')}" if status["monitoring"] else f"❌ {t('field_stopped')}")
             table.add_row(t("field_gpio"), "✅" if status["gpio_available"] else "❌")
-            table.add_row(t("field_voltage"), f"{reading.voltage_v}V")
-            table.add_row(t("field_current"), f"{reading.current_a}A")
-            table.add_row(t("field_power"), f"{reading.power_w}W")
-            table.add_row(t("field_energy"), f"{reading.energy_wh}Wh")
-            table.add_row(t("field_battery"), f"{reading.battery_percent}%")
-            table.add_row(t("field_charging"), "✅" if reading.charging else "❌")
+            table.add_row(t("field_voltage"), self._measurement(reading.voltage_v, "V"))
+            table.add_row(t("field_current"), self._measurement(reading.current_a, "A"))
+            table.add_row(t("field_power"), self._measurement(reading.power_w, "W"))
+            table.add_row(t("field_energy"), self._measurement(reading.energy_wh, "Wh"))
+            battery = (
+                f"{reading.battery_percent}%"
+                if reading.has_trusted_battery_percent
+                else t("power_value_unknown")
+            )
+            charging_display = (
+                t("power_value_unknown")
+                if reading.charging is None
+                else "✅" if reading.charging else "❌"
+            )
+            table.add_row(t("field_battery"), battery)
+            table.add_row(t("field_charging"), charging_display)
             table.add_row(t("field_source"), reading.source)
             self.console.print(table)
 
@@ -44,6 +59,8 @@ class PowerCommand(BaseCommand):
             runtime = pm.estimate_runtime()
             if runtime.get("estimated_hours") is None:
                 self.console.print(f"\n[dim]{t('power_runtime_unknown')}[/]")
+            elif runtime["estimated_hours"] == pm.SUSTAINED:
+                self.console.print(f"\n[dim]{t('power_runtime_sustained')}[/]")
             else:
                 self.console.print(f"\n[dim]{t('est_runtime', hours=runtime['estimated_hours'], mode=runtime.get('mode_recommendation', '?'))}[/]")
 
@@ -54,16 +71,40 @@ class PowerCommand(BaseCommand):
 
         if sub in ("start", "开始"):
             interval = int(args[1]) if len(args) > 1 else 60
-            result = pm.start_monitoring(interval)
+            pm.start_monitoring(interval)
             self.console.print(f"[green]✅ {t('power_monitor_started', interval=interval)}[/]")
         elif sub in ("stop", "停止"):
             pm.stop_monitoring()
             self.console.print(f"[yellow]{t('power_monitor_stopped')}[/]")
         elif sub in ("input", "手动", "输入"):
-            wh = float(args[1]) if len(args) > 1 else 0
-            charging = len(args) > 2 and args[2].lower() in ("true", "yes", "1", "charging", "充电")
-            result = pm.manual_input(wh, charging)
-            self.console.print(f"[green]{t('power_updated', wh=wh, battery=result['reading']['battery_percent'])}[/]")
+            if len(args) < 2:
+                self.console.print(f"[red]{t('power_input_required')}[/]")
+                return
+            wh = args[1]
+            charging_observed = None
+            if len(args) > 2:
+                charging_value = args[2].lower()
+                if charging_value in ("true", "yes", "1", "charging", "充电"):
+                    charging_observed = True
+                elif charging_value in (
+                    "false", "no", "0", "not-charging", "未充电", "否"
+                ):
+                    charging_observed = False
+                else:
+                    self.console.print(
+                        f"[red]{t('power_invalid_charging', value=args[2])}[/]"
+                    )
+                    return
+            try:
+                result = pm.manual_input(wh, charging_observed)
+            except ResourceValidationError as exc:
+                self.console.print(
+                    f"[red]{t(f'error_resource_{exc.reason}', field=exc.field)}[/]"
+                )
+                return
+            self.console.print(
+                f"[green]{t('power_updated', wh=result['reading']['energy_wh'])}[/]"
+            )
         elif sub in ("source", "电源"):
             if len(args) >= 4 and args[1].lower() in ("add", "添加"):
                 pm.register_source(args[2], args[3])
@@ -73,14 +114,23 @@ class PowerCommand(BaseCommand):
                 if sources:
                     for s in sources:
                         icon = "🟢" if s.available else "🔴"
-                        self.console.print(f"  {icon} {s.name} ({s.type}): {s.power_w}W")
+                        self.console.print(
+                            f"  {icon} {s.name} ({s.type}): "
+                            f"{self._measurement(s.power_w, 'W')}"
+                        )
                 else:
                     self.console.print(f"[dim]{t('power_no_sources')}[/]")
         elif sub in ("history", "历史"):
             history = pm.get_history(20)
             if history:
                 for h in history[-10:]:
-                    self.console.print(f"  {h['timestamp'][:19]}: {h['energy_wh']}Wh {h['battery_percent']}%")
+                    energy = self._measurement(h["energy_wh"], "Wh")
+                    battery = (
+                        f"{h['battery_percent']}%"
+                        if h["battery_percent_known"]
+                        else t("power_value_unknown")
+                    )
+                    self.console.print(f"  {h['timestamp'][:19]}: {energy} {battery}")
             else:
                 self.console.print(f"[dim]{t('power_no_history')}[/]")
         else:

@@ -304,8 +304,8 @@ def test_partial_power_reading_preserves_energy_without_inventing_rate_state(man
     reading = PowerMonitor(db=manager.db, resource_manager=manager)._read_simulated()
     assert reading.source == "from_db_partial"
     assert reading.energy_wh == 500
-    assert reading.battery_percent == 0
-    assert reading.charging is False
+    assert reading.battery_percent is None
+    assert reading.charging is None
 
 
 def test_partial_sensor_merge_uses_mixed_source_and_oldest_snapshot(manager):

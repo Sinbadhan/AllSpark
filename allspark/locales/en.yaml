@@ -438,7 +438,7 @@ sensor_usage: "Usage:\n  sensor list              — List devices\n  sensor add
   \ snapshot"
 power_usage: "Usage:\n  power status           — Current status\n  power start [interval]\
   \ — Start monitoring\n  power stop             — Stop monitoring\n  power input\
-  \ <Wh> [charge]— Manual input\n  power source add <name> <type>— Register source\n\
+  \ <Wh> [charging|not-charging] — Manual input; omit for unknown charging state\n  power source add <name> <type>— Register source\n\
   \  power history           — History log"
 preserve_usage: "Usage:\n  preserve start [interval]— Start auto-save\n  preserve\
   \ stop           — Stop auto-save\n  preserve backup         — Backup now\n  preserve\
@@ -520,8 +520,8 @@ field_known_nodes: Known Nodes
 field_voltage: Voltage
 field_current: Current
 field_power: Power
-field_energy: Energy
-field_battery: Battery
+field_energy: Current energy
+field_battery: Battery state of charge (SoC)
 field_charging: Charging
 field_source: Source
 field_multimodal: Multimodal
@@ -624,7 +624,11 @@ trade_not_found: Trade {id} not found
 trade_cancelled: Trade {id} cancelled
 trade_cannot_cancel: Cannot cancel {id}
 trade_unknown_cmd: 'Unknown trade command: {cmd}'
-power_updated: '✅ Updated: {wh}Wh battery={battery}%'
+power_updated: '✅ Updated: {wh}Wh; battery percentage remains unknown without trusted device SoC'
+power_value_unknown: ◇ Unknown for now
+power_runtime_sustained: Net intake covers use, so current power is sustained; this does not indicate battery state of charge.
+power_invalid_charging: 'Unrecognized charging state “{value}”; use charging|not-charging, or omit it to keep the state unknown.'
+power_input_required: 'Current energy in Wh is required. No resource data was changed. Usage: power input <Wh> [charging|not-charging]'
 power_source_registered: '✅ Source registered: {name} ({type})'
 power_no_sources: No power sources registered
 power_no_history: No history

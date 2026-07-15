@@ -13,13 +13,27 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PowerReading:
     timestamp: str
-    voltage_v: float = 0.0
-    current_a: float = 0.0
-    power_w: float = 0.0
-    energy_wh: float = 0.0
+    voltage_v: Optional[float] = None
+    current_a: Optional[float] = None
+    power_w: Optional[float] = None
+    energy_wh: Optional[float] = None
     source: str = "unknown"
-    battery_percent: float = 0.0
-    charging: bool = False
+    battery_percent: Optional[float] = None
+    battery_percent_source: Optional[str] = None
+    battery_percent_as_of: Optional[str] = None
+    battery_percent_trusted: bool = False
+    charging: Optional[bool] = None
+
+    @property
+    def has_trusted_battery_percent(self) -> bool:
+        """Whether SoC came directly from a trusted, timestamped device."""
+        return bool(
+            self.battery_percent_trusted
+            and self.battery_percent_source
+            and self.battery_percent_as_of
+            and self.battery_percent is not None
+            and 0 <= self.battery_percent <= 100
+        )
 
 
 @dataclass
@@ -27,9 +41,9 @@ class PowerSource:
     name: str
     type: str
     available: bool = False
-    voltage_v: float = 0.0
-    current_a: float = 0.0
-    power_w: float = 0.0
+    voltage_v: Optional[float] = None
+    current_a: Optional[float] = None
+    power_w: Optional[float] = None
 
 
 class PowerMonitor:
@@ -85,7 +99,11 @@ class PowerMonitor:
                 if self.db:
                     self._update_db(reading)
 
-                if reading.battery_percent < 10 and reading.power_w > 0:
+                if (
+                    reading.has_trusted_battery_percent
+                    and reading.battery_percent is not None
+                    and reading.battery_percent < 10
+                ):
                     if self._on_critical:
                         try:
                             self._on_critical(reading)
@@ -115,8 +133,6 @@ class PowerMonitor:
 
             battery_voltage = voltage * 5.0
             reading.voltage_v = round(battery_voltage, 2)
-            reading.battery_percent = max(0, min(100, (battery_voltage / 12.6) * 100))
-            reading.charging = battery_voltage > 12.8
             reading.source = "gpio_adc"
 
             spi.close()
@@ -134,53 +150,40 @@ class PowerMonitor:
             if (
                 power
                 and power.amount_known
-                and power.current_amount > 0
                 and manager.has_complete_rate_data(power)
             ):
-                hours = power.estimated_remaining_hours
-                pct = min(100, max(0, (hours / 72.0) * 100))
                 return PowerReading(
                     timestamp=datetime.now().isoformat(),
-                    voltage_v=0.0,
-                    current_a=0.0,
-                    power_w=0.0,
                     energy_wh=power.current_amount,
-                    battery_percent=round(pct, 1),
-                    charging=power.daily_intake > power.daily_consumption,
                     source="from_db",
                 )
-            if power and power.amount_known and power.current_amount > 0:
+            if power and power.amount_known:
                 return PowerReading(
                     timestamp=datetime.now().isoformat(),
-                    voltage_v=0.0,
-                    current_a=0.0,
-                    power_w=0.0,
                     energy_wh=power.current_amount,
-                    battery_percent=0.0,
-                    charging=False,
                     source="from_db_partial",
                 )
 
         return PowerReading(
             timestamp=datetime.now().isoformat(),
-            voltage_v=0.0,
-            current_a=0.0,
-            power_w=0.0,
-            energy_wh=0.0,
-            battery_percent=0.0,
-            charging=False,
             source="no_data",
         )
 
     def _update_db(self, reading: PowerReading):
         try:
             power = self.db.get_resource(ResourceType.POWER)
-            if power and reading.energy_wh > 0:
+            if power and reading.energy_wh is not None:
                 manager = self._get_resource_manager()
                 manager.merge_resource_observation(
                     ResourceType.POWER,
                     amount=reading.energy_wh,
-                    intake=reading.power_w * 24 if reading.charging and reading.power_w > 0 else None,
+                    intake=(
+                        reading.power_w * 24
+                        if reading.charging is True
+                        and reading.power_w is not None
+                        and reading.power_w > 0
+                        else None
+                    ),
                     source="sensor",
                     as_of=reading.timestamp,
                 )
@@ -226,46 +229,47 @@ class PowerMonitor:
 
     def get_history(self, last_n: int = 100) -> list[dict]:
         readings = self._history[-last_n:]
-        return [
-            {
-                "timestamp": r.timestamp,
-                "voltage_v": r.voltage_v,
-                "current_a": r.current_a,
-                "power_w": r.power_w,
-                "energy_wh": r.energy_wh,
-                "battery_percent": r.battery_percent,
-                "charging": r.charging,
-                "source": r.source,
-            }
-            for r in readings
-        ]
+        return [self._reading_payload(r, include_timestamp=True) for r in readings]
+
+    @staticmethod
+    def _reading_payload(reading: PowerReading, *, include_timestamp: bool = False) -> dict:
+        soc_known = reading.has_trusted_battery_percent
+        payload = {
+            "voltage_v": reading.voltage_v,
+            "current_a": reading.current_a,
+            "power_w": reading.power_w,
+            "energy_wh": reading.energy_wh,
+            "battery_percent": reading.battery_percent if soc_known else None,
+            "battery_percent_known": soc_known,
+            "battery_percent_source": reading.battery_percent_source if soc_known else None,
+            "battery_percent_as_of": reading.battery_percent_as_of if soc_known else None,
+            "charging": reading.charging,
+            "source": reading.source,
+        }
+        if include_timestamp:
+            payload = {"timestamp": reading.timestamp, **payload}
+        return payload
 
     def get_status(self) -> dict:
         reading = self.get_current_reading()
         return {
             "monitoring": self._running,
             "gpio_available": self._gpio_available,
-            "current": {
-                "voltage_v": reading.voltage_v,
-                "current_a": reading.current_a,
-                "power_w": reading.power_w,
-                "energy_wh": reading.energy_wh,
-                "battery_percent": reading.battery_percent,
-                "charging": reading.charging,
-                "source": reading.source,
-            },
+            "current": self._reading_payload(reading),
             "sources_registered": len(self._sources),
             "sources_active": len(self.get_active_sources()),
             "history_entries": len(self._history),
         }
 
-    def manual_input(self, energy_wh: float, charging: bool = False,
+    def manual_input(self, energy_wh: float, charging: Optional[bool] = None,
                      daily_consumption: float = None,
                      daily_intake: float = None) -> dict:
+        manager = self._get_resource_manager()
+        energy_wh = manager.validate_value("amount", energy_wh)
         if self.db:
             power = self.db.get_resource(ResourceType.POWER)
             if power:
-                self._get_resource_manager().merge_resource_observation(
+                manager.merge_resource_observation(
                     ResourceType.POWER,
                     amount=energy_wh,
                     consumption=daily_consumption,
@@ -274,31 +278,15 @@ class PowerMonitor:
                     as_of=datetime.now().isoformat(),
                 )
 
-        pct = 0.0
-        if self.db:
-            power = self.db.get_resource(ResourceType.POWER)
-            manager = self._get_resource_manager()
-            if (
-                power
-                and manager.has_complete_rate_data(power)
-                and power.estimated_remaining_hours > 0
-            ):
-                pct = min(100, max(0, (power.estimated_remaining_hours / 72.0) * 100))
-
         reading = PowerReading(
             timestamp=datetime.now().isoformat(),
             energy_wh=energy_wh,
-            battery_percent=round(pct, 1),
             charging=charging,
             source="manual",
         )
         self._current_reading = reading
 
-        return {"status": "ok", "reading": {
-            "energy_wh": reading.energy_wh,
-            "battery_percent": reading.battery_percent,
-            "charging": reading.charging,
-        }}
+        return {"status": "ok", "reading": self._reading_payload(reading)}
 
     # Sentinel: -1 means "sustained / cannot estimate".
     SUSTAINED = -1.0

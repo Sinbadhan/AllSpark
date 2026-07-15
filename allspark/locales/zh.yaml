@@ -401,7 +401,7 @@ sensor_usage: "用法:\n  传感器 list              — 设备列表\n  传感
   \  传感器 start             — 开始轮询\n  传感器 stop              — 停止轮询\n  传感器 input <名>\
   \ <值>   — 手动输入\n  传感器 detect            — 自动检测\n  传感器 snapshot           — 环境快照"
 power_usage: "用法:\n  电力 status           — 当前状态\n  电力 start [间隔秒]   — 开始监控\n  电力 stop\
-  \             — 停止监控\n  电力 input <Wh> [充电] — 手动输入\n  电力 source add <名> <类型> — 注册电源\n\
+  \             — 停止监控\n  电力 input <Wh> [充电|未充电] — 手动输入；省略则充电状态未知\n  电力 source add <名> <类型> — 注册电源\n\
   \  电力 history           — 历史记录"
 preserve_usage: "用法:\n  固化 start [间隔秒]     — 开始自动保存\n  固化 stop              — 停止自动保存\n\
   \  固化 backup            — 立即备份\n  固化 snapshot          — 创建快照\n  固化 restore <文件>\
@@ -478,8 +478,8 @@ field_known_nodes: 已知节点
 field_voltage: 电压
 field_current: 电流
 field_power: 功率
-field_energy: 电量
-field_battery: 电池
+field_energy: 当前能量
+field_battery: 电池荷电百分比 (SoC)
 field_charging: 充电中
 field_source: 来源
 field_multimodal: 多模态
@@ -579,7 +579,11 @@ trade_not_found: 交易 {id} 未找到
 trade_cancelled: 交易 {id} 已取消
 trade_cannot_cancel: 无法取消 {id}
 trade_unknown_cmd: '未知交易命令: {cmd}'
-power_updated: '✅ 已更新: {wh}Wh 电池={battery}%'
+power_updated: '✅ 已更新: {wh}Wh；未提供受信设备 SoC，电池百分比保持未知'
+power_value_unknown: ◇ 暂时未知
+power_runtime_sustained: 净补充不低于净消耗，当前电力可持续；该结论不代表电池荷电百分比。
+power_invalid_charging: '无法识别充电状态“{value}”；请使用 充电|未充电，或省略以保持未知。'
+power_input_required: 必须提供当前能量 Wh；资源数据未更改。用法：电力 input <Wh> [充电|未充电]
 power_source_registered: '✅ 电源已注册: {name} ({type})'
 power_no_sources: 暂无已注册电源
 power_no_history: 暂无历史记录

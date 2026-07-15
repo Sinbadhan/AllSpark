@@ -1,9 +1,12 @@
 """Hardware API routes: power, sensor, preserve."""
 
-from fastapi import Query
+from typing import Optional
+
+from fastapi import HTTPException, Query
 
 from allspark.adapters.routes.helpers import _require_service
 from allspark.core.i18n import t
+from allspark.services.resource_manager import ResourceValidationError
 
 
 def register_hardware_routes(app, check):
@@ -28,11 +31,17 @@ def register_hardware_routes(app, check):
     @app.post("/api/power/manual")
     async def power_manual(
         energy_wh: float = Query(...),
-        charging: bool = Query(False),
+        charging: Optional[bool] = Query(None),
     ):
         container, db = check()
         power_svc = _require_service(app, 'power_monitor')
-        return power_svc.manual_input(energy_wh, charging)
+        try:
+            return power_svc.manual_input(energy_wh, charging)
+        except ResourceValidationError as exc:
+            raise HTTPException(
+                status_code=422,
+                detail=t(f"error_resource_{exc.reason}", field=exc.field),
+            ) from exc
 
     @app.get("/api/power/runtime")
     async def power_runtime():

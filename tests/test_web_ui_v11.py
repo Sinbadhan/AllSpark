@@ -20,6 +20,7 @@ from allspark.adapters.web_ui import create_app
 from allspark.core.database import Database
 from allspark.infrastructure.hardware import FeatureFlags
 from allspark.infrastructure.module_loader import ModuleRegistry
+from allspark.services.power_monitor import PowerReading
 
 
 class TempDb:
@@ -107,6 +108,62 @@ def test_about_returns_version_and_flags():
         assert isinstance(data["feature_flags"], dict)
         assert "license" in data
         assert data["homepage"].startswith("http")
+
+
+def test_power_api_keeps_manual_measurements_and_soc_separate():
+    with TempDb() as path:
+        c = _client(path)
+        manual = c.post("/api/power/manual?energy_wh=50")
+        assert manual.status_code == 200
+        reading = manual.json()["reading"]
+        assert reading["energy_wh"] == 50
+        assert reading["battery_percent"] is None
+        assert reading["battery_percent_known"] is False
+        assert reading["battery_percent_source"] is None
+        assert reading["battery_percent_as_of"] is None
+        assert reading["charging"] is None
+
+        current = c.get("/api/power/status").json()["current"]
+        assert current == reading
+
+        explicit = c.post("/api/power/manual?energy_wh=50&charging=false").json()
+        assert explicit["reading"]["charging"] is False
+
+
+@pytest.mark.parametrize("invalid_soc", [float("nan"), -1.0, 101.0, float("inf")])
+def test_power_api_never_serializes_invalid_trusted_soc(invalid_soc):
+    with TempDb() as path:
+        c = _client(path)
+        monitor = c.app.state.container.get("power_monitor")
+        monitor._current_reading = PowerReading(
+            timestamp="2026-07-15T12:00:00+08:00",
+            battery_percent=invalid_soc,
+            battery_percent_source="trusted_bms",
+            battery_percent_as_of="2026-07-15T12:00:00+08:00",
+            battery_percent_trusted=True,
+            source="battery_management_system",
+        )
+
+        response = c.get("/api/power/status")
+        assert response.status_code == 200
+        current = response.json()["current"]
+        assert current["battery_percent"] is None
+        assert current["battery_percent_known"] is False
+        assert current["battery_percent_source"] is None
+        assert current["battery_percent_as_of"] is None
+
+
+@pytest.mark.parametrize("invalid_wh", ["nan", "inf", "-1"])
+def test_power_manual_api_rejects_invalid_wh_without_writing(invalid_wh):
+    with TempDb() as path:
+        c = _client(path)
+        before = c.get("/api/power/status").json()["current"]
+
+        response = c.post(f"/api/power/manual?energy_wh={invalid_wh}")
+
+        assert response.status_code == 422
+        after = c.get("/api/power/status").json()["current"]
+        assert after == before
 
 
 def test_language_switch_round_trip():

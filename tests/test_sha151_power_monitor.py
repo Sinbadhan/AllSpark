@@ -27,7 +27,7 @@ def test_read_simulated_with_db():
     r = m._read_simulated()
     assert r.source == "from_db"
     assert r.energy_wh == 200.0
-    assert r.charging is False  # intake 10 < consumption 50
+    assert r.charging is None  # Daily rates are not an instantaneous observation.
 
 
 def test_read_simulated_no_db():
@@ -40,7 +40,10 @@ def test_read_simulated_db_power_zero():
     db = MagicMock()
     db.get_resource.return_value = _power(current=0.0)
     m = PowerMonitor(db=db)
-    assert m._read_simulated().source == "no_data"  # current_amount not > 0
+    reading = m._read_simulated()
+    assert reading.source == "from_db"
+    assert reading.energy_wh == 0.0
+    assert reading.battery_percent is None
 
 
 def test_read_gpio_fallback_to_simulated(monkeypatch):
@@ -155,17 +158,16 @@ def test_monitor_loop_one_iteration_then_stops(monkeypatch):
 
 def test_monitor_loop_critical_callback(tmp_path, monkeypatch):
     db = Database(tmp_path / "pm3.db")
-    db.upsert_resource(_power(current=5.0, hours=3.0))  # low hours -> ~4% battery
+    db.upsert_resource(_power(current=5.0, hours=3.0))
     m = PowerMonitor(db=db)
     monkeypatch.setattr(pm_mod.time, "sleep", lambda s: setattr(m, "_running", False))
     m._running = True
-    m._monitor_loop(1)  # reading from db has battery<10 but power_w=0 -> no critical
+    m._monitor_loop(1)  # Runtime is short, but SoC is unknown and cannot trigger.
     db.close()
-    # Now force a critical via a reading with power_w>0 and battery<10.
+    # An unknown SoC never triggers the callback.
     m2 = PowerMonitor()
     fired = []
     m2._on_critical = lambda r: fired.append(r)
-    # _read_simulated returns power_w=0, so critical won't fire; assert no raise instead.
     monkeypatch.setattr(pm_mod.time, "sleep", lambda s: setattr(m2, "_running", False))
     m2._running = True
     m2._monitor_loop(1)

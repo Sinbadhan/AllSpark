@@ -281,6 +281,11 @@ class ResourceManager:
             raise ResourceValidationError(field, "too_large")
         return number
 
+    @classmethod
+    def validate_value(cls, field: str, value: Any, *, positive: bool = False) -> float:
+        """Validate a resource number for controlled service entry points."""
+        return cls._validate_value(field, value, positive=positive)
+
     @staticmethod
     def _validate_people_count(value: Any) -> int:
         if isinstance(value, bool):
