@@ -1,5 +1,5 @@
-# Non-authoritative local working notes; SHA-158 + tracked docs own release truth
-PRD.md
+# Non-authoritative local working notes; tracked PRD owns product requirements,
+# while SHA-158 owns live release facts and evidence.
 PROGRESS.md
 ARCHITECTURE.md
 REVIEW-PLAN.md
