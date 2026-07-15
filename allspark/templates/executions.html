@@ -91,7 +91,7 @@ const GOAL_I18N = {
 
 async function refreshExecutions() {
   try {
-    const tasks = await api("/api/tasks");
+    const tasks = await api("/api/tasks?include_terminal=true");
     const experiences = await api("/api/experience?limit=20");
     const container = document.getElementById("exec-list");
 
@@ -136,7 +136,7 @@ async function refreshExecutions() {
             <div class="text-on-surface-variant text-xs mt-0.5">Phase ${t.phase} · Priority ${t.priority}</div>
           </div>
           <div class="text-on-surface-variant text-right hidden md:block">
-            <div class="text-sm ${isFailed ? 'text-critical' : isSuccess ? 'text-success' : isActive ? 'text-primary' : 'text-secondary'}">${t.status}</div>
+            <div class="text-sm ${isFailed ? 'text-critical' : isSuccess ? 'text-success' : isActive ? 'text-primary' : 'text-secondary'}">${I18N['web_task_status_' + t.status] || t.status}</div>
           </div>
           <div style="display:flex;gap:4px;">${actions}</div>
           <span class="material-symbols-outlined text-on-surface-variant">expand_more</span>

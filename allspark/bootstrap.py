@@ -15,6 +15,7 @@ from allspark.infrastructure.hardware import (
     resolve_runtime_deploy_mode,
 )
 from allspark.infrastructure.module_loader import ModuleRegistry
+from allspark.services.action_loop import ActionLoopService
 from allspark.services.experience_engine import ExperienceEngine
 from allspark.services.initial_assessment import InitialAssessmentService
 from allspark.services.knowledge_engine import KnowledgeEngine
@@ -284,6 +285,15 @@ class ApplicationBootstrap:
 
         survival_plan = SurvivalPlanService(self.db, resource_mgr)
         self.container.register("survival_plan", survival_plan)
+
+        action_loop = ActionLoopService(
+            self.db,
+            resource_mgr,
+            survival_plan,
+            planner,
+            timeline_provider=lambda: self.container.get("timeline"),
+        )
+        self.container.register("action_loop", action_loop)
 
     def _load_knowledge(self):
         registry = self.registry

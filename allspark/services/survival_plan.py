@@ -60,6 +60,30 @@ class SurvivalPlanService:
     ) -> SurvivalPlan:
         snapshot_now = now or datetime.now(timezone.utc)
         resources = self._assessment_resources(assessment)
+        return self._generate_from_facts(
+            assessment,
+            resources,
+            snapshot_now=snapshot_now,
+        )
+
+    def generate_current(self, *, now: datetime | None = None) -> SurvivalPlan:
+        """Reassess persisted facts without refreshing their observation time."""
+        snapshot_now = now or datetime.now(timezone.utc)
+        resources = self.resource_manager.get_all_resources()
+        assessment = self._current_assessment(resources)
+        return self._generate_from_facts(
+            assessment,
+            resources,
+            snapshot_now=snapshot_now,
+        )
+
+    def _generate_from_facts(
+        self,
+        assessment: dict[str, Any],
+        resources: list[Resource],
+        *,
+        snapshot_now: datetime,
+    ) -> SurvivalPlan:
         phase, phase_missing, phase_stale = evaluate_phase_truth(
             resources, self.resource_manager, now=snapshot_now
         )
@@ -110,6 +134,84 @@ class SurvivalPlanService:
             actions=actions,
             created_at=snapshot_now.isoformat(),
         )
+
+    def _current_assessment(self, resources: list[Resource]) -> dict[str, Any]:
+        survivor = self.db.get_survivor_state()
+
+        def fact(name: str) -> dict[str, Any]:
+            status = survivor.get(f"{name}_status", "unknown")
+            value = survivor.get(name)
+            if status != "known" or value in (None, "", "unknown"):
+                return {"status": "unknown", "value": None}
+            return {"status": "known", "value": value}
+
+        people_status = survivor.get("people_count_status", "unknown")
+        people_value: int | None = None
+        if people_status == "known":
+            try:
+                people_value = int(survivor.get("people_count", ""))
+            except (TypeError, ValueError):
+                people_value = None
+        if people_value is None:
+            people_value = next(
+                (
+                    resource.people_count
+                    for resource in resources
+                    if resource.people_count_known and resource.people_count > 0
+                ),
+                None,
+            )
+            people_status = "known" if people_value is not None else "unknown"
+
+        threat_status = survivor.get("threats_status", "unknown")
+        threat_values = [
+            value
+            for value in survivor.get("threats", "").split(",")
+            if value
+        ]
+        if threat_status not in {"none", "selected"}:
+            threat_status = "unknown"
+            threat_values = []
+
+        resource_contract = {}
+        for resource in resources:
+            rates_known = (
+                resource.consumption_known
+                and resource.intake_known
+                and resource.rate_basis == "group_total"
+            )
+            resource_contract[resource.type.value] = {
+                "status": "known" if resource.amount_known else "unknown",
+                "amount": resource.current_amount if resource.amount_known else None,
+                "unit": resource.unit,
+                "rates": {
+                    "status": "estimate" if rates_known else "unknown",
+                    "basis": resource.rate_basis if rates_known else None,
+                    "daily_consumption": (
+                        resource.daily_consumption if rates_known else None
+                    ),
+                    "daily_intake": resource.daily_intake if rates_known else None,
+                },
+                "source": resource.source,
+                "as_of": resource.as_of,
+            }
+
+        observed_times = sorted(
+            resource.as_of for resource in resources if resource.as_of
+        )
+        return {
+            "people_count": {
+                "status": people_status,
+                "value": people_value,
+            },
+            "health": fact("health"),
+            "urgency": fact("urgency"),
+            "shelter": fact("shelter"),
+            "threats": {"status": threat_status, "values": threat_values},
+            "resources": resource_contract,
+            "as_of": observed_times[-1] if observed_times else "",
+            "confirmed": True,
+        }
 
     def validate_selection(
         self,
@@ -417,7 +519,7 @@ class SurvivalPlanService:
                                     "resource": domain,
                                     "remaining_status": "finite",
                                     "remaining_hours": round(hours, 3),
-                                    "as_of": facts["as_of"],
+                                    "as_of": resource.as_of,
                                 }
                             ],
                             reassess_at="PT1H",
@@ -440,7 +542,7 @@ class SurvivalPlanService:
                                 "resource": "fire",
                                 "amount": resource.current_amount,
                                 "unit": resource.unit,
-                                "as_of": facts["as_of"],
+                                "as_of": resource.as_of,
                             }
                         ],
                         reassess_at="PT4H",

@@ -1,4 +1,6 @@
+import hashlib
 import logging
+import uuid
 from datetime import datetime
 
 from allspark.core.config import PHASE_DESC_KEYS, PHASE_GOAL_KEYS
@@ -178,6 +180,46 @@ class MissionPlanner:
 
     def get_all_active(self) -> list[Task]:
         return self.db.get_active_tasks()
+
+    def create_task(
+        self,
+        *,
+        title: str,
+        description: str = "",
+        phase: int | None = None,
+        priority: int = 20,
+        source: str = "manual",
+        source_ref: str = "",
+    ) -> tuple[Task, bool]:
+        normalized_title = title.strip()
+        if not normalized_title:
+            raise ValueError("task title is required")
+        if source_ref:
+            existing = self.db.get_task_by_source(source, source_ref)
+            if existing is not None:
+                return existing, False
+            digest = hashlib.sha256(
+                f"{source}:{source_ref}".encode("utf-8")
+            ).hexdigest()[:16]
+            task_id = f"task-{source}-{digest}"
+        else:
+            task_id = f"task-manual-{uuid.uuid4().hex[:12]}"
+        now = datetime.now().isoformat()
+        task = Task(
+            id=task_id,
+            phase=phase if phase is not None else -1,
+            priority=priority,
+            title=normalized_title,
+            description=description.strip(),
+            status="pending",
+            task_type=TaskType.MAIN.value,
+            source=source,
+            source_ref=source_ref,
+            created_at=now,
+            updated_at=now,
+        )
+        self.db.save_task(task)
+        return task, True
 
     def calculate_priority(self, task: Task, *,
                            urgency: float = 0.5,

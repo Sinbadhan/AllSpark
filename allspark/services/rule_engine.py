@@ -35,6 +35,7 @@ class RuleEngine:
         self.planner = container.get("mission_planner")
         self.llm = container.get("llm")
         self.crisis_support = container.get("crisis_support") or SelfHarmSupport()
+        self.action_loop = container.get("action_loop")
         self._assessment_cache: dict | None = None
         self._assessment_cache_time = 0.0
         self._assessment_cache_ttl = 60
@@ -68,12 +69,36 @@ class RuleEngine:
         *,
         conversation_id: str | None = None,
     ) -> str:
+        return self.process_input_result(
+            user_input,
+            conversation_id=conversation_id,
+        )["response"]
+
+    def process_input_result(
+        self,
+        user_input: str,
+        *,
+        conversation_id: str | None = None,
+    ) -> dict:
         safety_response = self.process_safety_input(
             user_input,
             conversation_id=conversation_id,
         )
         if safety_response is not None:
-            return safety_response
+            return {"response": safety_response, "safety": True}
+
+        if self.action_loop is not None:
+            interaction = self.action_loop.process_chat(
+                user_input,
+                conversation_id=conversation_id,
+            )
+            if interaction is not None:
+                if interaction.metadata.get("state_changed"):
+                    self._assessment_cache = None
+                return {
+                    "response": interaction.response,
+                    "interaction": interaction.metadata,
+                }
 
         intent = self.personality.classify_intent(user_input)
         needs_fresh = intent in ("status", "resource")
@@ -87,23 +112,24 @@ class RuleEngine:
         self.personality.determine_mode(mode, warnings, phase)
 
         if intent == "status":
-            return self._handle_status(assessment, mode, warnings)
+            response = self._handle_status(assessment, mode, warnings)
         elif intent == "resource":
-            return self._handle_resources()
+            response = self._handle_resources()
         elif intent == "help":
-            return self._handle_help()
+            response = self._handle_help()
         elif intent in ("water", "fire", "food", "shelter", "medical", "navigation"):
             if self.knowledge:
-                return self._handle_knowledge_query(
+                response = self._handle_knowledge_query(
                     user_input, intent, resources, warnings
                 )
             else:
-                return self._format_trusted_response(
+                response = self._format_trusted_response(
                     t("knowledge_module_not_loaded"),
                     "none",
                 )
         else:
-            return self._handle_general(user_input, resources, warnings, phase)
+            response = self._handle_general(user_input, resources, warnings, phase)
+        return {"response": response}
 
     def process_safety_input(
         self,

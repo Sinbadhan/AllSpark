@@ -136,6 +136,12 @@ class Database:
                 title TEXT NOT NULL,
                 description TEXT DEFAULT '',
                 status TEXT DEFAULT 'pending',
+                task_type TEXT DEFAULT 'main',
+                source TEXT DEFAULT 'manual',
+                source_ref TEXT DEFAULT '',
+                result TEXT DEFAULT '',
+                evidence TEXT DEFAULT '[]',
+                completed_at TEXT DEFAULT '',
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
@@ -432,6 +438,19 @@ class Database:
                  AND rate_basis='unknown'"""
         )
         self.conn.commit()
+        for col, ctype in [
+            ("task_type", "TEXT NOT NULL DEFAULT 'main'"),
+            ("source", "TEXT NOT NULL DEFAULT 'manual'"),
+            ("source_ref", "TEXT NOT NULL DEFAULT ''"),
+            ("result", "TEXT NOT NULL DEFAULT ''"),
+            ("evidence", "TEXT NOT NULL DEFAULT '[]'"),
+            ("completed_at", "TEXT NOT NULL DEFAULT ''"),
+        ]:
+            try:
+                cur.execute(f"SELECT {col} FROM tasks LIMIT 1")
+            except sqlite3.OperationalError:
+                cur.execute(f"ALTER TABLE tasks ADD COLUMN {col} {ctype}")
+                self.conn.commit()
         try:
             cur.execute("SELECT language FROM knowledge LIMIT 1")
         except sqlite3.OperationalError:
@@ -593,11 +612,66 @@ class Database:
 
     def save_task(self, t: Task):
         self.conn.execute(
-            "INSERT OR REPLACE INTO tasks VALUES (?,?,?,?,?,?,?,?)",
-            (t.id, t.phase, t.priority, t.title, t.description,
-             t.status, t.created_at, self._now())
+            """INSERT OR REPLACE INTO tasks
+               (id, phase, priority, title, description, status, task_type,
+                source, source_ref, result, evidence, completed_at, created_at,
+                updated_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                t.id,
+                t.phase,
+                t.priority,
+                t.title,
+                t.description,
+                t.status,
+                t.task_type,
+                t.source,
+                t.source_ref,
+                t.result,
+                json.dumps(t.evidence, ensure_ascii=False),
+                t.completed_at,
+                t.created_at or self._now(),
+                self._now(),
+            ),
         )
         self.conn.commit()
+
+    @staticmethod
+    def _row_to_task(row) -> Task:
+        data = dict(row)
+        evidence = data.get("evidence", "[]")
+        try:
+            data["evidence"] = json.loads(evidence) if isinstance(evidence, str) else []
+        except json.JSONDecodeError:
+            data["evidence"] = []
+        return Task(**data)
+
+    def get_task(self, task_id: str) -> Optional[Task]:
+        row = self.conn.execute(
+            "SELECT * FROM tasks WHERE id=?", (task_id,)
+        ).fetchone()
+        return self._row_to_task(row) if row else None
+
+    def get_tasks(self, limit: int = 200) -> list[Task]:
+        rows = self.conn.execute(
+            """SELECT * FROM tasks
+               ORDER BY CASE status
+                   WHEN 'in_progress' THEN 0
+                   WHEN 'pending' THEN 1
+                   ELSE 2 END,
+                   updated_at DESC, priority ASC
+               LIMIT ?""",
+            (limit,),
+        ).fetchall()
+        return [self._row_to_task(row) for row in rows]
+
+    def get_task_by_source(self, source: str, source_ref: str) -> Optional[Task]:
+        row = self.conn.execute(
+            """SELECT * FROM tasks WHERE source=? AND source_ref=?
+               ORDER BY created_at DESC LIMIT 1""",
+            (source, source_ref),
+        ).fetchone()
+        return self._row_to_task(row) if row else None
 
     def delete_task(self, task_id: str) -> None:
         self.conn.execute("DELETE FROM tasks WHERE id=?", (task_id,))
@@ -607,13 +681,13 @@ class Database:
         rows = self.conn.execute(
             "SELECT * FROM tasks WHERE phase=? ORDER BY priority", (phase,)
         ).fetchall()
-        return [Task(**dict(r)) for r in rows]
+        return [self._row_to_task(r) for r in rows]
 
     def get_active_tasks(self) -> list[Task]:
         rows = self.conn.execute(
             "SELECT * FROM tasks WHERE status IN ('pending','in_progress') ORDER BY priority"
         ).fetchall()
-        return [Task(**dict(r)) for r in rows]
+        return [self._row_to_task(r) for r in rows]
 
     def update_task_status(self, task_id: str, status: str):
         self.conn.execute(
@@ -629,6 +703,12 @@ class Database:
         now = self._now()
         created_at = plan.created_at or now
         with self.conn:
+            if plan.status == "active":
+                self.conn.execute(
+                    """UPDATE survival_plans SET status='archived'
+                       WHERE status='active' AND id<>?""",
+                    (plan.id,),
+                )
             self.conn.execute(
                 """INSERT OR REPLACE INTO survival_plans
                    (id, assessment_hash, fingerprint, phase, phase_status,
@@ -666,7 +746,12 @@ class Database:
                         action.order,
                         action.domain,
                         action.priority,
-                        action.status,
+                        (
+                            "accepted"
+                            if plan.status == "active"
+                            and action.id == plan.accepted_action_id
+                            else action.status
+                        ),
                         action.title_key,
                         action.why_now,
                         json.dumps(action.evidence, ensure_ascii=False, sort_keys=True),
@@ -747,6 +832,21 @@ class Database:
                     "DELETE FROM survival_plan_actions WHERE plan_id=?", (plan_id,)
                 )
             self.conn.execute("DELETE FROM survival_plans WHERE status='draft'")
+
+    def replace_active_survival_plan(
+        self,
+        plan: SurvivalPlan,
+        *,
+        accepted_action_id: str,
+    ) -> None:
+        """Publish one reassessed plan and archive the previous active plan."""
+        if not accepted_action_id or accepted_action_id not in {
+            action.id for action in plan.actions
+        }:
+            raise ValueError("accepted_action_id must belong to the plan")
+        plan.status = "active"
+        plan.accepted_action_id = accepted_action_id
+        self.save_survival_plan(plan)
 
     # --- Knowledge ---
 

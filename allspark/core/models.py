@@ -84,6 +84,7 @@ class TaskStatus(Enum):
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     FAILED = "failed"
+    SKIPPED = "skipped"
 
 
 class TaskPriority(Enum):
@@ -192,6 +193,11 @@ class Task:
     description: str = ""
     status: str = "pending"
     task_type: str = "main"
+    source: str = "manual"
+    source_ref: str = ""
+    result: str = ""
+    evidence: list[str] = field(default_factory=list)
+    completed_at: str = ""
     created_at: str = ""
     updated_at: str = ""
 

@@ -77,7 +77,17 @@ class TaskCommand(BaseCommand):
             return
 
         subcmd = args[0].lower()
-        if subcmd in ("完成", "done", "complete") and len(args) > 1:
+        if subcmd in ("添加", "add", "new") and len(args) > 1:
+            title = " ".join(args[1:]).strip()
+            assessment = survival.assess()
+            task, created = planner.create_task(
+                title=title,
+                phase=assessment["phase"],
+                source="manual",
+            )
+            if created:
+                self.console.print(f"[green]{t('task_added_msg', id=task.id)}[/]")
+        elif subcmd in ("完成", "done", "complete") and len(args) > 1:
             planner.complete_task(args[1])
             self.console.print(f"[green]{t('task_done_msg', id=args[1])}[/]")
         elif subcmd in ("开始", "start") and len(args) > 1:

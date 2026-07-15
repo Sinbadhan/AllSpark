@@ -349,7 +349,7 @@ set_remaining_hours: '  预计可用：{hours:.1f}小时'
 task_done_msg: ✓ 任务 {id} 已完成
 task_start_msg: ✓ 任务 {id} 已开始
 task_fail_msg: ✓ 任务 {id} 已标记失败
-task_usage_msg: '用法: 任务 | 任务 完成 <id> | 任务 开始 <id> | 任务 失败 <id>'
+task_usage_msg: '用法: 任务 | 任务 添加 <标题> | 任务 完成 <id> | 任务 开始 <id> | 任务 失败 <id>'
 map_add_cancelled: 已取消
 map_no_type_locations: 没有类型为 '{type}' 的地点
 map_usage_msg: '用法: map | map add | map remove <id> | map <类型>'
@@ -1995,6 +1995,29 @@ llm_error_model_not_found: |-
   下载地址：{url}
 llm_error_load_failed: 模型加载失败：{error}
 llm_error_chat: '[LLM 错误：{error}]'
+action_loop_context_required: '我可以更新{resource}，但还需要{fields}。目前没有保存任何内容。'
+action_loop_context_fields_amount: '以 {unit} 表示的总量'
+action_loop_context_fields_people: '这批物资覆盖的人数'
+action_loop_context_fields_amount_people: '以 {unit} 表示的总量和覆盖人数'
+action_loop_context_fields_capacity: '不小于剩余量的存储总容量'
+action_loop_confirm: '请确认本次更新：{resource} {amount}{unit}；人数：{people}；{rate}；{capacity}。回复“确认”保存并重算 24 小时计划，或回复“取消”。'
+action_loop_rate_known: '群体每日消耗 {consumption}{unit}、每日获取 {intake}{unit}'
+action_loop_rate_unknown: '群体每日消耗仍未知'
+action_loop_capacity_known: '总容量保持为 {amount}{unit}'
+action_loop_capacity_not_applicable: '容量保持不变或不适用'
+action_loop_not_applicable: '不适用'
+web_task_status_pending: '待执行'
+web_task_status_in_progress: '执行中'
+web_task_status_completed: '已完成'
+web_task_status_failed: '失败'
+web_task_status_skipped: '已跳过'
+action_loop_cancelled: '已取消待确认的{resource}更新，没有保存任何内容。'
+action_loop_applied: '已保存{resource} {amount}{unit}并重算 24 小时计划。当前首要行动：{action}'
+action_loop_timeline_resource_update: '已确认更新 {resource}：{amount}{unit}'
+error_knowledge_not_found: '未找到知识条目'
+web_knowledge_create_task: '加入任务'
+web_knowledge_task_created: '任务已加入'
+task_added_msg: '已添加任务：{id}'
 # services/voice.py
 voice_error_sd_webrtcvad_not_installed: 未安装 sounddevice/webrtcvad
 voice_error_whisper_not_installed: 未安装 whisper。请运行：pip install openai-whisper

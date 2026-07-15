@@ -7,7 +7,7 @@ from fastapi import HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from allspark.adapters.routes.helpers import _get_service, error_response
-from allspark.core.i18n import render, set_language, t
+from allspark.core.i18n import set_language, t
 
 
 class ChatRequest:
@@ -264,13 +264,13 @@ def register_core_routes(app, check):
             conversation_id = data.get("conversation_id", conversation_id)
         if language:
             set_language(language)
-        response = container.get("rule_engine").process_input(
+        result = container.get("rule_engine").process_input_result(
             message,
             conversation_id=conversation_id,
         )
         assessment = container.get("survival_engine").assess()
         return {
-            "response": response,
+            **result,
             "phase": assessment["phase"],
             "phase_status": assessment["phase_status"],
             "missing_fields": assessment["missing_fields"],
@@ -293,21 +293,35 @@ def register_core_routes(app, check):
         if language:
             set_language(language)
 
-        llm = _get_service(app, "llm")
-        if not llm or not llm.available:
-            return JSONResponse({
-                "response": container.get("rule_engine").process_input(
-                    message,
-                    conversation_id=conversation_id,
-                )
-            })
-
-        safety_response = container.get("rule_engine").process_safety_input(
+        rule_engine = container.get("rule_engine")
+        safety_response = rule_engine.process_safety_input(
             message,
             conversation_id=conversation_id,
         )
         if safety_response is not None:
             return JSONResponse({"response": safety_response, "safety": True})
+        action_loop = container.get("action_loop")
+        if action_loop is not None:
+            interaction = action_loop.process_chat(
+                message,
+                conversation_id=conversation_id,
+            )
+            if interaction is not None:
+                return JSONResponse(
+                    {
+                        "response": interaction.response,
+                        "interaction": interaction.metadata,
+                    }
+                )
+
+        llm = _get_service(app, "llm")
+        if not llm or not llm.available:
+            return JSONResponse({
+                "response": rule_engine.process_input(
+                    message,
+                    conversation_id=conversation_id,
+                )
+            })
 
         survival = _get_service(app, "survival_engine")
         assessment = None
@@ -406,20 +420,38 @@ def register_core_routes(app, check):
         return error_response(t("error_llm_load_failed"), detail=container.get("llm").error or "")
 
     @app.get("/api/tasks")
-    async def get_tasks():
+    async def get_tasks(
+        limit: int = Query(200, ge=1, le=500),
+        include_terminal: bool = Query(False),
+    ):
         container, db = check()
-        active = db.get_active_tasks()
-        return [
-            {
-                "id": t.id,
-                "phase": t.phase,
-                "priority": t.priority,
-                "title": render(t.title),
-                "description": render(t.description),
-                "status": t.status,
-            }
-            for t in active
-        ]
+        action_loop = container.get("action_loop")
+        tasks = db.get_tasks(limit) if include_terminal else db.get_active_tasks()[:limit]
+        return [action_loop.task_payload(task) for task in tasks]
+
+    @app.post("/api/tasks/from-knowledge")
+    async def create_task_from_knowledge(request: Request):
+        container, db = check()
+        try:
+            data = await request.json()
+        except Exception:
+            data = {}
+        knowledge_id = data.get("knowledge_id") if isinstance(data, dict) else None
+        if not isinstance(knowledge_id, str) or not knowledge_id.strip():
+            raise HTTPException(400, t("error_missing_required_fields", fields="knowledge_id"))
+        result = container.get("action_loop").create_task_from_knowledge(
+            knowledge_id.strip()
+        )
+        if result is None:
+            raise HTTPException(404, t("error_knowledge_not_found"))
+        task, created = result
+        return JSONResponse(
+            status_code=201 if created else 200,
+            content={
+                "created": created,
+                "task": container.get("action_loop").task_payload(task),
+            },
+        )
 
     @app.get("/api/modules")
     async def get_modules():

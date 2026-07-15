@@ -478,7 +478,7 @@ async function refreshDashboard() {
   if (tasks.length) {
     tlist.innerHTML = '<table class="mini-table"><thead><tr>' +
       '<th>' + I18N.web_th_phase + '</th><th>' + I18N.web_th_task + '</th><th>' + I18N.web_th_status + '</th></tr></thead><tbody>' +
-      tasks.slice(0, 8).map(t => '<tr><td class="text-primary font-semibold">P' + t.phase + '</td><td>' + escHtml(t.title) + '</td><td class="text-success">' + t.status + '</td></tr>').join("") +
+      tasks.slice(0, 8).map(t => '<tr><td class="text-primary font-semibold">' + (t.phase_status === 'known' ? 'P' + t.phase : I18N.web_phase_pending) + '</td><td>' + escHtml(t.title) + '</td><td class="text-success">' + (I18N['web_task_status_' + t.status] || t.status) + '</td></tr>').join("") +
       '</tbody></table>';
   } else {
     tlist.innerHTML = '<div class="text-secondary text-sm p-3">' + I18N.web_no_active_tasks + '</div>';
@@ -549,8 +549,25 @@ async function showKnowledge(id) {
   if (entry.steps && entry.steps.length) {
     html += '<div class="section-label">' + I18N.web_steps + '</div><ol style="list-style:decimal inside;font-size:13px;">' + entry.steps.map(s => '<li>' + escHtml(s) + '</li>').join("") + '</ol>';
   }
+  html += '<button class="action-btn action-primary" style="margin-top:12px;" data-index-action="knowledge-task" data-knowledge-id="' + escHtml(entry.id) + '"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">note_add</span>' + I18N.web_knowledge_create_task + '</button>';
   html += '</div>';
   container.innerHTML = html;
+}
+
+async function createKnowledgeTask(knowledgeId, button) {
+  button.disabled = true;
+  try {
+    const data = await api("/api/tasks/from-knowledge", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({knowledge_id: knowledgeId}),
+    });
+    button.textContent = I18N.web_knowledge_task_created;
+    await refreshDashboard();
+  } catch (e) {
+    button.disabled = false;
+    notify(e);
+  }
 }
 
 function backToResults() {
@@ -585,6 +602,7 @@ async function sendChat() {
   try {
     const data = await api("/api/chat", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({message: msg, conversation_id: chatConversationId}) });
     document.querySelector("#chat-messages .chat-msg.system:last-child .bubble").textContent = data.response;
+    if (data.interaction && data.interaction.state_changed) await refreshDashboard();
   } catch(e) {
     document.querySelector("#chat-messages .chat-msg.system:last-child .bubble").textContent = I18N.web_model_error.replace('{msg}', e.message);
   }
@@ -1097,6 +1115,7 @@ document.addEventListener("click", event => {
   if (action === "toggle-briefing") toggleBriefing();
   else if (action === "search-knowledge") searchKnowledge();
   else if (action === "send-chat") sendChat();
+  else if (action === "knowledge-task") createKnowledgeTask(target.dataset.knowledgeId, target);
   else if (action === "log-experience") logExperience();
   else if (action === "load-llm") loadLLM();
   else if (action === "submit-assessment") submitAssessment();

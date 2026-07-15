@@ -383,7 +383,7 @@ set_remaining_hours: '  Estimated remaining: {hours:.1f}h'
 task_done_msg: ✓ Task {id} completed
 task_start_msg: ✓ Task {id} started
 task_fail_msg: ✓ Task {id} marked as failed
-task_usage_msg: 'Usage: tasks | tasks done <id> | tasks start <id> | tasks fail <id>'
+task_usage_msg: 'Usage: tasks | tasks add <title> | tasks done <id> | tasks start <id> | tasks fail <id>'
 map_add_cancelled: Cancelled
 map_no_type_locations: No locations of type '{type}'
 map_usage_msg: 'Usage: map | map add | map remove <id> | map <type>'
@@ -2056,6 +2056,29 @@ llm_error_model_not_found: |-
   Download from: {url}
 llm_error_load_failed: 'Failed to load model: {error}'
 llm_error_chat: '[LLM error: {error}]'
+action_loop_context_required: 'I can update {resource}, but I still need {fields}. Nothing has been saved yet.'
+action_loop_context_fields_amount: 'the total amount in {unit}'
+action_loop_context_fields_people: 'the number of people this supply covers'
+action_loop_context_fields_amount_people: 'the total amount in {unit} and the number of people it covers'
+action_loop_context_fields_capacity: 'a total storage capacity that is not lower than the remaining amount'
+action_loop_confirm: 'Please confirm this update: {resource} {amount}{unit}; people: {people}; {rate}; {capacity}. Reply "confirm" to save and recalculate the 24-hour plan, or "cancel".'
+action_loop_rate_known: 'group use {consumption}{unit}/day and intake {intake}{unit}/day'
+action_loop_rate_unknown: 'daily group use remains unknown'
+action_loop_capacity_known: 'total capacity remains {amount}{unit}'
+action_loop_capacity_not_applicable: 'capacity is unchanged or not applicable'
+action_loop_not_applicable: 'not applicable'
+web_task_status_pending: 'Pending'
+web_task_status_in_progress: 'In progress'
+web_task_status_completed: 'Completed'
+web_task_status_failed: 'Failed'
+web_task_status_skipped: 'Skipped'
+action_loop_cancelled: 'Cancelled the pending {resource} update. Nothing was saved.'
+action_loop_applied: 'Saved {resource} as {amount}{unit} and recalculated the 24-hour plan. Current first action: {action}'
+action_loop_timeline_resource_update: 'Confirmed {resource} update: {amount}{unit}'
+error_knowledge_not_found: 'Knowledge entry not found'
+web_knowledge_create_task: 'Add to tasks'
+web_knowledge_task_created: 'Task added'
+task_added_msg: 'Task added: {id}'
 # services/voice.py
 voice_error_sd_webrtcvad_not_installed: sounddevice/webrtcvad not installed
 voice_error_whisper_not_installed: 'whisper not installed. Run: pip install openai-whisper'
