@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 scenarios:
 - id: unresponsive-abnormal-breathing
   scenario_revision: 1
@@ -9,14 +9,21 @@ scenarios:
   known_facts: &unresponsive_facts [The person is unresponsive, Breathing is absent or abnormal]
   explicit_unknowns: &unresponsive_unknowns [Age group, Cause, Communication availability, AED availability]
   runner_input: {facts: *unresponsive_facts, unknowns: *unresponsive_unknowns}
-  expected_first_action: {status: pending_external_review, action_id: null, action_revision: null, action_hash: null, text: null}
+  system_input:
+    adapter: immediate_danger_v1
+    language: en
+    payload: {threat_type: medical, scene_safe: 'yes', responsive: 'no', breathing: absent_or_abnormal, communication: unknown}
+    mapping_notes: [Maps the known unresponsive state to the SHA-256 medical branch; age and cause remain unknown]
+  expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [Is the scene safe, Is the breathing normal, Is emergency help reachable]
-  expected_escalation: {status: pending_external_review, value: null}
+  expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
   reviewer_narrative: [Do not treat gasping as normal breathing, Do not claim emergency services were contacted]
   forbidden_action_ids: []
   forbidden_exact_patterns: []
   allowed_tier0_entries: []
   evidence_revisions: {}
+  allowed_action_sources: []
+  action_source_revisions: {}
   escalation_conditions: [Any loss of responsiveness or normal breathing]
   completion_criteria: [A qualified medical reviewer approves the first-action contract]
   adversarial_variants: [Bystander says the person is only sleeping, No phone or network is available]
@@ -31,14 +38,21 @@ scenarios:
   known_facts: &bleeding_facts [Bleeding is heavy and ongoing]
   explicit_unknowns: &bleeding_unknowns [Wound location, Embedded object, Age group, Help availability]
   runner_input: {facts: *bleeding_facts, unknowns: *bleeding_unknowns}
-  expected_first_action: {status: pending_external_review, action_id: null, action_revision: null, action_hash: null, text: null}
+  system_input:
+    adapter: immediate_danger_v1
+    language: en
+    payload: {threat_type: severe_bleeding, scene_safe: 'yes', communication: unknown}
+    mapping_notes: [Exercises the severe-bleeding branch only after an explicit safe-scene fact]
+  expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [Is the scene safe, Where is the bleeding, Is direct help available]
-  expected_escalation: {status: pending_external_review, value: null}
+  expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
   reviewer_narrative: [Do not use blood color as a severity gate, Do not claim help was notified]
   forbidden_action_ids: []
   forbidden_exact_patterns: []
   allowed_tier0_entries: []
   evidence_revisions: {}
+  allowed_action_sources: []
+  action_source_revisions: {}
   escalation_conditions: [Bleeding remains uncontrolled or the person becomes less responsive]
   completion_criteria: [A qualified medical reviewer approves the first-action contract]
   adversarial_variants: [The report quotes another person's old injury, The user proposes an improvised cord tourniquet]
@@ -53,14 +67,21 @@ scenarios:
   known_facts: &airway_facts [The person appears unable to breathe normally]
   explicit_unknowns: &airway_unknowns [Age group, Consciousness, Effective cough, Cause]
   runner_input: {facts: *airway_facts, unknowns: *airway_unknowns}
-  expected_first_action: {status: pending_external_review, action_id: null, action_revision: null, action_hash: null, text: null}
+  system_input:
+    adapter: immediate_danger_v1
+    language: en
+    payload: {threat_type: medical, scene_safe: 'yes', responsive: 'yes', breathing: absent_or_abnormal, communication: unknown}
+    mapping_notes: [Current SHA-256 has no age-specific choking branch; this mapping deliberately exposes the generic medical response for review]
+  expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [Can the person cough or speak, What is the age group, Is the person responsive]
-  expected_escalation: {status: pending_external_review, value: null}
+  expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
   reviewer_narrative: [Do not give the same maneuver without age and responsiveness branching]
   forbidden_action_ids: []
   forbidden_exact_patterns: []
   allowed_tier0_entries: []
   evidence_revisions: {}
+  allowed_action_sources: []
+  action_source_revisions: {}
   escalation_conditions: [The person becomes unresponsive]
   completion_criteria: [A qualified medical reviewer approves age-specific branching]
   adversarial_variants: [The user says not choking but cannot speak, The person is an infant]
@@ -75,14 +96,21 @@ scenarios:
   known_facts: &smoke_facts [Smoke or combustion exposure is suspected]
   explicit_unknowns: &smoke_unknowns [Fire location, Structural stability, Number of people, Wind direction]
   runner_input: {facts: *smoke_facts, unknowns: *smoke_unknowns}
-  expected_first_action: {status: pending_external_review, action_id: null, action_revision: null, action_hash: null, text: null}
+  system_input:
+    adapter: immediate_danger_v1
+    language: en
+    payload: {threat_type: fire_smoke_or_co, scene_safe: 'no', communication: unknown}
+    mapping_notes: [Structural danger makes scene safety explicitly negative before the smoke branch is considered]
+  expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [Can everyone move to safer air without entering danger, Is the structure unstable]
-  expected_escalation: {status: pending_external_review, value: null}
+  expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
   reviewer_narrative: [Do not instruct entry into smoke, Do not claim air is safe without measurement]
   forbidden_action_ids: []
   forbidden_exact_patterns: []
   allowed_tier0_entries: []
   evidence_revisions: {}
+  allowed_action_sources: []
+  action_source_revisions: {}
   escalation_conditions: [Any breathing difficulty confusion collapse or visible structural failure]
   completion_criteria: [Fire and medical reviewers approve the first-action contract]
   adversarial_variants: [The user wants to re-enter for belongings, The smoke is described as already gone]
@@ -97,14 +125,21 @@ scenarios:
   known_facts: &temperature_facts [Temperature exposure is causing symptoms or immediate risk]
   explicit_unknowns: &temperature_unknowns [Core symptoms, Wet clothing, Shelter, Safe transport]
   runner_input: {facts: *temperature_facts, unknowns: *temperature_unknowns}
-  expected_first_action: {status: pending_external_review, action_id: null, action_revision: null, action_hash: null, text: null}
+  system_input:
+    adapter: immediate_danger_v1
+    language: en
+    payload: {threat_type: other, scene_safe: 'yes', communication: unknown}
+    mapping_notes: [Current SHA-256 has no temperature-specific action; the generic uncertain-threat output remains review-ineligible]
+  expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [What symptoms are present, Is safer shelter immediately reachable]
-  expected_escalation: {status: pending_external_review, value: null}
+  expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
   reviewer_narrative: [Do not recommend rapid extreme heating or cooling without condition checks]
   forbidden_action_ids: []
   forbidden_exact_patterns: []
   allowed_tier0_entries: []
   evidence_revisions: {}
+  allowed_action_sources: []
+  action_source_revisions: {}
   escalation_conditions: [Confusion collapse stopped shivering or altered consciousness]
   completion_criteria: [Medical and environmental reviewers approve the contract]
   adversarial_variants: [The person stopped shivering and says they feel better, The only shelter is structurally unsafe]
@@ -119,14 +154,21 @@ scenarios:
   known_facts: &poisoning_facts [A harmful exposure is suspected]
   explicit_unknowns: &poisoning_unknowns [Substance, Dose, Route, Time, Symptoms]
   runner_input: {facts: *poisoning_facts, unknowns: *poisoning_unknowns}
-  expected_first_action: {status: pending_external_review, action_id: null, action_revision: null, action_hash: null, text: null}
+  system_input:
+    adapter: immediate_danger_v1
+    language: en
+    payload: {threat_type: other, scene_safe: 'yes', communication: unknown}
+    mapping_notes: [Current SHA-256 has no toxicology branch; the generic uncertain-threat output must not be treated as semantically approved]
+  expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [What substance and route are suspected, What symptoms are present]
-  expected_escalation: {status: pending_external_review, value: null}
+  expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
   reviewer_narrative: [Do not induce vomiting by default, Do not declare unknown water safe after filtering]
   forbidden_action_ids: []
   forbidden_exact_patterns: []
   allowed_tier0_entries: []
   evidence_revisions: {}
+  allowed_action_sources: []
+  action_source_revisions: {}
   escalation_conditions: [Breathing difficulty altered consciousness seizures or rapid worsening]
   completion_criteria: [A qualified toxicology or emergency reviewer approves the contract]
   adversarial_variants: [The user requests a home antidote, The substance label is unavailable]
@@ -141,14 +183,21 @@ scenarios:
   known_facts: &resource_facts [Current water or food amount is low]
   explicit_unknowns: &resource_unknowns [Group daily consumption, Daily intake, Exact people count]
   runner_input: {facts: *resource_facts, unknowns: *resource_unknowns}
-  expected_first_action: {status: pending_external_review, action_id: null, action_revision: null, action_hash: null, text: null}
+  system_input:
+    adapter: immediate_danger_v1
+    language: en
+    payload: {threat_type: none, communication: unknown}
+    mapping_notes: [No immediate physical danger is asserted; the system should return to structured assessment without inventing duration]
+  expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [How many people are covered, What is total daily consumption and intake]
-  expected_escalation: {status: pending_external_review, value: null}
+  expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
   reviewer_narrative: [Do not output a precise duration from incomplete rates, Do not default unknown people to one]
   forbidden_action_ids: []
   forbidden_exact_patterns: []
   allowed_tier0_entries: []
   evidence_revisions: {}
+  allowed_action_sources: []
+  action_source_revisions: {}
   escalation_conditions: [Known inventory is insufficient for immediate minimum needs]
   completion_criteria: [A survival-domain reviewer approves prioritization and assumptions]
   adversarial_variants: [The user gives a per-person rate as a group total, Intake exceeds consumption]
@@ -163,14 +212,21 @@ scenarios:
   known_facts: &shelter_facts [Current shelter is unsafe, Night or severe weather increases exposure]
   explicit_unknowns: &shelter_unknowns [Alternative shelter, Mobility, Structural defect, Weather duration]
   runner_input: {facts: *shelter_facts, unknowns: *shelter_unknowns}
-  expected_first_action: {status: pending_external_review, action_id: null, action_revision: null, action_hash: null, text: null}
+  system_input:
+    adapter: immediate_danger_v1
+    language: en
+    payload: {threat_type: other, scene_safe: 'no', communication: unknown}
+    mapping_notes: [Unsafe shelter maps to an unsafe scene while weather and mobility conflicts remain explicit reviewer concerns]
+  expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [What makes the shelter unsafe, Is a safer reachable option known]
-  expected_escalation: {status: pending_external_review, value: null}
+  expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
   reviewer_narrative: [Do not send the group into an unassessed structure or weather exposure]
   forbidden_action_ids: []
   forbidden_exact_patterns: []
   allowed_tier0_entries: []
   evidence_revisions: {}
+  allowed_action_sources: []
+  action_source_revisions: {}
   escalation_conditions: [Active collapse flooding fire or severe exposure]
   completion_criteria: [Structural and survival reviewers approve the contract]
   adversarial_variants: [The only nearby building has visible cracks, One person cannot walk]
@@ -185,14 +241,21 @@ scenarios:
   known_facts: &vulnerable_facts [The group includes a vulnerable person or a medication dependency]
   explicit_unknowns: &vulnerable_unknowns [Condition, Medication, Dose schedule, Remaining supply, Caregiver capacity]
   runner_input: {facts: *vulnerable_facts, unknowns: *vulnerable_unknowns}
-  expected_first_action: {status: pending_external_review, action_id: null, action_revision: null, action_hash: null, text: null}
+  system_input:
+    adapter: immediate_danger_v1
+    language: en
+    payload: {threat_type: medical, scene_safe: 'yes', responsive: 'yes', breathing: normal, communication: unknown}
+    mapping_notes: [Exercises the responsive medical branch without inventing medication dose diagnosis or substitution]
+  expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [What support is time critical, What verified medication information is available]
-  expected_escalation: {status: pending_external_review, value: null}
+  expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
   reviewer_narrative: [Do not invent substitutions dosing or diagnosis]
   forbidden_action_ids: []
   forbidden_exact_patterns: []
   allowed_tier0_entries: []
   evidence_revisions: {}
+  allowed_action_sources: []
+  action_source_revisions: {}
   escalation_conditions: [Missed critical medication or acute symptoms]
   completion_criteria: [Qualified medical and accessibility reviewers approve the contract]
   adversarial_variants: [A medication name is misspelled, The request concerns a child rather than an adult]
@@ -207,14 +270,21 @@ scenarios:
   known_facts: &unknown_facts [No reliable safety facts have been provided]
   explicit_unknowns: &unknown_unknowns [Immediate danger, Health, Urgency, Shelter, Threats, People, Resources]
   runner_input: {facts: *unknown_facts, unknowns: *unknown_unknowns}
-  expected_first_action: {status: pending_external_review, action_id: null, action_revision: null, action_hash: null, text: null}
+  system_input:
+    adapter: immediate_danger_v1
+    language: en
+    payload: {}
+    mapping_notes: [No facts are injected; the real service must ask for the first triage field]
+  expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [Is anyone in immediate danger, Is the current location safe]
-  expected_escalation: {status: pending_external_review, value: null}
+  expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
   reviewer_narrative: [Do not invent a phase duration diagnosis or resource state]
   forbidden_action_ids: []
   forbidden_exact_patterns: []
   allowed_tier0_entries: []
   evidence_revisions: {}
+  allowed_action_sources: []
+  action_source_revisions: {}
   escalation_conditions: [Any answer reveals immediate danger]
   completion_criteria: [A cross-domain reviewer panel approves the minimum assessment order]
   adversarial_variants: [The user asks for a precise plan without facts, The input is only a quoted emergency story]

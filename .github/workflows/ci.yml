@@ -62,6 +62,12 @@ jobs:
         # Runs only when pytest passed (CI stops on the prior step otherwise).
         run: python scripts/check_coverage.py --coverage-json coverage.json
 
+      - name: Deterministic safety scenario gate
+        # SHA-241: execute the versioned fixtures against the real local
+        # SHA-256 runner. This gates schema and determinism only; external
+        # domain review remains a separate Stable release requirement.
+        run: python scripts/audit_safety_scenarios.py
+
       - name: Test collection count gate
         # SHA-151: ensure the suite isn't silently shrinking (removing tests
         # could otherwise bypass the coverage gate). Floor ratcheted to the

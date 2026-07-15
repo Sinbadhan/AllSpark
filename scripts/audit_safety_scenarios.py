@@ -16,11 +16,22 @@ def main() -> int:
     parser.add_argument(
         "--require-reviewed",
         action="store_true",
-        help="fail unless every scenario and bundled risk record is externally reviewed",
+        help=(
+            "fail unless reviewed scenario metrics, the release-eligible action "
+            "catalog, and bundled knowledge risk reviews all pass"
+        ),
     )
     args = parser.parse_args()
     report = audit_safety_scenarios()
     print(json.dumps(report, ensure_ascii=False, sort_keys=True))
+    execution = report["deterministic_execution"]
+    if (
+        execution["status"] != "passed"
+        or report["scenario_count"] < 10
+        or execution["executed"] != report["scenario_count"]
+        or execution["unstable"]
+    ):
+        return 2
     if args.require_reviewed and report["release_review_gate"]["status"] != "passed":
         return 1
     return 0

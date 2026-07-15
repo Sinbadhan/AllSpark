@@ -19,6 +19,11 @@ from pathlib import Path
 import yaml
 
 from allspark.core.models import compute_content_hash
+from allspark.services.immediate_danger import (
+    action_catalog_audit,
+    assess_immediate_danger,
+    load_action_catalog,
+)
 from allspark.services.knowledge_loader import (
     _TIER_FILES,
     _load_yaml,
@@ -116,6 +121,7 @@ SCENARIO_FIELDS = {
     "known_facts",
     "explicit_unknowns",
     "runner_input",
+    "system_input",
     "expected_first_action",
     "required_questions",
     "expected_escalation",
@@ -124,6 +130,8 @@ SCENARIO_FIELDS = {
     "forbidden_exact_patterns",
     "allowed_tier0_entries",
     "evidence_revisions",
+    "allowed_action_sources",
+    "action_source_revisions",
     "escalation_conditions",
     "completion_criteria",
     "adversarial_variants",
@@ -131,13 +139,21 @@ SCENARIO_FIELDS = {
     "reviewer_signoffs",
 }
 OBSERVED_FIELDS = {
+    "response_kind",
     "action_id",
     "action_revision",
+    "action_hash",
+    "catalog_action_hash",
+    "action_text",
     "questions",
-    "escalation",
+    "escalation_hash",
+    "escalation_text",
     "evidence",
     "output_text",
 }
+SYSTEM_INPUT_FIELDS = {"adapter", "language", "payload", "mapping_notes"}
+_SYSTEM_ADAPTER = "immediate_danger_v1"
+_RESPONSE_KINDS = {"action", "question"}
 _MAX_SCENARIO_BYTES = 64 * 1024
 _MAX_STRING = 4096
 _MAX_LIST_ITEMS = 64
@@ -200,9 +216,37 @@ def action_contract_hash(action_id: str, action_revision: int, text: str) -> str
     return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def escalation_contract_hash(text: str) -> str:
+    """Bind an escalation instruction to the exact reviewed text."""
+    canonical = json.dumps(
+        {"contract": "escalation", "text": text},
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
 @lru_cache(maxsize=1)
 def _tier0_revisions() -> dict[str, str]:
     return {entry.id: compute_content_hash(entry) for entry in load_knowledge(tier=0)}
+
+
+@lru_cache(maxsize=1)
+def _catalog_contracts() -> tuple[dict[str, dict], dict[str, str]]:
+    catalog = load_action_catalog()
+    actions = {
+        action["action_id"]: {
+            "revision": action["revision"],
+            "content_hash": action["content_hash"],
+        }
+        for action in catalog["actions"]
+    }
+    sources = {
+        source_id: source["content_hash"]
+        for source_id, source in catalog["sources"].items()
+    }
+    return actions, sources
 
 
 def _validate_reviewer_signoffs(scenario: dict, hazards: list[str]) -> None:
@@ -343,22 +387,40 @@ def validate_safety_scenario(scenario: object) -> dict:
         raise SafetyScenarioValidationError("runner_input facts drift from known_facts")
     if runner_input["unknowns"] != scenario["explicit_unknowns"]:
         raise SafetyScenarioValidationError("runner_input unknowns drift from explicit_unknowns")
+    system_input = scenario.get("system_input")
+    if not isinstance(system_input, dict) or set(system_input) != SYSTEM_INPUT_FIELDS:
+        raise SafetyScenarioValidationError("system_input has an invalid shape")
+    if system_input["adapter"] != _SYSTEM_ADAPTER:
+        raise SafetyScenarioValidationError("system_input adapter is unsupported")
+    if system_input["language"] not in {"en", "zh"}:
+        raise SafetyScenarioValidationError("system_input language is unsupported")
+    if not isinstance(system_input["payload"], dict):
+        raise SafetyScenarioValidationError("system_input payload must be an object")
+    _string_list(system_input["mapping_notes"], "system_input.mapping_notes")
     expected_escalation = scenario.get("expected_escalation")
     if not isinstance(expected_escalation, dict) or set(expected_escalation) != {
         "status",
-        "value",
+        "text",
+        "escalation_hash",
     }:
         raise SafetyScenarioValidationError("expected_escalation is invalid")
     if expected_escalation["status"] not in SCENARIO_REVIEW_STATUSES:
         raise SafetyScenarioValidationError("invalid expected_escalation status")
     if expected_escalation["status"] == "approved":
-        if not isinstance(expected_escalation["value"], bool):
+        if (
+            not isinstance(expected_escalation["text"], str)
+            or expected_escalation["escalation_hash"]
+            != escalation_contract_hash(expected_escalation["text"])
+        ):
             raise SafetyScenarioValidationError(
-                "approved expected_escalation must be boolean"
+                "approved expected_escalation contract is invalid"
             )
-    elif expected_escalation["value"] is not None:
+    elif any(
+        expected_escalation[field] is not None
+        for field in ("text", "escalation_hash")
+    ):
         raise SafetyScenarioValidationError(
-            "unreviewed expected_escalation value must be null"
+            "unreviewed expected_escalation contract must be null"
         )
 
     allowed_entries = _string_list(
@@ -377,13 +439,36 @@ def validate_safety_scenario(scenario: object) -> dict:
             raise SafetyScenarioValidationError(
                 f"Tier 0 evidence revision missing or drifted: {entry_id}"
             )
+    allowed_action_sources = _string_list(
+        scenario.get("allowed_action_sources"),
+        "allowed_action_sources",
+        allow_empty=True,
+    )
+    action_source_revisions = scenario.get("action_source_revisions")
+    if (
+        not isinstance(action_source_revisions, dict)
+        or set(action_source_revisions) != set(allowed_action_sources)
+    ):
+        raise SafetyScenarioValidationError(
+            "action_source_revisions must exactly match allowed_action_sources"
+        )
+    if set(allowed_entries) & set(allowed_action_sources):
+        raise SafetyScenarioValidationError("evidence ids must be unambiguous")
+    _, actual_action_sources = _catalog_contracts()
+    for source_id, revision_value in action_source_revisions.items():
+        if actual_action_sources.get(source_id) != revision_value:
+            raise SafetyScenarioValidationError(
+                f"action source revision missing or drifted: {source_id}"
+            )
 
     first_action = scenario.get("expected_first_action")
     if not isinstance(first_action, dict) or set(first_action) != {
         "status",
+        "response_kind",
         "action_id",
         "action_revision",
         "action_hash",
+        "catalog_action_hash",
         "text",
     }:
         raise SafetyScenarioValidationError("expected_first_action invalid")
@@ -391,10 +476,10 @@ def validate_safety_scenario(scenario: object) -> dict:
         raise SafetyScenarioValidationError("invalid expected_first_action status")
     if first_action["status"] == "approved":
         if (
-            not isinstance(first_action["action_id"], str)
+            first_action["response_kind"] not in _RESPONSE_KINDS
+            or not isinstance(first_action["action_id"], str)
             or not first_action["action_id"].strip()
             or not isinstance(first_action["text"], str)
-            or not first_action["text"].strip()
             or not isinstance(first_action["action_revision"], int)
             or isinstance(first_action["action_revision"], bool)
             or first_action["action_revision"] < 1
@@ -408,9 +493,37 @@ def validate_safety_scenario(scenario: object) -> dict:
             raise SafetyScenarioValidationError(
                 "approved first action contract is invalid"
             )
+        if first_action["response_kind"] == "action":
+            action_contracts, _ = _catalog_contracts()
+            catalog_contract = action_contracts.get(first_action["action_id"])
+            if (
+                not first_action["text"].strip()
+                or catalog_contract is None
+                or catalog_contract["revision"] != first_action["action_revision"]
+                or catalog_contract["content_hash"]
+                != first_action["catalog_action_hash"]
+            ):
+                raise SafetyScenarioValidationError(
+                    "approved action does not match the catalog contract"
+                )
+        elif (
+            not first_action["action_id"].startswith("question:")
+            or not first_action["text"].strip()
+            or first_action["catalog_action_hash"] is not None
+        ):
+            raise SafetyScenarioValidationError(
+                "approved question contract is invalid"
+            )
     elif any(
         first_action[field] is not None
-        for field in ("action_id", "action_revision", "action_hash", "text")
+        for field in (
+            "response_kind",
+            "action_id",
+            "action_revision",
+            "action_hash",
+            "catalog_action_hash",
+            "text",
+        )
     ):
         raise SafetyScenarioValidationError(
             "unreviewed first action contract must be null"
@@ -428,6 +541,14 @@ def validate_safety_scenario(scenario: object) -> dict:
         raise SafetyScenarioValidationError(
             "approved review requires an approved escalation contract"
         )
+    if (
+        scenario["review_status"] == "approved"
+        and first_action["response_kind"] == "action"
+        and not expected_escalation["text"].strip()
+    ):
+        raise SafetyScenarioValidationError(
+            "approved action requires an escalation instruction"
+        )
     _validate_reviewer_signoffs(scenario, hazards)
     return scenario
 
@@ -437,7 +558,7 @@ def load_safety_scenarios(path: Path = _DATA_PATH) -> list[dict]:
         document = yaml.safe_load(stream)
     if not isinstance(document, dict) or set(document) != {"schema_version", "scenarios"}:
         raise SafetyScenarioValidationError("invalid safety scenario document")
-    if document.get("schema_version") != 1:
+    if document.get("schema_version") != 2:
         raise SafetyScenarioValidationError("unsupported safety scenario schema")
     scenarios = document.get("scenarios")
     if not isinstance(scenarios, list) or len(scenarios) > 128:
@@ -454,6 +575,8 @@ def evaluate_scenario_output(scenario: dict, observed: object) -> dict:
     validate_safety_scenario(scenario)
     if not isinstance(observed, dict) or set(observed) != OBSERVED_FIELDS:
         raise SafetyScenarioValidationError("observed output shape is invalid")
+    if observed["response_kind"] not in _RESPONSE_KINDS:
+        raise SafetyScenarioValidationError("observed response_kind is invalid")
     if not isinstance(observed["action_id"], str):
         raise SafetyScenarioValidationError("observed action_id is invalid")
     if (
@@ -462,9 +585,19 @@ def evaluate_scenario_output(scenario: dict, observed: object) -> dict:
         or observed["action_revision"] < 1
     ):
         raise SafetyScenarioValidationError("observed action_revision is invalid")
+    action_text = observed["action_text"]
+    if not isinstance(action_text, str) or len(action_text) > _MAX_STRING:
+        raise SafetyScenarioValidationError("observed action_text is invalid")
+    if observed["action_hash"] != action_contract_hash(
+        observed["action_id"], observed["action_revision"], action_text
+    ):
+        raise SafetyScenarioValidationError("observed action hash mismatch")
     questions = _string_list(observed["questions"], "observed.questions", allow_empty=True)
-    if not isinstance(observed["escalation"], bool):
-        raise SafetyScenarioValidationError("observed escalation is invalid")
+    escalation_text = observed["escalation_text"]
+    if not isinstance(escalation_text, str) or len(escalation_text) > _MAX_STRING:
+        raise SafetyScenarioValidationError("observed escalation_text is invalid")
+    if observed["escalation_hash"] != escalation_contract_hash(escalation_text):
+        raise SafetyScenarioValidationError("observed escalation hash mismatch")
     evidence = observed["evidence"]
     if not isinstance(evidence, dict) or any(
         not isinstance(key, str) or not isinstance(value, str)
@@ -484,27 +617,103 @@ def evaluate_scenario_output(scenario: dict, observed: object) -> dict:
     ]
     review_eligible = scenario["review_status"] == "approved"
     action_correct = (
-        observed["action_id"] == scenario["expected_first_action"]["action_id"]
+        observed["response_kind"]
+        == scenario["expected_first_action"]["response_kind"]
+        and observed["action_id"] == scenario["expected_first_action"]["action_id"]
         and observed["action_revision"]
         == scenario["expected_first_action"]["action_revision"]
+        and observed["action_text"] == scenario["expected_first_action"]["text"]
+        and observed["action_hash"]
+        == scenario["expected_first_action"]["action_hash"]
+        and observed["catalog_action_hash"]
+        == scenario["expected_first_action"]["catalog_action_hash"]
         if review_eligible else None
     )
     escalation_correct = (
-        observed["escalation"] == scenario["expected_escalation"]["value"]
+        observed["escalation_text"] == scenario["expected_escalation"]["text"]
+        and observed["escalation_hash"]
+        == scenario["expected_escalation"]["escalation_hash"]
         if review_eligible else None
     )
     return {
         "scenario_id": scenario["id"],
+        "system_adapter": scenario["system_input"]["adapter"],
+        "mapping_notes": list(scenario["system_input"]["mapping_notes"]),
+        "observed_response_kind": observed["response_kind"],
+        "observed_action_id": observed["action_id"],
+        "observed_action_revision": observed["action_revision"],
+        "observed_action_hash": observed["action_hash"],
+        "observed_questions": questions,
+        "observed_escalation_hash": observed["escalation_hash"],
+        "observed_evidence_ids": sorted(evidence),
         "review_eligible": review_eligible,
         "action_correct": action_correct,
-        "questions_complete": not missing_questions,
-        "missing_questions": missing_questions,
+        "questions_complete": not missing_questions if review_eligible else None,
+        "missing_questions": missing_questions if review_eligible else [],
         "escalation_correct": escalation_correct,
-        "evidence_correct": evidence == scenario["evidence_revisions"],
+        "evidence_correct": (
+            evidence
+            == scenario["evidence_revisions"]
+            | scenario["action_source_revisions"]
+            if review_eligible
+            else None
+        ),
         "forbidden_action_match": forbidden_action_match,
         "forbidden_exact_matches": forbidden_exact_matches,
         "machine_forbidden_match": forbidden_action_match or bool(forbidden_exact_matches),
         "semantic_review_status": "eligible" if review_eligible else "not_eligible",
+    }
+
+
+def immediate_danger_scenario_runner(system_input: dict) -> dict:
+    """Adapt the real SHA-256 service to the review-neutral audit schema."""
+    if not isinstance(system_input, dict) or set(system_input) != SYSTEM_INPUT_FIELDS:
+        raise SafetyScenarioValidationError("system runner input has an invalid shape")
+    if system_input["adapter"] != _SYSTEM_ADAPTER:
+        raise SafetyScenarioValidationError("system runner adapter is unsupported")
+    result = assess_immediate_danger(
+        system_input["payload"], language=system_input["language"]
+    )
+    if result["status"] == "needs_fact":
+        field = result["question"]["field"]
+        return {
+            "response_kind": "question",
+            "action_id": f"question:{field}",
+            "action_revision": 1,
+            "action_hash": action_contract_hash(f"question:{field}", 1, field),
+            "catalog_action_hash": None,
+            "action_text": field,
+            "questions": [field],
+            "escalation_hash": escalation_contract_hash(""),
+            "escalation_text": "",
+            "evidence": {},
+            "output_text": "",
+        }
+    action = result["action"]
+    follow_up = result.get("follow_up_question")
+    return {
+        "response_kind": "action",
+        "action_id": action["action_id"],
+        "action_revision": action["revision"],
+        "action_hash": action_contract_hash(
+            action["action_id"], action["revision"], action["text"]
+        ),
+        "catalog_action_hash": action["content_hash"],
+        "action_text": action["text"],
+        "questions": [follow_up["field"]] if follow_up else [],
+        "escalation_hash": escalation_contract_hash(action["escalation"]),
+        "escalation_text": action["escalation"],
+        "evidence": {
+            source["source_id"]: source["content_hash"]
+            for source in action["sources"]
+        },
+        "output_text": "\n".join(
+            [
+                action["text"],
+                *action["contraindications"],
+                action["escalation"],
+            ]
+        ),
     }
 
 
@@ -517,8 +726,8 @@ def run_safety_scenarios(
     results = []
     for scenario in fixtures:
         validate_safety_scenario(scenario)
-        first = runner(scenario["runner_input"])
-        second = runner(scenario["runner_input"])
+        first = runner(scenario["system_input"])
+        second = runner(scenario["system_input"])
         evaluation = evaluate_scenario_output(scenario, first)
         evaluation["deterministic"] = first == second
         evaluation["schema_passed"] = True
@@ -539,20 +748,43 @@ def run_safety_scenarios(
     correct = sum(value["action_correct"] is True for value in eligible)
     dangerous = sum(value["machine_forbidden_match"] for value in eligible)
     accuracy = (correct / len(eligible) * 100) if eligible else None
+    stable = sum(value["execution_stable"] for value in results)
+    declared_forbidden = sum(value["machine_forbidden_match"] for value in results)
+    semantic_failures = sum(value["semantic_gate"] == "failed" for value in results)
+    scenario_gate_passed = (
+        len(fixtures) >= 10
+        and stable == len(fixtures)
+        and len(eligible) == len(fixtures)
+        and accuracy is not None
+        and accuracy >= 95.0
+        and dangerous == 0
+        and semantic_failures == 0
+    )
     return {
         "deterministic_execution": {
+            "status": (
+                "passed"
+                if stable == len(results) and declared_forbidden == 0
+                else "failed"
+            ),
             "executed": len(results),
-            "stable": sum(value["execution_stable"] for value in results),
-            "unstable": sum(not value["execution_stable"] for value in results),
+            "stable": stable,
+            "unstable": len(results) - stable,
+            "declared_forbidden_matches": declared_forbidden,
             "results": results,
         },
         "release_review_gate": {
-            "status": "blocked",
-            "reason": "reviewed SHA-256 action catalog is not implemented",
+            "status": "passed" if scenario_gate_passed else "blocked",
+            "reason": (
+                "reviewed scenario metrics passed"
+                if scenario_gate_passed
+                else "external scenario review or reviewed metrics are incomplete"
+            ),
             "eligible_scenarios": len(eligible),
             "total_scenarios": len(fixtures),
             "first_action_accuracy_percent": accuracy,
             "machine_forbidden_matches": dangerous if eligible else None,
+            "semantic_failures": semantic_failures if eligible else None,
         },
     }
 
@@ -602,6 +834,10 @@ def audit_bundled_risk_metadata() -> dict:
 
 def audit_safety_scenarios(path: Path = _DATA_PATH) -> dict:
     scenarios = load_safety_scenarios(path)
+    execution = run_safety_scenarios(immediate_danger_scenario_runner, scenarios)
+    if len(scenarios) < 10:
+        execution["deterministic_execution"]["status"] = "failed"
+    catalog = action_catalog_audit()
     approved = [value for value in scenarios if value["review_status"] == "approved"]
     hazards = sorted({hazard for value in scenarios for hazard in value["hazards"]})
     risk_metadata = audit_bundled_risk_metadata()
@@ -612,15 +848,26 @@ def audit_safety_scenarios(path: Path = _DATA_PATH) -> dict:
         and risk_metadata["unknown_hazard_count"] == 0
         and risk_metadata["approved_count"] == risk_metadata["total"]
     )
+    scenario_gate = execution["release_review_gate"]
+    catalog_reviewed = (
+        catalog["review_status"] == "approved" and catalog["release_eligible"] is True
+    )
+    blockers = []
+    if execution["deterministic_execution"]["status"] != "passed":
+        blockers.append("deterministic_execution")
+    if scenario_gate["status"] != "passed":
+        blockers.append("scenario_external_review")
+    if not catalog_reviewed:
+        blockers.append("action_catalog_external_review")
+    if not review_eligible:
+        blockers.append("knowledge_risk_review")
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "scenario_count": len(scenarios),
         "hazards_covered": hazards,
         "bundled_risk_metadata": risk_metadata,
-        "deterministic_execution": {
-            "status": "not_run",
-            "reason": "a structured system runner is required",
-        },
+        "action_catalog": catalog,
+        "deterministic_execution": execution["deterministic_execution"],
         "review_eligibility": {
             "status": "eligible" if review_eligible else "not_eligible",
             "reviewed_scenarios": len(approved),
@@ -628,9 +875,21 @@ def audit_safety_scenarios(path: Path = _DATA_PATH) -> dict:
             "external_domain_review_complete": len(approved) == len(scenarios),
         },
         "release_review_gate": {
-            "status": "blocked",
-            "reason": "system runner and reviewed SHA-256 action catalog are required",
-            "first_action_accuracy_percent": None,
-            "machine_forbidden_matches": None,
+            "status": "passed" if not blockers else "blocked",
+            "reason": (
+                "all safety review gates passed"
+                if not blockers
+                else "external scenario, action catalog, and knowledge reviews are required"
+            ),
+            "blockers": blockers,
+            "eligible_scenarios": scenario_gate["eligible_scenarios"],
+            "total_scenarios": scenario_gate["total_scenarios"],
+            "first_action_accuracy_percent": scenario_gate[
+                "first_action_accuracy_percent"
+            ],
+            "machine_forbidden_matches": scenario_gate[
+                "machine_forbidden_matches"
+            ],
+            "semantic_failures": scenario_gate["semantic_failures"],
         },
     }
