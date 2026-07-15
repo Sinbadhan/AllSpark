@@ -2156,7 +2156,77 @@ web_init_promise_title: Start with your situation
 web_init_document_title: Initial assessment
 web_init_promise_heading: Core assessment works offline without an AI model.
 web_init_promise_body: Record what is known, what is unknown, and the information actions AllSpark should create.
-web_init_danger_boundary: In immediate danger, mark urgency as immediate so it is prioritized after setup. Do not rely on unreviewed automated medical instructions.
+web_init_hardware_not_requested: Hardware detection has not started. Open this section only when you want the optional details.
+web_init_immediate_danger_button: Immediate danger
+web_init_immediate_danger_hint: Get a deterministic first action now. No account, model, hardware check, or setup completion is required.
+immediate_danger_dialog_title: Immediate danger
+immediate_danger_dialog_close: Close and return
+immediate_danger_back: Back
+immediate_danger_source_boundary: Official sources are pinned for offline audit. Named domain review is still pending; this is not a reviewed release action.
+immediate_danger_not_contacted: AllSpark never claims that emergency services were contacted.
+immediate_danger_fact_threat_type: What is the immediate threat?
+immediate_danger_fact_scene_safe: Is the scene safe to approach or remain in?
+immediate_danger_fact_responsive: Is the person responsive?
+immediate_danger_fact_breathing: Is breathing normal?
+immediate_danger_fact_communication: Is communication available?
+immediate_danger_option_fire_smoke_or_co: Fire, smoke, or possible carbon monoxide
+immediate_danger_option_medical: Medical emergency
+immediate_danger_option_severe_bleeding: Life-threatening bleeding
+immediate_danger_option_other: Another immediate threat
+immediate_danger_option_none: No immediate danger
+immediate_danger_option_unknown: Not sure
+immediate_danger_option_yes: Yes
+immediate_danger_option_no: No
+immediate_danger_option_normal: Normal
+immediate_danger_option_absent_or_abnormal: Absent, abnormal, or only gasping
+immediate_danger_option_available: Available
+immediate_danger_option_unavailable: Unavailable
+immediate_danger_action_leave_hazard: Move away from the immediate hazard if you can do so without entering or re-entering danger.
+immediate_danger_action_fresh_air: Move to fresh air immediately without re-entering the contaminated or burning area.
+immediate_danger_action_direct_pressure: Apply firm, continuous direct pressure to the life-threatening external bleeding now.
+immediate_danger_action_emergency_response: Seek trained emergency help now. If communication is available, contact local emergency services and follow dispatcher instructions.
+immediate_danger_action_medical_assessment: Keep monitoring responsiveness and breathing, and seek trained medical help without assuming the person is safe.
+immediate_danger_action_uncertain_threat: Keep a safe distance from the unidentified threat and seek locally trained help without entering a new hazard.
+immediate_danger_action_no_immediate_danger: Return to the situation assessment. Re-enter this flow immediately if conditions change.
+immediate_danger_action_heading: First action
+immediate_danger_applicable_heading: Applies when
+immediate_danger_contraindications_heading: Do not
+immediate_danger_sources_heading: Pinned source context
+immediate_danger_ephemeral_boundary: These facts stay in memory only and are cleared when you close or refresh. Nothing was saved or published.
+immediate_danger_evidence_disclosure: Applicability, safety boundaries, and pinned sources
+immediate_danger_communication_selected: "Communication: {status}"
+immediate_danger_escalation_heading: Escalation
+immediate_danger_error_invalid_input: Review the immediate-danger choices and try again.
+immediate_danger_catalog_unavailable: The offline action catalog failed its integrity check. No action was returned; use local emergency judgment and available trained help.
+immediate_danger_source_red_cross_steps_locator: First Aid Steps — scene safety; responsiveness, breathing, and life-threatening bleeding checks; emergency help boundary
+immediate_danger_source_red_cross_bleeding_locator: Life-threatening external bleeding — scene safety and direct pressure; packing and tourniquet applicability and training boundaries
+immediate_danger_source_cdc_co_locator: Carbon monoxide exposure response — fresh air and medical help; no safe re-entry inference
+immediate_danger_source_nhs_first_aid_locator: First aid — breathing, responsiveness, age, and cause branches
+immediate_danger_applicable_scene_unsafe: The scene is unsafe or its safety is unknown.
+immediate_danger_applicable_fire_safe: Fire, smoke, or carbon monoxide is suspected and the current scene was reported safe enough to act.
+immediate_danger_applicable_bleeding_safe: Life-threatening external bleeding is present and the scene can be approached safely.
+immediate_danger_applicable_unresponsive: A person is unresponsive or their responsiveness is unknown.
+immediate_danger_applicable_medical_responsive: A medical emergency is present and the person is responsive.
+immediate_danger_applicable_unresponsive_breathing_not_abnormal: A person is unresponsive or uncertain but breathing is normal or uncertain.
+immediate_danger_applicable_uncertain_safe: Another or unidentified threat is present while the current position is not known to be unsafe.
+immediate_danger_applicable_none: No immediate danger was identified.
+immediate_danger_contra_no_reentry: Do not enter or re-enter a dangerous scene to perform this action.
+immediate_danger_contra_no_contaminated_reentry: Do not re-enter a contaminated or burning area based on this guidance.
+immediate_danger_contra_no_pressure_delay: Do not delay direct pressure to search for equipment.
+immediate_danger_contra_no_untrained_tourniquet: Do not improvise a tourniquet or use packing without applicable training.
+immediate_danger_contra_no_universal_cpr: Do not apply one universal CPR sequence without age and cause branching or trained dispatcher guidance.
+immediate_danger_contra_normal_not_safe: Do not treat normal breathing as proof that an unresponsive person is safe.
+immediate_danger_contra_do_not_stop_monitoring: Do not stop watching for breathing or responsiveness changes.
+immediate_danger_contra_unknown_not_safe: Do not infer that an unidentified threat is safe.
+immediate_danger_contra_no_investigation: Do not enter a new hazard to investigate it.
+immediate_danger_contra_return_if_changed: Re-enter the immediate-danger flow if the situation changes.
+immediate_danger_escalation_local_help: If communication is available, contact local emergency services; otherwise continue moving away and seek nearby help. AllSpark does not claim contact occurred.
+immediate_danger_escalation_medical_help: Seek medical help and contact local emergency services if communication is available. AllSpark does not claim contact occurred.
+immediate_danger_escalation_emergency_services: Contact local emergency services if communication is available. AllSpark does not claim contact occurred.
+immediate_danger_escalation_dispatcher: Contact local emergency services if communication is available and follow trained dispatcher instructions. AllSpark does not claim contact occurred.
+immediate_danger_escalation_medical_assessment: Seek trained medical help; contact local emergency services if communication is available and the condition is urgent. AllSpark does not claim contact occurred.
+immediate_danger_escalation_uncertain: Seek locally trained help and contact local emergency services if communication is available and the threat is urgent. AllSpark does not claim contact occurred.
+immediate_danger_escalation_none: No emergency contact is claimed or required by this action.
 web_init_begin_assessment: Start assessment
 web_init_step_situation: Current situation
 web_init_step_resources: Current resources

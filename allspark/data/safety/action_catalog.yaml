@@ -1,0 +1,134 @@
+schema_version: 1
+catalog_id: allspark-immediate-danger
+catalog_revision: 1
+review_status: pending_external_review
+release_eligible: false
+sources:
+  red-cross-first-aid-steps:
+    organization: American Red Cross
+    title: First Aid Steps
+    locator: "First Aid Steps: check the scene for safety; check responsiveness, breathing, and life-threatening bleeding; get emergency help when indicated"
+    locator_key: immediate_danger_source_red_cross_steps_locator
+    url: https://www.redcross.org/take-a-class/first-aid/performing-first-aid/first-aid-steps
+    revision: accessed-2026-07-16
+    assertion: Check scene safety before care and assess responsiveness, breathing, and life-threatening bleeding before choosing the next response.
+    content_hash: sha256:089c69084b8e68b06e7adadb271bab3ff51130b8a68bb24b823357f8d8b10381
+  red-cross-life-threatening-bleeding:
+    organization: American Red Cross
+    title: Life-Threatening External Bleeding
+    locator: "Life-threatening external bleeding: scene safety and direct pressure; packing or tourniquet only when applicable and within training boundaries"
+    locator_key: immediate_danger_source_red_cross_bleeding_locator
+    url: https://www.redcross.org/take-a-class/resources/learn-first-aid/bleeding-life-threatening-external
+    revision: accessed-2026-07-16
+    assertion: After confirming scene safety, direct pressure is the initial response for life-threatening external bleeding; packing and tourniquets have applicability and training boundaries.
+    content_hash: sha256:63d78a85067fa86f702a84aec6bb509699fcfb9de80f8c5d56eadc6c626090af
+  cdc-niosh-carbon-monoxide:
+    organization: CDC/NIOSH
+    title: Carbon Monoxide
+    locator: "Carbon monoxide exposure response: move immediately to fresh air and seek medical attention; do not infer that re-entry is safe"
+    locator_key: immediate_danger_source_cdc_co_locator
+    url: https://www.cdc.gov/niosh/carbon-monoxide/about/index.html
+    revision: accessed-2026-07-16
+    assertion: Suspected carbon monoxide exposure requires moving to fresh air immediately and seeking medical attention without implying that re-entry is safe.
+    content_hash: sha256:0989fce2e7b6834f2dcb5757a59dc8275b06de9bf689ee3d3ea647a06da69756
+  nhs-first-aid:
+    organization: NHS
+    title: First aid
+    locator: "CPR and emergency branches: normal breathing, ineffective cough/choking, age, awareness, and cause affect the response"
+    locator_key: immediate_danger_source_nhs_first_aid_locator
+    url: https://www.nhs.uk/tests-and-treatments/first-aid/
+    revision: accessed-2026-07-16
+    assertion: Breathing, responsiveness, age, and cause affect emergency first-aid branches and must not be collapsed into one universal instruction.
+    content_hash: sha256:1eb9e62cadc22d8a46e667ecbf8c1d04e5b867391a039ac8c964a9664b386fb8
+actions:
+  - action_id: leave-immediate-hazard
+    revision: 1
+    text_key: immediate_danger_action_leave_hazard
+    source_ids: [red-cross-first-aid-steps]
+    applicable_when:
+      any:
+        - scene_safe: ["no", unknown]
+    applicable_label_keys: [immediate_danger_applicable_scene_unsafe]
+    contraindication_keys: [immediate_danger_contra_no_reentry]
+    escalation_key: immediate_danger_escalation_local_help
+    review_status: pending_external_review
+    content_hash: sha256:637357a753446d1fa77b345da9b8846b52a369640afeb25b1741c539a4509874
+  - action_id: move-to-fresh-air
+    revision: 1
+    text_key: immediate_danger_action_fresh_air
+    source_ids: [cdc-niosh-carbon-monoxide]
+    applicable_when:
+      any:
+        - threat_type: [fire_smoke_or_co]
+          scene_safe: ["yes"]
+    applicable_label_keys: [immediate_danger_applicable_fire_safe]
+    contraindication_keys: [immediate_danger_contra_no_contaminated_reentry]
+    escalation_key: immediate_danger_escalation_medical_help
+    review_status: pending_external_review
+    content_hash: sha256:3473ad85c16cc8c23312fa814a2459d61d3bd90fb064fb9f7b0aed2781608ec5
+  - action_id: apply-direct-pressure
+    revision: 1
+    text_key: immediate_danger_action_direct_pressure
+    source_ids: [red-cross-first-aid-steps, red-cross-life-threatening-bleeding]
+    applicable_when:
+      any:
+        - threat_type: [severe_bleeding]
+          scene_safe: ["yes"]
+    applicable_label_keys: [immediate_danger_applicable_bleeding_safe]
+    contraindication_keys: [immediate_danger_contra_no_pressure_delay, immediate_danger_contra_no_untrained_tourniquet]
+    escalation_key: immediate_danger_escalation_emergency_services
+    review_status: pending_external_review
+    content_hash: sha256:c3a538730aef8644795962b05aa1396c92bdb1b6b783216101612cf01fd31f43
+  - action_id: seek-emergency-response
+    revision: 1
+    text_key: immediate_danger_action_emergency_response
+    source_ids: [red-cross-first-aid-steps, nhs-first-aid]
+    applicable_when:
+      any:
+        - threat_type: [medical]
+          scene_safe: ["yes"]
+          responsive: ["no", unknown]
+    applicable_label_keys: [immediate_danger_applicable_unresponsive]
+    contraindication_keys: [immediate_danger_contra_no_universal_cpr]
+    escalation_key: immediate_danger_escalation_dispatcher
+    review_status: pending_external_review
+    content_hash: sha256:0f90f7dabb7b6e84ff4ffefd00119b31d3af1779580ea5b5b38a078bbeb83797
+  - action_id: seek-medical-assessment
+    revision: 1
+    text_key: immediate_danger_action_medical_assessment
+    source_ids: [red-cross-first-aid-steps, nhs-first-aid]
+    applicable_when:
+      any:
+        - threat_type: [medical]
+          scene_safe: ["yes"]
+          responsive: ["yes"]
+    applicable_label_keys: [immediate_danger_applicable_medical_responsive]
+    contraindication_keys: [immediate_danger_contra_normal_not_safe, immediate_danger_contra_do_not_stop_monitoring]
+    escalation_key: immediate_danger_escalation_medical_assessment
+    review_status: pending_external_review
+    content_hash: sha256:a87059fb0c4f8a1e92b6e96c4fb003f04909cbee8c10708010f3a7519cd22a73
+  - action_id: keep-distance-seek-local-help
+    revision: 1
+    text_key: immediate_danger_action_uncertain_threat
+    source_ids: [red-cross-first-aid-steps]
+    applicable_when:
+      any:
+        - threat_type: [other, unknown]
+          scene_safe: ["yes"]
+    applicable_label_keys: [immediate_danger_applicable_uncertain_safe]
+    contraindication_keys: [immediate_danger_contra_unknown_not_safe, immediate_danger_contra_no_investigation]
+    escalation_key: immediate_danger_escalation_uncertain
+    review_status: pending_external_review
+    content_hash: sha256:3e294a2405e7b0f1d42214626f9260e3f2c7759441d43c8869d4d99cedd97683
+  - action_id: return-to-assessment
+    revision: 1
+    text_key: immediate_danger_action_no_immediate_danger
+    source_ids: []
+    applicable_when:
+      any:
+        - threat_type: [none]
+    applicable_label_keys: [immediate_danger_applicable_none]
+    contraindication_keys: [immediate_danger_contra_return_if_changed]
+    escalation_key: immediate_danger_escalation_none
+    review_status: pending_external_review
+    content_hash: sha256:2b9ff4c6cae6b31b60ef1dc2183f5dd0aa23c7fa1ebef18f1da16327dea1b2de

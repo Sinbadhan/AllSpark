@@ -1,3 +1,4 @@
+import asyncio
 import hmac
 import logging
 import secrets
@@ -24,6 +25,13 @@ from allspark.core.database import Database
 from allspark.core.i18n import MESSAGES, get_language, init_language, set_language, t
 from allspark.infrastructure.hardware import compute_feature_flags, detect_hardware
 from allspark.infrastructure.module_loader import ModuleRegistry
+from allspark.services.immediate_danger import (
+    ImmediateDangerCatalogError,
+    ImmediateDangerInputError,
+    action_catalog_audit,
+    assess_immediate_danger,
+    load_action_catalog,
+)
 from allspark.services.initial_assessment import (
     InitialAssessmentValidationError,
     assessment_preview,
@@ -124,6 +132,7 @@ def _render_template(name: str, **context) -> str:
         "error_assessment_",
         "resource_",
         "q_",
+        "immediate_danger_",
     )
     context.setdefault(
         "init_i18n",
@@ -390,6 +399,105 @@ def _assessment_error_response(
 
 
 def _register_init_routes(app):
+    def catalog_unavailable(exc: ImmediateDangerCatalogError, language: str):
+        logger.error(
+            "Immediate-danger catalog unavailable: field=%s code=%s",
+            exc.field,
+            exc.code,
+        )
+        response_language = language if language in ("zh", "en") else "en"
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "error": "immediate_danger_catalog_unavailable",
+                "detail": MESSAGES[response_language][
+                    "immediate_danger_catalog_unavailable"
+                ],
+                "release_eligible": False,
+                "next_action": "use_local_emergency_judgment",
+            },
+        )
+
+    @app.get("/api/immediate-danger/catalog")
+    async def immediate_danger_catalog(language: str = Query("en")):
+        """Read-only, bundled action contract; never fetches source URLs."""
+        if language not in ("zh", "en"):
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "error": "invalid_immediate_danger_input",
+                    "detail": MESSAGES["en"]["immediate_danger_error_invalid_input"],
+                    "errors": [{"field": "language", "code": "invalid_choice"}],
+                },
+            )
+        try:
+            catalog = load_action_catalog()
+        except ImmediateDangerCatalogError as exc:
+            return catalog_unavailable(exc, language)
+        return {
+            **action_catalog_audit(),
+            "actions": [
+                {
+                    key: action[key]
+                    for key in (
+                        "action_id",
+                        "revision",
+                        "content_hash",
+                        "source_ids",
+                        "applicable_when",
+                        "review_status",
+                    )
+                }
+                for action in catalog["actions"]
+            ],
+            "sources": [
+                {
+                    "source_id": source_id,
+                    "organization": source["organization"],
+                    "title": source["title"],
+                    "locator": MESSAGES[language][source["locator_key"]],
+                    "url": source["url"],
+                    "revision": source["revision"],
+                    "content_hash": source["content_hash"],
+                }
+                for source_id, source in catalog["sources"].items()
+            ],
+        }
+
+    @app.post("/api/immediate-danger/assess")
+    async def immediate_danger_assess(request: Request):
+        try:
+            body = await request.json()
+        except Exception:
+            body = None
+        language = body.get("language", "en") if isinstance(body, dict) else "en"
+        facts = body.get("facts") if isinstance(body, dict) else None
+        try:
+            return assess_immediate_danger(facts, language)
+        except ImmediateDangerInputError as exc:
+            response_language = (
+                language
+                if isinstance(language, str) and language in ("zh", "en")
+                else "en"
+            )
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "error",
+                    "error": "invalid_immediate_danger_input",
+                    "detail": MESSAGES[response_language].get(
+                        "immediate_danger_error_invalid_input",
+                        MESSAGES["en"]["immediate_danger_error_invalid_input"],
+                    ),
+                    "errors": [{"field": exc.field, "code": exc.code}],
+                    "next_action": "review_immediate_danger_facts",
+                },
+            )
+        except ImmediateDangerCatalogError as exc:
+            return catalog_unavailable(exc, language)
+
     @app.get("/api/init/status")
     async def init_status():
         return {"initialized": app.state.initialized}
@@ -436,7 +544,21 @@ def _register_init_routes(app):
     @app.get("/api/init/hardware")
     async def init_hardware():
         from allspark.infrastructure.hardware import LLM_MODEL_MAP
-        profile = detect_hardware()
+        try:
+            profile = await asyncio.wait_for(
+                asyncio.to_thread(detect_hardware), timeout=3.0
+            )
+        except Exception as exc:
+            logger.warning("Deferred hardware detection unavailable: %s", exc)
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "error",
+                    "error": "hardware_detection_unavailable",
+                    "detail": t("web_init_hardware_unavailable"),
+                    "next_action": "continue_without_hardware",
+                },
+            )
         flags = compute_feature_flags(profile.tier, profile.gpu_available)
         model_info = LLM_MODEL_MAP.get(profile.tier, {})
 
