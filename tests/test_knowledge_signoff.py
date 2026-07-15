@@ -86,10 +86,9 @@ class TestLoaderGuard:
 
 
 class TestVerifierGate:
-    def test_unsigned_high_trust_gets_field_tested_not_expert(self):
-        # db=None -> cross_reference step returns passed=True (skipped), so
-        # has_support=True; source=pre_collapse -> high trust. Without a
-        # signoff the verifier must NOT assign expert_verified (SHA-148).
+    def test_unsigned_high_trust_is_only_partially_verified(self):
+        # A provenance claim without auditable cross-reference or controlled
+        # field records cannot become field_tested or expert_verified.
         verifier = KnowledgeVerifier(db=None)
         entry = KnowledgeEntry(
             id="test/water/boil3", category="survival", subcategory="water",
@@ -98,12 +97,19 @@ class TestVerifierGate:
             source="pre_collapse", language="zh",
         )
         report = verifier.verify_entry(entry)
-        assert report.level == "field_tested"
+        assert report.level == "partially_verified"
 
     def test_signed_high_trust_gets_expert_verified(self):
+        # Expert signoff is a separate controlled evidence path; the skipped
+        # cross-reference result is not counted as support.
         verifier = KnowledgeVerifier(db=None)
         report = verifier.verify_entry(_signed_entry())
         assert report.level == "expert_verified"
+        assert report.overall_passed is True
+        cross_ref = next(result for result in report.results if result.step == "cross_reference")
+        assert cross_ref.passed is False
+        level = next(result for result in report.results if result.step == "level_assign")
+        assert level.details["has_support"] is False
 
 
 class TestRealKnowledgeBase:

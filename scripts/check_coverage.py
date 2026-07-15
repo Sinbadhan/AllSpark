@@ -7,8 +7,9 @@ the two metrics separate avoids coverage.py's combined statement/branch
 percentage when branch measurement is enabled.
 
 Release acceptance (Linear SHA-151) requires >=90% branch on the critical
-path (auth/init/SKF/import/reset/backup/search/resource) and >=75% total
-line coverage. The 9 critical-path floors are pinned to the 90% acceptance
+path (auth/init/SKF/import/reset/backup/search/resource/first-run assessment/
+knowledge verification) and >=75% total
+line coverage. The 10 critical-path floors are pinned to the 90% acceptance
 threshold. Other high-risk floors are ratcheted to measured levels to prevent
 regression.
 
@@ -29,7 +30,7 @@ import sys
 from typing import Any
 
 # Critical-path modules per SHA-151 acceptance plus other high-risk
-# low-coverage modules. Floors are BRANCH coverage %. All 9 critical-path
+# low-coverage modules. Floors are BRANCH coverage %. All 10 critical-path
 # modules now meet the >=90% acceptance (Phase B, 2026-07-13, branch
 # sha-151/coverage-gate-real); their floor is pinned at 90 so they cannot
 # regress below acceptance. Non-critical high-risk modules keep a ratcheted
@@ -46,6 +47,7 @@ DEFAULT_BRANCH_FLOORS = {
     "allspark/services/knowledge_engine.py": 90,       # search (58.3% -> 94.4%)
     "allspark/services/resource_manager.py": 90,       # resource (68.4% -> 96.9%)
     "allspark/services/initial_assessment.py": 90,      # first-run safety contract
+    "allspark/services/knowledge_verifier.py": 90,      # knowledge trust boundary
     # --- other high-risk low-coverage modules (ratcheted, non-acceptance) ---
     "allspark/adapters/routes/governance.py": 92,      # (0% -> 92.1%)
     "allspark/commands/survival.py": 9,

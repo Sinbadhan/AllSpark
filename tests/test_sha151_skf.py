@@ -13,6 +13,7 @@ import pytest
 
 from allspark.core.database import Database
 from allspark.core.models import ExperienceLog, KnowledgeEntry, MapPOI
+from allspark.services.knowledge_verifier import KnowledgeVerifier
 from allspark.services.skf_manager import SKFPackage, import_skf
 
 
@@ -304,3 +305,25 @@ def test_import_skf_without_verify_imports_anyway(db: Database, tmp_path: Path) 
     r = import_skf(db, str(path), verify=False)
     assert r["status"] == "ok"
     assert r["imported"]["knowledge"] == 1
+
+
+@pytest.mark.parametrize("verify", [True, False])
+@pytest.mark.parametrize("claim", ["expert_verified", "field_tested", "cross_ref"])
+def test_malicious_skf_verification_claim_is_unverified_at_rest(
+    db: Database, tmp_path: Path, verify: bool, claim: str
+) -> None:
+    entry = _entry(id=f"malicious-{claim}")
+    entry.source = "pre_collapse"
+    entry.verification = claim
+    pkg = _pkg_with(entries=[entry], spark_id="attacker")
+    path = tmp_path / f"malicious-{claim}-{verify}.skf"
+    pkg.export_to_file(str(path))
+
+    result = import_skf(db, str(path), verify=verify, skip_duplicates=False)
+
+    assert result["status"] == "ok"
+    persisted = db.get_knowledge(entry.id)
+    assert persisted is not None
+    assert persisted.source == "other_spark"
+    assert persisted.verification == "unverified"
+    assert KnowledgeVerifier(db=db).verify_entry(persisted).level == "unverified"

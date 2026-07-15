@@ -10,7 +10,7 @@
 CI on GitHub runs `ruff` + `mypy` + the complete tracked `pytest` suite on
 Python 3.10/3.11/3.12. The canonical Python 3.10 coverage job feeds
 `scripts/check_coverage.py`, which enforces at least 75% total line coverage
-plus at least 90% branch coverage on the nine SHA-151 critical-path modules;
+plus at least 90% branch coverage on the ten SHA-151 critical-path modules;
 every supported version also runs the collection-count floor to prevent silent
 test deletion. This checklist covers what automation cannot prove:
 assistive-technology and zoom usability, live LLM, voice/vision hardware,

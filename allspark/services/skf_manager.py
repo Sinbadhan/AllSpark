@@ -375,6 +375,10 @@ def import_skf(db, path: str, verify: bool = True,
                     imported["skipped"] += 1
                     continue
         k.source = "other_spark"
+        # SKF is an untrusted transport.  Preserve the sender's claim only in
+        # the package inspection layer; persisted knowledge starts unverified
+        # until a local, auditable evidence workflow establishes otherwise.
+        k.verification = "unverified"
         db.save_knowledge(k)
         imported["knowledge"] += 1
 

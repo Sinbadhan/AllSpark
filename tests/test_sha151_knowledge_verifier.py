@@ -10,6 +10,8 @@ from allspark.services.knowledge_verifier import (
     KnowledgeSigner,
     KnowledgeVerifier,
     VerificationLevel,
+    VerificationReport,
+    VerificationResult,
 )
 
 
@@ -25,11 +27,13 @@ def _entry(id="v1", title="T", summary="S", category="survival", priority=1,
     )
 
 
-def test_verify_entry_good_entry_passes():
+def test_verify_entry_without_auditable_cross_refs_fails_closed():
     v = KnowledgeVerifier()
     report = v.verify_entry(_entry())
-    assert report.overall_passed is True
-    assert report.level  # some level assigned
+    assert report.overall_passed is False
+    cross_ref = next(r for r in report.results if r.step == "cross_reference")
+    assert cross_ref.passed is False
+    assert cross_ref.details["supporting_count"] == 0
 
 
 def test_format_check_missing_required_field():
@@ -61,12 +65,14 @@ def test_source_check_trust_levels():
         assert src.details["trust_level"] == expected
 
 
-def test_source_check_verification_overrides():
+def test_source_check_verification_claim_never_overrides_provenance():
     v = KnowledgeVerifier()
-    # unknown source but expert_verified -> high trust.
-    r = v.verify_entry(_entry(source="unknown", verification="expert_verified"))
-    src = next(x for x in r.results if x.step == "source_check")
-    assert src.details["trust_level"] == "high"
+    for claim in ("expert_verified", "field_tested", "cross_ref"):
+        r = v.verify_entry(_entry(source="unknown", verification=claim))
+        src = next(x for x in r.results if x.step == "source_check")
+        assert src.details["trust_level"] == "low"
+        assert src.details["verification_claim"] == claim
+        assert r.level == VerificationLevel.UNVERIFIED.value
 
 
 def test_consistency_check_no_db_skips():
@@ -88,6 +94,18 @@ def test_consistency_check_detects_summary_conflict(tmp_path):
     db.close()
 
 
+def test_consistency_check_detects_step_conflict(tmp_path):
+    db = Database(tmp_path / "kv-step-conflict.db")
+    db.save_knowledge(_entry(id="steps", summary="same", steps=["必须煮沸"]))
+    report = KnowledgeVerifier(db=db).verify_entry(
+        _entry(id="steps", summary="same", steps=["不要煮沸"])
+    )
+    consistency = next(x for x in report.results if x.step == "consistency_check")
+    assert consistency.passed is False
+    assert consistency.details["conflicts"][0]["type"] == "step_conflict"
+    db.close()
+
+
 def test_consistency_check_warning_conflict_across_entries(tmp_path):
     db = Database(tmp_path / "kv2.db")
     db.save_knowledge(_entry(id="a", summary="ok", category="survival", warnings=["禁止饮用"]))
@@ -104,17 +122,98 @@ def test_cross_reference_no_db_skips():
     r = v.verify_entry(_entry())
     cr = next(x for x in r.results if x.step == "cross_reference")
     assert cr.details.get("skipped") is True
+    assert cr.passed is False
+    assert cr.message == "Cross-reference evidence not established: no database available"
+    assert cr.details["supporting_count"] == 0
+    level = next(x for x in r.results if x.step == "level_assign")
+    assert level.details["has_support"] is False
+    assert r.overall_passed is False
 
 
-def test_cross_reference_finds_support(tmp_path):
+def test_cross_reference_rejects_same_category_and_keyword_overlap(tmp_path):
     db = Database(tmp_path / "kv3.db")
     db.save_knowledge(_entry(id="s1", title="water boiling", summary="purify", category="survival"))
     db.save_knowledge(_entry(id="s2", title="water boiling method", summary="purify water", category="survival"))
     v = KnowledgeVerifier(db=db)
-    r = v.verify_entry(_entry(id="s2", title="water boiling", summary="purify", category="survival"))
+    r = v.verify_entry(_entry(id="candidate", title="water boiling", summary="purify water",
+                              category="survival", source="other_spark"))
     cr = next(x for x in r.results if x.step == "cross_reference")
-    assert cr.details["supporting_count"] >= 1
+    assert cr.passed is False
+    assert cr.details["supporting_count"] == 0
+    assert cr.details["supporting"] == []
+    assert r.level == VerificationLevel.UNVERIFIED.value
     db.close()
+
+
+def test_cross_reference_rejects_short_keywords_and_zero_references(tmp_path):
+    db = Database(tmp_path / "kv-short.db")
+    v = KnowledgeVerifier(db=db)
+
+    for entry in (
+        _entry(id="short", title="a b", summary="c d", source="unknown"),
+        _entry(id="empty", title="water purification guide",
+               summary="boil filter disinfect", source="unknown"),
+    ):
+        report = v.verify_entry(entry)
+        cross_ref = next(x for x in report.results if x.step == "cross_reference")
+        assert cross_ref.passed is False
+        assert cross_ref.details["supporting_count"] == 0
+        assert report.level == VerificationLevel.UNVERIFIED.value
+    db.close()
+
+
+def test_auditable_support_guard_rejects_skipped_empty_and_non_independent():
+    skipped = VerificationResult("cross_reference", True, "skipped", {"skipped": True})
+    empty = VerificationResult(
+        "cross_reference", True, "empty", {"skipped": False, "supporting": []}
+    )
+    same_source = VerificationResult(
+        "cross_reference",
+        True,
+        "duplicate source",
+        {
+            "skipped": False,
+            "supporting": [
+                {"source_id": "one", "locator": "book:1", "independent": True},
+                {"source_id": "one", "locator": "book:2", "independent": True},
+            ],
+        },
+    )
+    assert KnowledgeVerifier._has_auditable_support(skipped) is False
+    assert KnowledgeVerifier._has_auditable_support(empty) is False
+    assert KnowledgeVerifier._has_auditable_support(same_source) is False
+    assert KnowledgeVerifier._has_auditable_support(
+        VerificationResult(
+            "cross_reference", True, "malformed", {"supporting": ["not-a-reference", {}]}
+        )
+    ) is False
+
+
+def test_level_assign_accepts_only_two_independent_locatable_sources():
+    report = VerificationReport(entry_id="candidate", entry_title="Candidate")
+    report.results = [
+        VerificationResult("source_check", True, "low", {"trust_level": "low"}),
+        VerificationResult("consistency_check", True, "consistent", {}),
+        VerificationResult(
+            "cross_reference",
+            True,
+            "two independent sources",
+            {
+                "skipped": False,
+                "supporting": [
+                    {"source_id": "who", "locator": "WHO:guide:1", "independent": True},
+                    {"source_id": "red-cross", "locator": "ARC:manual:2", "independent": True},
+                ],
+            },
+        ),
+    ]
+
+    result = KnowledgeVerifier()._step_level_assign(
+        _entry(id="candidate", source="unknown"), report
+    )
+
+    assert result.details["has_support"] is True
+    assert result.details["level"] == VerificationLevel.CROSS_REFERENCED.value
 
 
 def test_level_assign_conflict_when_consistency_fails(tmp_path):
@@ -129,8 +228,23 @@ def test_level_assign_conflict_when_consistency_fails(tmp_path):
 def test_level_assign_unverified_for_low_trust():
     v = KnowledgeVerifier()
     r = v.verify_entry(_entry(source="unknown"))
-    # low trust, no db support -> unverified (or partially_verified if keywords<3)
-    assert r.level in (VerificationLevel.UNVERIFIED.value, VerificationLevel.PARTIALLY_VERIFIED.value)
+    assert r.level == VerificationLevel.UNVERIFIED.value
+
+
+def test_level_assign_never_auto_assigns_field_tested():
+    v = KnowledgeVerifier()
+    r = v.verify_entry(_entry(source="pre_collapse", verification="field_tested"))
+    assert r.level == VerificationLevel.PARTIALLY_VERIFIED.value
+    assert r.level != VerificationLevel.FIELD_TESTED.value
+
+
+def test_other_spark_without_auditable_support_stays_unverified(tmp_path):
+    db = Database(tmp_path / "kv-other-spark.db")
+    verifier = KnowledgeVerifier(db=db)
+    for claim in ("expert_verified", "field_tested"):
+        report = verifier.verify_entry(_entry(source="other_spark", verification=claim))
+        assert report.level == VerificationLevel.UNVERIFIED.value
+    db.close()
 
 
 def test_is_contradictory_negation_patterns():

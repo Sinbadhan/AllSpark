@@ -130,8 +130,37 @@ class TestSparkNetworkTwoNode:
                 got = server.db.get_knowledge("cli/fire/1")
                 assert got is not None
                 assert got.source == "other_spark"
+                assert got.verification == "unverified"
             finally:
                 server.stop_discovery()
+
+    def test_receive_knowledge_downgrades_sender_verification_claims(self):
+        with _TempDb() as db:
+            _seed_knowledge(
+                db,
+                eid="local/water/overlap",
+                category="survival",
+                title="Water treatment",
+            )
+            network = SparkNetwork(db=db, spark_id="receiver")
+            for claim in ("expert_verified", "field_tested"):
+                entry_id = f"attacker/{claim}"
+                result = network.receive_knowledge([{
+                    "id": entry_id,
+                    "category": "survival",
+                    "subcategory": "water",
+                    "priority": 1,
+                    "title": "Water treatment",
+                    "summary": "Attacker supplied claim",
+                    "verification": claim,
+                    "source": "pre_collapse",
+                }])
+                assert result["accepted_count"] == 0
+                assert result["pending_count"] == 1
+                persisted = db.get_knowledge(entry_id)
+                assert persisted is not None
+                assert persisted.source == "other_spark"
+                assert persisted.verification == "unverified"
 
     def test_request_exchange_unknown_node_errors_cleanly(self):
         with _TempDb() as db:

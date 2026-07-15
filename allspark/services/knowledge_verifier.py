@@ -58,7 +58,9 @@ class VerificationReport:
         }
 
 
-TRUSTED_SOURCES = {"pre_collapse", "expert_verified", "field_tested"}
+# Provenance and verification are separate taxonomies.  In particular,
+# ``expert_verified`` and ``field_tested`` are evidence claims, not sources.
+TRUSTED_SOURCES = {"pre_collapse"}
 MODERATE_SOURCES = {"other_spark", "crowdsourced"}
 LOW_TRUST_SOURCES = {"unverified", "unknown", "ai_generated"}
 
@@ -86,7 +88,22 @@ class KnowledgeVerifier:
         report.results.append(self._step_cross_reference(entry))
         report.results.append(self._step_level_assign(entry, report))
 
-        report.overall_passed = all(r.passed for r in report.results)
+        # ``overall_passed`` means that one auditable verification path was
+        # established and the hard content checks passed.  Cross-reference
+        # and expert signoff are alternative evidence paths, so an expert-
+        # signed entry is not failed merely because it has no cross-reference.
+        hard_steps = {
+            VerificationStep.FORMAT_CHECK.value,
+            VerificationStep.CONSISTENCY_CHECK.value,
+            VerificationStep.LEVEL_ASSIGN.value,
+        }
+        hard_checks_passed = all(
+            result.passed for result in report.results if result.step in hard_steps
+        )
+        report.overall_passed = hard_checks_passed and report.level in {
+            VerificationLevel.EXPERT_VERIFIED.value,
+            VerificationLevel.CROSS_REFERENCED.value,
+        }
         if not report.overall_passed:
             failed = [r.step for r in report.results if not r.passed]
             report.warnings.append(f"Failed steps: {', '.join(failed)}")
@@ -144,7 +161,7 @@ class KnowledgeVerifier:
 
     def _step_source_check(self, entry: KnowledgeEntry) -> VerificationResult:
         source = entry.source or "unknown"
-        verification = entry.verification or "unverified"
+        verification_claim = entry.verification or "unverified"
 
         if source in TRUSTED_SOURCES:
             trust = "high"
@@ -153,18 +170,18 @@ class KnowledgeVerifier:
         else:
             trust = "low"
 
-        if verification == "expert_verified":
-            trust = "high"
-        elif verification == "field_tested":
-            trust = "high"
-        elif verification == "cross_ref":
-            trust = "moderate"
-
         return VerificationResult(
             step=VerificationStep.SOURCE_CHECK.value,
             passed=trust != "low",
-            message=f"Source trust level: {trust} (source={source}, verification={verification})",
-            details={"source": source, "verification": verification, "trust_level": trust},
+            message=(
+                f"Source trust level: {trust} "
+                f"(source={source}, verification_claim={verification_claim})"
+            ),
+            details={
+                "source": source,
+                "verification_claim": verification_claim,
+                "trust_level": trust,
+            },
         )
 
     def _step_consistency_check(self, entry: KnowledgeEntry) -> VerificationResult:
@@ -220,41 +237,34 @@ class KnowledgeVerifier:
         )
 
     def _step_cross_reference(self, entry: KnowledgeEntry) -> VerificationResult:
+        # SHA-250: database presence, category similarity, and keyword overlap
+        # are discovery signals, not evidence.  The current KnowledgeEntry
+        # schema cannot represent two independent, locatable references; that
+        # evidence model belongs to SHA-240.  Until then this step must fail
+        # closed instead of fabricating support from search results.
         if not self.db:
             return VerificationResult(
                 step=VerificationStep.CROSS_REFERENCE.value,
-                passed=True,
-                message="No database available, skipping cross-reference",
-                details={"skipped": True},
+                passed=False,
+                message="Cross-reference evidence not established: no database available",
+                details={
+                    "skipped": True,
+                    "supporting_count": 0,
+                    "supporting": [],
+                    "reason": "independent_locatable_references_required",
+                },
             )
-
-        supporting = []
-
-        keywords = []
-        if entry.title:
-            keywords.extend(entry.title.split())
-        if entry.summary:
-            keywords.extend(entry.summary.split()[:10])
-
-        keywords = [k for k in keywords if len(k) >= 2][:8]
-
-        for kw in keywords:
-            results = self.db.search_knowledge(kw, limit=3)
-            for r in results:
-                if r.id == entry.id:
-                    continue
-                if r.category == entry.category:
-                    supporting.append({"id": r.id, "title": r.title, "reason": "same_category"})
-                elif any(kw in (r.summary or "") for kw in keywords[:3]):
-                    supporting.append({"id": r.id, "title": r.title, "reason": "keyword_overlap"})
-
-        supporting = self._deduplicate_refs(supporting)
 
         return VerificationResult(
             step=VerificationStep.CROSS_REFERENCE.value,
-            passed=len(supporting) > 0 or len(keywords) < 3,
-            message=f"Found {len(supporting)} supporting reference(s)" if supporting else "No supporting references found",
-            details={"supporting_count": len(supporting), "supporting": supporting[:5], "keywords_used": keywords},
+            passed=False,
+            message="No auditable independent references available",
+            details={
+                "skipped": False,
+                "supporting_count": 0,
+                "supporting": [],
+                "reason": "independent_locatable_references_required",
+            },
         )
 
     def _step_level_assign(self, entry: KnowledgeEntry, report: VerificationReport) -> VerificationResult:
@@ -267,25 +277,15 @@ class KnowledgeVerifier:
             source_trust = source_result.details.get("trust_level", "low")
 
         has_conflicts = consistency_result and not consistency_result.passed
-        has_support = cross_ref_result and cross_ref_result.passed
+        has_support = self._has_auditable_support(cross_ref_result)
 
         if has_conflicts:
             level = VerificationLevel.CONFLICT
-        elif source_trust == "high" and has_support and entry.is_signed_off():
+        elif source_trust == "high" and entry.is_signed_off():
             level = VerificationLevel.EXPERT_VERIFIED
-        elif source_trust == "high" and has_support:
-            # High-trust + cross-ref support but no auditable expert signoff
-            # (SHA-148): field_tested, not expert_verified. expert_verified now
-            # requires a populated reviewer + signoff_version pinned to the
-            # entry's content_hash (see KnowledgeEntry.is_signed_off).
-            level = VerificationLevel.FIELD_TESTED
-        elif source_trust == "high":
-            level = VerificationLevel.PARTIALLY_VERIFIED
-        elif source_trust == "moderate" and has_support:
-            level = VerificationLevel.CROSS_REFERENCED
-        elif source_trust == "moderate":
-            level = VerificationLevel.PARTIALLY_VERIFIED
         elif has_support:
+            level = VerificationLevel.CROSS_REFERENCED
+        elif source_trust == "high":
             level = VerificationLevel.PARTIALLY_VERIFIED
         else:
             level = VerificationLevel.UNVERIFIED
@@ -298,6 +298,39 @@ class KnowledgeVerifier:
             message=f"Assigned verification level: {level.value}",
             details={"level": level.value, "source_trust": source_trust, "has_conflicts": has_conflicts, "has_support": has_support},
         )
+
+    @staticmethod
+    def _has_auditable_support(result: VerificationResult | None) -> bool:
+        """Accept cross-reference support only when its evidence is explicit.
+
+        SHA-240 will introduce the structured reference schema.  This guard is
+        deliberately stricter than the current result producer so skipped or
+        accidentally-passed empty results cannot become trust evidence again.
+        """
+        if result is None or not result.passed or not result.details:
+            return False
+        if result.details.get("skipped"):
+            return False
+        supporting = result.details.get("supporting")
+        if not isinstance(supporting, list) or len(supporting) < 2:
+            return False
+
+        source_ids = set()
+        for reference in supporting:
+            if not isinstance(reference, dict):
+                return False
+            source_id = reference.get("source_id")
+            locator = reference.get("locator")
+            if (
+                reference.get("independent") is not True
+                or not isinstance(source_id, str)
+                or not source_id.strip()
+                or not isinstance(locator, str)
+                or not locator.strip()
+            ):
+                return False
+            source_ids.add(source_id.strip())
+        return len(source_ids) >= 2
 
     def _is_contradictory(self, text_a: str, text_b: str) -> bool:
         if not text_a or not text_b:

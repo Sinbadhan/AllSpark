@@ -101,7 +101,7 @@ allspark/
 - v1.0.3 尚未 tag 或发布；SHA-158 是实时发布状态权威入口，当前结论为 On track / Release-ready，但仍不得称为 Stable
 - 2026-07-15 发现的 8 个 High/P1、本轮 CLI/Repository/CI P2、执行中心入口、CSP enforcing、发布事务一致性与最终 RC 跨流程复验均已闭环
 - 完整 tracked tests 已收集（以 `pytest tests/ -q` / CI 实际输出为准；CI 在 Python 3.10/3.11/3.12 复现，SHA-28）
-- SHA-151 质量门禁：Python 3.10 为权威覆盖环境，总行覆盖率 ≥75%，9 个关键路径模块分支覆盖率均 ≥90%；3.10/3.11/3.12 均运行完整测试与收集数防回退门禁
+- SHA-151 质量门禁：Python 3.10 为权威覆盖环境，总行覆盖率 ≥75%，10 个关键路径模块分支覆盖率均 ≥90%；3.10/3.11/3.12 均运行完整测试与收集数防回退门禁
 - Ruff lint 0 errors
 - mypy 0 errors，`check_untyped_defs = true` 已启用
 - `scripts/bench_import.py --check` 同时执行 600ms sum-of-means 与 2000ms cold-wall 门禁，当前通过
