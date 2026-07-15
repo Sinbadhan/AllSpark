@@ -187,6 +187,14 @@ class TestSetCommand:
     def test_execute_invalid_number(self, dispatcher):
         assert dispatcher.dispatch("set", ["power", "abc"]) is True
 
+    @pytest.mark.parametrize("value", ["NaN", "Infinity", "-1"])
+    def test_execute_unsafe_number_does_not_write(self, dispatcher, db, value):
+        from allspark.core.models import ResourceType
+
+        before = db.get_resource(ResourceType.WATER)
+        assert dispatcher.dispatch("set", ["water", value, "2"]) is True
+        assert db.get_resource(ResourceType.WATER) == before
+
 
 # ─── LangCommand Tests ──────────────────────────────────────────────────────
 
