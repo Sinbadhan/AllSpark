@@ -127,4 +127,4 @@ markers = [
 include = ["allspark*"]
 
 [tool.setuptools.package-data]
-allspark = ["py.typed", "data/*.yaml", "data/knowledge/*.yaml", "locales/*.yaml", "templates/*.html"]
+allspark = ["py.typed", "data/*.yaml", "data/knowledge/*.yaml", "data/safety/*.yaml", "locales/*.yaml", "templates/*.html"]
