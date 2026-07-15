@@ -53,3 +53,48 @@ def test_main_warns_when_binding_all_interfaces(create_app, uvicorn_run, caplog)
 
     assert "0.0.0.0" in caplog.text
     uvicorn_run.assert_called_once()
+
+
+@patch("allspark.__main__.uvicorn.run")
+@patch("allspark.__main__.create_app")
+def test_operator_token_is_neither_redisplayed_nor_logged(
+    create_app, uvicorn_run, caplog, capsys
+):
+    import allspark.__main__ as main_mod
+
+    create_app.return_value = MagicMock()
+    token = "sha259-private-bootstrap-token"
+    with patch.object(main_mod, "_port_in_use", return_value=False):
+        main_mod.main(
+            ["--web", "--host", "192.0.2.10", "--web-token", token]
+        )
+
+    captured = capsys.readouterr()
+    assert token not in captured.err
+    assert token not in caplog.text
+    assert "Auth ENABLED" in caplog.text
+    create_app.assert_called_once_with(None, token=token)
+    uvicorn_run.assert_called_once()
+
+
+@patch("allspark.__main__.uvicorn.run")
+@patch("allspark.__main__.create_app")
+def test_generated_token_is_shown_once_but_not_logged(
+    create_app, uvicorn_run, caplog, capsys
+):
+    import allspark.__main__ as main_mod
+
+    create_app.return_value = MagicMock()
+    token = "sha259-generated-bootstrap-token"
+    with (
+        patch.object(main_mod, "_port_in_use", return_value=False),
+        patch("secrets.token_urlsafe", return_value=token),
+    ):
+        main_mod.main(["--web", "--host", "192.0.2.10"])
+
+    captured = capsys.readouterr()
+    assert captured.err.count(token) == 1
+    assert token not in caplog.text
+    assert "captured stderr as sensitive" in caplog.text
+    create_app.assert_called_once_with(None, token=token)
+    uvicorn_run.assert_called_once()

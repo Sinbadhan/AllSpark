@@ -2269,3 +2269,9 @@ web_init_plan_risk_label: 风险边界
 web_primary_plan_heading: 现在做什么
 web_primary_plan_unavailable: 尚无已确认的 24 小时计划，请重新评估当前状况。
 web_primary_plan_reassess: 重新评估
+storage_path_not_owned: "敏感数据路径不属于当前用户：{path}"
+storage_path_not_directory: "敏感数据路径不是目录：{path}"
+storage_parent_writable: "数据库路径祖先目录不安全 {path}（权限 {mode}）：同组或其他用户可替换其下目录项"
+storage_path_not_regular: "敏感数据路径不是普通文件：{path}"
+storage_directory_symlink: "敏感数据目录不允许使用不受信任的符号链接：{path}"
+web_auth_bootstrap_token: "一次性 Web 登录令牌：{token}（请在 /login 输入，勿分享或记录）"

@@ -21,6 +21,7 @@ from allspark.core.models import (
     normalize_knowledge_risk_metadata,
     validate_knowledge_entry_schema,
 )
+from allspark.core.storage_security import prepare_database_path, secure_database_files
 from allspark.core.tokenizer import tokenize, tokenize_query
 
 logger = logging.getLogger(__name__)
@@ -87,15 +88,23 @@ class Database:
         )
 
     def __init__(self, db_path: Optional[Path] = None):
+        from allspark.core.config import DEFAULT_DB_DIR, DEFAULT_DB_PATH
+
         if db_path is None:
-            from allspark.core.config import DEFAULT_DB_PATH
             db_path = DEFAULT_DB_PATH
         db_path = Path(db_path)
-        db_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            db_path.resolve().relative_to(DEFAULT_DB_DIR.resolve())
+            managed_root: Path | None = DEFAULT_DB_DIR
+        except ValueError:
+            managed_root = None
+        prepare_database_path(db_path, managed_root=managed_root)
         self.db_path = db_path
         self.conn = sqlite3.connect(str(db_path), check_same_thread=False)
+        secure_database_files(db_path)
         self.conn.row_factory = sqlite3.Row
         self._init_schema()
+        secure_database_files(db_path)
 
     def _init_schema(self):
         cur = self.conn.cursor()

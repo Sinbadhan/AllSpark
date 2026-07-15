@@ -96,7 +96,7 @@ accessibility claim.
 ### 📝 Journal & Timeline
 | Feature | Description |
 |---------|-------------|
-| Spark Diary | Text/emotion recording + keyword tagging + date index + privacy protection |
+| Spark Diary | Text/emotion recording + keyword tagging + date index; local plaintext privacy boundary is documented |
 | Survival Timeline | 7 event types + day-by-day view + auto-record goals/milestones/resource changes |
 | Diary-Timeline Link | Diary entries auto-appear in survival timeline |
 
@@ -122,7 +122,7 @@ accessibility claim.
 |---------|-------------|
 | Power Monitor (Experimental hardware) | Simulated/manual fallback is available; RPi GPIO ADC is not field-certified |
 | Sensor Hub (Experimental) | I2C/GPIO/Serial adapters exist but target sensors are not field-certified |
-| Data Preservation | Local atomic snapshot/restore + checksum/integrity checks; removable-media recovery is Experimental |
+| Data Preservation | Local atomic snapshot/restore + checksum/integrity checks + POSIX owner-only permissions; data is not application-encrypted and removable-media recovery is Experimental |
 | Boot Optimization (Experimental) | Boot timing plus systemd/watchdog templates; target Linux boot deployment is not certified |
 | Startup Integrity | DB file + table integrity + missing table detection on startup |
 

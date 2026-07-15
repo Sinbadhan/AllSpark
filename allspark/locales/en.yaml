@@ -2330,3 +2330,9 @@ web_init_plan_risk_label: Risk boundary
 web_primary_plan_heading: What to do now
 web_primary_plan_unavailable: No confirmed 24-hour plan is available. Reassess the current situation.
 web_primary_plan_reassess: Reassess
+storage_path_not_owned: "Sensitive storage path is not owned by the current user: {path}"
+storage_path_not_directory: "Sensitive storage path is not a directory: {path}"
+storage_parent_writable: "Unsafe database path ancestor {path} (mode {mode}): group or other users can replace entries below it"
+storage_path_not_regular: "Sensitive storage path is not a regular file: {path}"
+storage_directory_symlink: "Sensitive storage directories cannot use an untrusted symbolic link: {path}"
+web_auth_bootstrap_token: "One-time Web login token: {token} (enter it at /login; do not share or log it)"

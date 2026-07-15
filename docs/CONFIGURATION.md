@@ -56,6 +56,16 @@ Common local data locations and file types:
 
 Do not commit local runtime data to Git.
 
+On POSIX systems, AllSpark enforces `0700` on managed data, backup, and snapshot
+directories and `0600` on SQLite and preservation files. A database path whose
+ancestor chain is writable by group or other users is rejected, except for
+POSIX sticky shared directories such as `/tmp`. User-controlled directory
+symlinks in the sensitive storage path are rejected; root-owned system aliases
+are resolved and their target chain is checked. These controls do not encrypt
+the data; see [the privacy boundary](PRIVACY.md) for the data
+inventory, deletion semantics, encryption decision, and Windows validation
+status.
+
 ## Models
 
 Local model files can be large and sensitive to licensing constraints. Keep model weights outside the repository. `.gguf` files are ignored by default.

@@ -14,6 +14,12 @@ from pathlib import Path
 from typing import Any, Optional
 
 from allspark.core.config import DEFAULT_DB_DIR
+from allspark.core.storage_security import (
+    ensure_private_directory,
+    ensure_private_file,
+    prepare_database_path,
+    secure_database_files,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +38,26 @@ class DataPreservation:
         self._last_save_time: Optional[str] = None
         self._save_count = 0
         self._signal_handlers_installed = False
+        try:
+            self.db_path.resolve().relative_to(DEFAULT_DB_DIR.resolve())
+            managed_root: Path | None = DEFAULT_DB_DIR
+        except ValueError:
+            managed_root = None
+        prepare_database_path(self.db_path, managed_root=managed_root)
+        self._migrate_existing_preservation_files()
+
+    def _migrate_existing_preservation_files(self) -> None:
+        for directory in (self.backup_dir, self.snapshot_dir):
+            if not directory.exists():
+                continue
+            ensure_private_directory(directory)
+            for path in directory.iterdir():
+                if path.is_file():
+                    ensure_private_file(path)
+
+    @staticmethod
+    def _prepare_output_directory(directory: Path) -> None:
+        ensure_private_directory(directory)
 
     def start_auto_save(self, interval_seconds: int = 300) -> dict:
         if self._running:
@@ -73,7 +99,7 @@ class DataPreservation:
 
     def emergency_save(self, reason: str = "unknown") -> dict:
         try:
-            self.backup_dir.mkdir(parents=True, exist_ok=True)
+            self._prepare_output_directory(self.backup_dir)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             backup_name = f"emergency_{reason}_{timestamp}.db"
             backup_path = self.backup_dir / backup_name
@@ -87,6 +113,7 @@ class DataPreservation:
                         logger.warning("WAL checkpoint failed before emergency save: %s", e)
 
                 shutil.copy2(str(self.db_path), str(backup_path))
+                ensure_private_file(backup_path)
                 integrity = self._verify_integrity(backup_path)
                 logger.warning(f"Emergency save: {backup_name} integrity={integrity}")
                 return {"status": "ok", "path": str(backup_path), "integrity": integrity, "reason": reason}
@@ -98,7 +125,7 @@ class DataPreservation:
 
     def _create_backup(self) -> Optional[str]:
         try:
-            self.backup_dir.mkdir(parents=True, exist_ok=True)
+            self._prepare_output_directory(self.backup_dir)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             backup_path = self.backup_dir / f"auto_{timestamp}.db"
 
@@ -109,6 +136,7 @@ class DataPreservation:
                     except Exception as e:
                         logger.warning("DB commit failed before backup: %s", e)
                 shutil.copy2(str(self.db_path), str(backup_path))
+                ensure_private_file(backup_path)
                 self._cleanup_old_backups()
                 return str(backup_path)
         except Exception as e:
@@ -132,7 +160,7 @@ class DataPreservation:
         snap_tmp: Optional[Path] = None
         meta_tmp: Optional[Path] = None
         try:
-            self.snapshot_dir.mkdir(parents=True, exist_ok=True)
+            self._prepare_output_directory(self.snapshot_dir)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             safe_label = re.sub(r"[^\w.-]+", "-", label.strip(), flags=re.UNICODE)
             safe_label = safe_label.strip(".-_")[:64]
@@ -147,6 +175,7 @@ class DataPreservation:
                 meta_tmp = self.snapshot_dir / f".{snap_name}.meta.{token}.tmp"
 
                 self._copy_database(snap_tmp)
+                ensure_private_file(snap_tmp)
                 if not self._verify_integrity(snap_tmp):
                     raise ValueError("Snapshot integrity check failed")
 
@@ -158,12 +187,15 @@ class DataPreservation:
                     "checksum_algorithm": "sha256",
                 }
                 with open(meta_tmp, "w") as f:
+                    ensure_private_file(meta_tmp)
                     json.dump(meta, f, indent=2, ensure_ascii=False)
                     f.flush()
                     os.fsync(f.fileno())
 
                 os.replace(snap_tmp, snap_path)
                 os.replace(meta_tmp, meta_path)
+                ensure_private_file(snap_path)
+                ensure_private_file(meta_path)
                 self._fsync_directory(self.snapshot_dir)
                 return {"status": "ok", "path": str(snap_path), "meta": meta}
             return {"status": "no_db_file"}
@@ -226,9 +258,17 @@ class DataPreservation:
             ):
                 return {"status": "error", "message": "Snapshot checksum mismatch"}
 
-            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+            prepare_database_path(
+                self.db_path,
+                managed_root=(
+                    DEFAULT_DB_DIR
+                    if self.db_path.resolve().is_relative_to(DEFAULT_DB_DIR.resolve())
+                    else None
+                ),
+            )
             restore_tmp = self.db_path.parent / f".{self.db_path.name}.{uuid.uuid4().hex}.restore.tmp"
             shutil.copy2(snap_path, restore_tmp)
+            ensure_private_file(restore_tmp)
             if not self._verify_integrity(restore_tmp):
                 return {"status": "error", "message": "Staged snapshot integrity check failed"}
 
@@ -242,6 +282,7 @@ class DataPreservation:
             for suffix in ("-wal", "-shm"):
                 Path(f"{self.db_path}{suffix}").unlink(missing_ok=True)
             os.replace(restore_tmp, self.db_path)
+            secure_database_files(self.db_path)
             self._fsync_directory(self.db_path.parent)
 
             if self.db:
@@ -276,9 +317,12 @@ class DataPreservation:
                 target.close()
             return
         shutil.copy2(self.db_path, destination)
+        ensure_private_file(destination)
 
     def _reopen_database(self) -> None:
+        secure_database_files(self.db_path)
         self.db.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
+        secure_database_files(self.db_path)
         self.db.conn.row_factory = sqlite3.Row
 
     @staticmethod

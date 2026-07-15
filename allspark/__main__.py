@@ -77,12 +77,23 @@ def main(argv: list[str] | None = None):
         web_token = None
         if host not in ("127.0.0.1", "localhost", "::1"):
             import secrets as _secrets
+
+            from rich.console import Console
+
             web_token = args.web_token or _secrets.token_urlsafe(32)
-            logger.warning(
-                "Auth ENABLED for Web UI (non-loopback). Token: %s "
-                "(open /login in the browser and enter it; token is never sent in HTML)",
-                web_token,
-            )
+            if args.web_token:
+                logger.warning(
+                    "Auth ENABLED for Web UI (non-loopback); "
+                    "the operator-provided credential will not be displayed or logged."
+                )
+            else:
+                logger.warning(
+                    "Auth ENABLED for Web UI (non-loopback); an auto-generated "
+                    "credential was emitted once on stderr. Treat captured stderr as sensitive."
+                )
+                Console(stderr=True).print(
+                    t("web_auth_bootstrap_token", token=web_token), markup=False
+                )
 
         if _port_in_use(port, host):
             logger.warning(t("web_port_in_use", port=port))

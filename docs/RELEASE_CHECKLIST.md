@@ -49,6 +49,11 @@ python3 tests/regression/run_all.py
 python3 scripts/bench_import.py --check --hard-fail
 ```
 
+On a real macOS/Linux candidate installation, also verify that managed data,
+backup, and snapshot directories are `0700`, while the database, WAL/SHM,
+backups, snapshots, and metadata are `0600`. Keep Windows ACL support in Testing
+until a real Windows run is attached; see `docs/PRIVACY.md`.
+
 Do not lower coverage or collection floors to make a release pass. Record the
 exact pytest, coverage, regression, and benchmark output in the release PR.
 Python 3.10 is the canonical coverage environment; CI still runs the complete
@@ -85,6 +90,8 @@ Verify no sensitive or generated files are staged:
 - `CONTRIBUTING.md` has current development commands.
 - `SECURITY.md` has a valid reporting path.
 - `docs/CONFIGURATION.md` reflects actual configuration behavior.
+- `docs/PRIVACY.md` reflects the current data inventory, plaintext storage,
+  deletion limits, and encryption/Windows boundaries.
 - `docs/REAL_WORLD_VALIDATION.md` separates verified automation from hardware
   that was not exercised in this release.
 - `CHANGELOG.md` has release notes for the new version.
