@@ -92,7 +92,9 @@ def test_action_first_assessment_preview_switches_live_without_publishing(tmp_pa
         state = browser.evaluate(
             """({
               resources: document.getElementById('summary-resources').textContent,
-              actions: document.getElementById('summary-actions').textContent,
+              plan: document.getElementById('plan-selection').textContent,
+              primaryCount: document.querySelectorAll('input[name=primary-action]').length,
+              completeDisabled: document.getElementById('btn-complete').disabled,
               initializedText: document.getElementById('hardware-summary').textContent,
             })"""
         )
@@ -100,7 +102,15 @@ def test_action_first_assessment_preview_switches_live_without_publishing(tmp_pa
         assert "4 L/day" in state["resources"]
         assert "total basis" in state["resources"]
         assert "Mixed sources" in state["resources"]
-        assert "deferred" in state["actions"]
+        assert "Complete" in state["plan"]
+        assert state["primaryCount"] >= 1
+        assert state["completeDisabled"] is True
+        enabled = browser.evaluate(
+            "document.querySelector('input[name=primary-action]').click();"
+            "document.getElementById('assessment-confirmed').click();"
+            "document.getElementById('btn-complete').disabled"
+        )
+        assert enabled is False
         initialized = browser.evaluate(
             "fetch('/api/init/status').then(r=>r.json()).then(x=>x.initialized)",
             await_promise=True,
@@ -114,6 +124,7 @@ def test_action_first_assessment_preview_switches_live_without_publishing(tmp_pa
               progressHidden: document.querySelector('.progress').getAttribute('aria-hidden'),
               title: document.title,
               hardware: document.getElementById('hardware-summary').textContent,
+              selectedPlan: document.querySelector('input[name=primary-action]:checked')?.value || '',
             })"""
         )
         assert "次" in switched["resources"]
@@ -121,6 +132,16 @@ def test_action_first_assessment_preview_switches_live_without_publishing(tmp_pa
         assert switched["progressHidden"] == "true"
         assert switched["title"] == "ALLSPARK — 首次状况评估"
         assert "正在检测" not in switched["hardware"]
+        assert switched["selectedPlan"].startswith("survival-plan-")
+
+        browser.evaluate(
+            "showErrors([{field:'primary_action_id',code:'selection_required'}]);"
+            "document.querySelector('#init-error-list a').click()"
+        )
+        browser.wait_for("document.activeElement.name==='primary-action'")
+        assert browser.evaluate(
+            "document.querySelector('#init-error-list a').getAttribute('href')"
+        ) == "#plan-selection"
 
 
 def test_zh_browser_locale_starts_on_language_step(tmp_path: Path) -> None:

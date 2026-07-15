@@ -92,6 +92,7 @@ def test_cli_publishes_after_assessment_without_profile_or_hardware_prompts(
             "2", "1",  # fire
             "2", "1",  # storage
             "yes",
+            "1",  # explicitly accept one current primary action
         ]
         os.write(master, ("\n".join(answers) + "\n").encode())
         output = _read_until(master, "Initialization complete", timeout=30)
@@ -105,6 +106,9 @@ def test_cli_publishes_after_assessment_without_profile_or_hardware_prompts(
     assert "Mixed sources" in output
     assert "total basis" in output
     assert "Step 3/3: Review before initialization" in output
+    assert "Next 24-hour action plan" in output
+    assert "Risk boundary" in output
+    assert "Later actions" in output
     assert "Choose hardware tier" not in output
     assert "GPS" not in output
     assert "Skills" not in output

@@ -21,6 +21,7 @@ from allspark.services.initial_assessment import (
     validate_initial_assessment,
 )
 from allspark.services.resource_manager import ResourceManager
+from allspark.services.survival_plan import SurvivalPlanService
 
 
 def assessment_payload(*, confirmed: bool = True) -> dict:
@@ -190,7 +191,7 @@ def test_outlier_requires_explicit_confirmation() -> None:
     assert validate_initial_assessment(payload)["resources"]["water"]["amount"] == 100_001
 
 
-def test_all_unknown_persists_without_per_person_claims_and_creates_gap_tasks(
+def test_all_unknown_persists_without_per_person_claims_or_phase_zero_tasks(
     tmp_path,
 ) -> None:
     db = Database(tmp_path / "assessment.db")
@@ -204,16 +205,8 @@ def test_all_unknown_persists_without_per_person_claims_and_creates_gap_tasks(
     state = db.get_survivor_state()
     assert state["people_count"] == "unknown"
     assert state["people_count_status"] == "unknown"
-    assert {task.id for task in tasks} == {
-        "assessment-gap-people_count",
-        "assessment-gap-health",
-        "assessment-gap-urgency",
-        "assessment-gap-shelter",
-        "assessment-gap-threats",
-        "assessment-gap-water",
-        "assessment-gap-food",
-    }
-    assert [task.priority for task in tasks] == [1, 1, 1, 1, 1, 1, 2]
+    assert tasks == []
+    assert db.get_active_tasks() == []
     for resource in manager.get_all_resources():
         assert resource.amount_known is False
         assert resource.people_count == 1
@@ -243,7 +236,7 @@ def test_apply_is_idempotent_and_does_not_replace_unrelated_tasks(tmp_path) -> N
 
     rows = db.conn.execute("SELECT * FROM tasks").fetchall()
     ids = [row["id"] for row in rows]
-    assert len(ids) == len(set(ids)) == 8
+    assert len(ids) == len(set(ids)) == 1
     saved = db.conn.execute(
         "SELECT * FROM tasks WHERE id='manual-existing'"
     ).fetchone()
@@ -251,19 +244,18 @@ def test_apply_is_idempotent_and_does_not_replace_unrelated_tasks(tmp_path) -> N
     assert saved["title"] == "Keep me"
 
 
-def test_gap_task_markers_render_in_both_languages(tmp_path) -> None:
+def test_gap_plan_actions_render_in_both_languages(tmp_path) -> None:
     db = Database(tmp_path / "i18n.db")
     manager = ResourceManager(db)
     manager.init_defaults()
-    task = InitialAssessmentService(db, manager)._gap_tasks(
-        validate_initial_assessment(unknown_assessment())
-    )[0]
+    service = SurvivalPlanService(db, manager)
+    plan = service.generate(validate_initial_assessment(unknown_assessment()))
     original = "en"
     try:
         set_language("zh", persist=False)
-        zh = render(task.title)
+        zh = service.payload(plan)["actions"][0]["title"]
         set_language("en", persist=False)
-        en = render(task.title)
+        en = service.payload(plan)["actions"][0]["title"]
     finally:
         set_language(original, persist=False)
     assert zh and en and zh != en
@@ -282,7 +274,7 @@ def test_mixed_source_label_does_not_imply_older_data() -> None:
         set_language(original, persist=False)
 
 
-def test_preview_separates_known_unknown_and_actions() -> None:
+def test_preview_separates_known_unknown_without_legacy_task_claims() -> None:
     payload = unknown_assessment()
     payload["resources"]["water"] = {
         "status": "known",
@@ -294,43 +286,29 @@ def test_preview_separates_known_unknown_and_actions() -> None:
     assert {item["domain"] for item in preview["known"]} >= {"water"}
     assert "water" not in preview["unknown"]
     assert "water_rate" in preview["unknown"]
-    assert all(action["id"].startswith("assessment-gap-") for action in preview["actions"])
-    water_action = next(
-        action for action in preview["actions"] if action["domain"] == "water"
-    )
-    assert water_action == {
-        "id": "assessment-gap-water",
-        "domain": "water",
-        "missing": ["rate"],
-        "priority": 1,
-        "disposition": "created",
-    }
+    assert preview["actions"] == []
 
 
 def test_resource_gap_task_aggregates_amount_and_rate_and_defers_low_risk(
     tmp_path,
 ) -> None:
     assessment = validate_initial_assessment(unknown_assessment())
-    preview = assessment_preview(assessment)
-    water = next(action for action in preview["actions"] if action["domain"] == "water")
-    power = next(action for action in preview["actions"] if action["domain"] == "power")
-    assert water["missing"] == ["amount", "rate"]
-    assert water["disposition"] == "created"
-    assert power["missing"] == ["amount", "rate"]
-    assert power["disposition"] == "deferred"
+    assert assessment_preview(assessment)["actions"] == []
 
     db = Database(tmp_path / "aggregate.db")
     manager = ResourceManager(db)
     manager.init_defaults()
-    service = InitialAssessmentService(db, manager)
-    service.apply(assessment)
-    assert db.conn.execute(
-        "SELECT COUNT(*) FROM tasks WHERE id='assessment-gap-water'"
-    ).fetchone()[0] == 1
-    assert db.conn.execute(
-        "SELECT COUNT(*) FROM tasks WHERE id IN "
-        "('assessment-gap-power','assessment-gap-fire','assessment-gap-storage')"
-    ).fetchone()[0] == 0
+    plan = SurvivalPlanService(db, manager).generate(assessment)
+    water_plan_action = next(
+        action for action in plan.actions if action.id == "survival-plan-gap-water"
+    )
+    assert {item["field"] for item in water_plan_action.evidence} >= {
+        "water.amount",
+        "water.consumption",
+        "water.intake",
+        "water.rate_basis",
+    }
+    assert db.get_active_tasks() == []
 
     rate_only = unknown_assessment()
     rate_only["resources"]["water"] = {
@@ -338,18 +316,28 @@ def test_resource_gap_task_aggregates_amount_and_rate_and_defers_low_risk(
         "amount": 10,
         "rates": {"status": "unknown"},
     }
-    service.apply(validate_initial_assessment(rate_only))
-    row = db.conn.execute(
-        "SELECT * FROM tasks WHERE id='assessment-gap-water'"
-    ).fetchone()
-    assert row is not None
-    assert row["description"] == "t:assessment_gap_water_rate_desc"
+    rate_plan = SurvivalPlanService(db, manager).generate(
+        validate_initial_assessment(rate_only)
+    )
+    rate_action = next(
+        action
+        for action in rate_plan.actions
+        if action.id == "survival-plan-gap-water"
+    )
+    assert {item["field"] for item in rate_action.evidence} == {
+        "water.consumption",
+        "water.intake",
+        "water.rate_basis",
+    }
 
     all_known = assessment_payload()
-    service.apply(validate_initial_assessment(all_known))
-    assert db.conn.execute(
-        "SELECT COUNT(*) FROM tasks WHERE id='assessment-gap-water'"
-    ).fetchone()[0] == 1
+    unknown_rate_plan = SurvivalPlanService(db, manager).generate(
+        validate_initial_assessment(all_known)
+    )
+    assert any(
+        action.id == "survival-plan-gap-water"
+        for action in unknown_rate_plan.actions
+    )
     for resource in all_known["resources"].values():
         resource["rates"] = {
             "status": "estimate",
@@ -357,10 +345,14 @@ def test_resource_gap_task_aggregates_amount_and_rate_and_defers_low_risk(
             "daily_consumption": 1,
             "daily_intake": 0,
         }
-    service.apply(validate_initial_assessment(all_known))
-    assert db.conn.execute(
-        "SELECT COUNT(*) FROM tasks WHERE id='assessment-gap-water'"
-    ).fetchone()[0] == 0
+    complete_plan = SurvivalPlanService(db, manager).generate(
+        validate_initial_assessment(all_known)
+    )
+    assert all(
+        action.id != "survival-plan-gap-water"
+        for action in complete_plan.actions
+    )
+    assert db.get_active_tasks() == []
 
 
 def test_explicit_rate_estimate_requires_known_people_and_is_persisted(tmp_path) -> None:
@@ -482,21 +474,19 @@ def test_web_preview_is_read_only_and_complete_publishes_same_contract(tmp_path)
     assert db.get_active_tasks() == []
     payload["as_of"] = preview.json()["summary"]["as_of"]
 
+    plan = preview.json()["plan"]
     completed = client.post(
         "/api/init/complete",
-        json={"language": "zh", "assessment": payload},
+        json={
+            "language": "zh",
+            "assessment": payload,
+            "plan_id": plan["id"],
+            "primary_action_id": plan["primary_candidate_ids"][0],
+        },
     )
 
     assert completed.status_code == 200, completed.text
-    assert completed.json()["created_task_ids"] == [
-        "assessment-gap-food",
-        "assessment-gap-health",
-        "assessment-gap-shelter",
-        "assessment-gap-threats",
-        "assessment-gap-urgency",
-        "assessment-gap-water",
-        "assessment-gap-people_count",
-    ]
+    assert completed.json()["created_task_ids"] == []
     assert db.is_initialized() is True
     assert db.get_survivor_state()["name"] == "幸存者"
     resources = client.get("/api/resources")
@@ -571,6 +561,7 @@ def _assessment_candidate(db: Database) -> PreparedApplication:
     manager.init_defaults()
     container = ServiceContainer()
     container.register("initial_assessment", InitialAssessmentService(db, manager))
+    container.register("survival_plan", SurvivalPlanService(db, manager))
     return PreparedApplication(
         bootstrap=SimpleNamespace(shutdown=MagicMock()),
         container=container,
@@ -591,22 +582,34 @@ def test_web_assessment_drafts_converge_after_finalize_failure_and_changed_retry
     original_finalize = db.finalize_initialization
     calls = 0
 
-    def fail_once(language):
+    def fail_once(language, plan_id=None, accepted_action_id=None):
         nonlocal calls
         calls += 1
         if calls == 1:
             raise RuntimeError("marker failed")
-        return original_finalize(language)
+        return original_finalize(language, plan_id, accepted_action_id)
 
     monkeypatch.setattr(db, "finalize_initialization", fail_once)
+    first_payload = unknown_assessment()
+    first_preview = client.post(
+        "/api/init/assessment/preview",
+        json={"language": "en", "assessment": first_payload},
+    ).json()
+    first_payload["as_of"] = first_preview["summary"]["as_of"]
     first = client.post(
         "/api/init/complete",
-        json={"language": "en", "assessment": unknown_assessment()},
+        json={
+            "language": "en",
+            "assessment": first_payload,
+            "plan_id": first_preview["plan"]["id"],
+            "primary_action_id": first_preview["plan"]["primary_candidate_ids"][0],
+        },
     )
     assert first.status_code == 503
     assert db.is_initialized() is False
     assert client.app.state.container is None
-    assert len(db.get_active_tasks()) == 7
+    assert db.get_active_tasks() == []
+    assert db.get_survival_plan() is None
 
     complete = assessment_payload()
     for resource in complete["resources"].values():
@@ -616,9 +619,19 @@ def test_web_assessment_drafts_converge_after_finalize_failure_and_changed_retry
             "daily_consumption": 1,
             "daily_intake": 0,
         }
+    retry_preview = client.post(
+        "/api/init/assessment/preview",
+        json={"language": "en", "assessment": complete},
+    ).json()
+    complete["as_of"] = retry_preview["summary"]["as_of"]
     retry = client.post(
         "/api/init/complete",
-        json={"language": "en", "assessment": complete},
+        json={
+            "language": "en",
+            "assessment": complete,
+            "plan_id": retry_preview["plan"]["id"],
+            "primary_action_id": retry_preview["plan"]["primary_candidate_ids"][0],
+        },
     )
     assert retry.status_code == 200, retry.text
     assert retry.json()["created_task_ids"] == []
@@ -626,7 +639,7 @@ def test_web_assessment_drafts_converge_after_finalize_failure_and_changed_retry
     assert db.get_active_tasks() == []
 
 
-def test_web_partial_gap_task_write_failure_retries_without_duplicates(
+def test_web_partial_plan_write_failure_retries_without_draft_leak(
     monkeypatch, tmp_path
 ) -> None:
     client = TestClient(create_app(str(tmp_path / "task-retry.db")))
@@ -636,23 +649,35 @@ def test_web_partial_gap_task_write_failure_retries_without_duplicates(
         "_prepare_engine",
         lambda *args, **kwargs: _assessment_candidate(db),
     )
-    original_save = db.save_task
+    original_save = db.save_survival_plan
     calls = 0
 
-    def fail_second_once(task):
+    def fail_after_write_once(plan):
         nonlocal calls
         calls += 1
-        if calls == 2:
-            raise RuntimeError("task draft failed")
-        return original_save(task)
+        original_save(plan)
+        if calls == 1:
+            raise RuntimeError("plan draft failed")
 
-    monkeypatch.setattr(db, "save_task", fail_second_once)
-    payload = {"language": "en", "assessment": unknown_assessment()}
+    monkeypatch.setattr(db, "save_survival_plan", fail_after_write_once)
+    assessment = unknown_assessment()
+    preview = client.post(
+        "/api/init/assessment/preview",
+        json={"language": "en", "assessment": assessment},
+    ).json()
+    assessment["as_of"] = preview["summary"]["as_of"]
+    payload = {
+        "language": "en",
+        "assessment": assessment,
+        "plan_id": preview["plan"]["id"],
+        "primary_action_id": preview["plan"]["primary_candidate_ids"][0],
+    }
     failed = client.post("/api/init/complete", json=payload)
     assert failed.status_code == 503
     assert db.is_initialized() is False
+    assert db.get_survival_plan() is None
 
     retry = client.post("/api/init/complete", json=payload)
     assert retry.status_code == 200, retry.text
-    ids = [task.id for task in db.get_active_tasks()]
-    assert len(ids) == len(set(ids)) == 7
+    assert db.get_active_tasks() == []
+    assert db.get_survival_plan(active_only=True) is not None

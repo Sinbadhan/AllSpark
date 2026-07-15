@@ -87,7 +87,22 @@ class SparkCLI:
                     "skills", ",".join(survivor.get("skills", []))
                 )
                 prepared.container.require("initial_assessment").apply(assessment)
-                self.db.finalize_initialization(language)
+                plan_service = prepared.container.require("survival_plan")
+                plan = plan_service.generate(assessment)
+                plan_id = self.init_result.get("plan_id")
+                primary_action_id = self.init_result.get("primary_action_id")
+                if not isinstance(plan_id, str) or not isinstance(
+                    primary_action_id, str
+                ):
+                    raise RuntimeError("Initialization wizard returned no plan selection")
+                plan_service.persist_draft(
+                    plan,
+                    plan_id=plan_id,
+                    accepted_action_id=primary_action_id,
+                )
+                self.db.finalize_initialization(
+                    language, plan.id, primary_action_id
+                )
 
             self._container = prepared.container
             self._engine = prepared.engine

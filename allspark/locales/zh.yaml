@@ -2208,3 +2208,60 @@ web_init_amount_summary: '当前量 {amount}'
 docker_logs_title: '{service} 日志'
 # commands/survival.py
 voice_unknown_error: 未知错误
+survival_plan_heading: 未来 24 小时行动计划
+survival_plan_why_label: 为什么现在做
+survival_plan_prerequisite_label: 前置条件
+survival_plan_done_label: 完成标准
+survival_plan_select_prompt: '请选择并确认一个首要行动（1-{count}）'
+survival_plan_reassess_1h: 1 小时内重新评估
+survival_plan_reassess_4h: 4 小时内重新评估
+survival_plan_reassess_24h: 24 小时内重新评估
+error_survival_plan_selection_required: 必须明确选择一个首要行动。
+error_survival_plan_invalid_primary_action: 该行动不是当前计划的首要候选，请重新核对计划。
+error_survival_plan_stale_plan: 评估事实或计划已变化，请重新核对最新计划。
+survival_plan_gap_title: '补齐{domain}信息'
+survival_plan_gap_why: '当前缺少或需要刷新{domain}证据，系统不能据此推断安全状态。'
+survival_plan_gap_prerequisite: 只记录能够直接观察、测量或明确确认的事实。
+survival_plan_gap_risk: 不要用猜测、默认值或旧数据代替未知事实。
+survival_plan_gap_done: 该信息已记录为有效值或明确的未知状态。
+survival_plan_immediate_danger_title: 打开已审阅的立即危险分流
+survival_plan_immediate_danger_why: 当前评估明确标记为立即危险，普通 24 小时排序不应延迟安全分流。
+survival_plan_immediate_danger_prerequisite: 保持在当前可确认的安全位置；能够通信时自行联系当地紧急服务。
+survival_plan_immediate_danger_risk: 不要为使用本系统进入或重新进入危险现场；火种不会声称已联系救援。
+survival_plan_immediate_danger_done: 已进入立即危险流程并获得与当前情况匹配的首个已审阅动作。
+survival_plan_health_help_title: 使用已审阅流程处理严重健康风险
+survival_plan_health_help_why: 当前健康事实显示严重或危急状况，需要先于一般资源规划处理。
+survival_plan_health_help_prerequisite: 先确认现场安全；能够通信时自行寻求受训医疗帮助。
+survival_plan_health_help_risk: 不要把本计划当作诊断，也不要因寻找设备而延迟紧急求助。
+survival_plan_health_help_done: 已进入适用的已审阅医疗分流，并开始执行首个安全动作。
+survival_plan_threat_review_title: 核对当前威胁并选择安全分流
+survival_plan_threat_review_why: 已记录一个或多个现实威胁，必须先确认适用条件和禁忌。
+survival_plan_threat_review_prerequisite: 从当前可确认安全的位置核对，不进入危险区域调查。
+survival_plan_threat_review_risk: 未识别或未核实的威胁不能被推断为安全。
+survival_plan_threat_review_done: 已为当前威胁选择适用的已审阅动作和退出条件。
+survival_plan_shelter_title: 先确认安全位置与最低庇护需求
+survival_plan_shelter_why: 当前庇护事实不足以证明能够安全停留。
+survival_plan_shelter_prerequisite: 不进入结构、火灾、洪水或污染风险未确认的区域。
+survival_plan_shelter_risk: 不要把“有遮挡”当作结构或环境安全的证明。
+survival_plan_shelter_done: 已确认当前可停留位置，或已进入适用的已审阅撤离分流。
+survival_plan_resource_priority_title: '核对并稳定{domain}'
+survival_plan_resource_priority_why: '当前有效快照显示{domain}的可用时间低于安全排序阈值。'
+survival_plan_resource_priority_prerequisite: 先核对数量、单位、每日总消耗/补充和记录时间。
+survival_plan_resource_priority_risk: 不要依据未验证来源、错误单位或陈旧快照执行不可逆操作。
+survival_plan_resource_priority_done: 已确认新的可用量与速率，并记录下一次复查时间。
+survival_plan_fire_capacity_title: 核对安全火源能力
+survival_plan_fire_capacity_why: 当前有效快照显示可用火源次数较低。
+survival_plan_fire_capacity_prerequisite: 先确认当地环境允许安全使用与存放火源。
+survival_plan_fire_capacity_risk: 不要在火灾、爆炸、通风或污染风险未确认时点火。
+survival_plan_fire_capacity_done: 已核对安全可用次数、消耗速率和替代方案。
+survival_plan_maintain_review_title: 保持当前状态并按时复查
+survival_plan_maintain_review_why: 当前关键证据未触发更高优先级动作，但状态仍会随时间变化。
+survival_plan_maintain_review_prerequisite: 保留当前资源与状况记录，不把本次评估视为永久结论。
+survival_plan_maintain_review_risk: 延迟复查可能让资源、健康或环境变化未被及时发现。
+survival_plan_maintain_review_done: 已确认下一次复查时间并保持关键事实可更新。
+web_init_plan_select_intro: 选择一个你现在确认要优先执行的行动；完成初始化前不会发布计划。
+web_init_plan_later_actions: 后续行动
+web_init_plan_risk_label: 风险边界
+web_primary_plan_heading: 现在做什么
+web_primary_plan_unavailable: 尚无已确认的 24 小时计划，请重新评估当前状况。
+web_primary_plan_reassess: 重新评估

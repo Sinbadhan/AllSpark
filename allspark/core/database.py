@@ -10,8 +10,10 @@ from allspark.core.models import (
     KnowledgeEntry,
     MapPOI,
     OperatingState,
+    PlanAction,
     Resource,
     ResourceType,
+    SurvivalPlan,
     Task,
     compute_source_content_hash,
     derive_verification_level,
@@ -352,6 +354,40 @@ class Database:
                 result TEXT DEFAULT '',
                 title TEXT DEFAULT ''
             );
+
+            -- PRD §10.1: deterministic 24-hour survival plans. These are not
+            -- warning ActionPlans and are not executable Tasks.
+            CREATE TABLE IF NOT EXISTS survival_plans (
+                id TEXT PRIMARY KEY,
+                assessment_hash TEXT NOT NULL,
+                fingerprint TEXT NOT NULL,
+                phase INTEGER,
+                phase_status TEXT NOT NULL,
+                missing_fields TEXT NOT NULL DEFAULT '[]',
+                stale_fields TEXT NOT NULL DEFAULT '[]',
+                accepted_action_id TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'draft',
+                horizon_hours INTEGER NOT NULL DEFAULT 24,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS survival_plan_actions (
+                plan_id TEXT NOT NULL,
+                action_id TEXT NOT NULL,
+                order_num INTEGER NOT NULL,
+                domain TEXT NOT NULL,
+                priority INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'proposed',
+                title_key TEXT NOT NULL,
+                why_now TEXT NOT NULL,
+                evidence TEXT NOT NULL DEFAULT '[]',
+                prerequisites TEXT NOT NULL DEFAULT '[]',
+                risk TEXT NOT NULL,
+                done_when TEXT NOT NULL,
+                reassess_at TEXT NOT NULL,
+                PRIMARY KEY (plan_id, action_id)
+            );
         """)
         self.conn.commit()
         self._migrate()
@@ -576,6 +612,132 @@ class Database:
             (status, self._now(), task_id)
         )
         self.conn.commit()
+
+    # --- Deterministic 24-hour survival plans (PRD §10.1) ---
+
+    def save_survival_plan(self, plan: SurvivalPlan) -> None:
+        """Atomically replace one draft plan and its structured actions."""
+        now = self._now()
+        created_at = plan.created_at or now
+        with self.conn:
+            self.conn.execute(
+                """INSERT OR REPLACE INTO survival_plans
+                   (id, assessment_hash, fingerprint, phase, phase_status,
+                    missing_fields, stale_fields, accepted_action_id, status,
+                    horizon_hours, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    plan.id,
+                    plan.assessment_hash,
+                    plan.fingerprint,
+                    plan.phase,
+                    plan.phase_status,
+                    json.dumps(plan.missing_fields, ensure_ascii=False),
+                    json.dumps(plan.stale_fields, ensure_ascii=False),
+                    plan.accepted_action_id,
+                    plan.status,
+                    plan.horizon_hours,
+                    created_at,
+                    now,
+                ),
+            )
+            self.conn.execute(
+                "DELETE FROM survival_plan_actions WHERE plan_id=?", (plan.id,)
+            )
+            self.conn.executemany(
+                """INSERT INTO survival_plan_actions
+                   (plan_id, action_id, order_num, domain, priority, status,
+                    title_key, why_now, evidence, prerequisites, risk,
+                    done_when, reassess_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                [
+                    (
+                        plan.id,
+                        action.id,
+                        action.order,
+                        action.domain,
+                        action.priority,
+                        action.status,
+                        action.title_key,
+                        action.why_now,
+                        json.dumps(action.evidence, ensure_ascii=False, sort_keys=True),
+                        json.dumps(action.prerequisites, ensure_ascii=False),
+                        action.risk,
+                        action.done_when,
+                        action.reassess_at,
+                    )
+                    for action in plan.actions
+                ],
+            )
+
+    def get_survival_plan(
+        self, plan_id: str | None = None, *, active_only: bool = False
+    ) -> SurvivalPlan | None:
+        clauses = []
+        values: list[str] = []
+        if plan_id:
+            clauses.append("id=?")
+            values.append(plan_id)
+        if active_only:
+            clauses.append("status='active'")
+        where = " WHERE " + " AND ".join(clauses) if clauses else ""
+        row = self.conn.execute(
+            f"SELECT * FROM survival_plans{where} ORDER BY updated_at DESC LIMIT 1",
+            values,
+        ).fetchone()
+        if row is None:
+            return None
+        action_rows = self.conn.execute(
+            """SELECT * FROM survival_plan_actions WHERE plan_id=?
+               ORDER BY order_num, priority, action_id""",
+            (row["id"],),
+        ).fetchall()
+        actions = [
+            PlanAction(
+                id=item["action_id"],
+                domain=item["domain"],
+                priority=item["priority"],
+                status=item["status"],
+                title_key=item["title_key"],
+                why_now=item["why_now"],
+                evidence=json.loads(item["evidence"]),
+                prerequisites=json.loads(item["prerequisites"]),
+                risk=item["risk"],
+                done_when=item["done_when"],
+                reassess_at=item["reassess_at"],
+                order=item["order_num"],
+            )
+            for item in action_rows
+        ]
+        return SurvivalPlan(
+            id=row["id"],
+            assessment_hash=row["assessment_hash"],
+            fingerprint=row["fingerprint"],
+            phase=row["phase"],
+            phase_status=row["phase_status"],
+            missing_fields=json.loads(row["missing_fields"]),
+            stale_fields=json.loads(row["stale_fields"]),
+            actions=actions,
+            accepted_action_id=row["accepted_action_id"],
+            status=row["status"],
+            horizon_hours=row["horizon_hours"],
+            created_at=row["created_at"],
+            updated_at=row["updated_at"],
+        )
+
+    def cleanup_initialization_plan_drafts(self) -> None:
+        with self.conn:
+            draft_ids = [
+                row["id"]
+                for row in self.conn.execute(
+                    "SELECT id FROM survival_plans WHERE status='draft'"
+                ).fetchall()
+            ]
+            for plan_id in draft_ids:
+                self.conn.execute(
+                    "DELETE FROM survival_plan_actions WHERE plan_id=?", (plan_id,)
+                )
+            self.conn.execute("DELETE FROM survival_plans WHERE status='draft'")
 
     # --- Knowledge ---
 
@@ -928,7 +1090,12 @@ class Database:
         )
         self.conn.commit()
 
-    def finalize_initialization(self, language: str) -> None:
+    def finalize_initialization(
+        self,
+        language: str,
+        plan_id: str | None = None,
+        accepted_action_id: str | None = None,
+    ) -> None:
         """Atomically publish a prepared installation.
 
         Initialization draft rows are intentionally written by existing,
@@ -938,6 +1105,43 @@ class Database:
         if language not in ("zh", "en"):
             raise ValueError(f"Unsupported language: {language}")
         with self.conn:
+            if plan_id is not None:
+                if not accepted_action_id:
+                    raise ValueError("accepted_action_id is required")
+                action = self.conn.execute(
+                    """SELECT 1 FROM survival_plan_actions
+                       WHERE plan_id=? AND action_id=?""",
+                    (plan_id, accepted_action_id),
+                ).fetchone()
+                plan = self.conn.execute(
+                    "SELECT status FROM survival_plans WHERE id=?", (plan_id,)
+                ).fetchone()
+                if action is None or plan is None or plan["status"] != "draft":
+                    raise ValueError("invalid initialization plan selection")
+                self.conn.execute(
+                    "UPDATE survival_plans SET status='archived' WHERE status='active'"
+                )
+                self.conn.execute(
+                    """UPDATE survival_plan_actions SET status='proposed'
+                       WHERE plan_id=?""",
+                    (plan_id,),
+                )
+                self.conn.execute(
+                    """UPDATE survival_plan_actions SET status='accepted'
+                       WHERE plan_id=? AND action_id=?""",
+                    (plan_id, accepted_action_id),
+                )
+                self.conn.execute(
+                    """UPDATE survival_plans
+                       SET status='active', accepted_action_id=?, updated_at=?
+                       WHERE id=?""",
+                    (accepted_action_id, self._now(), plan_id),
+                )
+                # Replace deprecated gap sentinels only when the equivalent
+                # structured plan is published in this same transaction.
+                self.conn.execute(
+                    "DELETE FROM tasks WHERE id LIKE 'assessment-gap-%'"
+                )
             self.conn.execute(
                 "INSERT OR REPLACE INTO operating_state VALUES (?,?)",
                 ("language", language),

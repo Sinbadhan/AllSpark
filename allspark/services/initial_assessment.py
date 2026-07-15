@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
 
 from allspark.core.database import Database
-from allspark.core.i18n import mark
 from allspark.core.models import RESOURCE_UNITS, ResourceType, Task
 from allspark.services.resource_manager import (
     ResourceManager,
@@ -15,16 +13,6 @@ from allspark.services.resource_manager import (
 
 CRITICAL_FACTS = ("people_count", "health", "urgency", "shelter")
 RESOURCE_TYPES = tuple(resource.value for resource in ResourceType)
-_HIGH_RISK_TASK_DOMAINS = {
-    "people_count",
-    "health",
-    "urgency",
-    "shelter",
-    "threats",
-    "water",
-    "food",
-}
-
 _ALLOWED_FACT_VALUES = {
     "health": {
         "healthy",
@@ -82,10 +70,6 @@ class InitialAssessmentValidationError(ValueError):
     def __init__(self, errors: list[dict[str, str]]):
         self.errors = errors
         super().__init__("Initial assessment is incomplete or invalid")
-
-
-def _gap_task_id(domain: str) -> str:
-    return f"assessment-gap-{domain}"
 
 
 def _error(errors: list[dict[str, str]], field: str, code: str) -> None:
@@ -366,43 +350,14 @@ def assessment_preview(assessment: dict[str, Any]) -> dict[str, Any]:
                     "unit": RESOURCE_UNITS[resource_type],
                 }
             )
-    actions = []
-    for domain in (*CRITICAL_FACTS, "threats"):
-        if domain in gaps:
-            actions.append(
-                {
-                    "id": _gap_task_id(domain),
-                    "domain": domain,
-                    "missing": ["value"],
-                    "priority": _GAP_PRIORITIES[domain],
-                    "disposition": "created",
-                }
-            )
-    for domain in RESOURCE_TYPES:
-        missing = []
-        if domain in gaps:
-            missing.append("amount")
-        if f"{domain}_rate" in gaps:
-            missing.append("rate")
-        if missing:
-            actions.append(
-                {
-                    "id": _gap_task_id(domain),
-                    "domain": domain,
-                    "missing": missing,
-                    "priority": _GAP_PRIORITIES[domain],
-                    "disposition": (
-                        "created" if domain in _HIGH_RISK_TASK_DOMAINS else "deferred"
-                    ),
-                }
-            )
-    actions.sort(key=lambda action: (action["priority"], action["id"]))
     return {
         "known": known,
         "unknown": gaps,
         "resources": resource_states,
         "as_of": assessment["as_of"],
-        "actions": actions,
+        # Compatibility key retained for SHA-238 preview clients. The sibling
+        # SHA-239 `plan` payload is now the sole action contract.
+        "actions": [],
     }
 
 
@@ -463,35 +418,6 @@ class InitialAssessmentService:
                 confirm_outlier=resource["confirm_outlier"],
             )
 
-        tasks = self._gap_tasks(assessment)
-        active_ids = {task.id for task in tasks}
-        for domain in (*CRITICAL_FACTS, "threats", *RESOURCE_TYPES):
-            task_id = _gap_task_id(domain)
-            if task_id not in active_ids:
-                self.db.delete_task(task_id)
-        for task in tasks:
-            self.db.save_task(task)
-        return tasks
-
-    @staticmethod
-    def _gap_tasks(assessment: dict[str, Any]) -> list[Task]:
-        now = datetime.now().isoformat()
-        actions = assessment_preview(assessment)["actions"]
-        return [
-            Task(
-                id=action["id"],
-                phase=0,
-                priority=action["priority"],
-                title=mark(f"assessment_gap_{action['domain']}_title"),
-                description=mark(
-                    f"assessment_gap_{action['domain']}_{'_'.join(action['missing'])}_desc"
-                    if action["domain"] in RESOURCE_TYPES
-                    else f"assessment_gap_{action['domain']}_desc"
-                ),
-                status="pending",
-                created_at=now,
-                updated_at=now,
-            )
-            for action in actions
-            if action["disposition"] == "created"
-        ]
+        # Information gaps belong to the persisted 24-hour plan. Legacy gap
+        # sentinels are replaced atomically only when that plan is published.
+        return []

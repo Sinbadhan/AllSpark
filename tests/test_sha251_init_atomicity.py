@@ -2,6 +2,7 @@
 
 import sqlite3
 import threading
+from copy import deepcopy
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -16,6 +17,9 @@ from allspark.container import ServiceContainer
 from allspark.core.database import Database
 from allspark.core.i18n import get_language, set_language
 from allspark.infrastructure.hardware import FeatureFlags
+from allspark.services.initial_assessment import validate_initial_assessment
+from allspark.services.resource_manager import ResourceManager
+from allspark.services.survival_plan import SurvivalPlanService
 from tests.assessment_helpers import valid_initial_assessment
 
 
@@ -51,14 +55,49 @@ class _ConnectionProxy:
         return self.connection.rollback()
 
 
-def _candidate() -> PreparedApplication:
+def _candidate(db: Database | None = None) -> PreparedApplication:
     container = ServiceContainer()
     container.register("initial_assessment", MagicMock())
+    if db is not None:
+        container.register(
+            "survival_plan", SurvivalPlanService(db, ResourceManager(db))
+        )
     return PreparedApplication(
         bootstrap=SimpleNamespace(shutdown=MagicMock()),
         container=container,
         engine=MagicMock(name="rule_engine"),
     )
+
+
+def _web_payload(client: TestClient, assessment: dict | None = None) -> dict:
+    assessment = deepcopy(assessment or valid_initial_assessment())
+    preview = client.post(
+        "/api/init/assessment/preview",
+        json={"language": "en", "assessment": assessment},
+    )
+    assert preview.status_code == 200, preview.text
+    body = preview.json()
+    assessment["as_of"] = body["summary"]["as_of"]
+    assessment["confirmed"] = True
+    return {
+        "language": "en",
+        "assessment": assessment,
+        "plan_id": body["plan"]["id"],
+        "primary_action_id": body["plan"]["primary_candidate_ids"][0],
+    }
+
+
+def _cli_result(db: Database) -> dict:
+    assessment = validate_initial_assessment(valid_initial_assessment())
+    plan_service = SurvivalPlanService(db, ResourceManager(db))
+    plan = plan_service.generate(assessment)
+    return {
+        "language": "en",
+        "hardware": {"flags": MagicMock()},
+        "assessment": assessment,
+        "plan_id": plan.id,
+        "primary_action_id": plan_service.primary_candidate_ids(plan)[0],
+    }
 
 
 def test_finalize_initialization_commits_language_and_marker_together(tmp_path) -> None:
@@ -235,7 +274,7 @@ def test_web_init_failure_is_unpublished_cookie_free_and_retryable(
         prepare_calls += 1
         if failure_stage == "prepare" and prepare_calls == 1:
             raise RuntimeError("knowledge/bootstrap failed")
-        candidate = _candidate()
+        candidate = _candidate(db)
         candidates.append(candidate)
         return candidate
 
@@ -257,20 +296,17 @@ def test_web_init_failure_is_unpublished_cookie_free_and_retryable(
         original_finalize = db.finalize_initialization
         failed = False
 
-        def fail_finalize_once(language):
+        def fail_finalize_once(language, plan_id=None, accepted_action_id=None):
             nonlocal failed
             if not failed:
                 failed = True
                 raise sqlite3.OperationalError("finalize failed")
-            return original_finalize(language)
+            return original_finalize(language, plan_id, accepted_action_id)
 
         monkeypatch.setattr(db, "finalize_initialization", fail_finalize_once)
 
-    payload = {
-        "language": "zh",
-        "survivor_name": "Retry Survivor",
-        "assessment": valid_initial_assessment(),
-    }
+    payload = _web_payload(client)
+    payload.update({"language": "zh", "survivor_name": "Retry Survivor"})
     try:
         failed_response = client.post("/api/init/complete", json=payload)
         assert failed_response.status_code == 503
@@ -307,26 +343,23 @@ def test_web_concurrent_init_bootstraps_at_most_once(monkeypatch, tmp_path) -> N
         calls += 1
         entered.set()
         assert release.wait(timeout=5)
-        return _candidate()
+        return _candidate(client.app.state.db)
 
     monkeypatch.setattr(wui, "_prepare_engine", blocking_prepare)
     first_response = []
 
+    payload = _web_payload(client)
+    payload["language"] = "zh"
+
     def first_request():
         first_response.append(
-            client.post(
-                "/api/init/complete",
-                json={"language": "zh", "assessment": valid_initial_assessment()},
-            )
+            client.post("/api/init/complete", json=payload)
         )
 
     thread = threading.Thread(target=first_request)
     thread.start()
     assert entered.wait(timeout=5)
-    second = client.post(
-        "/api/init/complete",
-        json={"language": "zh", "assessment": valid_initial_assessment()},
-    )
+    second = client.post("/api/init/complete", json=payload)
     release.set()
     thread.join(timeout=5)
 
@@ -371,16 +404,13 @@ def test_web_commit_after_write_failure_rolls_back_before_retry(
     candidates: list[PreparedApplication] = []
 
     def prepare(*args, **kwargs):
-        candidate = _candidate()
+        candidate = _candidate(db)
         candidates.append(candidate)
         return candidate
 
     monkeypatch.setattr(wui, "_prepare_engine", prepare)
-    payload = {
-        "language": "en",
-        "survivor_name": "Commit Retry",
-        "assessment": valid_initial_assessment(),
-    }
+    payload = _web_payload(client)
+    payload["survivor_name"] = "Commit Retry"
 
     failed = client.post("/api/init/complete", json=payload)
     assert failed.status_code == 503
@@ -408,14 +438,12 @@ def test_cli_finalize_failure_keeps_runtime_unpublished_and_retry_succeeds(
         nonlocal wizard_calls
         wizard_calls += 1
         set_language("en", persist=False)
-        return {
-            "language": "en",
-            "hardware": {"flags": flags},
-            "assessment": valid_initial_assessment(),
-        }
+        result = _cli_result(db)
+        result["hardware"] = {"flags": flags}
+        return result
 
     def prepare(db, flags=None):
-        candidate = _candidate()
+        candidate = _candidate(db)
         candidates.append(candidate)
         return candidate
 
@@ -427,12 +455,12 @@ def test_cli_finalize_failure_keeps_runtime_unpublished_and_retry_succeeds(
     original_finalize = cli.db.finalize_initialization
     finalize_calls = 0
 
-    def fail_finalize_once(language):
+    def fail_finalize_once(language, plan_id=None, accepted_action_id=None):
         nonlocal finalize_calls
         finalize_calls += 1
         if finalize_calls == 1:
             raise sqlite3.OperationalError("finalize failed")
-        return original_finalize(language)
+        return original_finalize(language, plan_id, accepted_action_id)
 
     monkeypatch.setattr(cli.db, "finalize_initialization", fail_finalize_once)
 
@@ -458,18 +486,14 @@ def test_cli_commit_after_write_failure_rolls_back_before_retry(
     cli.running = False
     proxy = _ConnectionProxy(cli.db.conn, fail_next_commit=True)
     cli.db.conn = proxy
-    candidate = _candidate()
+    candidate = _candidate(cli.db)
     wizard_calls = 0
 
     def wizard(db):
         nonlocal wizard_calls
         wizard_calls += 1
         db.save_survivor_state("name", "CLI Retry")
-        return {
-            "language": "en",
-            "hardware": {"flags": MagicMock()},
-            "assessment": valid_initial_assessment(),
-        }
+        return _cli_result(db)
 
     monkeypatch.setattr(cli_mod, "run_init_wizard", wizard)
     monkeypatch.setattr(cli_mod, "prepare_application", lambda *a, **k: candidate)

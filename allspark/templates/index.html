@@ -130,6 +130,15 @@
 .kb-detail .section-label.warn { color: var(--warning); }
 .back-btn { font-size: 12px; color: var(--secondary); cursor: pointer; display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
 .back-btn:hover { color: var(--primary-container); }
+.primary-plan { border: 1px solid var(--primary); border-left-width: 4px; border-radius: 6px; padding: 14px 16px; background: var(--surface-low); min-width: 0; }
+.primary-plan-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.primary-plan-header h2 { margin: 0; font-size: 15px; color: var(--primary-container); display: flex; align-items: center; gap: 7px; }
+.primary-plan-title { font-size: 18px; font-weight: 700; color: var(--on-surface); overflow-wrap: anywhere; }
+.primary-plan-meta { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-top: 10px; }
+.primary-plan-meta div { min-width: 0; font-size: 12px; line-height: 1.5; color: var(--on-surface-variant); overflow-wrap: anywhere; }
+.primary-plan-meta strong { display: block; color: var(--secondary); font-size: 10px; text-transform: uppercase; margin-bottom: 2px; }
+.primary-plan-risk { color: var(--warning) !important; }
+@media(max-width:640px){.primary-plan-header{align-items:flex-start;gap:6px}.primary-plan-header h2{font-size:13px}.primary-plan-header .badge{font-size:9px}.primary-plan-meta{grid-template-columns:1fr}.primary-plan-title{font-size:16px}}
 .mini-table { width: 100%; border-collapse: collapse; }
 .mini-table th { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); padding: 8px; text-align: left; border-bottom: 1px solid var(--border); background: var(--surface-lowest); }
 .mini-table td { padding: 8px; border-bottom: 1px solid var(--border); font-size: 13px; }
@@ -156,6 +165,11 @@
 
 <!-- Bento Grid Layout -->
 <div class="bento-grid">
+
+  <section id="primary-plan" class="primary-plan span-12" aria-labelledby="primary-plan-heading">
+    <div class="primary-plan-header"><h2 id="primary-plan-heading"><span class="material-symbols-outlined" aria-hidden="true">flag</span> {{ t('web_primary_plan_heading') }}</h2><span id="primary-plan-phase" class="badge bg-surface-mid text-secondary">{{ primary_plan.phase_description if primary_plan else t('web_phase_pending') }}</span></div>
+    <div id="primary-plan-content" aria-live="polite">{% if primary_plan %}<div class="primary-plan-title">{{ primary_plan.action.title }}</div><div class="primary-plan-meta"><div><strong>{{ t('survival_plan_why_label') }}</strong>{{ primary_plan.action.why_now_text }}</div><div><strong>{{ t('survival_plan_prerequisite_label') }}</strong>{{ primary_plan.action.prerequisite_texts|join('; ') }}</div><div><strong>{{ t('survival_plan_done_label') }}</strong>{{ primary_plan.action.done_when_text }}</div><div class="primary-plan-risk"><strong>{{ t('web_primary_plan_reassess') }}</strong>{{ primary_plan.action.reassess_at_text }}</div></div><div class="primary-plan-risk text-sm" style="margin-top:10px;">{{ t('web_init_plan_risk_label') }}: {{ primary_plan.action.risk_text }}</div>{% else %}<span class="text-secondary text-sm">{{ t('web_primary_plan_unavailable') }}</span>{% endif %}</div>
+  </section>
 
   <!-- Today's Briefing (collapsible) -->
   <div id="briefing-banner" class="span-12" style="background:var(--surface-low);border:1px solid var(--surface-container-high);border-radius:6px;padding:12px;margin-bottom:8px;">
@@ -317,6 +331,54 @@ const resourceIcons = {
 
 function escHtml(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
 
+async function refreshSurvivalPlan() {
+  const panel = document.getElementById("primary-plan-content");
+  const phase = document.getElementById("primary-plan-phase");
+  const plan = await api("/api/survival-plan");
+  panel.replaceChildren();
+  if (plan.status === "unavailable") {
+    phase.textContent = I18N.web_phase_pending;
+    const empty = document.createElement("p");
+    empty.className = "text-secondary text-sm";
+    empty.textContent = I18N.web_primary_plan_unavailable;
+    panel.append(empty);
+    return;
+  }
+  phase.textContent = plan.phase_description;
+  const action = plan.actions.find(item => item.id === plan.accepted_action_id);
+  if (!action) {
+    const empty = document.createElement("p");
+    empty.className = "text-secondary text-sm";
+    empty.textContent = I18N.web_primary_plan_unavailable;
+    panel.append(empty);
+    return;
+  }
+  const title = document.createElement("div");
+  title.className = "primary-plan-title";
+  title.textContent = action.title;
+  const meta = document.createElement("div");
+  meta.className = "primary-plan-meta";
+  const rows = [
+    [I18N.survival_plan_why_label, action.why_now_text, ""],
+    [I18N.survival_plan_prerequisite_label, action.prerequisite_texts.join("; "), ""],
+    [I18N.survival_plan_done_label, action.done_when_text, ""],
+    [I18N.web_primary_plan_reassess, action.reassess_at_text, "primary-plan-risk"],
+  ];
+  rows.forEach(([label,value,className]) => {
+    const item = document.createElement("div");
+    item.className = className;
+    const heading = document.createElement("strong");
+    heading.textContent = label;
+    item.append(heading, document.createTextNode(value));
+    meta.append(item);
+  });
+  const risk = document.createElement("div");
+  risk.className = "primary-plan-risk text-sm";
+  risk.style.marginTop = "10px";
+  risk.textContent = I18N.web_init_plan_risk_label + ": " + action.risk_text;
+  panel.append(title, meta, risk);
+}
+
 function switchTab(tab) {
   document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
   const btn = document.querySelector('.sub-tab[data-subtab="' + tab + '"]');
@@ -332,6 +394,7 @@ function switchTab(tab) {
 
 async function refreshDashboard() {
   const data = await api("/api/status");
+  const planRefresh = refreshSurvivalPlan().catch(notify);
 
   // Phase badge
   const badge = document.getElementById("phase-badge");
@@ -420,6 +483,7 @@ async function refreshDashboard() {
   } else {
     tlist.innerHTML = '<div class="text-secondary text-sm p-3">' + I18N.web_no_active_tasks + '</div>';
   }
+  await planRefresh;
 }
 
 // Knowledge
@@ -573,8 +637,10 @@ async function loadLLM() {
 }
 
 // Init
-refreshDashboard();
-setInterval(refreshDashboard, 15000);
+window.addEventListener("DOMContentLoaded", () => {
+  refreshDashboard().catch(notify);
+  setInterval(() => refreshDashboard().catch(notify), 15000);
+});
 
 /* === Briefing banner === */
 const BRIEFING_I18N = {

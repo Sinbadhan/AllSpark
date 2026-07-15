@@ -103,6 +103,15 @@ def register_core_routes(app, check):
         resources = resource_mgr.get_all_resources()
         return [_resource_payload(resource_mgr, r) for r in resources]
 
+    @app.get("/api/survival-plan")
+    async def get_survival_plan():
+        container, db = check()
+        plan = db.get_survival_plan(active_only=True)
+        if plan is None:
+            return {"status": "unavailable", "reason": "no_active_plan"}
+        service = container.get("survival_plan")
+        return service.payload(plan)
+
     @app.post("/api/resources")
     async def update_resource(request: Request, type: str = Query(None), amount: float = Query(None)):
         container, db = check()

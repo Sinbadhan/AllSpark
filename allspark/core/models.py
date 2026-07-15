@@ -197,6 +197,43 @@ class Task:
 
 
 @dataclass
+class PlanAction:
+    """A deterministic 24-hour plan action, separate from execution Tasks."""
+
+    id: str
+    domain: str
+    priority: int
+    title_key: str
+    why_now: str
+    evidence: list[dict] = field(default_factory=list)
+    prerequisites: list[str] = field(default_factory=list)
+    risk: str = ""
+    done_when: str = ""
+    reassess_at: str = "PT4H"
+    status: str = "proposed"
+    order: int = 0
+
+
+@dataclass
+class SurvivalPlan:
+    """Persisted Assess→Decide output for the next 24 hours."""
+
+    id: str
+    assessment_hash: str
+    fingerprint: str
+    phase: int | None
+    phase_status: str
+    missing_fields: list[str] = field(default_factory=list)
+    stale_fields: list[str] = field(default_factory=list)
+    actions: list[PlanAction] = field(default_factory=list)
+    accepted_action_id: str = ""
+    status: str = "draft"
+    horizon_hours: int = 24
+    created_at: str = ""
+    updated_at: str = ""
+
+
+@dataclass
 class KnowledgeEntry:
     id: str
     category: str

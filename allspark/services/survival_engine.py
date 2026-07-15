@@ -6,9 +6,74 @@ from allspark.core.i18n import t
 from allspark.core.models import OperatingMode, Resource, ResourceType
 from allspark.services.resource_manager import ResourceManager
 
+CRITICAL_PHASE_RESOURCES = (ResourceType.WATER, ResourceType.FOOD)
+
+
+def evaluate_phase_truth(
+    resources: list[Resource],
+    resource_mgr: ResourceManager,
+    *,
+    now: datetime,
+) -> tuple[int | None, list[str], list[str]]:
+    """Return the shared evidence-gated Phase truth for every consumer."""
+    by_type = {resource.type: resource for resource in resources}
+    missing_fields: list[str] = []
+    stale_fields: list[str] = []
+    for resource_type in CRITICAL_PHASE_RESOURCES:
+        prefix = resource_type.value
+        resource = by_type.get(resource_type)
+        if resource is None:
+            missing_fields.extend(
+                f"{prefix}.{field}"
+                for field in ("amount", "consumption", "intake", "rate_basis")
+            )
+            stale_fields.append(f"{prefix}.as_of")
+            continue
+        if not resource.amount_known:
+            missing_fields.append(f"{prefix}.amount")
+        if not resource.consumption_known:
+            missing_fields.append(f"{prefix}.consumption")
+        if not resource.intake_known:
+            missing_fields.append(f"{prefix}.intake")
+        if resource.rate_basis != "group_total":
+            missing_fields.append(f"{prefix}.rate_basis")
+        if not resource_mgr.is_snapshot_current(resource, now=now):
+            stale_fields.append(f"{prefix}.as_of")
+
+    if missing_fields or stale_fields:
+        return None, missing_fields, stale_fields
+
+    water = by_type[ResourceType.WATER]
+    food = by_type[ResourceType.FOOD]
+    fire = by_type.get(ResourceType.FIRE)
+    water_days = (
+        water.estimated_remaining_hours / 24.0
+        if water.estimated_remaining_hours >= 0
+        else float("inf")
+    )
+    food_days = (
+        food.estimated_remaining_hours / 24.0
+        if food.estimated_remaining_hours >= 0
+        else float("inf")
+    )
+    if water_days < 3 or food_days < 2:
+        return 0, missing_fields, stale_fields
+    fire_low = bool(
+        fire
+        and resource_mgr.is_configured(fire)
+        and resource_mgr.is_snapshot_current(fire, now=now)
+        and fire.current_amount < 5
+    )
+    if water_days < 14 or food_days < 7 or fire_low:
+        return 1, missing_fields, stale_fields
+    if water_days < 180 or food_days < 90:
+        return 2, missing_fields, stale_fields
+    if water_days < 1800 or food_days < 900:
+        return 3, missing_fields, stale_fields
+    return 4, missing_fields, stale_fields
+
 
 class SurvivalAssessmentEngine:
-    _CRITICAL_PHASE_RESOURCES = (ResourceType.WATER, ResourceType.FOOD)
     def __init__(self, db: Database, resource_mgr: ResourceManager):
         self.db = db
         self.resource_mgr = resource_mgr
@@ -18,13 +83,10 @@ class SurvivalAssessmentEngine:
         warnings = self.resource_mgr.check_warnings()
         survivor = self.db.get_survivor_state()
         snapshot_now = self._now_utc()
-        missing_fields, stale_fields = self._phase_evidence_gaps(
-            resources, now=snapshot_now
-        )
-        phase = (
-            None
-            if missing_fields or stale_fields
-            else self._determine_phase(resources, survivor, now=snapshot_now)
+        phase, missing_fields, stale_fields = evaluate_phase_truth(
+            resources,
+            self.resource_mgr,
+            now=snapshot_now,
         )
         phase_status = "known" if phase is not None else "unknown"
         bottleneck = self._identify_bottleneck(
@@ -50,29 +112,9 @@ class SurvivalAssessmentEngine:
     def _phase_evidence_gaps(
         self, resources: list[Resource], *, now: datetime
     ) -> tuple[list[str], list[str]]:
-        by_type = {resource.type: resource for resource in resources}
-        missing_fields: list[str] = []
-        stale_fields: list[str] = []
-        for resource_type in self._CRITICAL_PHASE_RESOURCES:
-            prefix = resource_type.value
-            resource = by_type.get(resource_type)
-            if resource is None:
-                missing_fields.extend(
-                    f"{prefix}.{field}"
-                    for field in ("amount", "consumption", "intake", "rate_basis")
-                )
-                stale_fields.append(f"{prefix}.as_of")
-                continue
-            if not resource.amount_known:
-                missing_fields.append(f"{prefix}.amount")
-            if not resource.consumption_known:
-                missing_fields.append(f"{prefix}.consumption")
-            if not resource.intake_known:
-                missing_fields.append(f"{prefix}.intake")
-            if resource.rate_basis != "group_total":
-                missing_fields.append(f"{prefix}.rate_basis")
-            if not self._snapshot_is_current(resource.as_of, now=now):
-                stale_fields.append(f"{prefix}.as_of")
+        _, missing_fields, stale_fields = evaluate_phase_truth(
+            resources, self.resource_mgr, now=now
+        )
         return missing_fields, stale_fields
 
     @classmethod
@@ -89,37 +131,11 @@ class SurvivalAssessmentEngine:
     def _determine_phase(
         self, resources: list[Resource], survivor: dict, *, now: datetime
     ) -> int:
-        water = next((r for r in resources if r.type == ResourceType.WATER), None)
-        food = next((r for r in resources if r.type == ResourceType.FOOD), None)
-        fire = next((r for r in resources if r.type == ResourceType.FIRE), None)
-
-        assert water is not None and food is not None
-        water_days = (
-            water.estimated_remaining_hours / 24.0
-            if water.estimated_remaining_hours >= 0
-            else float("inf")
+        phase, missing_fields, stale_fields = evaluate_phase_truth(
+            resources, self.resource_mgr, now=now
         )
-        food_days = (
-            food.estimated_remaining_hours / 24.0
-            if food.estimated_remaining_hours >= 0
-            else float("inf")
-        )
-
-        if water_days < 3 or food_days < 2:
-            return 0
-        fire_low = bool(
-            fire
-            and self.resource_mgr.is_configured(fire)
-            and self.resource_mgr.is_snapshot_current(fire, now=now)
-            and fire.current_amount < 5
-        )
-        if water_days < 14 or food_days < 7 or fire_low:
-            return 1
-        if water_days < 180 or food_days < 90:
-            return 2
-        if water_days < 1800 or food_days < 900:
-            return 3
-        return 4
+        assert phase is not None and not missing_fields and not stale_fields
+        return phase
 
     def _identify_bottleneck(
         self,

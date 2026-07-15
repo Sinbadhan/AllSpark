@@ -21,7 +21,7 @@ from allspark.core.database import Database
 from allspark.infrastructure.hardware import FeatureFlags
 from allspark.infrastructure.module_loader import ModuleRegistry
 from allspark.services.power_monitor import PowerReading
-from tests.assessment_helpers import valid_initial_assessment
+from tests.assessment_helpers import confirmed_init_payload, valid_initial_assessment
 
 
 class TempDb:
@@ -1005,22 +1005,27 @@ def test_init_complete_accepts_questionnaire_json_body():
         db = Database(path)
         db.close()
         c = TestClient(create_app(path))
-        r = c.post("/api/init/complete", json={
-            "language": "en",
-            "survivor_name": "Test",
-            "location_type": "wilderness",
-            "skills": ["medical"],
-            "assessment": {
-                **valid_initial_assessment(),
-                "shelter": {"status": "known", "value": "temporary_shelter"},
-                "health": {"status": "known", "value": "minor_injury"},
-                "urgency": {"status": "known", "value": "stable_but_urgent"},
-                "threats": {
-                    "status": "selected",
-                    "values": ["extreme_weather", "wildlife"],
-                },
+        assessment = {
+            **valid_initial_assessment(),
+            "shelter": {"status": "known", "value": "temporary_shelter"},
+            "health": {"status": "known", "value": "minor_injury"},
+            "urgency": {"status": "known", "value": "stable_but_urgent"},
+            "threats": {
+                "status": "selected",
+                "values": ["extreme_weather", "wildlife"],
             },
-        })
+        }
+        r = c.post(
+            "/api/init/complete",
+            json=confirmed_init_payload(
+                c,
+                assessment=assessment,
+                language="en",
+                survivor_name="Test",
+                location_type="wilderness",
+                skills=["medical"],
+            ),
+        )
         assert r.status_code == 200, r.text
         db = Database(path)
         try:
@@ -1074,17 +1079,23 @@ def test_auth_cookie_and_one_time_bootstrap():
         assert client.get("/api/status").status_code != 401
 
         # 6. Bootstrap: init/complete works while not initialized (cookie-authed).
-        r = client.post("/api/init/complete", json={
-            "language": "zh", "survivor_name": "T", "skip_model": True,
-            "assessment": valid_initial_assessment(),
-        })
+        init_payload = confirmed_init_payload(
+            client,
+            language="zh",
+            survivor_name="T",
+            skip_model=True,
+        )
+        r = client.post(
+            "/api/init/complete",
+            json=init_payload,
+        )
         assert r.status_code == 200, r.text
 
         # 7. One-time: a second init/complete is rejected (410) even when authed.
-        r = client.post("/api/init/complete", json={
-            "language": "zh", "survivor_name": "T", "skip_model": True,
-            "assessment": valid_initial_assessment(),
-        })
+        r = client.post(
+            "/api/init/complete",
+            json=init_payload,
+        )
         assert r.status_code == 410, r.text
         assert r.json()["error"] == "bootstrap_closed"
 
@@ -1131,10 +1142,13 @@ def test_loopback_no_token_allows_init_and_blocks_reinit():
         client = TestClient(create_app(path))  # no token -> loopback
 
         # First init succeeds.
-        r = client.post("/api/init/complete", json={
-            "language": "zh", "survivor_name": "T", "skip_model": True,
-            "assessment": valid_initial_assessment(),
-        })
+        init_payload = confirmed_init_payload(
+            client,
+            language="zh",
+            survivor_name="T",
+            skip_model=True,
+        )
+        r = client.post("/api/init/complete", json=init_payload)
         assert r.status_code == 200, r.text
 
         # Second init blocked even on loopback.

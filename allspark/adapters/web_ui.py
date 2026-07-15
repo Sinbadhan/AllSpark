@@ -38,6 +38,11 @@ from allspark.services.initial_assessment import (
     validate_initial_assessment,
 )
 from allspark.services.reset_manager import get_reset_descriptions
+from allspark.services.resource_manager import ResourceManager
+from allspark.services.survival_plan import (
+    SurvivalPlanService,
+    SurvivalPlanValidationError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +127,7 @@ def _render_template(name: str, **context) -> str:
         or k.startswith("resource_")
         or k.startswith("knowledge_")
         or k.startswith("q_")
+        or k.startswith("survival_plan_")
     }
     context.setdefault("web_i18n", web_i18n)
     init_prefixes = (
@@ -133,6 +139,9 @@ def _render_template(name: str, **context) -> str:
         "resource_",
         "q_",
         "immediate_danger_",
+        "survival_plan_",
+        "error_survival_plan_",
+        "phase_desc_",
     )
     context.setdefault(
         "init_i18n",
@@ -234,9 +243,30 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
     async def index():
         if not app.state.initialized:
             return _render_template("init.html")
+        primary_plan = None
+        plan = db.get_survival_plan(active_only=True)
+        if plan is not None and app.state.container is not None:
+            payload = app.state.container.get("survival_plan").payload(plan)
+            action = next(
+                (
+                    item
+                    for item in payload["actions"]
+                    if item["id"] == payload["accepted_action_id"]
+                ),
+                None,
+            )
+            if action is not None:
+                primary_plan = {
+                    "phase_description": payload["phase_description"],
+                    "action": action,
+                }
         # SHA-60: page_title flows into the topbar and <title>; route it
         # through t() so it is not a hardcoded English leak in zh mode.
-        return _render_template("index.html", page_title=t("web_page_title_dashboard"))
+        return _render_template(
+            "index.html",
+            page_title=t("web_page_title_dashboard"),
+            primary_plan=primary_plan,
+        )
 
     @app.get("/system", response_class=HTMLResponse)
     async def system_page():
@@ -539,7 +569,17 @@ def _register_init_routes(app):
             )
         except InitialAssessmentValidationError as exc:
             return _assessment_error_response(exc, language)
-        return {"status": "ok", "summary": assessment_preview(assessment)}
+        plan_service = SurvivalPlanService(
+            app.state.db, ResourceManager(app.state.db)
+        )
+        plan = plan_service.generate(assessment)
+        return {
+            "status": "ok",
+            "summary": assessment_preview(assessment),
+            "plan": plan_service.payload(
+                plan, language=language if language in ("zh", "en") else None
+            ),
+        }
 
     @app.get("/api/init/hardware")
     async def init_hardware():
@@ -771,6 +811,36 @@ def _register_init_routes(app):
             except InitialAssessmentValidationError as exc:
                 return _assessment_error_response(exc, language)
 
+            plan_service = SurvivalPlanService(db, ResourceManager(db))
+            plan = plan_service.generate(assessment)
+            plan_id = body.get("plan_id")
+            primary_action_id = body.get("primary_action_id")
+            try:
+                if not isinstance(plan_id, str) or not isinstance(
+                    primary_action_id, str
+                ):
+                    raise SurvivalPlanValidationError(
+                        "primary_action_id", "selection_required"
+                    )
+                plan_service.validate_selection(
+                    plan,
+                    plan_id=plan_id,
+                    accepted_action_id=primary_action_id,
+                )
+            except SurvivalPlanValidationError as exc:
+                return JSONResponse(
+                    status_code=422,
+                    content={
+                        "status": "error",
+                        "error": "invalid_survival_plan",
+                        "detail": MESSAGES[language].get(
+                            f"error_survival_plan_{exc.code}", exc.code
+                        ),
+                        "errors": [{"field": exc.field, "code": exc.code}],
+                        "next_action": "review_plan",
+                    },
+                )
+
             profile = detect_hardware()
             flags = compute_feature_flags(profile.tier, profile.gpu_available)
 
@@ -806,7 +876,13 @@ def _register_init_routes(app):
             db.save_survivor_state("questionnaire_version", "3")
             assessment_service = prepared.container.require("initial_assessment")
             gap_tasks = assessment_service.apply(assessment)
-            db.finalize_initialization(language)
+            prepared_plan_service = prepared.container.require("survival_plan")
+            prepared_plan_service.persist_draft(
+                plan,
+                plan_id=plan_id,
+                accepted_action_id=primary_action_id,
+            )
+            db.finalize_initialization(language, plan.id, primary_action_id)
 
             # Publish is deliberately synchronous and contains no fallible I/O.
             _publish_engine(app, prepared)
@@ -818,6 +894,10 @@ def _register_init_routes(app):
                     "status": "ok",
                     "summary": assessment_preview(assessment),
                     "created_task_ids": [task.id for task in gap_tasks],
+                    "plan": prepared_plan_service.payload(
+                        db.get_survival_plan(plan.id) or plan,
+                        language=language,
+                    ),
                 }
             )
             if _WEB_TOKEN:

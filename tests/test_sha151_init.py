@@ -19,6 +19,7 @@ from allspark.adapters.init_wizard import (
     _step_initial_assessment,
     _step_language_select,
     _step_model_setup,
+    _step_plan_selection,
     _step_summary,
     run_init_wizard,
 )
@@ -311,13 +312,70 @@ def test_step_summary_renders(monkeypatch) -> None:
     _step_summary(result)  # no assertion needed; renders a table
 
 
+def test_step_plan_selection_discloses_full_primary_contract_and_later_actions(
+    monkeypatch,
+) -> None:
+    output = []
+    monkeypatch.setattr(
+        init_wizard.console,
+        "print",
+        lambda *values, **_kwargs: output.append(" ".join(map(str, values))),
+    )
+    _mock_input(monkeypatch, ["bad", "1"])
+    plan = {
+        "phase_description": "Phase pending assessment",
+        "primary_candidate_ids": ["primary"],
+        "actions": [
+            {
+                "id": "primary",
+                "title": "Verify water",
+                "why_now_text": "Water evidence is missing",
+                "prerequisite_texts": ["Use measured facts"],
+                "done_when_text": "Water facts are recorded",
+                "risk_text": "Do not guess",
+                "reassess_at_text": "Reassess within 1 hour",
+            },
+            {
+                "id": "later",
+                "title": "Review power",
+                "why_now_text": "Power can be checked next",
+                "prerequisite_texts": [],
+                "done_when_text": "Power is recorded",
+                "risk_text": "Do not guess",
+                "reassess_at_text": "Reassess within 4 hours",
+            },
+        ],
+    }
+
+    assert _step_plan_selection(plan) == "primary"
+    rendered = "\n".join(output)
+    for expected in (
+        "Phase pending assessment",
+        "Verify water",
+        "Water evidence is missing",
+        "Use measured facts",
+        "Water facts are recorded",
+        "Do not guess",
+        "Reassess within 1 hour",
+        "Review power",
+        "Power can be checked next",
+    ):
+        assert expected in rendered
+
+
 def test_run_init_wizard_orchestrates_without_publishing(monkeypatch, tmp_path) -> None:
     # The wizard writes draft data only; the adapter publishes after bootstrap.
     monkeypatch.setattr(init_wizard, "_step_language_select", lambda: "zh")
+    from allspark.services.initial_assessment import validate_initial_assessment
     from tests.assessment_helpers import valid_initial_assessment
-    assessment = valid_initial_assessment()
+    assessment = validate_initial_assessment(valid_initial_assessment())
     monkeypatch.setattr(init_wizard, "_step_initial_assessment", lambda: assessment)
     monkeypatch.setattr(init_wizard, "_step_assessment_summary", lambda value: True)
+    monkeypatch.setattr(
+        init_wizard,
+        "_step_plan_selection",
+        lambda plan: plan["primary_candidate_ids"][0],
+    )
     monkeypatch.setattr(
         init_wizard,
         "_prepare_hardware_automatically",
@@ -328,6 +386,8 @@ def test_run_init_wizard_orchestrates_without_publishing(monkeypatch, tmp_path) 
         r = run_init_wizard(db)
         assert r["language"] == "zh"
         assert r["assessment"] is assessment
+        assert r["plan_id"]
+        assert r["primary_action_id"]
         assert "survivor" not in r and "model" not in r
         assert db.is_initialized() is False
     finally:

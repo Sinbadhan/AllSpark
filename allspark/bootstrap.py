@@ -27,6 +27,7 @@ from allspark.services.resource_manager import ResourceManager
 from allspark.services.rule_engine import RuleEngine
 from allspark.services.scheduler import create_default_scheduler
 from allspark.services.survival_engine import SurvivalAssessmentEngine
+from allspark.services.survival_plan import SurvivalPlanService
 from allspark.services.vision_engine import VisionEngine
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,10 @@ def rollback_initialization_draft(db: Database) -> None:
         db.conn.rollback()
     except Exception:
         logger.exception("Failed to roll back initialization draft transaction")
+    try:
+        db.cleanup_initialization_plan_drafts()
+    except Exception:
+        logger.exception("Failed to clean up initialization plan drafts")
 
 
 def cleanup_application_candidate(bootstrap: Any) -> None:
@@ -271,6 +276,9 @@ class ApplicationBootstrap:
 
         initial_assessment = InitialAssessmentService(self.db, resource_mgr)
         self.container.register("initial_assessment", initial_assessment)
+
+        survival_plan = SurvivalPlanService(self.db, resource_mgr)
+        self.container.register("survival_plan", survival_plan)
 
     def _load_knowledge(self):
         registry = self.registry

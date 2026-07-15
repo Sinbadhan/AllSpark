@@ -12,7 +12,7 @@ from rich.text import Text
 
 from allspark.core.config import DEFAULT_DB_DIR
 from allspark.core.database import Database
-from allspark.core.i18n import get_language, render, set_language, t
+from allspark.core.i18n import get_language, set_language, t
 from allspark.core.models import RESOURCE_UNITS, ResourceType
 from allspark.infrastructure.hardware import (
     DeployMode,
@@ -29,6 +29,7 @@ from allspark.services.initial_assessment import (
     validate_initial_assessment,
 )
 from allspark.services.resource_manager import ResourceManager, ResourceValidationError
+from allspark.services.survival_plan import SurvivalPlanService
 
 console = Console()
 
@@ -74,12 +75,57 @@ def run_init_wizard(db: Database) -> dict:
         if _step_assessment_summary(result["assessment"]):
             break
 
+    plan_service = SurvivalPlanService(db, ResourceManager(db))
+    plan = plan_service.generate(result["assessment"])
+    result["plan_id"] = plan.id
+    result["primary_action_id"] = _step_plan_selection(
+        plan_service.payload(plan)
+    )
+
     # Hardware is supporting runtime context, never another interactive gate.
     # Tier override, model, GPS, skills, and profile details belong to advanced
     # settings after the first useful assessment is published.
     result["hardware"] = _prepare_hardware_automatically(db)
 
     return result
+
+
+def _step_plan_selection(plan: dict[str, Any]) -> str:
+    """Show the first 24-hour plan and require one explicit primary action."""
+    console.print(f"\n[bold cyan]━━ {t('survival_plan_heading')} ━━[/]")
+    console.print(f"[dim]{plan['phase_description']}[/]")
+    primary_ids = set(plan["primary_candidate_ids"])
+    candidates = [
+        action for action in plan["actions"] if action["id"] in primary_ids
+    ]
+    for index, action in enumerate(candidates, 1):
+        console.print(f"  {index}. [bold]{action['title']}[/]")
+        console.print(f"     {t('survival_plan_why_label')}: {action['why_now_text']}")
+        console.print(
+            f"     {t('survival_plan_prerequisite_label')}: "
+            + "; ".join(action["prerequisite_texts"])
+        )
+        console.print(f"     {t('survival_plan_done_label')}: {action['done_when_text']}")
+        console.print(f"     {t('web_init_plan_risk_label')}: {action['risk_text']}")
+        console.print(f"     {t('web_primary_plan_reassess')}: {action['reassess_at_text']}")
+    later_actions = [
+        action for action in plan["actions"] if action["id"] not in primary_ids
+    ]
+    if later_actions:
+        console.print(f"\n[bold]{t('web_init_plan_later_actions')}[/]")
+        for action in later_actions:
+            console.print(f"  - {action['title']} — {action['why_now_text']}")
+    while True:
+        answer = console.input(
+            t("survival_plan_select_prompt", count=len(candidates)) + " > "
+        ).strip()
+        try:
+            selected = int(answer) - 1
+        except ValueError:
+            selected = -1
+        if 0 <= selected < len(candidates):
+            return candidates[selected]["id"]
+        console.print(f"[red]{t('q_invalid_choice')}[/]")
 
 
 def _prepare_hardware_automatically(db: Database) -> dict:
@@ -635,15 +681,6 @@ def _step_assessment_summary(assessment: dict) -> bool:
         else:
             rate = t("init_assessment_rate_unknown")
         console.print(f"  • {label}: {amount}; {rate}; {preview['as_of']}")
-    console.print(f"[bold]{t('init_assessment_actions')}[/]")
-    for action in preview["actions"]:
-        title = render(f"t:assessment_gap_{action['domain']}_title")
-        disposition = t(
-            "web_init_action_created"
-            if action["disposition"] == "created"
-            else "web_init_action_deferred"
-        )
-        console.print(f"  → {title} — {disposition}")
     while True:
         answer = console.input(t("init_assessment_confirm") + " [y/n] > ").strip().lower()
         if answer in {"y", "yes", "是"}:

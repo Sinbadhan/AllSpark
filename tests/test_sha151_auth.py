@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 import allspark.adapters.web_ui as wui
 from allspark.adapters.web_ui import MODEL_DOWNLOAD_URLS, create_app
 from allspark.core.database import Database
-from tests.assessment_helpers import valid_initial_assessment
+from tests.assessment_helpers import confirmed_init_payload
 
 
 def _client(db_path: str, token: str | None = None) -> TestClient:
@@ -159,12 +159,15 @@ def test_init_complete_with_body_list_fields_and_cookie(tmp_path: Path) -> None:
     c = _client(str(tmp_path / "ic.db"), token=token)
     # SHA-142: in token mode, bootstrap requires prior login (explicit authorization).
     assert c.post("/api/auth/login", json={"token": token}).status_code == 200
-    r = c.post("/api/init/complete", json={
-        "language": "zh", "survivor_name": "Tester",
-        "location_type": "urban", "shelter": "apt",
-        "skills": ["first_aid", "navigation"],  # list -> _pick joins (covers [435,436])
-        "assessment": valid_initial_assessment(),
-    })
+    payload = confirmed_init_payload(
+        c,
+        language="zh",
+        survivor_name="Tester",
+        location_type="urban",
+        shelter="apt",
+        skills=["first_aid", "navigation"],
+    )
+    r = c.post("/api/init/complete", json=payload)
     assert r.status_code == 200
     assert "allspark_session" in r.cookies  # cookie re-stamped (covers [490,491])
     # second complete -> 410 bootstrap closed (covers middleware [108,109])
@@ -177,11 +180,7 @@ def test_init_complete_loopback_no_cookie(tmp_path: Path) -> None:
     c = _client(str(tmp_path / "icl.db"))
     r = c.post(
         "/api/init/complete",
-        json={
-            "language": "en",
-            "survivor_name": "Z",
-            "assessment": valid_initial_assessment(),
-        },
+        json=confirmed_init_payload(c, language="en", survivor_name="Z"),
     )
     assert r.status_code == 200
     assert "allspark_session" not in r.cookies

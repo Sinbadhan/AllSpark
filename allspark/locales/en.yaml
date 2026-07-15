@@ -2269,3 +2269,60 @@ web_init_amount_summary: 'current amount {amount}'
 docker_logs_title: '{service} logs'
 # commands/survival.py
 voice_unknown_error: Unknown error
+survival_plan_heading: Next 24-hour action plan
+survival_plan_why_label: Why now
+survival_plan_prerequisite_label: Prerequisite
+survival_plan_done_label: Done when
+survival_plan_select_prompt: 'Select and confirm one primary action (1-{count})'
+survival_plan_reassess_1h: Reassess within 1 hour
+survival_plan_reassess_4h: Reassess within 4 hours
+survival_plan_reassess_24h: Reassess within 24 hours
+error_survival_plan_selection_required: Select one primary action explicitly.
+error_survival_plan_invalid_primary_action: That action is not a current primary candidate. Review the plan again.
+error_survival_plan_stale_plan: The assessment facts or plan changed. Review the latest plan.
+survival_plan_gap_title: 'Complete {domain} information'
+survival_plan_gap_why: '{domain} evidence is missing or needs refresh, so the system cannot infer safety from it.'
+survival_plan_gap_prerequisite: Record only facts that can be observed, measured, or explicitly confirmed.
+survival_plan_gap_risk: Do not replace an unknown fact with a guess, default, or old data.
+survival_plan_gap_done: The information is recorded as a valid value or an explicit unknown.
+survival_plan_immediate_danger_title: Open the reviewed immediate-danger flow
+survival_plan_immediate_danger_why: The assessment explicitly reports immediate danger, so normal 24-hour ranking must not delay safety triage.
+survival_plan_immediate_danger_prerequisite: Stay in a location currently known to be safe; contact local emergency services yourself when communication is available.
+survival_plan_immediate_danger_risk: Do not enter or re-enter danger to use this system. AllSpark does not claim that help was contacted.
+survival_plan_immediate_danger_done: The immediate-danger flow is open and shows the first reviewed action applicable to the current facts.
+survival_plan_health_help_title: Use the reviewed flow for a serious health risk
+survival_plan_health_help_why: The current health fact is serious or critical and takes priority over ordinary resource planning.
+survival_plan_health_help_prerequisite: Confirm scene safety first; seek trained medical help yourself when communication is available.
+survival_plan_health_help_risk: Do not treat this plan as a diagnosis or delay urgent help while looking for equipment.
+survival_plan_health_help_done: The applicable reviewed medical triage is open and its first safe action has started.
+survival_plan_threat_review_title: Review the current threat and choose safe triage
+survival_plan_threat_review_why: One or more real threats are recorded, so applicability and contraindications must be checked first.
+survival_plan_threat_review_prerequisite: Review from a location currently known to be safe; do not enter danger to investigate.
+survival_plan_threat_review_risk: An unidentified or unverified threat cannot be inferred to be safe.
+survival_plan_threat_review_done: An applicable reviewed action and exit condition are selected for the current threat.
+survival_plan_shelter_title: Confirm a safe position and minimum shelter need
+survival_plan_shelter_why: The current shelter fact does not establish that remaining in place is safe.
+survival_plan_shelter_prerequisite: Do not enter an area with unverified structural, fire, flood, or contamination risk.
+survival_plan_shelter_risk: Do not treat cover alone as proof of structural or environmental safety.
+survival_plan_shelter_done: A safe place to remain is confirmed, or the applicable reviewed evacuation flow is open.
+survival_plan_resource_priority_title: 'Verify and stabilize {domain}'
+survival_plan_resource_priority_why: 'The current valid snapshot puts {domain} below its safety-ranking threshold.'
+survival_plan_resource_priority_prerequisite: Verify amount, unit, total daily use/intake, and observation time first.
+survival_plan_resource_priority_risk: Do not make irreversible changes from an unverified source, wrong unit, or stale snapshot.
+survival_plan_resource_priority_done: The new amount and rates are confirmed, with the next review time recorded.
+survival_plan_fire_capacity_title: Verify safe fire-starting capacity
+survival_plan_fire_capacity_why: The current valid snapshot shows few available fire-starting uses.
+survival_plan_fire_capacity_prerequisite: Confirm that the local environment permits safe use and storage first.
+survival_plan_fire_capacity_risk: Do not ignite anything while fire, explosion, ventilation, or contamination risk is unverified.
+survival_plan_fire_capacity_done: Safe available uses, consumption rate, and an alternative are recorded.
+survival_plan_maintain_review_title: Maintain current state and review on time
+survival_plan_maintain_review_why: Current critical evidence does not trigger a higher-priority action, but conditions still change over time.
+survival_plan_maintain_review_prerequisite: Keep current resource and situation records; do not treat this assessment as permanent.
+survival_plan_maintain_review_risk: A delayed review can miss changes in resources, health, or environment.
+survival_plan_maintain_review_done: The next review time is confirmed and critical facts remain updateable.
+web_init_plan_select_intro: Choose one action you confirm you will prioritize now. The plan is not published until initialization completes.
+web_init_plan_later_actions: Later actions
+web_init_plan_risk_label: Risk boundary
+web_primary_plan_heading: What to do now
+web_primary_plan_unavailable: No confirmed 24-hour plan is available. Reassess the current situation.
+web_primary_plan_reassess: Reassess

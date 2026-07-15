@@ -60,6 +60,8 @@ RESET_POLICIES = {
                 "spark_location",
                 "psych_state",
                 "action_plans",
+                "survival_plan_actions",
+                "survival_plans",
             }
         ),
     ),
