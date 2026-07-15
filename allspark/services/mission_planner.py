@@ -39,7 +39,9 @@ class MissionPlanner:
         self.db = db
         self.resource_mgr = resource_mgr
 
-    def generate_tasks_for_phase(self, phase: int) -> list[Task]:
+    def generate_tasks_for_phase(self, phase: int | None) -> list[Task]:
+        if phase is None:
+            return []
         existing = self.db.get_tasks_by_phase(phase)
         existing_titles = {task.title for task in existing}
         goal_keys = PHASE_GOAL_KEYS.get(phase, [])
@@ -65,8 +67,10 @@ class MissionPlanner:
                 tasks.append(task)
         return tasks
 
-    def generate_side_missions(self, phase: int) -> list[Task]:
+    def generate_side_missions(self, phase: int | None) -> list[Task]:
         """Generate side missions for the given phase (PRD §10.1)."""
+        if phase is None:
+            return []
         templates = _SIDE_MISSION_TEMPLATES.get(phase, [])
         if not templates:
             return []
@@ -106,14 +110,28 @@ class MissionPlanner:
         active = self.db.get_active_tasks()
         return [task for task in active if task.task_type != TaskType.SIDE.value]
 
-    def suggest_tasks(self, resources: list = None) -> list[Task]:
+    def suggest_tasks(
+        self,
+        resources: list | None = None,
+        *,
+        phase: int | None = None,
+        stale_fields: list[str] | None = None,
+    ) -> list[Task]:
         active = self.db.get_active_tasks()
         if active:
             return active
 
+        stale_resources = {
+            field.split(".", 1)[0] for field in (stale_fields or [])
+        }
         if resources:
             from allspark.core.models import ResourceType
             for r in resources:
+                if (
+                    r.type.value in stale_resources
+                    or not self.resource_mgr.is_snapshot_current(r)
+                ):
+                    continue
                 if (
                     r.type == ResourceType.WATER
                     and self.resource_mgr.has_remaining_estimate(r)
@@ -147,7 +165,7 @@ class MissionPlanner:
                     self.db.save_task(task)
                     return [task]
 
-        return self.generate_tasks_for_phase(0)
+        return self.generate_tasks_for_phase(phase)
 
     def complete_task(self, task_id: str):
         self.db.update_task_status(task_id, "completed")

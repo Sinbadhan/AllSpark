@@ -275,6 +275,7 @@ resource_offline: ◇ OFFLINE
 resource_offline_hint: ◇ Resource data not connected, use 'set <type> <value>' to
   input
 resource_remaining_unknown: Remaining time unknown; set daily consumption/intake to calculate it
+resource_snapshot_stale: '{label}: {amount}{unit} (snapshot stale; remaining time unknown)'
 operating_mode_fmt: 'Mode: {emoji} {mode}'
 mode_proactive_zh: Proactive
 mode_standard_zh: Standard
@@ -330,6 +331,7 @@ phase_desc_1: Short-term Survival (1-30d)
 phase_desc_2: Mid-term Self-sufficiency (1-12m)
 phase_desc_3: Quality of Life (1-5y)
 phase_desc_4: Civilization Revival (5y+)
+phase_desc_unknown: Phase pending assessment
 field_status: Status
 field_mode: Mode
 field_phase: Phase
@@ -772,6 +774,7 @@ phase_fallback_3: Currently in quality-of-life phase. I can help with medical, c
   or manufacturing knowledge.
 phase_fallback_4: Currently in civilization renaissance phase. We can discuss education,
   technology, or community governance.
+phase_fallback_unknown: Critical resource facts are missing or stale, so the phase is pending assessment. Add current water and food amounts, total daily consumption, and total daily intake first.
 general_fallback: 'I cannot understand your question.
 
   {phase_suggestion}
@@ -1923,6 +1926,7 @@ web_init_tier_flagship: Flagship (32GB+)
 web_init_tier_unknown: Unknown
 web_init_value_none: None
 web_phase_label: 'PHASE {phase}'
+web_phase_pending: Phase pending assessment
 web_mode_prefix: 'MODE'
 web_status_unknown: UNKNOWN
 web_status_ok: OK

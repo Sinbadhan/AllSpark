@@ -171,7 +171,7 @@ class PriorityCalculator(BaseService):
                 r = self.db.get_resource(rtype)
                 if (
                     r
-                    and self._resource_mgr.has_complete_rate_data(r)
+                    and self._resource_mgr.remaining_status(r) != "unknown"
                     and r.estimated_remaining_hours > 0
                 ):
                     threshold = _URGENCY_THRESHOLDS.get(rtype, 72)

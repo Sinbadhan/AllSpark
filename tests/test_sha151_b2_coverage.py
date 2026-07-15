@@ -5,6 +5,7 @@ meaningful branch gains toward the 90% acceptance; SHA-151 stays open until
 75% total line / 90% critical-path branch is actually met (tracked via the
 acceptance-gap table printed by scripts/check_coverage.py).
 """
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, call
 
@@ -142,16 +143,19 @@ def test_get_relevant_knowledge_with_known_low_resources_triggers_each_fallback(
                  daily_consumption=10.0, daily_intake=0.0,
                  estimated_remaining_hours=48.0, last_updated="",
                  amount_known=True, consumption_known=True,
-                 intake_known=True, rate_basis="group_total"),          # < 72h
+                 intake_known=True, rate_basis="group_total",
+                 as_of=datetime.now(timezone.utc).isoformat()),          # < 72h
         Resource(type=ResourceType.FOOD, current_amount=5.0, unit="kcal",
                  daily_consumption=10.0, daily_intake=0.0,
                  estimated_remaining_hours=100.0, last_updated="",
                  amount_known=True, consumption_known=True,
-                 intake_known=True, rate_basis="group_total"),          # < 120h
+                 intake_known=True, rate_basis="group_total",
+                 as_of=datetime.now(timezone.utc).isoformat()),          # < 120h
         Resource(type=ResourceType.FIRE, current_amount=5.0, unit="uses",
                  daily_consumption=10.0, daily_intake=0.0,
                  estimated_remaining_hours=200.0, last_updated="",
-                 amount_known=True),                                    # < 10 amount
+                 amount_known=True,
+                 as_of=datetime.now(timezone.utc).isoformat()),          # < 10 amount
     ]
     result = ke.get_relevant_knowledge("zzznomatchxyz", resources=resources)
     assert [entry.id for entry in result] == ["fallback-hit"]
@@ -267,6 +271,7 @@ def _res(
         amount_known=True, consumption_known=True, intake_known=True,
         rate_basis="group_total",
         capacity=capacity, capacity_known=capacity_known,
+        as_of=datetime.now(timezone.utc).isoformat(),
     )
 
 

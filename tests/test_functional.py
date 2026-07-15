@@ -171,7 +171,8 @@ class TestSurvivalAssessment:
 
     def test_phase_determined(self, survival):
         result = survival.assess()
-        assert 0 <= result["phase"] <= 4
+        assert result["phase"] is None
+        assert result["phase_status"] == "unknown"
 
     def test_bottleneck_with_low_resources(self, db, resource_mgr):
         resource_mgr.init_defaults()
@@ -236,7 +237,9 @@ class TestKnowledgeEngine:
 class TestGoalEngine:
     def test_auto_generate(self, db, resource_mgr, survival):
         resource_mgr.init_defaults()
-        resource_mgr.update_resource(ResourceType.WATER, 3.0, consumption=2.0)
+        resource_mgr.update_resource(
+            ResourceType.WATER, 3.0, consumption=2.0, intake=0.0
+        )
         ge = GoalEngine(db, resource_mgr=resource_mgr, survival=survival)
         goals = ge.auto_generate_goals()
         assert len(goals) > 0
@@ -482,7 +485,12 @@ class TestI18n:
 class TestMissionPlanner:
     def test_generate_tasks(self, db, resource_mgr, survival):
         resource_mgr.init_defaults()
-        resource_mgr.update_resource(ResourceType.WATER, 3.0, consumption=2.0)
+        resource_mgr.update_resource(
+            ResourceType.WATER, 3.0, consumption=2.0, intake=0.0
+        )
+        resource_mgr.update_resource(
+            ResourceType.FOOD, 30.0, consumption=1.0, intake=0.0
+        )
         planner = MissionPlanner(db, resource_mgr)
         assessment = survival.assess()
         planner.generate_tasks_for_phase(assessment["phase"])
@@ -1189,7 +1197,8 @@ class TestEdgeCases:
         engine = SurvivalAssessmentEngine(db, resource_mgr)
         result = engine.assess()
         assert "phase" in result
-        assert result["phase"] >= 0
+        assert result["phase"] is None
+        assert result["phase_status"] == "unknown"
 
     def test_goal_progress_tracking(self, db):
         from allspark.services.goal_engine import GoalEngine

@@ -124,7 +124,9 @@ class LLMEngine:
             logger.error(f"LLM chat stream failed: {e}")
             yield t("llm_error_chat", error=str(e))
 
-    def survival_chat_stream(self, user_input: str, context: str = "", phase: int = 0):
+    def survival_chat_stream(
+        self, user_input: str, context: str = "", phase: int | None = None
+    ):
         """Yield tokens for survival chat via SSE."""
         if not self._available:
             return
@@ -139,7 +141,9 @@ class LLMEngine:
 
         yield from self.chat_stream(messages, max_tokens=512, temperature=0.7)
 
-    def survival_chat(self, user_input: str, context: str = "", phase: int = 0) -> str:
+    def survival_chat(
+        self, user_input: str, context: str = "", phase: int | None = None
+    ) -> str:
         if not self._available:
             return ""
 
@@ -153,7 +157,7 @@ class LLMEngine:
 
         return self.chat(messages, max_tokens=512, temperature=0.7)
 
-    def _build_system_prompt(self, phase: int) -> str:
+    def _build_system_prompt(self, phase: int | None) -> str:
         phase_names = {
             0: "immediate survival (0-72h)",
             1: "short-term survival (1-30 days)",
@@ -161,10 +165,11 @@ class LLMEngine:
             3: "quality of life (1-5 years)",
             4: "civilization renaissance (5+ years)",
         }
+        phase_name = "unknown" if phase is None else phase_names.get(phase, "unknown")
         return (
             "You are AllSpark (火种), an offline AI survival system. "
             "Your mission is to help survivors stay alive and rebuild civilization.\n"
-            f"Current survival phase: {phase_names.get(phase, 'unknown')}\n"
+            f"Current survival phase: {phase_name}\n"
             "Rules:\n"
             "- Prioritize survival above all else\n"
             "- Give practical, actionable advice\n"

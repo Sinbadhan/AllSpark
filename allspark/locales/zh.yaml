@@ -242,6 +242,7 @@ reset_usage: "用法:\n  重置 评估          — L1 重置评估数据\n  重
 resource_offline: ◇ 未接入
 resource_offline_hint: ◇ 资源数据尚未接入，使用 '设置 <类型> <值>' 录入
 resource_remaining_unknown: 剩余时间未知，请设置每日消耗/补给后再计算
+resource_snapshot_stale: '{label}: {amount}{unit}（快照已过期，剩余时间暂时未知）'
 operating_mode_fmt: 运行模式：{emoji} {mode}
 mode_proactive_zh: 主动
 mode_standard_zh: 标准
@@ -296,6 +297,7 @@ phase_desc_1: 短期生存 (1-30天)
 phase_desc_2: 中期自给 (1-12月)
 phase_desc_3: 生活质量 (1-5年)
 phase_desc_4: 文明复兴 (5年+)
+phase_desc_unknown: 阶段待评估
 field_status: 状态
 field_mode: 运行模式
 field_phase: 生存阶段
@@ -718,6 +720,7 @@ phase_fallback_1: 当前处于短期生存阶段。请描述你的具体需求�
 phase_fallback_2: 当前处于中期自给阶段。你想了解农业、工具制造还是能源方面的知识？
 phase_fallback_3: 当前处于生活质量阶段。我可以帮你了解医疗、通信或制造方面的知识。
 phase_fallback_4: 当前处于文明复兴阶段。我们可以讨论教育、技术或社区治理等话题。
+phase_fallback_unknown: 当前关键资源事实缺失或已过期，阶段待评估。请先补充饮水和食物的当前量、每日总消耗与每日总获取。
 general_fallback: '我暂时无法理解你的问题。
 
   {phase_suggestion}
@@ -1862,6 +1865,7 @@ web_init_tier_flagship: 旗舰 (32GB+)
 web_init_tier_unknown: 未知
 web_init_value_none: 无
 web_phase_label: 'PHASE {phase}'
+web_phase_pending: 阶段待评估
 web_mode_prefix: '运行模式'
 web_status_unknown: 未知
 web_status_ok: 正常

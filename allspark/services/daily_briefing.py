@@ -86,7 +86,7 @@ class DailyBriefing:
                 lines.append(f"  {icon} {res_name}: [dim]{t('resource_offline')}[/]")
                 continue
 
-            rates_complete = self._has_complete_rate_data(r)
+            rates_complete = self._has_current_rate_data(r)
 
             remaining = ""
             if rates_complete and r.estimated_remaining_hours < 0:
@@ -117,6 +117,16 @@ class DailyBriefing:
             resource.amount_known
             and resource.consumption_known
             and resource.intake_known
+        )
+
+    def _has_current_rate_data(self, resource) -> bool:
+        if self.resource_mgr:
+            return self.resource_mgr.remaining_status(resource) != "unknown"
+        from allspark.services.resource_manager import ResourceManager
+
+        return bool(
+            self._has_complete_rate_data(resource)
+            and ResourceManager.is_snapshot_current(resource)
         )
 
     def _warning_section(self) -> str:
@@ -196,7 +206,7 @@ class DailyBriefing:
         priority_cats = []
 
         if self.survival:
-            phase = self.survival.assess().get("phase", 0)
+            phase = self.survival.assess().get("phase")
             phase_cats = _PHASE_KNOWLEDGE_PRIORITY.get(phase, [])
             priority_cats.extend(phase_cats)
 
@@ -322,7 +332,7 @@ class DailyBriefing:
                     continue
                 res_name = t(f"resource_{r.type.value}")
                 remaining = ""
-                if self._has_complete_rate_data(r) and r.estimated_remaining_hours > 0:
+                if self._has_current_rate_data(r) and r.estimated_remaining_hours > 0:
                     hours = r.estimated_remaining_hours
                     remaining = f"({hours / 24:.1f}d)" if hours >= 24 else f"({hours:.0f}h)"
                 parts.append(f"{icon}{res_name}:{r.current_amount:.0f}{r.unit}{remaining}")

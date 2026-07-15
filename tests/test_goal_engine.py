@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import pytest
 
 from allspark.core.database import Database
@@ -83,8 +85,10 @@ class TestGoalEngineAutoGenerate:
         water = Resource(
             type=ResourceType.WATER, current_amount=2.0, unit="L",
             daily_consumption=3.0, daily_intake=0.0,
+            rate_basis="group_total",
             estimated_remaining_hours=16.0, last_updated="",
             amount_known=True, consumption_known=True, intake_known=True,
+            as_of=datetime.now(timezone.utc).isoformat(),
         )
         db.upsert_resource(water)
 
@@ -99,8 +103,10 @@ class TestGoalEngineAutoGenerate:
         water = Resource(
             type=ResourceType.WATER, current_amount=2.0, unit="L",
             daily_consumption=3.0, daily_intake=0.0,
+            rate_basis="group_total",
             estimated_remaining_hours=16.0, last_updated="",
             amount_known=True, consumption_known=True, intake_known=True,
+            as_of=datetime.now(timezone.utc).isoformat(),
         )
         db.upsert_resource(water)
 

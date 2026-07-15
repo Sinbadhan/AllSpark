@@ -1,6 +1,6 @@
 import logging
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from allspark.core.config import POWER_MODE_THRESHOLDS, RESOURCE_WARNING_THRESHOLDS
@@ -21,6 +21,7 @@ class ResourceValidationError(ValueError):
 
 
 class ResourceManager:
+    SNAPSHOT_MAX_AGE = timedelta(hours=24)
     # Technical safety ceiling: rejects overflow/abuse without constraining any
     # plausible single-device or community inventory. Product-specific soft
     # ranges and confirmation belong to the input contract (SHA-237).
@@ -64,7 +65,7 @@ class ResourceManager:
 
     def remaining_status(self, r: Resource) -> str:
         """Return the public remaining-time state without leaking sentinels."""
-        if not self.has_complete_rate_data(r):
+        if not self.has_complete_rate_data(r) or not self.is_snapshot_current(r):
             return "unknown"
         if r.daily_consumption <= r.daily_intake:
             return "sustained"
@@ -77,6 +78,26 @@ class ResourceManager:
             and r.intake_known
             and r.rate_basis == "group_total"
         )
+
+    @classmethod
+    def is_snapshot_current(
+        cls, resource: Resource, *, now: datetime | None = None
+    ) -> bool:
+        value = resource.as_of
+        if not isinstance(value, str) or not value.strip():
+            return False
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except (OverflowError, ValueError):
+            return False
+        if parsed.tzinfo is None:
+            local_timezone = datetime.now().astimezone().tzinfo or timezone.utc
+            parsed = parsed.replace(tzinfo=local_timezone)
+        current = now or datetime.now(timezone.utc)
+        if current.tzinfo is None:
+            current = current.replace(tzinfo=timezone.utc)
+        age = current.astimezone(timezone.utc) - parsed.astimezone(timezone.utc)
+        return -timedelta(minutes=5) <= age <= cls.SNAPSHOT_MAX_AGE
 
     def update_resource(self, rtype: ResourceType, amount: Optional[float],
                         consumption: Optional[float] = None,
@@ -411,6 +432,8 @@ class ResourceManager:
         power = self.db.get_resource(ResourceType.POWER)
         if power is None or not self.is_configured(power):
             return OperatingMode.STANDARD
+        if not self.is_snapshot_current(power):
+            return self.get_operating_mode()
         if not self.has_complete_rate_data(power):
             return OperatingMode.STANDARD
         if not self.has_remaining_estimate(power):
@@ -441,7 +464,11 @@ class ResourceManager:
     def check_warnings(self) -> list[dict]:
         warnings = []
         power = self.db.get_resource(ResourceType.POWER)
-        if power and self.has_remaining_estimate(power):
+        if (
+            power
+            and self.is_snapshot_current(power)
+            and self.has_remaining_estimate(power)
+        ):
             hours = power.estimated_remaining_hours
             thresh = RESOURCE_WARNING_THRESHOLDS["power"]
             if hours < thresh["critical_hours"]:
@@ -458,7 +485,11 @@ class ResourceManager:
                 })
 
         water = self.db.get_resource(ResourceType.WATER)
-        if water and self.has_remaining_estimate(water):
+        if (
+            water
+            and self.is_snapshot_current(water)
+            and self.has_remaining_estimate(water)
+        ):
             days = water.estimated_remaining_hours / 24.0
             thresh = RESOURCE_WARNING_THRESHOLDS["water"]
             if days < thresh["critical_days"]:
@@ -473,7 +504,11 @@ class ResourceManager:
                 })
 
         food = self.db.get_resource(ResourceType.FOOD)
-        if food and self.has_remaining_estimate(food):
+        if (
+            food
+            and self.is_snapshot_current(food)
+            and self.has_remaining_estimate(food)
+        ):
             days = food.estimated_remaining_hours / 24.0
             thresh = RESOURCE_WARNING_THRESHOLDS["food"]
             if days < thresh["critical_days"]:
@@ -488,7 +523,11 @@ class ResourceManager:
                 })
 
         fire = self.db.get_resource(ResourceType.FIRE)
-        if fire and self.is_configured(fire):
+        if (
+            fire
+            and self.is_snapshot_current(fire)
+            and self.is_configured(fire)
+        ):
             thresh = RESOURCE_WARNING_THRESHOLDS["fire"]
             if fire.current_amount < thresh["critical_uses"]:
                 warnings.append({
@@ -502,7 +541,12 @@ class ResourceManager:
                 })
 
         storage = self.db.get_resource(ResourceType.STORAGE)
-        if storage and self.is_configured(storage) and storage.capacity_known:
+        if (
+            storage
+            and self.is_snapshot_current(storage)
+            and self.is_configured(storage)
+            and storage.capacity_known
+        ):
             if storage.capacity > 0:
                 pct = (storage.current_amount / storage.capacity) * 100
                 thresh = RESOURCE_WARNING_THRESHOLDS["storage"]
@@ -573,6 +617,16 @@ class ResourceManager:
                 continue
 
             has_data = True
+            if not self.is_snapshot_current(r):
+                lines.append(
+                    t(
+                        "resource_snapshot_stale",
+                        label=t(f"resource_{r.type.value}"),
+                        amount=r.current_amount,
+                        unit=r.unit,
+                    )
+                )
+                continue
             if not self.has_complete_rate_data(r):
                 lines.append(
                     t(

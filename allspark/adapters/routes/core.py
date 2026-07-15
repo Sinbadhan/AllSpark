@@ -84,7 +84,10 @@ def register_core_routes(app, check):
 
         return {
             "phase": assessment["phase"],
-            "phase_name": assessment.get("phase_name", ""),
+            "phase_status": assessment["phase_status"],
+            "phase_description": assessment["phase_description"],
+            "missing_fields": assessment["missing_fields"],
+            "stale_fields": assessment["stale_fields"],
             "mode": mode.value if hasattr(mode, "value") else str(mode),
             "warnings": warnings,
             "resources": [_resource_payload(resource_mgr, r) for r in resources],
@@ -247,7 +250,14 @@ def register_core_routes(app, check):
         if language:
             set_language(language)
         response = container.get("rule_engine").process_input(message)
-        return {"response": response}
+        assessment = container.get("survival_engine").assess()
+        return {
+            "response": response,
+            "phase": assessment["phase"],
+            "phase_status": assessment["phase_status"],
+            "missing_fields": assessment["missing_fields"],
+            "stale_fields": assessment["stale_fields"],
+        }
 
     @app.post("/api/chat/stream")
     async def chat_stream(request: Request, message: str = Query(None), language: str = None):
@@ -264,11 +274,21 @@ def register_core_routes(app, check):
             return JSONResponse({"response": container.get("rule_engine").process_input(message)})
 
         survival = _get_service(app, "survival_engine")
-        phase = 0
+        assessment = None
+        phase = None
         if survival:
-            phase = survival.assess().get("phase", 0)
+            assessment = survival.assess()
+            phase = assessment.get("phase")
 
         def event_generator():
+            if assessment is not None:
+                metadata = {
+                    "phase": phase,
+                    "phase_status": assessment["phase_status"],
+                    "missing_fields": assessment["missing_fields"],
+                    "stale_fields": assessment["stale_fields"],
+                }
+                yield f"event: phase\ndata: {json.dumps(metadata)}\n\n"
             for token in llm.survival_chat_stream(message, phase=phase):
                 yield f"data: {json.dumps({'token': token})}\n\n"
             yield "data: [DONE]\n\n"

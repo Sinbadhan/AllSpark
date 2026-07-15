@@ -1,5 +1,5 @@
 """SHA-151: psychology line-coverage tests (criterion 1: total line >=75%)."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -66,7 +66,8 @@ def test_calculate_stress_modes_and_power(tracker):
                                         daily_consumption=10, daily_intake=0,
                                         estimated_remaining_hours=3.0, last_updated="",
                                         amount_known=True, consumption_known=True,
-                                        intake_known=True))
+                                        intake_known=True, rate_basis="group_total",
+                                        as_of=datetime.now(timezone.utc).isoformat()))
     assert tracker._calculate_stress() >= 0.7
 
 

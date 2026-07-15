@@ -345,8 +345,10 @@ class KnowledgeEngine:
     def get_relevant_knowledge(self, intent: str, resources: list = None) -> list:
         entries = self.search_by_language(intent, limit=5)
         if not entries and resources:
+            from allspark.services.resource_manager import ResourceManager
+
             for r in resources:
-                if not r.amount_known:
+                if not r.amount_known or not ResourceManager.is_snapshot_current(r):
                     continue
                 rates_known = r.consumption_known and r.intake_known
                 if r.type == ResourceType.WATER and rates_known and r.estimated_remaining_hours < 72:

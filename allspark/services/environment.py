@@ -360,7 +360,8 @@ class EnvironmentAssessor:
         if knowledge_count > 20:
             result["score"] += 0.1
             result["items"].append(t("env_opp_knowledge", count=knowledge_count))
-        if self.survival and self.survival.assess().get("phase", 0) >= 2:
+        phase = self.survival.assess().get("phase") if self.survival else None
+        if phase is not None and phase >= 2:
             result["items"].append(t("env_opp_stable"))
         pois = self.db.get_all_pois()
         if len(pois) > 3:

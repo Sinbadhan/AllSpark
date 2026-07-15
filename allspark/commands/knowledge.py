@@ -68,7 +68,11 @@ class TaskCommand(BaseCommand):
             tasks = planner.get_all_active()
             if not tasks:
                 assessment = survival.assess()
-                tasks = planner.suggest_tasks(assessment["resources"])
+                tasks = planner.suggest_tasks(
+                    assessment["resources"],
+                    phase=assessment["phase"],
+                    stale_fields=assessment["stale_fields"],
+                )
             self.console.print(planner.format_tasks(tasks))
             return
 

@@ -306,7 +306,7 @@ class PowerMonitor:
         if self.db:
             power = self.db.get_resource(ResourceType.POWER)
             manager = self._get_resource_manager()
-            if power and manager.has_complete_rate_data(power):
+            if power and manager.remaining_status(power) != "unknown":
                 mode = (
                     "proactive"
                     if power.estimated_remaining_hours == self.SUSTAINED

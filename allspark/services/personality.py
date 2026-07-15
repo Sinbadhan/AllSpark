@@ -16,7 +16,7 @@ class PersonalitySystem:
         self._mode_history: list[dict] = []
 
     def determine_mode(self, operating_mode: OperatingMode,
-                       warnings: list, phase: int,
+                       warnings: list, phase: int | None,
                        is_multiplayer: bool = False) -> PersonalityMode:
         previous_mode = self.current_mode
         has_critical = any(w.get("level") == "critical" for w in warnings)
@@ -28,12 +28,12 @@ class PersonalitySystem:
         elif operating_mode in (OperatingMode.STANDARD, OperatingMode.ECONOMY):
             if warnings:
                 self.current_mode = PersonalityMode.CRISIS
-            elif phase >= 4:
+            elif phase is not None and phase >= 4:
                 self.current_mode = PersonalityMode.RENAISSANCE
             else:
                 self.current_mode = PersonalityMode.STABLE
         else:
-            if phase >= 4:
+            if phase is not None and phase >= 4:
                 self.current_mode = PersonalityMode.RENAISSANCE
             else:
                 self.current_mode = PersonalityMode.COMPANION
@@ -45,7 +45,7 @@ class PersonalitySystem:
         return self.current_mode
 
     def _record_transition(self, from_mode: PersonalityMode, to_mode: PersonalityMode,
-                           operating_mode: OperatingMode, phase: int):
+                           operating_mode: OperatingMode, phase: int | None):
         entry = {
             "from": from_mode.value,
             "to": to_mode.value,

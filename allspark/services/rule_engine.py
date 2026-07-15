@@ -100,7 +100,14 @@ class RuleEngine:
             "",
             self.resource_mgr.get_resource_summary(),
             "",
-            self.planner.format_tasks(assessment["active_tasks"] or self.planner.suggest_tasks(assessment["resources"])),
+            self.planner.format_tasks(
+                assessment["active_tasks"]
+                or self.planner.suggest_tasks(
+                    assessment["resources"],
+                    phase=assessment["phase"],
+                    stale_fields=assessment["stale_fields"],
+                )
+            ),
         ]
         if warnings:
             lines.append("")
@@ -369,14 +376,14 @@ class RuleEngine:
         ]
 
     def _handle_general(self, user_input: str, resources: list,
-                        warnings: list, phase: int) -> str:
+                        warnings: list, phase: int | None) -> str:
         context_parts = []
         if warnings:
             for w in warnings:
                 context_parts.append(f"[Alert] {w['message']}")
         if resources:
             for r in resources[:5]:
-                if not self.resource_mgr.has_complete_rate_data(r):
+                if self.resource_mgr.remaining_status(r) == "unknown":
                     continue
                 remaining = (
                     "sustained"
@@ -405,6 +412,13 @@ class RuleEngine:
                 )
 
         return self._format_trusted_response(
-            t("general_fallback", phase_suggestion=t(f"phase_fallback_{phase}")),
+            t(
+                "general_fallback",
+                phase_suggestion=t(
+                    f"phase_fallback_{phase}"
+                    if phase is not None
+                    else "phase_fallback_unknown"
+                ),
+            ),
             "none",
         )

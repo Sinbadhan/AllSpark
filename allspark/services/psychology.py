@@ -105,12 +105,13 @@ class PsychologyTracker:
             rates_complete = bool(
                 power
                 and (
-                    self.resource_mgr.has_complete_rate_data(power)
+                    self.resource_mgr.remaining_status(power) != "unknown"
                     if self.resource_mgr
                     else (
                         power.amount_known
                         and power.consumption_known
                         and power.intake_known
+                        and self._snapshot_is_current(power)
                     )
                 )
             )
@@ -123,6 +124,12 @@ class PsychologyTracker:
             logger.warning(f"Failed to check power resource for stress calculation: {e}")
 
         return min(1.0, stress)
+
+    @staticmethod
+    def _snapshot_is_current(resource) -> bool:
+        from allspark.services.resource_manager import ResourceManager
+
+        return ResourceManager.is_snapshot_current(resource)
 
     def get_self_assessment_questions(self) -> list[dict]:
         return [

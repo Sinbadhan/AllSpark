@@ -590,6 +590,7 @@ const API = "";
 const FOOTER_I18N = {
   resources: "{{ t('web_footer_resources') }}",
   phase: "{{ t('web_footer_phase') }}",
+  phase_pending: "{{ t('web_phase_pending') }}",
   mode: "{{ t('web_footer_mode') }}",
   status_label: "{{ t('web_footer_status_label') }}",
   status_alert: "{{ t('web_footer_status_alert') }}",
@@ -779,8 +780,11 @@ async function updateFooter() {
     // footer shows "正常" while the System card shows degraded.
     const [data, health] = await Promise.all([api("/api/status"), api("/api/system/health").catch(() => null)]);
     const res = data.resources || [];
+    const phaseText = data.phase_status === "known" && data.phase !== null
+      ? FOOTER_I18N.phase + " " + data.phase
+      : FOOTER_I18N.phase_pending;
     document.getElementById("footer-resources").textContent =
-      FOOTER_I18N.resources + ": " + res.length + " | " + FOOTER_I18N.phase + " " + data.phase + " | " + FOOTER_I18N.mode + ": " + data.mode;
+      FOOTER_I18N.resources + ": " + res.length + " | " + phaseText + " | " + FOOTER_I18N.mode + ": " + data.mode;
     let statusText;
     const state = health && health.state;
     if (state === "degraded") {

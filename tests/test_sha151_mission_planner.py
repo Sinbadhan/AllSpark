@@ -1,5 +1,7 @@
 """SHA-151: mission_planner line-coverage tests (criterion 1: total line >=75%)."""
 
+from datetime import datetime, timezone
+
 import pytest
 
 from allspark.core.database import Database
@@ -55,9 +57,11 @@ def test_suggest_tasks_urgent_water_and_food(planner):
     # No active tasks; low water -> urgent water task.
     db.upsert_resource(Resource(type=ResourceType.WATER, current_amount=10, unit="L",
                                 daily_consumption=10, daily_intake=0,
+                                rate_basis="group_total",
                                 estimated_remaining_hours=48.0, last_updated="",
                                 amount_known=True, consumption_known=True,
-                                intake_known=True))
+                                intake_known=True,
+                                as_of=datetime.now(timezone.utc).isoformat()))
     result = mp.suggest_tasks(resources=db.get_all_resources())
     assert result and "water" in result[0].title.lower() or result
 
@@ -66,17 +70,20 @@ def test_suggest_tasks_urgent_water_and_food(planner):
     db.conn.commit()
     db.upsert_resource(Resource(type=ResourceType.FOOD, current_amount=10, unit="kcal",
                                 daily_consumption=20, daily_intake=0,
+                                rate_basis="group_total",
                                 estimated_remaining_hours=40.0, last_updated="",
                                 amount_known=True, consumption_known=True,
-                                intake_known=True))
+                                intake_known=True,
+                                as_of=datetime.now(timezone.utc).isoformat()))
     result2 = mp.suggest_tasks(resources=db.get_all_resources())
     assert result2
 
 
-def test_suggest_tasks_fallback_to_phase0(planner):
-    _, mp = planner
+def test_suggest_tasks_without_phase_fails_closed(planner):
+    db, mp = planner
     result = mp.suggest_tasks()  # no active, no resources
-    assert result  # falls back to generate_tasks_for_phase(0)
+    assert result == []
+    assert db.get_active_tasks() == []
 
 
 def test_complete_fail_start_task(planner):

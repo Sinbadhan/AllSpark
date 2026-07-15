@@ -145,8 +145,8 @@
     <p>{{ t('web_dashboard_subtitle') }}</p>
   </div>
   <div class="dash-badges">
-    <span id="phase-badge" class="badge bg-success-dim text-success border-success">
-      <span class="material-symbols-outlined" style="font-size:14px;">check_circle</span> PHASE 0
+    <span id="phase-badge" class="badge bg-surface-mid text-secondary" style="border:1px solid var(--border);">
+      <span class="material-symbols-outlined" aria-hidden="true" style="font-size:14px;">help</span> {{ t('web_phase_pending') }}
     </span>
     <span id="mode-badge" class="badge bg-surface-mid text-secondary" style="border:1px solid var(--border);">
       MODE: --
@@ -335,12 +335,18 @@ async function refreshDashboard() {
 
   // Phase badge
   const badge = document.getElementById("phase-badge");
-  badge.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;">check_circle</span> ' + I18N.web_phase_label.replace('{phase}', data.phase);
-  if (data.phase <= 1) {
+  if (data.phase_status !== "known" || data.phase === null) {
+    badge.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true" style="font-size:14px;">help</span> ' + I18N.web_phase_pending;
+    badge.className = "badge bg-surface-mid text-secondary";
+    badge.style.border = "1px solid var(--border)";
+  } else if (data.phase <= 1) {
+    badge.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true" style="font-size:14px;">warning</span> ' + I18N.web_phase_label.replace('{phase}', data.phase);
     badge.className = "badge bg-critical-dim text-critical"; badge.style.border = "1px solid var(--critical)";
   } else if (data.phase <= 2) {
+    badge.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true" style="font-size:14px;">warning</span> ' + I18N.web_phase_label.replace('{phase}', data.phase);
     badge.className = "badge bg-warn-dim text-warn"; badge.style.border = "1px solid var(--warning)";
   } else {
+    badge.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true" style="font-size:14px;">check_circle</span> ' + I18N.web_phase_label.replace('{phase}', data.phase);
     badge.className = "badge bg-success-dim text-success"; badge.style.border = "1px solid var(--success)";
   }
 

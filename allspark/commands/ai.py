@@ -48,7 +48,9 @@ class LLMCommand(BaseCommand):
                 self.console.print(f"[red]{t('llm_not_available')}[/]")
                 return
             with self.console.status(t("llm_thinking")):
-                response = llm.survival_chat(message, phase=survival.assess().phase)
+                response = llm.survival_chat(
+                    message, phase=survival.assess().get("phase")
+                )
             self.console.print(Panel(response, title=t("title_allspark_ai")))
             return
 

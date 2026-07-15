@@ -111,10 +111,10 @@ class GoalEngine:
             if r:
                 resources[rtype] = r
 
-        phase = 0
+        phase = None
         if self.survival:
             assessment = self.survival.assess()
-            phase = assessment.get("phase", 0)
+            phase = assessment.get("phase")
 
         for template in _GOAL_TEMPLATES:
             prefix = template["id_prefix"]
@@ -150,7 +150,11 @@ class GoalEngine:
 
         if prefix == "water":
             water = resources.get(ResourceType.WATER)
-            if water is None or not self._has_complete_rate_data(water):
+            if (
+                water is None
+                or not self._has_complete_rate_data(water)
+                or not self._is_current(water)
+            ):
                 return False
             if water and water.estimated_remaining_hours > 0:
                 return water.estimated_remaining_hours < 72
@@ -158,7 +162,11 @@ class GoalEngine:
 
         if prefix == "food":
             food = resources.get(ResourceType.FOOD)
-            if food is None or not self._has_complete_rate_data(food):
+            if (
+                food is None
+                or not self._has_complete_rate_data(food)
+                or not self._is_current(food)
+            ):
                 return False
             if food and food.estimated_remaining_hours > 0:
                 return food.estimated_remaining_hours < 120
@@ -169,6 +177,7 @@ class GoalEngine:
             if (
                 power
                 and self._has_complete_rate_data(power)
+                and self._is_current(power)
                 and power.estimated_remaining_hours > 0
             ):
                 return power.estimated_remaining_hours < 24
@@ -178,10 +187,10 @@ class GoalEngine:
             return False
 
         if prefix == "agriculture":
-            return phase >= 1
+            return phase is not None and phase >= 1
 
         if prefix == "communication":
-            return phase >= 3
+            return phase is not None and phase >= 3
 
         return False
 
@@ -193,6 +202,13 @@ class GoalEngine:
             and resource.consumption_known
             and resource.intake_known
         )
+
+    def _is_current(self, resource) -> bool:
+        if self.resource_mgr:
+            return bool(self.resource_mgr.is_snapshot_current(resource))
+        from allspark.services.resource_manager import ResourceManager
+
+        return ResourceManager.is_snapshot_current(resource)
 
     def _create_goal_from_template(self, template) -> Goal:
         now = datetime.now()

@@ -61,7 +61,7 @@ class StatusCommand(BaseCommand):
 
         for r in resources:
             is_offline = not r.amount_known
-            rates_complete = resource_mgr.has_complete_rate_data(r)
+            rates_complete = resource_mgr.remaining_status(r) != "unknown"
 
             if r.type == ResourceType.POWER:
                 name = t("res_power_table")

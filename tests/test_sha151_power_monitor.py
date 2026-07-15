@@ -5,6 +5,7 @@ estimate_runtime / _estimate_hours / _recommend_mode branches, status/history,
 and the GPIO fallback path. No hardware in CI.
 """
 import threading
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 from allspark.core.database import Database
@@ -18,7 +19,8 @@ def _power(current=100.0, consumption=50.0, intake=0.0, hours=48.0) -> Resource:
                     daily_consumption=consumption, daily_intake=intake,
                     estimated_remaining_hours=hours, last_updated="",
                     amount_known=True, consumption_known=True, intake_known=True,
-                    rate_basis="group_total")
+                    rate_basis="group_total",
+                    as_of=datetime.now(timezone.utc).isoformat())
 
 
 def test_read_simulated_with_db():
