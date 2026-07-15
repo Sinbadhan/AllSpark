@@ -42,8 +42,8 @@ def _detect_initial_language() -> str:
 
 
 def run_init_wizard(db: Database) -> dict:
-    # This only controls the pre-choice display. Persistence starts after the
-    # user explicitly confirms zh or en in _step_language_select().
+    # This only controls the pre-choice display. The adapter persists language
+    # together with the initialized marker after runtime preparation succeeds.
     set_language(_detect_initial_language(), persist=False)
     console.print(Panel(
         Text.assemble(
@@ -67,11 +67,6 @@ def run_init_wizard(db: Database) -> dict:
     result["survivor"] = _step_survivor_profile(db)
 
     _step_summary(result)
-
-    db.mark_initialized()
-
-    console.print(f"\n[bold green]{t('init_complete_msg')}[/]")
-    console.print(f"[dim]{t('init_complete_hint')}[/]\n")
 
     return result
 
@@ -209,11 +204,11 @@ def _step_language_select() -> str:
     while True:
         choice = console.input(f"\n🔥 [1/2] (default {default_choice}) > ").strip() or default_choice
         if choice in ("1", "zh"):
-            set_language("zh")
+            set_language("zh", persist=False)
             console.print(f"[green]{t('init_lang_set_zh')}[/]")
             return "zh"
         elif choice in ("2", "en", "english"):
-            set_language("en")
+            set_language("en", persist=False)
             console.print(f"[green]{t('init_lang_set_en')}[/]")
             return "en"
         else:

@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
@@ -28,6 +29,46 @@ from allspark.services.survival_engine import SurvivalAssessmentEngine
 from allspark.services.vision_engine import VisionEngine
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class PreparedApplication:
+    """A fully prepared runtime that has not yet been published by an adapter."""
+
+    bootstrap: "ApplicationBootstrap"
+    container: ServiceContainer
+    engine: RuleEngine
+
+
+def rollback_initialization_draft(db: Database) -> None:
+    """Best-effort cleanup for a failed self-committing draft write."""
+    try:
+        db.conn.rollback()
+    except Exception:
+        logger.exception("Failed to roll back initialization draft transaction")
+
+
+def cleanup_application_candidate(bootstrap: Any) -> None:
+    """Best-effort runtime cleanup that never hides the initiating failure."""
+    try:
+        bootstrap.shutdown()
+    except Exception:
+        logger.exception("Failed to clean up initialization candidate")
+
+
+def prepare_application(
+    db: Database, flags: FeatureFlags | None = None
+) -> PreparedApplication:
+    """Build and validate a candidate runtime without publishing adapter state."""
+    bootstrap = ApplicationBootstrap(db, flags=flags)
+    try:
+        container = bootstrap.bootstrap()
+        engine = container.require("rule_engine")
+        return PreparedApplication(bootstrap, container, engine)
+    except Exception:
+        rollback_initialization_draft(db)
+        cleanup_application_candidate(bootstrap)
+        raise
 
 
 class ApplicationBootstrap:
@@ -62,11 +103,27 @@ class ApplicationBootstrap:
         return self.container
 
     def shutdown(self):
-        """Gracefully shut down all managed services."""
-        scheduler = self.container.get("scheduler")
+        """Clean up services already instantiated by this candidate runtime."""
+        try:
+            services = self.container.all_services()
+        except Exception:
+            logger.exception("Failed to enumerate candidate runtime services")
+            return
+        scheduler = services.get("scheduler")
         if scheduler:
-            scheduler.stop()
-            logger.info("Scheduler stopped")
+            try:
+                scheduler.stop()
+                logger.info("Scheduler stopped")
+            except Exception:
+                logger.exception("Failed to stop candidate scheduler")
+
+        docker_manager = services.get("docker_manager")
+        if docker_manager:
+            try:
+                docker_manager.stop_all()
+                logger.info("Docker services stopped")
+            except Exception:
+                logger.exception("Failed to stop candidate Docker services")
 
     def recover(self) -> ServiceContainer:
         """Recovery mode: data integrity check → sync data → re-evaluate.

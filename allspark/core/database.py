@@ -737,6 +737,25 @@ class Database:
         )
         self.conn.commit()
 
+    def finalize_initialization(self, language: str) -> None:
+        """Atomically publish a prepared installation.
+
+        Initialization draft rows are intentionally written by existing,
+        self-committing methods.  These two operating-state keys are the sole
+        publish marker and must become visible together.
+        """
+        if language not in ("zh", "en"):
+            raise ValueError(f"Unsupported language: {language}")
+        with self.conn:
+            self.conn.execute(
+                "INSERT OR REPLACE INTO operating_state VALUES (?,?)",
+                ("language", language),
+            )
+            self.conn.execute(
+                "INSERT OR REPLACE INTO operating_state VALUES (?,?)",
+                ("initialized", "true"),
+            )
+
     def mark_uninitialized(self):
         self.conn.execute(
             "DELETE FROM operating_state WHERE key='initialized'"

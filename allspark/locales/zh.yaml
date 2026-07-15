@@ -1768,6 +1768,9 @@ web_init_dl_error_prefix: '错误'
 web_init_dl_failed: 失败
 web_init_dl_progress_error: 查询下载进度失败
 web_init_complete_error: 错误
+web_init_busy: 初始化正在进行，请稍后重试。
+web_init_closed: 此实例已完成初始化；如需重新初始化，请先执行重置。
+web_init_retryable: 初始化未完成，运行环境尚未发布。请重试。
 web_init_tier_phantom: 幻影 (2GB)
 web_init_tier_minimum: 最低 (4GB)
 web_init_tier_recommended: 推荐 (8GB)

@@ -1829,6 +1829,9 @@ web_init_dl_error_prefix: 'Error'
 web_init_dl_failed: Failed
 web_init_dl_progress_error: Error checking progress
 web_init_complete_error: Error
+web_init_busy: Initialization is already in progress. Please retry shortly.
+web_init_closed: This instance is already initialized; reset it before initializing again.
+web_init_retryable: Initialization did not complete and no runtime was published. Please retry.
 web_init_tier_phantom: Phantom (2GB)
 web_init_tier_minimum: Minimum (4GB)
 web_init_tier_recommended: Recommended (8GB)

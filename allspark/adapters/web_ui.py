@@ -1,5 +1,7 @@
 import hmac
+import logging
 import secrets
+import threading
 import urllib.request
 from contextvars import ContextVar
 from pathlib import Path
@@ -11,13 +13,20 @@ from jinja2 import Environment, FileSystemLoader
 
 from allspark import __version__
 from allspark.adapters.routes.helpers import http_exception_handler
-from allspark.bootstrap import ApplicationBootstrap
+from allspark.bootstrap import (
+    PreparedApplication,
+    cleanup_application_candidate,
+    prepare_application,
+    rollback_initialization_draft,
+)
 from allspark.core.config import DEFAULT_DB_DIR
 from allspark.core.database import Database
 from allspark.core.i18n import MESSAGES, get_language, init_language, set_language, t
 from allspark.infrastructure.hardware import compute_feature_flags, detect_hardware
 from allspark.infrastructure.module_loader import ModuleRegistry
 from allspark.services.reset_manager import get_reset_descriptions
+
+logger = logging.getLogger(__name__)
 
 MODELS_DIR = DEFAULT_DB_DIR / "models"
 
@@ -178,7 +187,9 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
     init_language(db)
     app.state.db = db
     app.state.engine = None
+    app.state.container = None
     app.state.initialized = db.is_initialized()
+    app.state.init_lock = threading.Lock()
 
     if app.state.initialized:
         _load_engine(app)
@@ -287,20 +298,26 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
     return app
 
 
-def _load_engine(app):
+def _prepare_engine(app, flags=None) -> PreparedApplication:
     db = app.state.db
+    if flags is None:
+        registry_loaded = ModuleRegistry.load_from_db(db)
+        if registry_loaded:
+            flags = registry_loaded.flags
+        else:
+            profile = detect_hardware()
+            flags = compute_feature_flags(profile.tier, profile.gpu_available)
+    return prepare_application(db, flags=flags)
 
-    registry_loaded = ModuleRegistry.load_from_db(db)
-    if registry_loaded:
-        flags = registry_loaded.flags
-    else:
-        profile = detect_hardware()
-        flags = compute_feature_flags(profile.tier, profile.gpu_available)
 
-    container = ApplicationBootstrap(db, flags=flags).bootstrap()
-    engine = container.get("rule_engine")
-    app.state.engine = engine
-    app.state.container = container
+def _publish_engine(app, prepared: PreparedApplication) -> None:
+    app.state.container = prepared.container
+    app.state.engine = prepared.engine
+
+
+def _load_engine(app) -> None:
+    prepared = _prepare_engine(app)
+    _publish_engine(app, prepared)
 
 
 def _register_init_routes(app):
@@ -497,47 +514,103 @@ def _register_init_routes(app):
         language = _pick("language", language)
 
         db = app.state.db
-        profile = detect_hardware()
-        flags = compute_feature_flags(profile.tier, profile.gpu_available)
+        init_lock = app.state.init_lock
+        if not init_lock.acquire(blocking=False):
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "status": "error",
+                    "error": "bootstrap_in_progress",
+                    "detail": t("web_init_busy"),
+                    "next_action": "retry",
+                },
+            )
 
-        for key, val in [
-            ("cpu_arch", profile.cpu_arch), ("cpu_model", profile.cpu_model),
-            ("cpu_cores", str(profile.cpu_cores)),
-            ("ram_total_gb", f"{profile.ram_total_gb:.1f}"),
-            ("ram_available_gb", f"{profile.ram_available_gb:.1f}"),
-            ("storage_total_gb", f"{profile.storage_total_gb:.1f}"),
-            ("storage_available_gb", f"{profile.storage_available_gb:.1f}"),
-            ("gpu_info", profile.gpu_info),
-            ("gpu_available", str(profile.gpu_available)),
-            ("os_name", profile.os_name), ("os_version", profile.os_version),
-            ("tier", profile.tier.value),
-        ]:
-            db.save_hardware_profile(key, val)
+        previous_language = get_language()
+        prepared = None
+        try:
+            # Middleware is an early gate only. Re-check both sources while
+            # holding the lock so concurrent/repeated requests cannot publish.
+            if app.state.initialized or db.is_initialized():
+                return JSONResponse(
+                    status_code=410,
+                    content={
+                        "status": "error",
+                        "error": "bootstrap_closed",
+                        "detail": t("web_init_closed"),
+                        "next_action": "",
+                    },
+                )
+            if language not in ("zh", "en"):
+                return JSONResponse(
+                    status_code=422,
+                    content={
+                        "status": "error",
+                        "error": "invalid_language",
+                        "detail": t("error_invalid_language"),
+                        "next_action": "choose_language",
+                    },
+                )
 
-        registry = ModuleRegistry(flags)
-        registry.save_to_db(db)
+            profile = detect_hardware()
+            flags = compute_feature_flags(profile.tier, profile.gpu_available)
 
-        set_language(language)
-        db.save_survivor_state("name", survivor_name)
-        db.save_survivor_state("language", language)
-        # Persist the structured questionnaire so the survival assessment has
-        # the same initial context the CLI wizard captures (SHA-56).
-        db.save_survivor_state("location_type", location_type)
-        db.save_survivor_state("shelter", shelter)
-        db.save_survivor_state("health", health)
-        db.save_survivor_state("urgency", urgency)
-        db.save_survivor_state("threats", threats)
-        db.save_survivor_state("skills", skills)
-        db.save_survivor_state("questionnaire_version", "2")
-        db.mark_initialized()
+            # Draft writes use fixed keys and may self-commit. A retry safely
+            # overwrites them, but they never imply a published installation.
+            for key, val in [
+                ("cpu_arch", profile.cpu_arch), ("cpu_model", profile.cpu_model),
+                ("cpu_cores", str(profile.cpu_cores)),
+                ("ram_total_gb", f"{profile.ram_total_gb:.1f}"),
+                ("ram_available_gb", f"{profile.ram_available_gb:.1f}"),
+                ("storage_total_gb", f"{profile.storage_total_gb:.1f}"),
+                ("storage_available_gb", f"{profile.storage_available_gb:.1f}"),
+                ("gpu_info", profile.gpu_info),
+                ("gpu_available", str(profile.gpu_available)),
+                ("os_name", profile.os_name), ("os_version", profile.os_version),
+                ("tier", profile.tier.value),
+            ]:
+                db.save_hardware_profile(key, val)
 
-        app.state.initialized = True
-        _load_engine(app)
+            registry = ModuleRegistry(flags)
+            registry.save_to_db(db)
+            db.save_survivor_state("name", survivor_name)
+            db.save_survivor_state("language", language)
+            db.save_survivor_state("location_type", location_type)
+            db.save_survivor_state("shelter", shelter)
+            db.save_survivor_state("health", health)
+            db.save_survivor_state("urgency", urgency)
+            db.save_survivor_state("threats", threats)
+            db.save_survivor_state("skills", skills)
+            db.save_survivor_state("questionnaire_version", "2")
 
-        # SHA-142: bootstrap completes -> issue the auth cookie so the wizard
-        # operator transitions into an authenticated session without re-entering
-        # the token. No-op in loopback/no-token mode.
-        resp = JSONResponse(content={"status": "ok"})
-        if _WEB_TOKEN:
-            _set_auth_cookie(resp, _WEB_TOKEN)
-        return resp
+            set_language(language, persist=False)
+            prepared = _prepare_engine(app, flags=flags)
+            db.finalize_initialization(language)
+
+            # Publish is deliberately synchronous and contains no fallible I/O.
+            _publish_engine(app, prepared)
+            app.state.initialized = True
+
+            # SHA-142: only a fully published bootstrap receives the auth cookie.
+            resp = JSONResponse(content={"status": "ok"})
+            if _WEB_TOKEN:
+                _set_auth_cookie(resp, _WEB_TOKEN)
+            return resp
+        except Exception:
+            detail = t("web_init_retryable")
+            logger.exception("Initialization failed before runtime publish")
+            rollback_initialization_draft(db)
+            if prepared is not None:
+                cleanup_application_candidate(prepared.bootstrap)
+            set_language(previous_language, persist=False)
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "error",
+                    "error": "bootstrap_failed",
+                    "detail": detail,
+                    "next_action": "retry",
+                },
+            )
+        finally:
+            init_lock.release()

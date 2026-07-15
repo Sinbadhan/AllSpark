@@ -6,11 +6,15 @@ from rich.text import Text
 
 from allspark import __version__
 from allspark.adapters.init_wizard import run_init_wizard
-from allspark.bootstrap import ApplicationBootstrap
+from allspark.bootstrap import (
+    cleanup_application_candidate,
+    prepare_application,
+    rollback_initialization_draft,
+)
 from allspark.commands.dispatcher import CommandDispatcher
 from allspark.container import ServiceContainer
 from allspark.core.database import Database
-from allspark.core.i18n import init_language, mark, render, t
+from allspark.core.i18n import get_language, init_language, mark, render, set_language, t
 from allspark.core.models import OperatingMode
 from allspark.services.rule_engine import RuleEngine
 
@@ -55,13 +59,35 @@ class SparkCLI:
         return self._dispatcher
 
     def run(self):
-        if not self.db.is_initialized():
-            self.init_result = run_init_wizard(self.db)
-            if self.init_result and "hardware" in self.init_result:
-                self._flags = self.init_result["hardware"].get("flags")
+        needs_initialization = not self.db.is_initialized()
+        previous_language = get_language()
+        prepared = None
+        try:
+            if needs_initialization:
+                self.init_result = run_init_wizard(self.db)
+                if self.init_result and "hardware" in self.init_result:
+                    self._flags = self.init_result["hardware"].get("flags")
 
-        self._container = ApplicationBootstrap(self.db, flags=self._flags).bootstrap()
-        self._engine = self.container.require("rule_engine")
+            prepared = prepare_application(self.db, flags=self._flags)
+            if needs_initialization:
+                if self.init_result is None:
+                    raise RuntimeError("Initialization wizard returned no result")
+                language = self.init_result.get("language", previous_language)
+                self.db.finalize_initialization(language)
+
+            self._container = prepared.container
+            self._engine = prepared.engine
+        except Exception:
+            rollback_initialization_draft(self.db)
+            if prepared is not None:
+                cleanup_application_candidate(prepared.bootstrap)
+            if needs_initialization:
+                set_language(previous_language, persist=False)
+            raise
+
+        if needs_initialization:
+            console.print(f"\n[bold green]{t('init_complete_msg')}[/]")
+            console.print(f"[dim]{t('init_complete_hint')}[/]\n")
         self._setup_dispatcher()
         self._print_banner()
         self._print_initial_status()

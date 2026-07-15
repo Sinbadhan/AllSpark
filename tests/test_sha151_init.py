@@ -322,8 +322,8 @@ def test_step_summary_renders(monkeypatch) -> None:
     _step_summary(result)  # no assertion needed; renders a table
 
 
-def test_run_init_wizard_orchestrates_and_marks_initialized(monkeypatch, tmp_path) -> None:
-    # Mock each step so run_init_wizard chains them without real I/O.
+def test_run_init_wizard_orchestrates_without_publishing(monkeypatch, tmp_path) -> None:
+    # The wizard writes draft data only; the adapter publishes after bootstrap.
     monkeypatch.setattr(init_wizard, "_step_language_select", lambda: "zh")
     monkeypatch.setattr(init_wizard, "_step_hardware_detect",
                         lambda db: {"profile": _profile(), "flags": SimpleNamespace(llm_model="x")})
@@ -336,7 +336,7 @@ def test_run_init_wizard_orchestrates_and_marks_initialized(monkeypatch, tmp_pat
         r = run_init_wizard(db)
         assert r["language"] == "zh"
         assert r["survivor"]["name"] == "Z"
-        assert db.is_initialized() is True
+        assert db.is_initialized() is False
     finally:
         db.close()
 
