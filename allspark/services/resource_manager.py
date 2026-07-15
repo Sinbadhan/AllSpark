@@ -79,7 +79,7 @@ class ResourceManager:
         elif r.type == ResourceType.FIRE:
             if r.daily_consumption <= 0:
                 return self.SUSTAINED
-            return r.current_amount * 24.0
+            return (r.current_amount / r.daily_consumption) * 24.0
         return 0.0
 
     def get_operating_mode(self) -> OperatingMode:
