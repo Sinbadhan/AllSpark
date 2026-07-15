@@ -86,16 +86,24 @@ def register_core_routes(app, check):
             consumption = data.get("daily_consumption", None)
             intake = data.get("daily_intake", None)
         from allspark.core.models import ResourceType
+        from allspark.services.resource_manager import ResourceValidationError
         try:
             rtype = ResourceType(type)
-        except ValueError:
-            raise HTTPException(400, f"Invalid resource type: {type}")
+        except (TypeError, ValueError):
+            raise HTTPException(400, t("error_invalid_resource_type", type=type))
         kwargs: dict[str, float] = {}
-        if consumption is not None:
-            kwargs["consumption"] = float(consumption)
-        if intake is not None:
-            kwargs["intake"] = float(intake)
-        container.get("resource_manager").update_resource(rtype, float(amount), **kwargs)
+        try:
+            if consumption is not None:
+                kwargs["consumption"] = float(consumption)
+            if intake is not None:
+                kwargs["intake"] = float(intake)
+            container.get("resource_manager").update_resource(rtype, float(amount), **kwargs)
+        except (TypeError, ValueError, ResourceValidationError) as exc:
+            if isinstance(exc, ResourceValidationError):
+                detail = t(f"error_resource_{exc.reason}", field=exc.field)
+            else:
+                detail = t("error_resource_not_numeric", field="amount")
+            raise HTTPException(422, detail) from exc
         return {"status": "ok"}
 
     @app.get("/api/knowledge/search")

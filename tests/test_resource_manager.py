@@ -1,7 +1,11 @@
 import pytest
 
 from allspark.core.models import OperatingMode, ResourceType
-from allspark.services.resource_manager import _DEFAULT_RESOURCES, ResourceManager
+from allspark.services.resource_manager import (
+    _DEFAULT_RESOURCES,
+    ResourceManager,
+    ResourceValidationError,
+)
 
 
 @pytest.fixture
@@ -61,6 +65,23 @@ class TestResourceManager:
         mode, reason = rm.update_operating_mode()
         assert mode in [OperatingMode.PROACTIVE, OperatingMode.STANDARD,
                         OperatingMode.ECONOMY, OperatingMode.HIBERNATION]
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), -1.0, 1_000_000_000_001.0])
+    def test_update_rejects_invalid_values_without_writing(self, rm, value):
+        rm.init_defaults()
+        before = rm.db.get_resource(ResourceType.WATER)
+        with pytest.raises(ResourceValidationError):
+            rm.update_resource(ResourceType.WATER, value, consumption=2.0)
+        after = rm.db.get_resource(ResourceType.WATER)
+        assert after == before
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), 0.0, -5.0])
+    def test_consume_requires_positive_finite_value_without_writing(self, rm, value):
+        rm.init_defaults()
+        rm.update_resource(ResourceType.WATER, 10.0, consumption=2.0)
+        with pytest.raises(ResourceValidationError):
+            rm.consume_resource(ResourceType.WATER, value)
+        assert rm.db.get_resource(ResourceType.WATER).current_amount == 10.0
 
 
 class TestResourceManagerI18n:

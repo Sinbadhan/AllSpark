@@ -225,6 +225,25 @@ def test_resource_post_accepts_full_payload():
         assert abs(water["daily_intake"] - 1.0) < 0.01
 
 
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"type": "water", "amount": "NaN"},
+        {"type": "water", "amount": "Infinity"},
+        {"type": "water", "amount": -1},
+        {"type": "water", "amount": 10, "daily_consumption": -2},
+    ],
+)
+def test_resource_post_rejects_invalid_values_without_writing(payload):
+    with TempDb() as path:
+        c = _client(path)
+        before = c.get("/api/resources").json()
+        response = c.post("/api/resources", json=payload)
+        assert response.status_code == 422
+        assert response.json()["status"] == "error"
+        assert c.get("/api/resources").json() == before
+
+
 def test_briefing_endpoints_reachable():
     with TempDb() as path:
         c = _client(path)

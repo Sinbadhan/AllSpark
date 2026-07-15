@@ -212,7 +212,14 @@ class SetCommand(BaseCommand):
             self.console.print(f"[red]{t('invalid_numeric')}[/]")
             return
 
-        resource_mgr.update_resource(rtype, amount, consumption, intake)
+        from allspark.services.resource_manager import ResourceValidationError
+        try:
+            resource_mgr.update_resource(rtype, amount, consumption, intake)
+        except ResourceValidationError as exc:
+            self.console.print(
+                f"[red]{t(f'error_resource_{exc.reason}', field=exc.field)}[/]"
+            )
+            return
         updated = self.db.get_resource(rtype)
         if updated is None:
             return

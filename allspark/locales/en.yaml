@@ -1738,6 +1738,12 @@ error_trade_id_format: Body must contain {trade_id}.
 error_trade_not_found: Trade not found
 error_trade_not_found_detail: No trade '{trade_id}'.
 error_not_initialized: AllSpark not initialized. Complete setup first.
+error_invalid_resource_type: "Invalid resource type: {type}"
+error_resource_not_numeric: "{field} must be a number. No resource data was changed."
+error_resource_not_finite: "{field} must be a finite number. No resource data was changed."
+error_resource_negative: "{field} cannot be negative. Use an explicit inventory correction instead."
+error_resource_not_positive: "{field} must be greater than zero to consume a resource."
+error_resource_too_large: "{field} exceeds the supported safety limit. Check the unit and value."
 error_service_not_available: Service '{name}' not available
 error_module_not_found: Module '{name}' does not exist
 error_module_unsupported: Hardware does not support '{name}'

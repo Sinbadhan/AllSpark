@@ -1,4 +1,5 @@
 import logging
+import math
 from datetime import datetime
 from typing import Optional
 
@@ -10,7 +11,21 @@ from allspark.core.models import OperatingMode, Resource, ResourceType
 logger = logging.getLogger(__name__)
 
 
+class ResourceValidationError(ValueError):
+    """Raised before an invalid resource value can reach persistence."""
+
+    def __init__(self, field: str, reason: str):
+        self.field = field
+        self.reason = reason
+        super().__init__(f"{field}: {reason}")
+
+
 class ResourceManager:
+    # Technical safety ceiling: rejects overflow/abuse without constraining any
+    # plausible single-device or community inventory. Product-specific soft
+    # ranges and confirmation belong to the input contract (SHA-237).
+    MAX_RESOURCE_VALUE = 1_000_000_000_000.0
+
     def __init__(self, db: Database):
         self.db = db
 
@@ -41,6 +56,11 @@ class ResourceManager:
     def update_resource(self, rtype: ResourceType, amount: float,
                         consumption: Optional[float] = None,
                         intake: Optional[float] = None):
+        amount = self._validate_value("amount", amount)
+        if consumption is not None:
+            consumption = self._validate_value("daily_consumption", consumption)
+        if intake is not None:
+            intake = self._validate_value("daily_intake", intake)
         r = self.db.get_resource(rtype)
         if r is None:
             return
@@ -53,6 +73,7 @@ class ResourceManager:
         self.db.upsert_resource(r)
 
     def consume_resource(self, rtype: ResourceType, amount: float):
+        amount = self._validate_value("amount", amount, positive=True)
         r = self.db.get_resource(rtype)
         if r is None:
             return
@@ -63,6 +84,22 @@ class ResourceManager:
     # Sentinel: -1 means "sustained / cannot estimate" (consumption=0 or intake>=consumption).
     # Display layer should render this as "--" or t("web_power_sustained").
     SUSTAINED = -1.0
+
+    @classmethod
+    def _validate_value(cls, field: str, value: float, *, positive: bool = False) -> float:
+        try:
+            number = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ResourceValidationError(field, "not_numeric") from exc
+        if not math.isfinite(number):
+            raise ResourceValidationError(field, "not_finite")
+        if positive and number <= 0:
+            raise ResourceValidationError(field, "not_positive")
+        if not positive and number < 0:
+            raise ResourceValidationError(field, "negative")
+        if number > cls.MAX_RESOURCE_VALUE:
+            raise ResourceValidationError(field, "too_large")
+        return number
 
     def _estimate_remaining(self, r: Resource) -> float:
         if r.type == ResourceType.POWER:
