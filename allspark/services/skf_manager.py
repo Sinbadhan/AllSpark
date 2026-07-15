@@ -5,10 +5,19 @@ import re
 import uuid
 from datetime import datetime
 from pathlib import Path
-from zipfile import ZIP_DEFLATED, ZipFile
+from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 from allspark.core.i18n import t
-from allspark.core.models import ExperienceLog, KnowledgeEntry, MapPOI
+from allspark.core.models import (
+    ExperienceLog,
+    KnowledgeEntry,
+    KnowledgeValidationError,
+    MapPOI,
+    externalize_knowledge_evidence,
+    normalize_knowledge_evidence,
+    review_claim_payload,
+    validate_knowledge_entry_schema,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +26,107 @@ SKF_MANIFEST = "manifest.json"
 SKF_KNOWLEDGE = "knowledge.json"
 SKF_EXPERIENCE = "experience.json"
 SKF_LOCAL_DATA = "local_data.json"
+
+_SKF_ALLOWED_MEMBERS = {SKF_MANIFEST, SKF_KNOWLEDGE, SKF_EXPERIENCE, SKF_LOCAL_DATA}
+_SKF_MEMBER_LIMITS = {
+    SKF_MANIFEST: 1_048_576,
+    SKF_KNOWLEDGE: 8_388_608,
+    SKF_EXPERIENCE: 4_194_304,
+    SKF_LOCAL_DATA: 4_194_304,
+}
+_SKF_TOTAL_UNCOMPRESSED_MAX = 16_777_216
+_SKF_ARCHIVE_COMPRESSED_MAX = 16_777_216
+_SKF_COMPRESSION_RATIO_MAX = 200
+_SKF_KNOWLEDGE_ENTRIES_MAX = 2048
+_SKF_EXPERIENCE_ENTRIES_MAX = 5000
+_SKF_LOCAL_ENTRIES_MAX = 5000
+_SKF_CONTENT_LIST_MAX = 128
+_SKF_CONTENT_TEXT_MAX = 4096
+
+
+class SKFArchiveValidationError(ValueError):
+    pass
+
+
+def _preflight_archive(zf: ZipFile) -> dict[str, ZipInfo]:
+    infos = zf.infolist()
+    names = [info.filename for info in infos]
+    unknown = set(names) - _SKF_ALLOWED_MEMBERS
+    if unknown:
+        raise SKFArchiveValidationError(f"Unexpected SKF members: {sorted(unknown)}")
+    duplicates = {name for name in names if names.count(name) > 1}
+    if duplicates:
+        raise SKFArchiveValidationError(f"Duplicate SKF members: {sorted(duplicates)}")
+    by_name = {info.filename: info for info in infos}
+    if SKF_MANIFEST not in by_name:
+        raise SKFArchiveValidationError("Missing manifest.json")
+    total = 0
+    for name, info in by_name.items():
+        limit = _SKF_MEMBER_LIMITS[name]
+        if info.file_size > limit:
+            raise SKFArchiveValidationError(f"SKF member too large: {name}")
+        if info.file_size and info.compress_size == 0:
+            raise SKFArchiveValidationError(f"Invalid compressed size: {name}")
+        if info.compress_size and info.file_size / info.compress_size > _SKF_COMPRESSION_RATIO_MAX:
+            raise SKFArchiveValidationError(f"SKF compression ratio too high: {name}")
+        total += info.file_size
+    if total > _SKF_TOTAL_UNCOMPRESSED_MAX:
+        raise SKFArchiveValidationError("SKF total uncompressed size too large")
+    return by_name
+
+
+def _read_member(zf: ZipFile, info: ZipInfo, name: str):
+    limit = _SKF_MEMBER_LIMITS[name]
+    with zf.open(info) as stream:
+        raw = stream.read(limit + 1)
+    if len(raw) > limit:
+        raise SKFArchiveValidationError(f"SKF member exceeded read limit: {name}")
+    try:
+        return json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SKFArchiveValidationError(f"Invalid JSON in {name}") from exc
+
+
+def _validate_content_strings(values, field: str) -> None:
+    if not isinstance(values, list) or len(values) > _SKF_CONTENT_LIST_MAX:
+        raise SKFArchiveValidationError(f"Invalid {field} count")
+    if any(not isinstance(value, str) or len(value) > _SKF_CONTENT_TEXT_MAX for value in values):
+        raise SKFArchiveValidationError(f"Invalid {field} item")
+
+
+def _validate_knowledge_item(item: object) -> None:
+    if not isinstance(item, dict):
+        raise SKFArchiveValidationError("Knowledge entry must be an object")
+    content = item.get("content", {})
+    if not isinstance(content, dict):
+        raise SKFArchiveValidationError("Knowledge content must be an object")
+    raw_id = item.get("id")
+    if not isinstance(raw_id, str) or not raw_id.strip():
+        raise SKFArchiveValidationError("Knowledge id must be stable non-empty text")
+    if not _sanitize_kf_field(raw_id, "id", ""):
+        raise SKFArchiveValidationError("Knowledge id is empty after sanitization")
+    limits = {"title": 1024, "summary": 16384}
+    for field, limit in limits.items():
+        value = item.get(field) if field == "title" else content.get(field, "")
+        if not isinstance(value, str) or len(value) > limit:
+            raise SKFArchiveValidationError(f"Invalid knowledge {field}")
+    scalar_limits = {
+        "id": 128, "category": 64, "subcategory": 64, "verification": 32,
+        "source": 64, "verification_claim": 32, "source_claim": 64,
+        "language": 8,
+    }
+    for field, limit in scalar_limits.items():
+        value = item.get(field, "")
+        if not isinstance(value, str) or len(value) > limit:
+            raise SKFArchiveValidationError(f"Invalid knowledge {field}")
+    priority = item.get("priority", 3)
+    version = item.get("version", 1)
+    if not isinstance(priority, int) or isinstance(priority, bool) or priority not in (0, 1, 2, 3):
+        raise SKFArchiveValidationError("Invalid knowledge priority")
+    if not isinstance(version, int) or isinstance(version, bool) or not 0 <= version <= 1_000_000:
+        raise SKFArchiveValidationError("Invalid knowledge version")
+    for field in ("steps", "prerequisites", "warnings"):
+        _validate_content_strings(content.get(field, []), field)
 
 
 def _generate_spark_id() -> str:
@@ -63,7 +173,7 @@ def _checksum(data: str) -> str:
 
 
 def _entry_checksum(k: KnowledgeEntry) -> str:
-    canonical = json.dumps({
+    payload = {
         "id": k.id,
         "category": k.category,
         "subcategory": k.subcategory,
@@ -77,7 +187,20 @@ def _entry_checksum(k: KnowledgeEntry) -> str:
         "source": k.source,
         "version": k.version,
         "language": k.language,
-    }, sort_keys=True, ensure_ascii=False)
+    }
+    evidence_fields = {
+        "references": k.references,
+        "field_records": k.field_records,
+        "applicable_when": k.applicable_when,
+        "contraindications": k.contraindications,
+        "review_claim": review_claim_payload(k),
+    }
+    if any(evidence_fields.values()):
+        payload.update(evidence_fields)
+    if k.verification_claim or k.source_claim:
+        payload["verification_claim"] = k.verification_claim
+        payload["source_claim"] = k.source_claim
+    canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False)
     return _checksum(canonical)
 
 
@@ -91,6 +214,7 @@ class SKFPackage:
         self.local_data: list[dict] = []
         self.metadata: dict = {}
         self._checksum_errors: list[str] = []
+        self._import_errors: list[str] = []
 
     @classmethod
     def from_db(cls, db, spark_id: str = "",
@@ -153,9 +277,16 @@ class SKFPackage:
                     "steps": k.steps,
                     "prerequisites": k.prerequisites,
                     "warnings": k.warnings,
+                    "applicable_when": k.applicable_when,
+                    "contraindications": k.contraindications,
                 },
+                "references": k.references,
+                "field_records": k.field_records,
                 "verification": k.verification,
                 "source": k.source,
+                "verification_claim": k.verification_claim,
+                "source_claim": k.source_claim,
+                "review_claim": review_claim_payload(k),
                 "version": k.version,
                 "language": k.language,
                 "checksum": _entry_checksum(k),
@@ -212,14 +343,18 @@ class SKFPackage:
         src = Path(path)
         if not src.exists():
             raise FileNotFoundError(f"SKF file not found: {src}")
+        if src.stat().st_size > _SKF_ARCHIVE_COMPRESSED_MAX:
+            raise SKFArchiveValidationError("SKF archive compressed size too large")
 
         pkg = cls()
 
         with ZipFile(str(src), 'r') as zf:
-            names = zf.namelist()
+            members = _preflight_archive(zf)
+            names = set(members)
 
-            manifest_raw = zf.read(SKF_MANIFEST).decode('utf-8')
-            manifest = json.loads(manifest_raw)
+            manifest = _read_member(zf, members[SKF_MANIFEST], SKF_MANIFEST)
+            if not isinstance(manifest, dict):
+                raise SKFArchiveValidationError("Manifest must be an object")
             skf_meta = manifest.get("skf", {})
             pkg.version = skf_meta.get("version", SKF_VERSION)
             pkg.spark_id = skf_meta.get("spark_id", "")
@@ -227,12 +362,14 @@ class SKFPackage:
             pkg.metadata = manifest.get("metadata", {})
 
             if SKF_KNOWLEDGE in names:
-                knowledge_raw = zf.read(SKF_KNOWLEDGE).decode('utf-8')
-                knowledge_data = json.loads(knowledge_raw)
+                knowledge_data = _read_member(zf, members[SKF_KNOWLEDGE], SKF_KNOWLEDGE)
+                if not isinstance(knowledge_data, list) or len(knowledge_data) > _SKF_KNOWLEDGE_ENTRIES_MAX:
+                    raise SKFArchiveValidationError("Invalid knowledge entry count")
                 for item in knowledge_data:
+                    _validate_knowledge_item(item)
                     content = item.get("content", {})
                     entry = KnowledgeEntry(
-                        id=_sanitize_kf_field(item.get("id"), "id", _generate_spark_id()),
+                        id=_sanitize_kf_field(item.get("id"), "id", ""),
                         category=_sanitize_kf_field(item.get("category"), "category", "uncategorized"),
                         subcategory=_sanitize_kf_field(item.get("subcategory"), "subcategory", ""),
                         priority=item.get("priority", 3),
@@ -241,11 +378,28 @@ class SKFPackage:
                         steps=content.get("steps", []),
                         prerequisites=content.get("prerequisites", []),
                         warnings=content.get("warnings", []),
+                        applicable_when=content.get("applicable_when", []),
+                        contraindications=content.get("contraindications", []),
+                        references=item.get("references", []),
+                        field_records=item.get("field_records", []),
                         verification=_sanitize_kf_field(item.get("verification"), "verification", "unverified"),
                         source=_sanitize_kf_field(item.get("source"), "source", "other_spark"),
+                        verification_claim=_sanitize_kf_field(
+                            item.get("verification_claim"), "verification", ""
+                        ),
+                        source_claim=_sanitize_kf_field(item.get("source_claim"), "source", ""),
+                        review_claim=item.get("review_claim", {}),
                         version=item.get("version", 1),
                         language=item.get("language", "zh"),
                     )
+                    try:
+                        validate_knowledge_entry_schema(entry)
+                        normalize_knowledge_evidence(entry)
+                    except KnowledgeValidationError as exc:
+                        pkg._import_errors.append(
+                            f"Knowledge {entry.id}: invalid evidence envelope ({exc.reason})"
+                        )
+                        continue
                     pkg.knowledge_entries.append(entry)
 
             pkg._checksum_errors = []
@@ -264,8 +418,15 @@ class SKFPackage:
                             steps=content.get("steps", []),
                             prerequisites=content.get("prerequisites", []),
                             warnings=content.get("warnings", []),
+                            applicable_when=content.get("applicable_when", []),
+                            contraindications=content.get("contraindications", []),
+                            references=item.get("references", []),
+                            field_records=item.get("field_records", []),
                             verification=item.get("verification", "unverified"),
                             source=item.get("source", "other_spark"),
+                            verification_claim=item.get("verification_claim", ""),
+                            source_claim=item.get("source_claim", ""),
+                            review_claim=item.get("review_claim", {}),
                             version=item.get("version", 1),
                             language=item.get("language", "zh"),
                         )
@@ -277,9 +438,12 @@ class SKFPackage:
                             )
 
             if SKF_EXPERIENCE in names:
-                experience_raw = zf.read(SKF_EXPERIENCE).decode('utf-8')
-                experience_data = json.loads(experience_raw)
+                experience_data = _read_member(zf, members[SKF_EXPERIENCE], SKF_EXPERIENCE)
+                if not isinstance(experience_data, list) or len(experience_data) > _SKF_EXPERIENCE_ENTRIES_MAX:
+                    raise SKFArchiveValidationError("Invalid experience entry count")
                 for item in experience_data:
+                    if not isinstance(item, dict):
+                        raise SKFArchiveValidationError("Experience entry must be an object")
                     exp_entry = ExperienceLog(
                         id=item.get("id", str(uuid.uuid4())[:8]),
                         timestamp=item.get("timestamp", ""),
@@ -290,12 +454,14 @@ class SKFPackage:
                     pkg.experience_log.append(exp_entry)
 
             if SKF_LOCAL_DATA in names:
-                local_raw = zf.read(SKF_LOCAL_DATA).decode('utf-8')
-                pkg.local_data = json.loads(local_raw)
+                local_data = _read_member(zf, members[SKF_LOCAL_DATA], SKF_LOCAL_DATA)
+                if not isinstance(local_data, list) or len(local_data) > _SKF_LOCAL_ENTRIES_MAX:
+                    raise SKFArchiveValidationError("Invalid local data entry count")
+                pkg.local_data = local_data
 
         return pkg
 
-    def validate(self) -> list[str]:
+    def validate(self, *, check_checksums: bool = True) -> list[str]:
         errors = []
 
         if not self.spark_id:
@@ -304,8 +470,9 @@ class SKFPackage:
         if not self.version:
             errors.append("Missing version in manifest")
 
-        for err in getattr(self, '_checksum_errors', []):
-            errors.append(err)
+        if check_checksums:
+            errors.extend(getattr(self, '_checksum_errors', []))
+        errors.extend(getattr(self, '_import_errors', []))
 
         seen_ids = set()
         for k in self.knowledge_entries:
@@ -360,10 +527,11 @@ def import_skf(db, path: str, verify: bool = True,
                skip_duplicates: bool = True) -> dict:
     pkg = SKFPackage.import_from_file(path)
 
-    if verify:
-        errors = pkg.validate()
-        if errors:
-            return {"status": "validation_error", "errors": errors}
+    # ``verify`` controls checksum compatibility only. Archive, schema,
+    # content and evidence safety checks are mandatory for every import.
+    errors = pkg.validate(check_checksums=verify)
+    if errors:
+        return {"status": "validation_error", "errors": errors}
 
     imported = {"knowledge": 0, "experience": 0, "local_data": 0, "skipped": 0}
 
@@ -374,10 +542,15 @@ def import_skf(db, path: str, verify: bool = True,
                 if existing.version >= k.version:
                     imported["skipped"] += 1
                     continue
+        if not k.source_claim:
+            k.source_claim = k.source
+        if not k.verification_claim:
+            k.verification_claim = k.verification
         k.source = "other_spark"
         # SKF is an untrusted transport.  Preserve the sender's claim only in
         # the package inspection layer; persisted knowledge starts unverified
         # until a local, auditable evidence workflow establishes otherwise.
+        externalize_knowledge_evidence(k)
         k.verification = "unverified"
         db.save_knowledge(k)
         imported["knowledge"] += 1

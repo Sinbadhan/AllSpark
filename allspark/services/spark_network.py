@@ -19,7 +19,15 @@ from allspark.core.config import (
     SPARKNET_MAX_INCOMING_BYTES,
 )
 from allspark.core.i18n import t
-from allspark.core.models import KnowledgeEntry
+from allspark.core.models import (
+    KnowledgeEntry,
+    KnowledgeValidationError,
+    externalize_knowledge_evidence,
+    knowledge_transport_payload,
+    normalize_knowledge_evidence,
+    validate_knowledge_entry_schema,
+    validate_knowledge_evidence,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -297,21 +305,7 @@ class SparkNetwork:
         try:
             knowledge_data = []
             for k in entries:
-                knowledge_data.append({
-                    "id": k.id,
-                    "category": k.category,
-                    "subcategory": k.subcategory,
-                    "priority": k.priority,
-                    "title": k.title,
-                    "summary": k.summary,
-                    "steps": k.steps,
-                    "prerequisites": k.prerequisites,
-                    "warnings": k.warnings,
-                    "verification": k.verification,
-                    "source": k.source,
-                    "version": k.version,
-                    "language": k.language,
-                })
+                knowledge_data.append(knowledge_transport_payload(k))
 
             # Soft signature: sign outgoing entries when a shared secret is
             # configured so peers can reject tampered transfers (audit H1/H2).
@@ -355,6 +349,12 @@ class SparkNetwork:
     def receive_knowledge(self, entries_data: list[dict], signatures: Optional[dict] = None) -> dict:
         if not self.db:
             return {"status": "error", "message": t("net_error_no_database")}
+        if not isinstance(entries_data, list):
+            return {
+                "status": "error", "message": t("net_error_invalid_payload"),
+                "accepted_count": 0, "rejected_count": 1, "pending_count": 0,
+                "sig_rejected_count": 0,
+            }
 
         from allspark.services.knowledge_verifier import KnowledgeVerifier
         verifier = KnowledgeVerifier(self.db, self.llm)
@@ -367,8 +367,11 @@ class SparkNetwork:
         sig_rejected = 0
 
         for item in entries_data:
+            if not isinstance(item, dict):
+                rejected += 1
+                continue
             entry = KnowledgeEntry(
-                id=item.get("id", str(uuid.uuid4())[:8]),
+                id=item.get("id", ""),
                 category=item.get("category", "uncategorized"),
                 subcategory=item.get("subcategory", ""),
                 priority=item.get("priority", 3),
@@ -377,12 +380,28 @@ class SparkNetwork:
                 steps=item.get("steps", []),
                 prerequisites=item.get("prerequisites", []),
                 warnings=item.get("warnings", []),
+                references=item.get("references", []),
+                field_records=item.get("field_records", []),
+                applicable_when=item.get("applicable_when", []),
+                contraindications=item.get("contraindications", []),
                 verification=item.get("verification", "unverified"),
                 source=item.get("source", ""),
+                verification_claim=item.get("verification_claim", ""),
+                source_claim=item.get("source_claim", ""),
+                review_claim=item.get("review_claim", {}),
                 version=item.get("version", 1),
                 language=item.get("language", "zh"),
             )
-
+            try:
+                validate_knowledge_entry_schema(entry)
+                validate_knowledge_evidence(entry)
+            except KnowledgeValidationError as exc:
+                rejected += 1
+                logger.warning(
+                    "Rejected knowledge entry %r: invalid schema (%s)",
+                    item.get("id"), exc.reason,
+                )
+                continue
             # A configured shared secret is an enforcement boundary: missing
             # and invalid signatures are both rejected. The sender-provided
             # source participates in the signature, then is replaced locally.
@@ -393,8 +412,31 @@ class SparkNetwork:
                     logger.warning("Rejected knowledge entry %s: missing or invalid signature", entry.id)
                     continue
 
+            try:
+                normalize_knowledge_evidence(entry)
+            except KnowledgeValidationError as exc:
+                rejected += 1
+                logger.warning(
+                    "Rejected knowledge entry %s: invalid evidence envelope (%s)",
+                    entry.id, exc.reason,
+                )
+                continue
+
+            if not entry.source_claim:
+                entry.source_claim = entry.source
+            if not entry.verification_claim:
+                entry.verification_claim = entry.verification
             entry.source = "other_spark"
+            externalize_knowledge_evidence(entry)
+            entry.verification = "unverified"
             report = verifier.verify_entry(entry)
+            format_result = next(
+                (result for result in report.results if result.step == "format_check"),
+                None,
+            )
+            if format_result is None or not format_result.passed:
+                rejected += 1
+                continue
 
             if report.level in ("expert_verified", "cross_ref", "field_tested"):
                 entry.verification = report.level

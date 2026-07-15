@@ -298,13 +298,13 @@ def test_import_skf_skip_duplicates_older_version(db: Database, tmp_path: Path) 
     assert r["imported"]["knowledge"] == 0
 
 
-def test_import_skf_without_verify_imports_anyway(db: Database, tmp_path: Path) -> None:
+def test_import_skf_without_verify_still_enforces_structure(db: Database, tmp_path: Path) -> None:
     pkg = _pkg_with(entries=[_entry(id="k9", title="", summary="")])  # would fail validation
     path = tmp_path / "noverify.skf"
     pkg.export_to_file(str(path))
     r = import_skf(db, str(path), verify=False)
-    assert r["status"] == "ok"
-    assert r["imported"]["knowledge"] == 1
+    assert r["status"] == "validation_error"
+    assert db.get_knowledge("k9") is None
 
 
 @pytest.mark.parametrize("verify", [True, False])

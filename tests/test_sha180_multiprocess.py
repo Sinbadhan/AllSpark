@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import socket
 import sqlite3
 import subprocess
@@ -108,11 +109,18 @@ def _start_server(
     ]
     if max_incoming_bytes is not None:
         command.extend(["--max-incoming-bytes", str(max_incoming_bytes)])
+    env = os.environ.copy()
+    project_root = str(Path(__file__).resolve().parents[1])
+    env["PYTHONPATH"] = (
+        project_root + os.pathsep + env["PYTHONPATH"]
+        if env.get("PYTHONPATH") else project_root
+    )
     process = subprocess.Popen(
         command,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        env=env,
     )
 
     deadline = time.monotonic() + _SERVER_READY_TIMEOUT_SECONDS
