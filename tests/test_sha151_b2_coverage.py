@@ -307,9 +307,9 @@ def test_determine_operating_mode_proactive(rm: ResourceManager) -> None:
 
 
 def test_estimate_remaining_fire_happy_path(rm: ResourceManager) -> None:
-    # FIRE consumption > 0 -> current * 24 (covers line 80->82 happy path).
+    # FIRE uses the same amount / daily-consumption contract as water and food.
     r = _res(ResourceType.FIRE, current=5, consumption=2, hours=0)
-    assert rm._estimate_remaining(r) == 5 * 24.0
+    assert rm._estimate_remaining(r) == (5 / 2) * 24.0
 
 
 def test_update_operating_mode_detects_change(rm: ResourceManager) -> None:
