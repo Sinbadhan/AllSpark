@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 import allspark.adapters.web_ui as wui
 from allspark.adapters.web_ui import MODEL_DOWNLOAD_URLS, create_app
 from allspark.core.database import Database
+from tests.assessment_helpers import valid_initial_assessment
 
 
 def _client(db_path: str, token: str | None = None) -> TestClient:
@@ -162,6 +163,7 @@ def test_init_complete_with_body_list_fields_and_cookie(tmp_path: Path) -> None:
         "language": "zh", "survivor_name": "Tester",
         "location_type": "urban", "shelter": "apt",
         "skills": ["first_aid", "navigation"],  # list -> _pick joins (covers [435,436])
+        "assessment": valid_initial_assessment(),
     })
     assert r.status_code == 200
     assert "allspark_session" in r.cookies  # cookie re-stamped (covers [490,491])
@@ -173,7 +175,14 @@ def test_init_complete_with_body_list_fields_and_cookie(tmp_path: Path) -> None:
 def test_init_complete_loopback_no_cookie(tmp_path: Path) -> None:
     # No token -> no cookie stamped (covers the [490,491] false branch).
     c = _client(str(tmp_path / "icl.db"))
-    r = c.post("/api/init/complete", json={"language": "en", "survivor_name": "Z"})
+    r = c.post(
+        "/api/init/complete",
+        json={
+            "language": "en",
+            "survivor_name": "Z",
+            "assessment": valid_initial_assessment(),
+        },
+    )
     assert r.status_code == 200
     assert "allspark_session" not in r.cookies
 
@@ -204,11 +213,14 @@ def test_download_progress_error_unlinks_tmp(tmp_path: Path, monkeypatch) -> Non
     assert r.json()["status"] == "error"
 
 
-def test_init_complete_non_dict_body_falls_back_to_defaults(tmp_path: Path) -> None:
-    # Body parses to a non-dict -> body stays {} -> query-param defaults (covers [428,433]).
+def test_init_complete_non_dict_body_is_rejected_without_draft(tmp_path: Path) -> None:
+    # A non-dict cannot carry the explicit safety contract and must not publish.
     c = _client(str(tmp_path / "icnd.db"))
     r = c.post("/api/init/complete", json=["not", "a", "dict"])
-    assert r.status_code == 200
+    assert r.status_code == 422
+    assert r.json()["error"] == "invalid_initial_assessment"
+    assert c.app.state.db.is_initialized() is False
+    assert c.app.state.db.get_survivor_state() == {}
 
 
 def test_init_download_thread_records_error_on_network_failure(tmp_path: Path, monkeypatch) -> None:

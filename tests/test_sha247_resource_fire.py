@@ -40,6 +40,7 @@ def test_fire_remaining_boundaries(amount, daily_consumption, expected_hours, tm
         amount_known=True,
         consumption_known=True,
         intake_known=True,
+        rate_basis="group_total",
     )
 
     assert manager._estimate_remaining(fire) == expected_hours

@@ -355,7 +355,7 @@ async function refreshDashboard() {
   container.innerHTML = data.resources.map(r => {
     const icon = resourceIcons[r.type] || "inventory_2";
     const label = resourceLabel(r.type);
-    const resourceAttrs = `data-index-action="resource-edit" data-resource-type="${escHtml(String(r.type || ''))}" data-resource-amount="${Number(r.amount) || 0}" data-resource-consumption="${Number(r.daily_consumption) || 0}" data-resource-intake="${Number(r.daily_intake) || 0}" data-resource-amount-known="${r.amount_known === true}" data-resource-consumption-known="${r.consumption_known === true}" data-resource-intake-known="${r.intake_known === true}" data-resource-capacity="${Number(r.capacity) || 0}" data-resource-capacity-known="${r.capacity_known === true}" data-resource-people="${Number(r.people_count) || 1}" data-resource-unit-label="${escHtml(String(r.unit_label || r.unit || ''))}" data-resource-source="${escHtml(String(r.source || ''))}" data-resource-source-label="${escHtml(String(r.source_label || ''))}" data-resource-as-of="${escHtml(String(r.as_of || ''))}"`;
+    const resourceAttrs = `data-index-action="resource-edit" data-resource-type="${escHtml(String(r.type || ''))}" data-resource-amount="${Number(r.amount) || 0}" data-resource-consumption="${Number(r.daily_consumption) || 0}" data-resource-intake="${Number(r.daily_intake) || 0}" data-resource-amount-known="${r.amount_known === true}" data-resource-consumption-known="${r.consumption_known === true}" data-resource-intake-known="${r.intake_known === true}" data-resource-capacity="${Number(r.capacity) || 0}" data-resource-capacity-known="${r.capacity_known === true}" data-resource-people="${r.people_count_known === true ? Number(r.people_count) : ''}" data-resource-people-known="${r.people_count_known === true}" data-resource-unit-label="${escHtml(String(r.unit_label || r.unit || ''))}" data-resource-source="${escHtml(String(r.source || ''))}" data-resource-source-label="${escHtml(String(r.source_label || ''))}" data-resource-as-of="${escHtml(String(r.as_of || ''))}"`;
     const editBtn = `<span class="material-symbols-outlined" style="font-size:14px;cursor:pointer;color:var(--secondary);" title="${RES_I18N.edit_label}" ${resourceAttrs}>edit</span>`;
     if (!r.configured) {
       // SHA-59: compact empty-state. Earlier every unconfigured card repeated
@@ -385,7 +385,7 @@ async function refreshDashboard() {
       '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + r.amount + (r.unit_label || r.unit) + ' ' + editBtn + '</span></div>' +
       '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + statusColor + '"></div></div>' +
       '<div class="card-status">' + statusText + ' · ' + escHtml(String(r.source_label || '-')) + '</div>' +
-      '<div class="card-remaining">' + remainingText + ' · ' + RES_I18N.perPerson.replace('{amount}', Number(r.amount_per_person || 0).toFixed(2)).replace('{unit}', escHtml(String(r.unit_label || r.unit || ''))) + '</div></div>';
+      '<div class="card-remaining">' + remainingText + ' · ' + (r.people_count_known === true && r.amount_per_person !== null ? RES_I18N.perPerson.replace('{amount}', Number(r.amount_per_person).toFixed(2)).replace('{unit}', escHtml(String(r.unit_label || r.unit || ''))) : RES_I18N.perPersonUnknown) + '</div></div>';
   }).join("");
 
   // Warnings
@@ -624,10 +624,12 @@ function updateResourceConversion() {
   if (!modal) return;
   const amountInput = document.getElementById("res-edit-amount");
   const amount = Number(amountInput.value);
-  const people = Math.max(1, Number(document.getElementById("res-edit-people").value || 1));
+  const peopleValue = document.getElementById("res-edit-people").value;
+  const people = Number(peopleValue);
   const unit = RESOURCE_CONTRACTS[modal._resourceType]?.unit || "";
   document.getElementById("res-edit-conversion").textContent =
-    resourceFieldKnown("amount") && amountInput.value.trim() !== "" && Number.isFinite(amount)
+    modal._peopleKnown === true && peopleValue.trim() !== "" && people >= 1 &&
+      resourceFieldKnown("amount") && amountInput.value.trim() !== "" && Number.isFinite(amount)
       ? RES_I18N.perPerson.replace("{amount}", (amount / people).toFixed(2)).replace("{unit}", unit)
       : RES_I18N.perPersonUnknown;
 }
@@ -666,7 +668,20 @@ function setResourceInputKind(kind) {
     button.setAttribute("aria-pressed", selected ? "true" : "false");
   });
 }
-function openResourceEdit(rtype, amount, consumption, intake, amountKnown, consumptionKnown, intakeKnown, capacity, capacityKnown, people, source, sourceLabel, asOf, trigger) {
+function setResourcePeopleKnown(known) {
+  const modal = document.getElementById("res-edit-modal");
+  modal._peopleKnown = known === true;
+  modal.querySelectorAll("[data-resource-people-known]").forEach(button => {
+    const selected = button.dataset.resourcePeopleKnown === String(known === true);
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
+  const input = document.getElementById("res-edit-people");
+  if (!known) input.value = "";
+  input.disabled = !known;
+  updateResourceConversion();
+}
+function openResourceEdit(rtype, amount, consumption, intake, amountKnown, consumptionKnown, intakeKnown, capacity, capacityKnown, people, peopleKnown, source, sourceLabel, asOf, trigger) {
   let modal = document.getElementById("res-edit-modal");
   if (!modal) {
     modal = document.createElement("div");
@@ -694,7 +709,7 @@ function openResourceEdit(rtype, amount, consumption, intake, amountKnown, consu
         </div>
         <div id="res-edit-conversion" style="font-size:11px;color:var(--secondary);margin-bottom:10px;"></div>
         <div class="resource-edit-field">
-          <div class="resource-edit-field-head"><label for="res-edit-people">${RES_I18N.people}</label></div>
+          <div class="resource-edit-field-head"><label id="res-edit-people-label" for="res-edit-people">${RES_I18N.people}</label><div class="q-chips" role="group" aria-labelledby="res-edit-people-label"><button type="button" class="q-chip" data-resource-people-known="true" aria-pressed="false">${RES_I18N.fieldKnown}</button><button type="button" class="q-chip" data-resource-people-known="false" aria-pressed="true">${RES_I18N.fieldUnknown}</button></div></div>
           <input id="res-edit-people" class="resource-edit-input" type="number" min="1" max="10000" step="1"/>
         </div>
         <details id="res-edit-advanced" class="resource-edit-advanced">
@@ -742,6 +757,7 @@ function openResourceEdit(rtype, amount, consumption, intake, amountKnown, consu
     modal.addEventListener("keydown", e => { if (e.key === "Escape") closeResEdit(); });
     document.body.appendChild(modal);
     modal.querySelectorAll("[data-resource-known-field]").forEach(button => button.addEventListener("click", () => setResourceFieldKnown(button.dataset.resourceKnownField, button.dataset.resourceKnownValue === "true")));
+    modal.querySelectorAll("[data-resource-people-known]").forEach(button => button.addEventListener("click", () => setResourcePeopleKnown(button.dataset.resourcePeopleKnown === "true")));
     document.getElementById("res-edit-amount").addEventListener("input", updateResourceConversion);
     document.getElementById("res-edit-people").addEventListener("input", updateResourceConversion);
     modal.querySelectorAll("[data-resource-input-kind]").forEach(button => button.addEventListener("click", () => setResourceInputKind(button.dataset.resourceInputKind)));
@@ -752,7 +768,7 @@ function openResourceEdit(rtype, amount, consumption, intake, amountKnown, consu
   document.getElementById("res-edit-amount").value = amount;
   document.getElementById("res-edit-consumption").value = consumption;
   document.getElementById("res-edit-intake").value = intake;
-  document.getElementById("res-edit-people").value = people || 1;
+  document.getElementById("res-edit-people").value = peopleKnown ? people : "";
   document.getElementById("res-edit-capacity").value = capacity || 0;
   document.getElementById("res-edit-capacity-wrap").style.display = rtype === "storage" ? "block" : "none";
   document.getElementById("res-edit-advanced").open = false;
@@ -765,6 +781,7 @@ function openResourceEdit(rtype, amount, consumption, intake, amountKnown, consu
   setResourceFieldKnown("consumption", consumptionKnown === true);
   setResourceFieldKnown("intake", intakeKnown === true);
   setResourceFieldKnown("capacity", rtype === "storage" && capacityKnown === true);
+  setResourcePeopleKnown(peopleKnown === true);
   updateResourceConversion();
   modal.style.display = "flex";
   // SHA-152: focus management - save the explicit trigger (passed as `this`
@@ -815,11 +832,14 @@ async function saveResource(rtype) {
   const consumption = parseFloat(document.getElementById("res-edit-consumption").value);
   const intake = parseFloat(document.getElementById("res-edit-intake").value);
   const capacity = parseFloat(document.getElementById("res-edit-capacity").value);
+  const peopleKnown = document.getElementById("res-edit-modal")._peopleKnown === true;
+  const peopleValue = document.getElementById("res-edit-people").value;
   if (
     (amountKnown && !Number.isFinite(amount)) ||
     (consumptionKnown && !Number.isFinite(consumption)) ||
     (intakeKnown && !Number.isFinite(intake)) ||
-    (capacityKnown && !Number.isFinite(capacity))
+    (capacityKnown && !Number.isFinite(capacity)) ||
+    (peopleKnown && (!/^\d+$/.test(peopleValue) || Number(peopleValue) < 1 || Number(peopleValue) > 10000))
   ) {
     notify(new Error(RES_I18N.valueRequired));
     return;
@@ -849,7 +869,8 @@ async function saveResource(rtype) {
         daily_intake: intakeKnown ? intake : null,
         capacity_known: capacityKnown,
         capacity: capacityKnown ? capacity : null,
-        people_count: Number(document.getElementById("res-edit-people").value || 1),
+        people_count: peopleKnown ? Number(peopleValue) : 1,
+        people_count_known: peopleKnown,
         confirm_outlier: confirmOutlier,
         input_kind: document.getElementById("res-edit-modal")._inputKind,
       }),
@@ -953,6 +974,7 @@ function openResourceFromTarget(target) {
     Number(target.dataset.resourceCapacity || 0),
     target.dataset.resourceCapacityKnown === "true",
     Number(target.dataset.resourcePeople || 1),
+    target.dataset.resourcePeopleKnown === "true",
     target.dataset.resourceSource || "",
     target.dataset.resourceSourceLabel || "",
     target.dataset.resourceAsOf || "",

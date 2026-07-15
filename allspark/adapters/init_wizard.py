@@ -12,7 +12,8 @@ from rich.text import Text
 
 from allspark.core.config import DEFAULT_DB_DIR
 from allspark.core.database import Database
-from allspark.core.i18n import get_language, set_language, t
+from allspark.core.i18n import get_language, render, set_language, t
+from allspark.core.models import RESOURCE_UNITS, ResourceType
 from allspark.infrastructure.hardware import (
     DeployMode,
     HardwareTier,
@@ -22,6 +23,12 @@ from allspark.infrastructure.hardware import (
     resolve_runtime_deploy_mode,
 )
 from allspark.infrastructure.module_loader import ModuleRegistry
+from allspark.services.initial_assessment import (
+    InitialAssessmentValidationError,
+    assessment_preview,
+    validate_initial_assessment,
+)
+from allspark.services.resource_manager import ResourceManager, ResourceValidationError
 
 console = Console()
 
@@ -62,13 +69,40 @@ def run_init_wizard(db: Database) -> dict:
 
     result["language"] = _step_language_select()
 
-    result["hardware"] = _step_hardware_detect(db)
-    result["model"] = _step_model_setup(db, result["hardware"])
-    result["survivor"] = _step_survivor_profile(db)
+    while True:
+        result["assessment"] = _step_initial_assessment()
+        if _step_assessment_summary(result["assessment"]):
+            break
 
-    _step_summary(result)
+    # Hardware is supporting runtime context, never another interactive gate.
+    # Tier override, model, GPS, skills, and profile details belong to advanced
+    # settings after the first useful assessment is published.
+    result["hardware"] = _prepare_hardware_automatically(db)
 
     return result
+
+
+def _prepare_hardware_automatically(db: Database) -> dict:
+    profile = detect_hardware()
+    flags = compute_feature_flags(profile.tier, profile.gpu_available)
+    _resolve_runtime_flags(db, flags)
+    for key, value in [
+        ("cpu_arch", profile.cpu_arch),
+        ("cpu_model", profile.cpu_model),
+        ("cpu_cores", str(profile.cpu_cores)),
+        ("ram_total_gb", f"{profile.ram_total_gb:.1f}"),
+        ("ram_available_gb", f"{profile.ram_available_gb:.1f}"),
+        ("storage_total_gb", f"{profile.storage_total_gb:.1f}"),
+        ("storage_available_gb", f"{profile.storage_available_gb:.1f}"),
+        ("gpu_info", profile.gpu_info),
+        ("gpu_available", str(profile.gpu_available)),
+        ("os_name", profile.os_name),
+        ("os_version", profile.os_version),
+        ("tier", profile.tier.value),
+    ]:
+        db.save_hardware_profile(key, value)
+    ModuleRegistry(flags).save_to_db(db)
+    return {"profile": profile, "flags": flags}
 
 
 def _step_hardware_detect(db: Database) -> dict:
@@ -379,104 +413,255 @@ def _download_model(model_name: str, size_gb: float):
     console.print(f"[dim]{t('init_model_download_manual_hint')}[/]")
 
 
-def _step_survivor_profile(db: Database) -> dict:
-    console.print(f"\n[bold cyan]━━ {t('init_step_profile')} ━━[/]")
-    console.print(f"[dim]{t('init_profile_intro')}[/]\n")
+def _explicit_known_state(label: str) -> str:
+    while True:
+        console.print(f"\n[bold]{label}[/]")
+        console.print(f"  1. {t('init_assessment_known')}")
+        console.print(f"  2. {t('init_assessment_unknown')}")
+        choice = console.input("🔥 [1/2] > ").strip()
+        if choice == "1":
+            return "known"
+        if choice == "2":
+            return "unknown"
+        console.print(f"[red]{t('init_assessment_explicit_required')}[/]")
 
-    # Load structured questionnaire data
+
+def _required_fact(label: str, options: list[dict]) -> dict[str, Any]:
+    while True:
+        console.print(f"\n[bold]{label}[/]")
+        for index, option in enumerate(options, 1):
+            console.print(f"  {index}. {t(option['label_key'])}")
+        unknown_index = len(options) + 1
+        console.print(f"  {unknown_index}. {t('init_assessment_unknown')}")
+        choice = console.input(f"🔥 [1-{unknown_index}] > ").strip()
+        try:
+            index = int(choice) - 1
+        except ValueError:
+            index = -1
+        if 0 <= index < len(options):
+            return {"status": "known", "value": options[index]["key"]}
+        if index == len(options):
+            return {"status": "unknown"}
+        console.print(f"[red]{t('init_assessment_explicit_required')}[/]")
+
+
+def _required_threats(options: list[dict]) -> dict[str, Any]:
+    while True:
+        console.print(f"\n[bold]{t('init_threats_label')}[/]")
+        console.print(f"  1. {t('init_assessment_threat_none')}")
+        console.print(f"  2. {t('init_assessment_threat_selected')}")
+        console.print(f"  3. {t('init_assessment_unknown')}")
+        state = console.input("🔥 [1/2/3] > ").strip()
+        if state == "1":
+            return {"status": "none", "values": []}
+        if state == "3":
+            return {"status": "unknown", "values": []}
+        if state != "2":
+            console.print(f"[red]{t('init_assessment_explicit_required')}[/]")
+            continue
+        for index, option in enumerate(options, 1):
+            console.print(f"  {index}. {t(option['label_key'])}")
+        raw = console.input(t("init_assessment_threat_prompt") + " > ").strip()
+        try:
+            indexes = [int(part.strip()) - 1 for part in raw.split(",")]
+        except ValueError:
+            indexes = []
+        if indexes and all(0 <= index < len(options) for index in indexes):
+            values = list(dict.fromkeys(options[index]["key"] for index in indexes))
+            return {"status": "selected", "values": values}
+        console.print(f"[red]{t('init_assessment_threat_required')}[/]")
+
+
+def _resource_assessment(resource_type: ResourceType) -> dict:
+    label = t(f"resource_{resource_type.value}")
+    amount_status = _explicit_known_state(
+        t("init_assessment_resource_amount", resource=label)
+    )
+    amount = None
+    confirm_outlier = False
+    if amount_status == "known":
+        while True:
+            raw = console.input(
+                t(
+                    "init_assessment_resource_value",
+                    resource=label,
+                    unit=RESOURCE_UNITS[resource_type],
+                )
+                + " > "
+            ).strip()
+            try:
+                amount = ResourceManager.validate_value("amount", raw)
+            except ResourceValidationError as exc:
+                console.print(f"[red]{t(f'error_resource_{exc.reason}', field=label)}[/]")
+                continue
+            if amount > ResourceManager.RESOURCE_SOFT_MAX[resource_type]:
+                confirm = console.input(t("init_assessment_outlier_confirm") + " [y/n] > ").strip().lower()
+                if confirm not in {"y", "yes", "是"}:
+                    continue
+                confirm_outlier = True
+            break
+
+    rates: dict[str, Any]
+    while True:
+        console.print(t("init_assessment_rate_state", resource=label))
+        console.print(f"  1. {t('init_assessment_rate_unknown')}")
+        console.print(f"  2. {t('init_assessment_rate_estimate')}")
+        rate_choice = console.input("🔥 [1/2] > ").strip()
+        if rate_choice == "1":
+            rates = {"status": "unknown"}
+            break
+        if rate_choice != "2":
+            console.print(f"[red]{t('init_assessment_explicit_required')}[/]")
+            continue
+        try:
+            consumption = ResourceManager.validate_value(
+                "daily_consumption",
+                console.input(
+                    f"{t('init_assessment_daily_consumption')} "
+                    f"({t(f'resource_unit_{resource_type.value}')}/{t('web_init_day_short')}) > "
+                ).strip(),
+            )
+            intake = ResourceManager.validate_value(
+                "daily_intake",
+                console.input(
+                    f"{t('init_assessment_daily_intake')} "
+                    f"({t(f'resource_unit_{resource_type.value}')}/{t('web_init_day_short')}) > "
+                ).strip(),
+            )
+        except ResourceValidationError as exc:
+            console.print(f"[red]{t(f'error_resource_{exc.reason}', field=label)}[/]")
+            continue
+        rates = {
+            "status": "estimate",
+            "basis": "group_total",
+            "daily_consumption": consumption,
+            "daily_intake": intake,
+        }
+        if max(consumption, intake) > ResourceManager.RESOURCE_SOFT_MAX[resource_type]:
+            confirm = console.input(t("init_assessment_outlier_confirm") + " [y/n] > ").strip().lower()
+            if confirm not in {"y", "yes", "是"}:
+                continue
+            confirm_outlier = True
+        break
+
+    result = {
+        "status": amount_status,
+        "rates": rates,
+        "confirm_outlier": confirm_outlier,
+    }
+    if amount_status == "known":
+        result["amount"] = amount
+    return result
+
+
+def _step_initial_assessment() -> dict:
+    console.print(f"\n[bold cyan]━━ {t('init_step_assessment')} ━━[/]")
+    console.print(f"[dim]{t('init_assessment_intro')}[/]")
     questionnaire = _load_questionnaire()
+    people_status = _explicit_known_state(t("init_people_count_label"))
+    people: dict[str, Any] = {"status": people_status}
+    if people_status == "known":
+        while True:
+            raw = console.input(t("init_assessment_people_value") + " > ").strip()
+            try:
+                people["value"] = ResourceManager.validate_people_count(raw)
+                break
+            except ResourceValidationError as exc:
+                console.print(f"[red]{t(f'error_resource_{exc.reason}', field=t('assessment_field_people_count'))}[/]")
 
-    # --- Section A: Basic Info (required) ---
-    console.print(f"[bold]{t('init_section_basic')}[/]")
+    assessment = {
+        "people_count": people,
+        "health": _required_fact(
+            t("init_health_label"), questionnaire.get("health_statuses", [])
+        ),
+        "urgency": _required_fact(
+            t("init_urgency_label"), questionnaire.get("urgency_levels", [])
+        ),
+        "shelter": _required_fact(
+            t("init_shelter_label"), questionnaire.get("shelter_statuses", [])
+        ),
+        "threats": _required_threats(questionnaire.get("threat_types", [])),
+        "resources": {},
+        "confirmed": True,
+    }
+    assessment["resources"] = {
+        resource_type.value: _resource_assessment(resource_type)
+        for resource_type in ResourceType
+    }
+    try:
+        return validate_initial_assessment(assessment)
+    except InitialAssessmentValidationError as exc:
+        raise RuntimeError("CLI produced an invalid initial assessment") from exc
+
+
+def _step_assessment_summary(assessment: dict) -> bool:
+    preview = assessment_preview(assessment)
+    console.print(f"\n[bold cyan]━━ {t('init_assessment_summary_title')} ━━[/]")
+    console.print(f"[bold]{t('init_assessment_known_facts')}[/]")
+    for fact in preview["known"]:
+        value = fact["value"]
+        if isinstance(value, list):
+            value = ", ".join(value) or t("init_assessment_threat_none")
+        if fact.get("unit"):
+            value = f"{value} {fact['unit']}"
+        label = t(f"assessment_field_{fact['domain']}")
+        console.print(f"  ✓ {label}: {value}")
+    console.print(f"[bold]{t('init_assessment_unknown_facts')}[/]")
+    for domain in preview["unknown"]:
+        base = domain[:-5] if domain.endswith("_rate") else domain
+        suffix = t("init_assessment_rate_suffix") if domain.endswith("_rate") else ""
+        console.print(f"  ◇ {t(f'assessment_field_{base}')}{suffix}")
+    console.print(f"[bold]{t('web_init_summary_resources')}[/]")
+    for resource in preview["resources"]:
+        label = t(f"assessment_field_{resource['domain']}")
+        unit = t(f"resource_unit_{resource['domain']}")
+        amount = (
+            f"{resource['amount']} {unit}"
+            if resource["amount_status"] == "known"
+            else t("init_assessment_unknown")
+        )
+        if resource["rate_status"] == "estimate":
+            source = t(f"resource_source_{resource['source']}")
+            rate = t("web_init_rate_summary").format(
+                consumption=(
+                    f"{resource['daily_consumption']} {unit}/{t('web_init_day_short')}"
+                ),
+                intake=(
+                    f"{resource['daily_intake']} {unit}/{t('web_init_day_short')}"
+                ),
+                source=source,
+            )
+            rate = f"{rate} · {t('web_init_group_total_basis')}"
+        else:
+            rate = t("init_assessment_rate_unknown")
+        console.print(f"  • {label}: {amount}; {rate}; {preview['as_of']}")
+    console.print(f"[bold]{t('init_assessment_actions')}[/]")
+    for action in preview["actions"]:
+        title = render(f"t:assessment_gap_{action['domain']}_title")
+        disposition = t(
+            "web_init_action_created"
+            if action["disposition"] == "created"
+            else "web_init_action_deferred"
+        )
+        console.print(f"  → {title} — {disposition}")
+    while True:
+        answer = console.input(t("init_assessment_confirm") + " [y/n] > ").strip().lower()
+        if answer in {"y", "yes", "是"}:
+            return True
+        if answer in {"n", "no", "否"}:
+            return False
+        console.print(f"[red]{t('init_assessment_explicit_required')}[/]")
+
+
+def _step_optional_profile() -> dict:
+    console.print(f"\n[bold]{t('init_assessment_optional_title')}[/]")
     name = console.input(f"{t('init_name_label')}: ").strip() or t("init_default_name")
-    people_count = console.input(f"{t('init_people_count_label')}: ").strip() or "1"
-    is_solo = people_count.strip() in ("1", "")
-
-    # --- Section B: Location (structured selection) ---
-    console.print(f"\n[bold]{t('init_section_location')}[/]")
-    loc_type = _select_option(
-        t("init_loc_type_label"), questionnaire.get("location_types", []), allow_skip=True
-    )
-    shelter_status = _select_option(
-        t("init_shelter_label"), questionnaire.get("shelter_statuses", []), allow_skip=True
-    )
     gps_input = console.input(f"{t('init_gps_label')}: ").strip()
-
-    # --- Section C: Health (structured) ---
-    health = _select_option(
-        t("init_health_label"), questionnaire.get("health_statuses", []), allow_skip=True
-    ) or "unknown"
-    others_str = ""
-    group_health = ""
-    if not is_solo:
-        others_str = console.input(f"{t('init_others_label')}: ").strip()
-        group_health = console.input(f"{t('init_group_health_label')}: ").strip()
-
-    # --- Section D: Supplies (optional) ---
-    console.print(f"\n[bold]{t('init_section_supplies')}[/]")
-    supplies_answer = console.input(f"{t('init_supplies_prompt')} ").strip().lower()
-
-    water = ""
-    food = ""
-    power = ""
-    tools_str = ""
-
-    if supplies_answer in (t("init_yes").lower(), "y", "yes"):
-        water = console.input(f"{t('init_water_label')}: ").strip()
-        food = console.input(f"{t('init_food_label')}: ").strip()
-        power = console.input(f"{t('init_power_label')}: ").strip()
-        tools_str = console.input(f"{t('init_tools_label')}: ").strip()
-
-    tools = [s.strip() for s in tools_str.split(",") if s.strip()]
-
-    # --- Section E: Threats & Skills (structured multi-select) ---
-    console.print(f"\n[bold]{t('init_section_threats')}[/]")
-    threats = _select_multi(
-        t("init_threats_label"), questionnaire.get("threat_types", []), allow_skip=True
-    )
-    urgency = _select_option(
-        t("init_urgency_label"), questionnaire.get("urgency_levels", []), allow_skip=True
-    )
-    skills = _select_multi(
-        t("init_skills_label"), questionnaire.get("skill_categories", []), allow_skip=True
-    )
-
-    # --- Save to DB ---
-    db.save_survivor_state("name", name)
-    db.save_survivor_state("location_type", loc_type)
-    db.save_survivor_state("shelter", shelter_status)
-    db.save_survivor_state("gps_input", gps_input)
-    db.save_survivor_state("people_count", people_count)
-    db.save_survivor_state("others", others_str)
-    db.save_survivor_state("health", health)
-    db.save_survivor_state("group_health", group_health)
-    db.save_survivor_state("water", water)
-    db.save_survivor_state("food", food)
-    db.save_survivor_state("power", power)
-    db.save_survivor_state("tools", ",".join(tools))
-    db.save_survivor_state("skills", ",".join(skills))
-    db.save_survivor_state("threats", ",".join(threats))
-    db.save_survivor_state("urgency", urgency)
-    db.save_survivor_state("questionnaire_version", "2")
-
-    console.print(f"\n[green]{t('init_profile_created', name=name)}[/]")
-    console.print(f"[dim]{t('init_profile_hint')}[/]")
-
+    skills_raw = console.input(f"{t('init_skills_label')}: ").strip()
     return {
         "name": name,
-        "location_type": loc_type,
-        "shelter": shelter_status,
         "gps_input": gps_input,
-        "people_count": people_count,
-        "health": health,
-        "group_health": group_health,
-        "water": water,
-        "food": food,
-        "power": power,
-        "tools": tools,
-        "skills": skills,
-        "threats": threats,
-        "urgency": urgency,
+        "skills": [value.strip() for value in skills_raw.split(",") if value.strip()],
     }
 
 

@@ -24,6 +24,11 @@ from allspark.core.database import Database
 from allspark.core.i18n import MESSAGES, get_language, init_language, set_language, t
 from allspark.infrastructure.hardware import compute_feature_flags, detect_hardware
 from allspark.infrastructure.module_loader import ModuleRegistry
+from allspark.services.initial_assessment import (
+    InitialAssessmentValidationError,
+    assessment_preview,
+    validate_initial_assessment,
+)
 from allspark.services.reset_manager import get_reset_descriptions
 
 logger = logging.getLogger(__name__)
@@ -110,6 +115,26 @@ def _render_template(name: str, **context) -> str:
         or k.startswith("q_")
     }
     context.setdefault("web_i18n", web_i18n)
+    init_prefixes = (
+        "web_init_",
+        "init_assessment_",
+        "assessment_field_",
+        "assessment_gap_",
+        "error_assessment_",
+        "resource_",
+        "q_",
+    )
+    context.setdefault(
+        "init_i18n",
+        {
+            language: {
+                key: value
+                for key, value in MESSAGES.get(language, {}).items()
+                if key.startswith(init_prefixes)
+            }
+            for language in ("zh", "en")
+        },
+    )
     return template.render(**context)
 
 
@@ -320,6 +345,49 @@ def _load_engine(app) -> None:
     _publish_engine(app, prepared)
 
 
+def _assessment_error_response(
+    exc: InitialAssessmentValidationError, language: str | None = None
+) -> JSONResponse:
+    response_language = language if language in ("zh", "en") else get_language()
+
+    def translate(key: str, **kwargs) -> str:
+        template = MESSAGES.get(response_language, {}).get(key, key)
+        try:
+            return template.format(**kwargs)
+        except (KeyError, ValueError):
+            return template
+
+    errors = []
+    for error in exc.errors:
+        field = error["field"]
+        domain = field.split(".")[1] if field.startswith("resources.") else field
+        label_key = (
+            "assessment_field_confirmation"
+            if domain == "confirmed"
+            else f"assessment_field_{domain}"
+        )
+        code = error["code"]
+        errors.append(
+            {
+                "field": field,
+                "code": code,
+                "message": translate(
+                    f"error_assessment_{code}", field=translate(label_key)
+                ),
+            }
+        )
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "error",
+            "error": "invalid_initial_assessment",
+            "detail": translate("error_assessment_summary"),
+            "errors": errors,
+            "next_action": "review_assessment",
+        },
+    )
+
+
 def _register_init_routes(app):
     @app.get("/api/init/status")
     async def init_status():
@@ -347,6 +415,22 @@ def _register_init_routes(app):
                     for lang in ("zh", "en")
                 }
         return {"version": "2", "questions": questions}
+
+    @app.post("/api/init/assessment/preview")
+    async def init_assessment_preview(request: Request):
+        try:
+            body = await request.json()
+        except Exception:
+            body = None
+        payload = body.get("assessment") if isinstance(body, dict) else None
+        language = body.get("language") if isinstance(body, dict) else None
+        try:
+            assessment = validate_initial_assessment(
+                payload, require_confirmation=False
+            )
+        except InitialAssessmentValidationError as exc:
+            return _assessment_error_response(exc, language)
+        return {"status": "ok", "summary": assessment_preview(assessment)}
 
     @app.get("/api/init/hardware")
     async def init_hardware():
@@ -477,7 +561,7 @@ def _register_init_routes(app):
     async def init_complete(
         request: Request,
         language: str = Query("zh"),
-        survivor_name: str = Query("Survivor"),
+        survivor_name: str = Query(""),
         skip_model: bool = Query(False),
         location_type: str = Query(""),
         shelter: str = Query(""),
@@ -551,6 +635,18 @@ def _register_init_routes(app):
                         "next_action": "choose_language",
                     },
                 )
+            if not survivor_name:
+                survivor_name = MESSAGES.get(language, {}).get(
+                    "web_init_default_survivor_name", "Survivor"
+                )
+
+            # Validate the complete safety-critical assessment before the
+            # hardware/profile/registry draft performs any self-committing
+            # write. Empty strings are never interpreted as unknown.
+            try:
+                assessment = validate_initial_assessment(body.get("assessment"))
+            except InitialAssessmentValidationError as exc:
+                return _assessment_error_response(exc, language)
 
             profile = detect_hardware()
             flags = compute_feature_flags(profile.tier, profile.gpu_available)
@@ -573,18 +669,20 @@ def _register_init_routes(app):
 
             registry = ModuleRegistry(flags)
             registry.save_to_db(db)
-            db.save_survivor_state("name", survivor_name)
-            db.save_survivor_state("language", language)
-            db.save_survivor_state("location_type", location_type)
-            db.save_survivor_state("shelter", shelter)
-            db.save_survivor_state("health", health)
-            db.save_survivor_state("urgency", urgency)
-            db.save_survivor_state("threats", threats)
-            db.save_survivor_state("skills", skills)
-            db.save_survivor_state("questionnaire_version", "2")
 
             set_language(language, persist=False)
             prepared = _prepare_engine(app, flags=flags)
+
+            # Candidate services own the shared Web/CLI assessment contract.
+            # These fixed-key draft writes are idempotent across a failed
+            # finalize and never imply a published installation.
+            db.save_survivor_state("name", survivor_name)
+            db.save_survivor_state("language", language)
+            db.save_survivor_state("location_type", location_type)
+            db.save_survivor_state("skills", skills)
+            db.save_survivor_state("questionnaire_version", "3")
+            assessment_service = prepared.container.require("initial_assessment")
+            gap_tasks = assessment_service.apply(assessment)
             db.finalize_initialization(language)
 
             # Publish is deliberately synchronous and contains no fallible I/O.
@@ -592,7 +690,13 @@ def _register_init_routes(app):
             app.state.initialized = True
 
             # SHA-142: only a fully published bootstrap receives the auth cookie.
-            resp = JSONResponse(content={"status": "ok"})
+            resp = JSONResponse(
+                content={
+                    "status": "ok",
+                    "summary": assessment_preview(assessment),
+                    "created_task_ids": [task.id for task in gap_tasks],
+                }
+            )
             if _WEB_TOKEN:
                 _set_auth_cookie(resp, _WEB_TOKEN)
             return resp

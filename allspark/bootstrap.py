@@ -16,6 +16,7 @@ from allspark.infrastructure.hardware import (
 )
 from allspark.infrastructure.module_loader import ModuleRegistry
 from allspark.services.experience_engine import ExperienceEngine
+from allspark.services.initial_assessment import InitialAssessmentService
 from allspark.services.knowledge_engine import KnowledgeEngine
 from allspark.services.knowledge_verifier import KnowledgeVerifier
 from allspark.services.llm_engine import LLMEngine
@@ -267,6 +268,9 @@ class ApplicationBootstrap:
 
         planner = MissionPlanner(self.db, resource_mgr)
         self.container.register("mission_planner", planner)
+
+        initial_assessment = InitialAssessmentService(self.db, resource_mgr)
+        self.container.register("initial_assessment", initial_assessment)
 
     def _load_knowledge(self):
         registry = self.registry

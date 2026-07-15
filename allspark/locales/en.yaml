@@ -1091,7 +1091,7 @@ init_welcome_line3: First launch — initial setup required.
 init_welcome_line4: This only happens once. AllSpark will remember your settings.
 init_complete_msg: ✓ Initialization complete! AllSpark is ready.
 init_complete_hint: Type 'help' to see available commands.
-init_step_language: 'Step 1/4: Language'
+init_step_language: 'Step 1/3: Language'
 init_lang_prompt: 'Choose your language:'
 init_lang_switch_hint: Your system locale only sets the default; you can choose either language.
 init_lang_zh: 中文 / Chinese (zh)
@@ -1599,7 +1599,7 @@ resource_source_sensor: Sensor reading
 resource_source_estimate: Explicit estimate
 resource_source_migration: Migrated data (unverified)
 resource_source_system: System-derived update
-resource_source_mixed: Mixed sources (includes older data)
+resource_source_mixed: Mixed sources
 web_task_action_start: Start
 web_task_action_complete: Complete
 web_task_action_fail: Mark failed
@@ -1800,6 +1800,7 @@ error_resource_outlier_confirmation: "{field} exceeds the expected range. Confir
 error_resource_capacity_storage_only: "capacity is only valid for storage resources."
 error_resource_capacity_below_remaining: "capacity cannot be less than the recorded remaining storage."
 error_resource_unknown_inventory: "Inventory is unknown; record an amount before consuming it."
+error_resource_invalid_rate_basis: "{field} must use the group_total basis."
 resource_marked_unknown: "{type} explicitly marked unknown. A fact-finding action is required."
 resource_amount_known_rate_unknown: "{label}: {amount}{unit}; daily use/intake unknown, so remaining time is not estimated"
 error_service_not_available: Service '{name}' not available
@@ -1975,6 +1976,139 @@ skf_error_missing_event: 'Experience {id}: missing event'
 exp_warning_attempts_failed: Some attempts failed - verify before relying on this
 # commands/governance.py
 default_unknown_name: Unknown
+assessment_field_assessment: initial assessment
+assessment_field_resources: resources
+assessment_field_people_count: People in your group (including you)
+assessment_field_health: health
+assessment_field_urgency: urgency
+assessment_field_shelter: shelter
+assessment_field_threats: threats
+assessment_field_power: current energy
+assessment_field_water: current water
+assessment_field_food: current food
+assessment_field_fire: current ignition capacity
+assessment_field_storage: remaining storage
+assessment_field_confirmation: assessment confirmation
+assessment_field_as_of: assessment time
+error_assessment_summary: Review the highlighted assessment fields before continuing.
+error_assessment_object_required: '{field} must be a structured value.'
+error_assessment_explicit_status_required: '{field} must be explicitly marked known or unknown.'
+error_assessment_threat_status_required: '{field} must be none, selected, or unknown.'
+error_assessment_threat_selection_required: Select at least one threat, or choose none/unknown.
+error_assessment_values_not_allowed: '{field} cannot contain a value while marked unknown or none.'
+error_assessment_invalid_choice: '{field} contains an unsupported choice.'
+error_assessment_not_integer: '{field} must be a whole number.'
+error_assessment_people_range: '{field} must be a whole number from 1 to 10000.'
+error_assessment_not_numeric: '{field} must be a number.'
+error_assessment_not_finite: '{field} must be a finite number.'
+error_assessment_negative: '{field} cannot be negative.'
+error_assessment_too_large: '{field} exceeds the supported safety limit.'
+error_assessment_not_boolean: '{field} confirmation must be true or false.'
+error_assessment_outlier_confirmation: '{field} is outside the expected range; confirm the unit and value.'
+error_assessment_confirmation_required: Review the summary and explicitly confirm before initialization.
+error_assessment_invalid_rate_basis: '{field} must explicitly use the total daily basis; per-person defaults are not supported.'
+error_assessment_invalid_timestamp: '{field} must be a valid ISO-8601 timestamp.'
+error_assessment_future_timestamp: '{field} cannot be in the future.'
+assessment_gap_people_count_title: Confirm people in your group (including you)
+assessment_gap_people_count_desc: Verify the total number of people present, including the person completing this assessment.
+assessment_gap_health_title: Check health status
+assessment_gap_health_desc: Collect current health and injury information before relying on the assessment.
+assessment_gap_urgency_title: Confirm immediate urgency
+assessment_gap_urgency_desc: Determine whether the current situation requires urgent action.
+assessment_gap_shelter_title: Check shelter safety
+assessment_gap_shelter_desc: Verify the availability and safety of the current shelter.
+assessment_gap_threats_title: Check nearby threats
+assessment_gap_threats_desc: Identify whether any immediate environmental or human threats are present.
+assessment_gap_power_title: Measure current energy
+assessment_gap_power_desc: Record the available electrical energy in Wh.
+assessment_gap_water_title: Measure current water
+assessment_gap_water_desc: Record the available drinking water in liters.
+assessment_gap_water_amount_desc: Record the available drinking water in liters; daily use/intake is already estimated.
+assessment_gap_water_rate_desc: Record or estimate group daily water use and collection; the current amount is already known.
+assessment_gap_water_amount_rate_desc: Record both available drinking water and group daily use/collection.
+assessment_gap_food_title: Measure current food
+assessment_gap_food_desc: Record the available food energy in kcal.
+assessment_gap_food_amount_desc: Record the available food energy in kcal; daily use/intake is already estimated.
+assessment_gap_food_rate_desc: Record or estimate group daily food use and acquisition; the current amount is already known.
+assessment_gap_food_amount_rate_desc: Record both available food energy and group daily use/acquisition.
+assessment_gap_fire_title: Count ignition capacity
+assessment_gap_fire_desc: Record the number of usable ignitions.
+assessment_gap_storage_title: Measure remaining storage
+assessment_gap_storage_desc: Record the remaining storage in GB.
+assessment_gap_power_rate_title: Estimate daily energy use and intake
+assessment_gap_power_rate_desc: Record or estimate group daily energy use and generation before calculating runtime.
+assessment_gap_water_rate_title: Estimate daily water use and intake
+assessment_gap_water_rate_desc: Record or estimate group daily water use and collection before calculating remaining time.
+assessment_gap_food_rate_title: Estimate daily food use and intake
+assessment_gap_food_rate_desc: Record or estimate group daily food use and acquisition before calculating remaining time.
+assessment_gap_fire_rate_title: Estimate daily ignition use and intake
+assessment_gap_fire_rate_desc: Record or estimate daily ignition use and replenishment before calculating remaining time.
+assessment_gap_storage_rate_title: Estimate daily storage growth and release
+assessment_gap_storage_rate_desc: Record or estimate daily storage growth and release before calculating remaining time.
+init_step_assessment: 'Step 2/3: Situation assessment'
+init_assessment_intro: Every safety-critical item must be recorded as known or unknown. Blank input does not mean unknown.
+init_assessment_known: Known — I can provide a value
+init_assessment_unknown: Unknown for now
+init_assessment_explicit_required: Choose an explicit listed option; Enter cannot skip this item.
+init_assessment_threat_none: No current threat identified
+init_assessment_threat_selected: Select current threats
+init_assessment_threat_prompt: Enter one or more threat numbers separated by commas
+init_assessment_threat_required: Select at least one valid threat, or return and choose none/unknown.
+init_assessment_resource_amount: '{resource} current amount'
+init_assessment_resource_value: '{resource} amount ({unit})'
+init_assessment_outlier_confirm: This value is outside the expected range. Confirm the unit and value?
+init_assessment_rate_state: 'Daily use/intake for {resource}:'
+init_assessment_rate_unknown: Daily use and intake are unknown; create a fact-finding action
+init_assessment_rate_estimate: Enter an explicit total daily estimate
+init_assessment_daily_consumption: Estimated total daily consumption
+init_assessment_daily_intake: Estimated total daily intake/acquisition
+init_assessment_people_value: People in your group (including you)
+init_assessment_summary_title: 'Step 3/3: Review before initialization'
+init_assessment_known_facts: Known facts
+init_assessment_unknown_facts: Explicit unknowns
+init_assessment_actions: Information-gathering actions to create
+init_assessment_rate_suffix: ' — daily use/intake'
+init_assessment_confirm: Confirm this assessment and continue initialization?
+init_assessment_optional_title: Optional profile details (do not affect readiness)
+web_init_promise_title: Start with your situation
+web_init_document_title: Initial assessment
+web_init_promise_heading: Core assessment works offline without an AI model.
+web_init_promise_body: Record what is known, what is unknown, and the information actions AllSpark should create.
+web_init_danger_boundary: In immediate danger, mark urgency as immediate so it is prioritized after setup. Do not rely on unreviewed automated medical instructions.
+web_init_begin_assessment: Start assessment
+web_init_step_situation: Current situation
+web_init_step_resources: Current resources
+web_init_step_summary: Review before publishing
+web_init_explicit_intro: Every critical field requires a real value or an explicit “unknown for now.” Blank input cannot skip a field.
+web_init_choose_explicitly: Choose an explicit value…
+web_init_continue_resources: Continue to resources
+web_init_resource_intro: For each resource, explicitly record the current amount and whether total daily use/intake is unknown or estimated.
+web_init_current_amount: Current amount
+web_init_rate_explicit: Enter total daily values; no per-person default is applied.
+web_init_outlier_ack: I checked the unit and confirm this outlier value.
+web_init_review: Review assessment
+web_init_summary_intro: Nothing is published yet. Confirm the facts, unknowns, and information actions below.
+web_init_summary_known: Known facts
+web_init_summary_unknown: Explicit unknowns
+web_init_summary_actions: Suggested information actions
+web_init_action_created: created as an active high-risk task
+web_init_action_deferred: deferred for later prioritization
+web_init_hardware_optional: Optional hardware details
+web_init_hardware_loading: Detecting hardware in the background…
+web_init_hardware_summary: '{ram} GB RAM detected; capability tier: {tier}.'
+web_init_hardware_unavailable: Hardware details are unavailable; the core assessment can still initialize.
+web_init_model_deferred: AI model setup is an optional enhancement available after initialization.
+web_init_confirm_truth: I reviewed this summary and confirm that unknown items are intentional, including any missing daily use/intake rates.
+web_init_confirm_publish: Confirm and initialize
+web_init_error_summary_title: Review these fields
+web_init_rate_summary: 'Estimated total daily consumption {consumption}; estimated total daily intake {intake}; source {source}'
+web_init_btn_back: ← Back
+web_init_progress_label: Initialization progress
+web_init_group_total_basis: total basis
+web_init_summary_resources: Resource details
+web_init_amount_status: Current amount status
+web_init_day_short: day
+web_init_amount_summary: 'current amount {amount}'
 # commands/docker.py
 docker_logs_title: '{service} logs'
 # commands/survival.py

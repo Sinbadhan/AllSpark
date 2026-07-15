@@ -312,9 +312,9 @@ def seed_initialized_db(db_path: Path, *, language: str = "zh", survivor_name: s
     Hits POST /api/init/complete with skip_model=true so the suite can
     proceed to feature-level probes without LLM weights on disk.
     """
-    from urllib.parse import urlencode
-
     import httpx
+
+    from tests.assessment_helpers import valid_initial_assessment
 
     if db_path.exists():
         db_path.unlink()
@@ -322,8 +322,15 @@ def seed_initialized_db(db_path: Path, *, language: str = "zh", survivor_name: s
         with httpx.Client(base_url=base) as c:
             # Hardware detection populates the model registry.
             c.get("/api/init/hardware", timeout=10)
-            qs = urlencode({"language": language, "survivor_name": survivor_name, "skip_model": "true"})
-            r = c.post(f"/api/init/complete?{qs}", timeout=15)
+            r = c.post(
+                "/api/init/complete",
+                json={
+                    "language": language,
+                    "survivor_name": survivor_name,
+                    "assessment": valid_initial_assessment(),
+                },
+                timeout=15,
+            )
             if r.status_code != 200:
                 raise RuntimeError(f"init failed: {r.status_code} {r.text[:200]}")
 

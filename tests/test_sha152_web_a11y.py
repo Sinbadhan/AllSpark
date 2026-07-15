@@ -19,24 +19,39 @@ def _read(name: str) -> str:
 class TestInitA11y:
     def test_language_cards_are_buttons_with_aria_pressed(self):
         t = _read("init.html")
-        assert '<button type="button" class="lang-btn"' in t
+        assert '<button type="button" class="language-button"' in t
         assert 'aria-pressed="false"' in t  # initial unselected state
 
-    def test_chips_are_buttons_with_aria_pressed(self):
+    def test_critical_states_use_native_radios_and_fieldsets(self):
         t = _read("init.html")
-        assert '<button type="button" class="q-chip' in t
-        assert "aria-pressed=" in t  # set in chipField
+        assert '<fieldset id="field-people_count">' in t
+        assert 'type="radio" name="people-state"' in t
+        assert 'type="radio" name="threat-state"' in t
+        assert '<legend data-i18n="assessment_field_people_count">' in t
 
     def test_selectlang_updates_aria_pressed(self):
         t = _read("init.html")
-        assert 'setAttribute("aria-pressed", "true")' in t
-        assert 'setAttribute("aria-pressed", "false")' in t
+        assert "setAttribute('aria-pressed',String(button.dataset.lang===lang))" in t
+        assert "document.documentElement.lang=selectedLang" in t
+        assert "document.title='ALLSPARK — '+tr('web_init_document_title')" in t
 
-    def test_questionnaire_selects_have_labels_and_skip_is_button(self):
+    def test_assessment_has_real_labels_error_summary_and_no_skip(self):
         t = _read("init.html")
-        assert '<label class="q-label" for="' in t
-        assert '<button type="button" class="step-skip"' in t
-        assert '<span class="step-skip"' not in t
+        for field in ("health", "urgency", "shelter"):
+            assert f'<label for="{field}"' in t
+        assert 'id="init-errors" class="error-summary hidden" role="alert"' in t
+        assert 'tabindex="-1"' in t
+        assert "function errorFocusTarget(error)" in t
+        assert "target?.focus()" in t
+        assert "step-skip" not in t
+        assert "fieldset" in t and "legend" in t
+
+    def test_decorative_progress_and_document_title_stay_out_of_empty_vo_items(self):
+        t = _read("init.html")
+        assert '<ol class="progress" aria-hidden="true">' in t
+        assert 'data-i18n-aria-label="web_init_progress_label"' not in t
+        assert "web_init_document_title" in t
+        assert "ALLSPARK — INIT" not in t
 
 
 class TestIndexA11y:

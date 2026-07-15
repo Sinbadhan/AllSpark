@@ -288,6 +288,7 @@ def test_power_monitor_controlled_sources_and_shared_fire_formula(manager):
         amount_known=True,
         consumption_known=True,
         intake_known=True,
+        rate_basis="group_total",
     )
     assert monitor._estimate_hours(fire) == 120
 

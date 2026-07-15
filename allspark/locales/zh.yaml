@@ -1043,7 +1043,7 @@ init_welcome_line3: 初次启动，需要完成初始化配置。
 init_welcome_line4: 这个过程只需要一次，之后火种会记住你的设置。
 init_complete_msg: ✓ 初始化完成！火种已就绪。
 init_complete_hint: 输入 '帮助' 查看可用命令。
-init_step_language: 步骤 1/4：语言设置
+init_step_language: 步骤 1/3：语言设置
 init_lang_prompt: 选择你的语言：
 init_lang_switch_hint: 系统区域设置只决定默认项，你可以选择任一语言。
 init_lang_zh: 中文 / Chinese (zh)
@@ -1538,7 +1538,7 @@ resource_source_sensor: 传感器读数
 resource_source_estimate: 显式估算
 resource_source_migration: 迁移数据（未核实）
 resource_source_system: 系统派生更新
-resource_source_mixed: 混合来源（含较早数据）
+resource_source_mixed: 混合来源
 web_task_action_start: 开始
 web_task_action_complete: 完成
 web_task_action_fail: 标记失败
@@ -1739,6 +1739,7 @@ error_resource_outlier_confirmation: "{field} 超出预期范围，请确认单�
 error_resource_capacity_storage_only: "capacity 仅适用于存储资源。"
 error_resource_capacity_below_remaining: "存储总容量不能小于当前剩余空间。"
 error_resource_unknown_inventory: "库存未知；消耗前请先记录当前量。"
+error_resource_invalid_rate_basis: "{field}必须使用 group_total（全组/系统总量）口径。"
 resource_marked_unknown: "已将{type}显式标记为未知，需要执行信息采集行动。"
 resource_amount_known_rate_unknown: "{label}：{amount}{unit}；日消耗/补充未知，暂不估算剩余时间"
 error_service_not_available: 服务「{name}」不可用
@@ -1914,6 +1915,139 @@ skf_error_missing_event: 经验 {id}：缺少事件
 exp_warning_attempts_failed: 部分尝试失败，使用前请先验证
 # commands/governance.py
 default_unknown_name: 未知
+assessment_field_assessment: 初始评估
+assessment_field_resources: 资源
+assessment_field_people_count: 同行总人数（含自己）
+assessment_field_health: 健康状况
+assessment_field_urgency: 紧迫程度
+assessment_field_shelter: 住所状况
+assessment_field_threats: 当前威胁
+assessment_field_power: 当前能量
+assessment_field_water: 当前饮水
+assessment_field_food: 当前食物
+assessment_field_fire: 当前点火能力
+assessment_field_storage: 剩余存储
+assessment_field_confirmation: 评估确认
+assessment_field_as_of: 评估时间
+error_assessment_summary: 请检查标出的评估信息后再继续。
+error_assessment_object_required: '{field}必须使用结构化值。'
+error_assessment_explicit_status_required: '{field}必须明确选择“已知”或“暂时未知”。'
+error_assessment_threat_status_required: '{field}必须明确选择“无威胁”“已选择”或“暂时未知”。'
+error_assessment_threat_selection_required: 请选择至少一种威胁，或明确选择“无威胁/暂时未知”。
+error_assessment_values_not_allowed: '{field}标为未知或无威胁时不能同时包含具体值。'
+error_assessment_invalid_choice: '{field}包含不支持的选项。'
+error_assessment_not_integer: '{field}必须是整数。'
+error_assessment_people_range: '{field}必须是 1 到 10000 的整数。'
+error_assessment_not_numeric: '{field}必须是数字。'
+error_assessment_not_finite: '{field}必须是有限数字。'
+error_assessment_negative: '{field}不能为负数。'
+error_assessment_too_large: '{field}超出支持的安全上限。'
+error_assessment_not_boolean: '{field}确认值必须是 true 或 false。'
+error_assessment_outlier_confirmation: '{field}超出常见范围，请确认单位和值。'
+error_assessment_confirmation_required: 请先查看摘要并明确确认，再完成初始化。
+error_assessment_invalid_rate_basis: '{field}必须明确使用每日总量口径；不支持静默的人均默认值。'
+error_assessment_invalid_timestamp: '{field}必须是有效的 ISO-8601 时间。'
+error_assessment_future_timestamp: '{field}不能是未来时间。'
+assessment_gap_people_count_title: 确认同行总人数（含自己）
+assessment_gap_people_count_desc: 核实当前同行总人数，包含正在填写评估的自己。
+assessment_gap_health_title: 核实健康状况
+assessment_gap_health_desc: 在依赖评估前，收集当前健康和伤情信息。
+assessment_gap_urgency_title: 确认紧迫程度
+assessment_gap_urgency_desc: 判断当前状况是否需要立即采取行动。
+assessment_gap_shelter_title: 核实住所安全
+assessment_gap_shelter_desc: 确认当前住所是否可用且安全。
+assessment_gap_threats_title: 核实附近威胁
+assessment_gap_threats_desc: 判断附近是否存在直接的环境或人为威胁。
+assessment_gap_power_title: 测量当前能量
+assessment_gap_power_desc: 记录可用电力能量（Wh）。
+assessment_gap_water_title: 测量当前饮水
+assessment_gap_water_desc: 记录可用饮水量（升）。
+assessment_gap_water_amount_desc: 记录可用饮水量（升）；每日消耗/获取已有估算。
+assessment_gap_water_rate_desc: 记录或估算群体每日用水与取水量；当前饮水量已知。
+assessment_gap_water_amount_rate_desc: 同时记录可用饮水量与群体每日用水/取水量。
+assessment_gap_food_title: 测量当前食物
+assessment_gap_food_desc: 记录可用食物能量（kcal）。
+assessment_gap_food_amount_desc: 记录可用食物能量（kcal）；每日消耗/获取已有估算。
+assessment_gap_food_rate_desc: 记录或估算群体每日食物消耗与获取量；当前食物量已知。
+assessment_gap_food_amount_rate_desc: 同时记录可用食物能量与群体每日消耗/获取量。
+assessment_gap_fire_title: 统计点火能力
+assessment_gap_fire_desc: 记录可用点火次数。
+assessment_gap_storage_title: 测量剩余存储
+assessment_gap_storage_desc: 记录剩余存储空间（GB）。
+assessment_gap_power_rate_title: 估算每日用电与获取
+assessment_gap_power_rate_desc: 在计算续航前，记录或估算群体每日用电与发电量。
+assessment_gap_water_rate_title: 估算每日用水与获取
+assessment_gap_water_rate_desc: 在计算可维持时间前，记录或估算群体每日用水与取水量。
+assessment_gap_food_rate_title: 估算每日食物消耗与获取
+assessment_gap_food_rate_desc: 在计算可维持时间前，记录或估算群体每日食物消耗与获取量。
+assessment_gap_fire_rate_title: 估算每日点火消耗与补充
+assessment_gap_fire_rate_desc: 在计算可维持时间前，记录或估算每日点火消耗与补充次数。
+assessment_gap_storage_rate_title: 估算每日存储增长与释放
+assessment_gap_storage_rate_desc: 在计算可维持时间前，记录或估算每日存储增长与释放量。
+init_step_assessment: 步骤 2/3：用户状况评估
+init_assessment_intro: 每项安全关键信息都必须明确记录为“已知”或“暂时未知”；留空不代表未知。
+init_assessment_known: 已知——我可以提供数值
+init_assessment_unknown: 暂时未知
+init_assessment_explicit_required: 请明确选择列出的选项；按回车不能跳过本项。
+init_assessment_threat_none: 已确认当前无威胁
+init_assessment_threat_selected: 选择当前威胁
+init_assessment_threat_prompt: 输入一个或多个威胁编号，用逗号分隔
+init_assessment_threat_required: 请至少选择一个有效威胁，或返回选择“无威胁/暂时未知”。
+init_assessment_resource_amount: '{resource}当前量'
+init_assessment_resource_value: '{resource}数量（{unit}）'
+init_assessment_outlier_confirm: 该数值超出常见范围，确认单位和值无误吗？
+init_assessment_rate_state: '{resource}的每日消耗/获取：'
+init_assessment_rate_unknown: 每日消耗与获取暂时未知，创建信息采集行动
+init_assessment_rate_estimate: 输入明确的每日总量估算
+init_assessment_daily_consumption: 预计每日总消耗
+init_assessment_daily_intake: 预计每日总补充/获取
+init_assessment_people_value: 同行总人数（含自己）
+init_assessment_summary_title: 步骤 3/3：初始化前核对评估摘要
+init_assessment_known_facts: 已知事实
+init_assessment_unknown_facts: 明确未知
+init_assessment_actions: 将创建的信息采集行动
+init_assessment_rate_suffix: ——每日消耗/获取
+init_assessment_confirm: 确认以上评估并继续初始化吗？
+init_assessment_optional_title: 可选档案信息（不影响系统就绪）
+web_init_promise_title: 先从你的处境开始
+web_init_document_title: 首次状况评估
+web_init_promise_heading: 核心评估无需 AI 模型，也能完全离线工作。
+web_init_promise_body: 记录已知事实、明确未知，以及火种需要创建的信息采集行动。
+web_init_danger_boundary: 如正处于立即危险，请明确标记“立即危险”，系统将在设置完成后优先处理。请勿依赖未经审阅的自动医疗指令。
+web_init_begin_assessment: 开始评估
+web_init_step_situation: 当前状况
+web_init_step_resources: 当前资源
+web_init_step_summary: 发布前核对
+web_init_explicit_intro: 每项关键信息都必须提供有效值或明确选择“暂时未知”；留空不能跳过。
+web_init_choose_explicitly: 请选择明确状态…
+web_init_continue_resources: 继续填写资源
+web_init_resource_intro: 对每类资源分别明确当前量，以及每日总消耗与总补充是未知还是估算。
+web_init_current_amount: 当前量
+web_init_rate_explicit: 请按每日总量填写，不套用人均默认值。
+web_init_outlier_ack: 我已核对单位并确认该异常数值无误。
+web_init_review: 核对评估
+web_init_summary_intro: 此时尚未发布任何初始化状态。请核对以下事实、未知项和信息采集行动。
+web_init_summary_known: 已知事实
+web_init_summary_unknown: 明确未知
+web_init_summary_actions: 建议的信息采集行动
+web_init_action_created: 创建为高风险活动任务
+web_init_action_deferred: 延后到后续排序
+web_init_hardware_optional: 可选硬件信息
+web_init_hardware_loading: 正在后台检测硬件……
+web_init_hardware_summary: '检测到 {ram} GB 内存；能力层级：{tier}。'
+web_init_hardware_unavailable: 暂时无法读取硬件信息；核心评估仍可正常初始化。
+web_init_model_deferred: AI 模型是可选增强，可在初始化完成后配置。
+web_init_confirm_truth: 我已核对摘要，并确认所有未知项均为有意选择，包括尚未提供的每日消耗/补充速率。
+web_init_confirm_publish: 确认并初始化
+web_init_error_summary_title: 请检查以下字段
+web_init_rate_summary: '预计每日总消耗 {consumption}；预计每日总补充/获取 {intake}；来源 {source}'
+web_init_btn_back: ← 返回
+web_init_progress_label: 初始化进度
+web_init_group_total_basis: 总量口径
+web_init_summary_resources: 资源明细
+web_init_amount_status: 当前量状态
+web_init_day_short: 天
+web_init_amount_summary: '当前量 {amount}'
 # commands/docker.py
 docker_logs_title: '{service} 日志'
 # commands/survival.py

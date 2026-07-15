@@ -18,9 +18,11 @@ from allspark.adapters.init_wizard import (
     _select_multi,
     _select_option,
     _step_hardware_detect,
+    _step_initial_assessment,
 )
 from allspark.core.database import Database
 from allspark.core.i18n import get_language, set_language
+from allspark.core.models import ResourceType
 from allspark.infrastructure.hardware import HardwareTier
 
 
@@ -81,14 +83,14 @@ class TestInitialLanguage:
     def test_zh_choice_screen_is_self_describing(self, monkeypatch):
         result, output = self._capture_choice(monkeypatch, "zh_CN", ["1"])
         assert result == "zh"
-        assert "步骤 1/4：语言设置" in output
+        assert "步骤 1/3：语言设置" in output
         assert "中文 / Chinese (zh)" in output
         assert "English / 英语 (en)" in output
 
     def test_unknown_locale_uses_english_copy_and_error(self, monkeypatch):
         result, output = self._capture_choice(monkeypatch, "fr_FR", ["bad", "2"])
         assert result == "en"
-        assert "Step 1/4: Language" in output
+        assert "Step 1/3: Language" in output
         assert "Your system locale only sets the default" in output
         assert "Enter 1 or 2" in output
 
@@ -123,6 +125,115 @@ class TestSelectMulti:
     def test_comma_separated_free_text(self, monkeypatch):
         monkeypatch.setattr(init_wizard.console, "input", lambda *a, **k: "a, b ,c")
         assert _select_multi("pick", []) == ["a", "b", "c"]
+
+
+class TestAssessmentInputHelpers:
+    @staticmethod
+    def _inputs(monkeypatch, values):
+        answers = iter(values)
+        monkeypatch.setattr(init_wizard.console, "input", lambda *a, **k: next(answers))
+
+    def test_explicit_state_retries_and_accepts_both_states(self, monkeypatch):
+        self._inputs(monkeypatch, ["bad", "1"])
+        assert init_wizard._explicit_known_state("People") == "known"
+        self._inputs(monkeypatch, ["2"])
+        assert init_wizard._explicit_known_state("People") == "unknown"
+
+    def test_required_fact_retries_invalid_and_accepts_known_or_unknown(self, monkeypatch):
+        options = [
+            {"key": "healthy", "label_key": "q_health_healthy"},
+            {"key": "minor", "label_key": "q_health_minor"},
+        ]
+        self._inputs(monkeypatch, ["bad", "9", "1"])
+        assert init_wizard._required_fact("Health", options) == {
+            "status": "known",
+            "value": "healthy",
+        }
+        self._inputs(monkeypatch, ["3"])
+        assert init_wizard._required_fact("Health", options) == {"status": "unknown"}
+
+    def test_required_threats_covers_none_unknown_and_validated_selection(self, monkeypatch):
+        options = [
+            {"key": "flooding", "label_key": "q_threat_flooding"},
+            {"key": "fire_risk", "label_key": "q_threat_fire_risk"},
+        ]
+        self._inputs(monkeypatch, ["bad", "1"])
+        assert init_wizard._required_threats(options) == {"status": "none", "values": []}
+        self._inputs(monkeypatch, ["3"])
+        assert init_wizard._required_threats(options) == {"status": "unknown", "values": []}
+        self._inputs(monkeypatch, ["2", "bad", "2", "9", "2", "1,1,2"])
+        assert init_wizard._required_threats(options) == {
+            "status": "selected",
+            "values": ["flooding", "fire_risk"],
+        }
+
+    def test_resource_unknown_and_normal_known_paths(self, monkeypatch):
+        self._inputs(monkeypatch, ["2", "1"])
+        assert init_wizard._resource_assessment(ResourceType.WATER) == {
+            "status": "unknown",
+            "rates": {"status": "unknown"},
+            "confirm_outlier": False,
+        }
+        self._inputs(monkeypatch, ["1", "10", "1"])
+        assert init_wizard._resource_assessment(ResourceType.WATER) == {
+            "status": "known",
+            "amount": 10.0,
+            "rates": {"status": "unknown"},
+            "confirm_outlier": False,
+        }
+
+    def test_resource_retries_invalid_and_requires_outlier_confirmation(self, monkeypatch):
+        self._inputs(
+            monkeypatch,
+            [
+                "1", "", "100001", "n", "100001", "yes",
+                "bad", "2", "", "2", "100001", "0", "n",
+                "2", "100001", "0", "yes",
+            ],
+        )
+
+        resource = init_wizard._resource_assessment(ResourceType.FIRE)
+
+        assert resource == {
+            "status": "known",
+            "amount": 100001.0,
+            "rates": {
+                "status": "estimate",
+                "basis": "group_total",
+                "daily_consumption": 100001.0,
+                "daily_intake": 0.0,
+            },
+            "confirm_outlier": True,
+        }
+
+
+class TestStepInitialAssessment:
+    def test_known_people_count_requires_explicit_non_empty_value(self, monkeypatch):
+        answers = iter(["", "2"])
+        monkeypatch.setattr(init_wizard, "_explicit_known_state", lambda _label: "known")
+        monkeypatch.setattr(init_wizard.console, "input", lambda *a, **k: next(answers))
+        monkeypatch.setattr(
+            init_wizard,
+            "_required_fact",
+            lambda *_args, **_kwargs: {"status": "unknown"},
+        )
+        monkeypatch.setattr(
+            init_wizard,
+            "_required_threats",
+            lambda *_args, **_kwargs: {"status": "unknown", "values": []},
+        )
+        monkeypatch.setattr(
+            init_wizard,
+            "_resource_assessment",
+            lambda *_args, **_kwargs: {
+                "status": "unknown",
+                "rates": {"status": "unknown"},
+            },
+        )
+
+        assessment = _step_initial_assessment()
+
+        assert assessment["people_count"] == {"status": "known", "value": 2}
 
 
 class TestStepHardwareDetect:

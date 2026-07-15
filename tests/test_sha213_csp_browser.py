@@ -107,7 +107,7 @@ def test_enforcing_csp_on_init_and_login(tmp_path: Path) -> None:
         browser.wait_for("!document.getElementById('step-1').classList.contains('hidden')")
         browser.evaluate("document.getElementById('lang-en').click()")
         browser.evaluate("document.getElementById('btn-step1-next').click()")
-        browser.wait_for("!document.getElementById('hw-info').classList.contains('hidden')")
+        browser.wait_for("!document.getElementById('step-2').classList.contains('hidden')")
         _assert_clean(browser, "Init")
 
     login_path = tmp_path / "login.db"

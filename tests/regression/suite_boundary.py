@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from urllib.parse import urlencode
 
 if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -38,6 +37,8 @@ from tests.regression._harness import (
 
 
 def main() -> int:
+    from tests.assessment_helpers import valid_initial_assessment
+
     db = REPORTS_DIR / "_boundary_session.db"
     if db.exists():
         db.unlink()
@@ -51,8 +52,12 @@ def main() -> int:
             with httpx.Client(base_url=base) as c:
                 # 1. Init zh
                 H("GET", "/api/init/status", label="boot/uninitialized")
-                qs = urlencode({"language": "zh", "survivor_name": "Alice", "skip_model": "true"})
-                H("POST", f"/api/init/complete?{qs}", label="init/zh")
+                H(
+                    "POST",
+                    "/api/init/complete",
+                    json={"language": "zh", "survivor_name": "Alice", "assessment": valid_initial_assessment()},
+                    label="init/zh",
+                )
                 H("GET", "/api/init/status", label="post-init")
 
                 # 2. L1 reset — confirm gating + happy path
@@ -85,8 +90,12 @@ def main() -> int:
                 recorder.add(rec_home)
 
                 # 6. Re-init en, then mid-flight language switching
-                qs = urlencode({"language": "en", "survivor_name": "Bob", "skip_model": "true"})
-                H("POST", f"/api/init/complete?{qs}", label="init/en")
+                H(
+                    "POST",
+                    "/api/init/complete",
+                    json={"language": "en", "survivor_name": "Bob", "assessment": valid_initial_assessment()},
+                    label="init/en",
+                )
                 H("GET", "/api/system/about", label="about/en")
                 H("POST", "/api/system/language", json={"language": "zh"}, label="lang/zh")
                 H("GET", "/api/system/about", label="about/zh")

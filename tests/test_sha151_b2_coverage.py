@@ -142,12 +142,12 @@ def test_get_relevant_knowledge_with_known_low_resources_triggers_each_fallback(
                  daily_consumption=10.0, daily_intake=0.0,
                  estimated_remaining_hours=48.0, last_updated="",
                  amount_known=True, consumption_known=True,
-                 intake_known=True),                                    # < 72h
+                 intake_known=True, rate_basis="group_total"),          # < 72h
         Resource(type=ResourceType.FOOD, current_amount=5.0, unit="kcal",
                  daily_consumption=10.0, daily_intake=0.0,
                  estimated_remaining_hours=100.0, last_updated="",
                  amount_known=True, consumption_known=True,
-                 intake_known=True),                                    # < 120h
+                 intake_known=True, rate_basis="group_total"),          # < 120h
         Resource(type=ResourceType.FIRE, current_amount=5.0, unit="uses",
                  daily_consumption=10.0, daily_intake=0.0,
                  estimated_remaining_hours=200.0, last_updated="",
@@ -204,6 +204,7 @@ def test_get_relevant_knowledge_skips_unknown_partial_and_threshold_boundaries(
             amount_known=True,
             consumption_known=True,
             intake_known=True,
+            rate_basis="group_total",
         ),
         Resource(
             type=ResourceType.FOOD,
@@ -213,6 +214,7 @@ def test_get_relevant_knowledge_skips_unknown_partial_and_threshold_boundaries(
             amount_known=True,
             consumption_known=True,
             intake_known=True,
+            rate_basis="group_total",
         ),
         Resource(
             type=ResourceType.FIRE,
@@ -228,6 +230,7 @@ def test_get_relevant_knowledge_skips_unknown_partial_and_threshold_boundaries(
             amount_known=True,
             consumption_known=True,
             intake_known=True,
+            rate_basis="group_total",
         ),
     ]
 
@@ -262,6 +265,7 @@ def _res(
         daily_consumption=consumption, daily_intake=intake,
         estimated_remaining_hours=hours, last_updated="",
         amount_known=True, consumption_known=True, intake_known=True,
+        rate_basis="group_total",
         capacity=capacity, capacity_known=capacity_known,
     )
 
@@ -331,6 +335,20 @@ def test_check_warnings_storage_warning(rm: ResourceManager) -> None:
     warnings = rm.check_warnings()
     assert any(w["level"] == "warning" for w in warnings)
     assert not any(w["level"] == "critical" for w in warnings)
+
+
+def test_check_warnings_storage_zero_capacity_is_not_a_percentage(rm: ResourceManager) -> None:
+    rm.db.upsert_resource(
+        _res(
+            ResourceType.STORAGE,
+            current=0,
+            consumption=2,
+            intake=1,
+            capacity=0,
+            capacity_known=True,
+        )
+    )
+    assert not any(w["resource"] == "storage" for w in rm.check_warnings())
 
 
 def test_estimate_remaining_power_sustained(rm: ResourceManager) -> None:

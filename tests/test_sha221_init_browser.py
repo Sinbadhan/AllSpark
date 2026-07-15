@@ -39,7 +39,7 @@ def _serve_init(app):
         thread.join(timeout=5)
 
 
-def test_language_first_and_questionnaire_switches_live(tmp_path: Path) -> None:
+def test_action_first_assessment_preview_switches_live_without_publishing(tmp_path: Path) -> None:
     app = create_app(str(tmp_path / "init.db"))
     with _serve_init(app) as base_url, _Chrome(
         _chrome_binary(), tmp_path / "chrome-profile"
@@ -58,47 +58,69 @@ def test_language_first_and_questionnaire_switches_live(tmp_path: Path) -> None:
             "({heading: document.querySelector('#step-1 h2').textContent, "
             "selected: document.getElementById('lang-en').getAttribute('aria-pressed')})"
         )
-        assert "Language" in first["heading"]
+        assert "Start with your situation" in first["heading"]
         assert first["selected"] == "true"
 
-        browser.evaluate("goStep(2)")
-        browser.wait_for("!document.getElementById('hw-info').classList.contains('hidden')")
-        browser.evaluate("goStep(1); document.getElementById('lang-zh').click(); goStep(2)")
-        assert "硬件检测" in browser.evaluate("document.querySelector('#step-2 h2').textContent")
-        browser.evaluate("goStep(1); document.getElementById('lang-en').click(); goStep(2)")
-        browser.wait_for("!document.getElementById('btn-step2-next').disabled")
-        browser.evaluate("goStep(3); goStep(4)")
-        browser.wait_for("document.querySelectorAll('#questionnaire select').length >= 4")
+        browser.evaluate("document.getElementById('btn-step1-next').click()")
+        browser.wait_for("!document.getElementById('step-2').classList.contains('hidden')")
+        browser.evaluate(
+            "document.querySelector('input[name=people-state][value=known]').click();"
+            "document.getElementById('people-count').value='2';"
+            "document.getElementById('health').value='healthy';"
+            "document.getElementById('urgency').value='stable';"
+            "document.getElementById('shelter').value='permanent_building';"
+            "document.querySelector('input[name=threat-state][value=none]').click();"
+            "document.querySelector('[data-action=situation-next]').click()"
+        )
+        browser.wait_for("!document.getElementById('step-3').classList.contains('hidden')")
+        browser.evaluate(
+            """['power','food','storage'].forEach(type=>{
+              document.querySelector(`input[name=${type}-amount-state][value=unknown]`).click();
+              document.querySelector(`input[name=${type}-rate-state][value=unknown]`).click();
+            });
+            document.querySelector('input[name=water-amount-state][value=known]').click();
+            document.getElementById('water-amount').value='10';
+            document.querySelector('input[name=water-rate-state][value=estimate]').click();
+            document.getElementById('water-consumption').value='4';
+            document.getElementById('water-intake').value='1';
+            document.querySelector('input[name=fire-amount-state][value=known]').click();
+            document.getElementById('fire-amount').value='5';
+            document.querySelector('input[name=fire-rate-state][value=unknown]').click();
+            document.getElementById('btn-review').click();"""
+        )
+        browser.wait_for("!document.getElementById('step-4').classList.contains('hidden')")
         state = browser.evaluate(
             """({
-              options: Array.from(document.querySelectorAll('#questionnaire option')).map(o => o.textContent),
-              labels: Array.from(document.querySelectorAll('#questionnaire select')).map(s => s.labels[0]?.textContent),
-              skipTag: document.querySelector('.step-skip').tagName,
+              resources: document.getElementById('summary-resources').textContent,
+              actions: document.getElementById('summary-actions').textContent,
+              initializedText: document.getElementById('hardware-summary').textContent,
             })"""
         )
-        assert any("Urban" in option for option in state["options"])
-        assert all(state["labels"])
-        assert state["skipTag"] == "BUTTON"
-
-        browser.evaluate(
-            "document.getElementById('q-location').value = 'urban'; "
-            "goStep(1); document.getElementById('lang-zh').click(); goStep(4)"
+        assert "10 L" in state["resources"]
+        assert "4 L/day" in state["resources"]
+        assert "total basis" in state["resources"]
+        assert "Mixed sources" in state["resources"]
+        assert "deferred" in state["actions"]
+        initialized = browser.evaluate(
+            "fetch('/api/init/status').then(r=>r.json()).then(x=>x.initialized)",
+            await_promise=True,
         )
+        assert initialized is False
+
+        browser.evaluate("document.getElementById('lang-zh').click()")
         switched = browser.evaluate(
             """({
-              value: document.getElementById('q-location').value,
-              options: Array.from(document.querySelectorAll('#q-location option')).map(o => o.textContent),
-              label: document.getElementById('q-location').labels[0].textContent,
+              resources: document.getElementById('summary-resources').textContent,
+              progressHidden: document.querySelector('.progress').getAttribute('aria-hidden'),
+              title: document.title,
+              hardware: document.getElementById('hardware-summary').textContent,
             })"""
         )
-        assert switched["value"] == "urban"
-        assert any("城市" in option for option in switched["options"])
-        assert "位置" in switched["label"]
-
-        browser.evaluate(
-            "goStep(1); document.getElementById('lang-en').click(); goStep(4)"
-        )
-        assert browser.evaluate("document.getElementById('q-location').value") == "urban"
+        assert "次" in switched["resources"]
+        assert "总量口径" in switched["resources"]
+        assert switched["progressHidden"] == "true"
+        assert switched["title"] == "ALLSPARK — 首次状况评估"
+        assert "正在检测" not in switched["hardware"]
 
 
 def test_zh_browser_locale_starts_on_language_step(tmp_path: Path) -> None:
@@ -119,5 +141,60 @@ def test_zh_browser_locale_starts_on_language_step(tmp_path: Path) -> None:
             "({heading: document.querySelector('#step-1 h2').textContent, "
             "selected: document.getElementById('lang-zh').getAttribute('aria-pressed')})"
         )
-        assert "语言" in state["heading"]
+        assert "先从你的处境开始" in state["heading"]
         assert state["selected"] == "true"
+
+
+def test_known_empty_people_is_blocked_and_error_link_focuses_input(tmp_path: Path) -> None:
+    app = create_app(str(tmp_path / "init-people-error.db"))
+    with _serve_init(app) as base_url, _Chrome(
+        _chrome_binary(), tmp_path / "chrome-profile-people-error"
+    ) as browser:
+        browser.navigate(base_url)
+        browser.wait_for("!document.getElementById('step-1').classList.contains('hidden')")
+        browser.evaluate("document.getElementById('btn-step1-next').click()")
+        browser.wait_for("!document.getElementById('step-2').classList.contains('hidden')")
+        initial = browser.evaluate("document.getElementById('people-count').value")
+        assert initial == ""
+
+        browser.evaluate(
+            "document.querySelector('input[name=people-state][value=known]').click();"
+            "document.getElementById('health').value='healthy';"
+            "document.getElementById('urgency').value='stable';"
+            "document.getElementById('shelter').value='permanent_building';"
+            "document.querySelector('input[name=threat-state][value=none]').click();"
+            "document.querySelector('[data-action=situation-next]').click()"
+        )
+        browser.wait_for("!document.getElementById('init-errors').classList.contains('hidden')")
+        state = browser.evaluate(
+            "({active:document.activeElement.id,"
+            "resourcesHidden:document.getElementById('step-3').classList.contains('hidden'),"
+            "href:document.querySelector('#init-error-list a').getAttribute('href')})"
+        )
+        assert state == {
+            "active": "init-errors",
+            "resourcesHidden": True,
+            "href": "#field-people_count",
+        }
+
+        browser.evaluate("document.querySelector('#init-error-list a').click()")
+        browser.wait_for("document.activeElement.id==='people-count'")
+
+        browser.evaluate(
+            "showStep(3);"
+            "showErrors([{field:'resources.water.rates.basis',code:'invalid_rate_basis'}]);"
+            "document.querySelector('#init-error-list a').click()"
+        )
+        browser.wait_for(
+            "document.activeElement.name==='water-rate-state'"
+        )
+
+        browser.evaluate(
+            "showErrors([{field:'resources.water.rates',code:'outlier_confirmation'}]);"
+            "document.querySelector('#init-error-list a').click()"
+        )
+        browser.wait_for("document.activeElement.id==='water-confirm-outlier'")
+        visible = browser.evaluate(
+            "!document.getElementById('water-outlier').classList.contains('hidden')"
+        )
+        assert visible is True

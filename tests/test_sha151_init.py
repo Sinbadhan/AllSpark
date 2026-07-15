@@ -14,11 +14,12 @@ from allspark.adapters.init_wizard import (
     _choose_other_model,
     _download_model,
     _select_multi,
+    _step_assessment_summary,
     _step_hardware_detect,
+    _step_initial_assessment,
     _step_language_select,
     _step_model_setup,
     _step_summary,
-    _step_survivor_profile,
     run_init_wizard,
 )
 from allspark.core.database import Database
@@ -245,42 +246,30 @@ def test_download_model_network_failure_records(monkeypatch, tmp_path) -> None:
     assert _download_model("qwen3-1_7b-instruct-q4", 1.0) is None
 
 
-# ─── _step_survivor_profile (solo vs group, supplies yes/no) ─────────────────
+# ─── explicit shared assessment ──────────────────────────────────────────────
 
 
-def test_survivor_profile_solo_no_supplies(monkeypatch, tmp_path) -> None:
-    db = Database(tmp_path / "sv.db")
-    # inputs: name, people_count, loc(1), shelter(1), gps, health(1),
-    # supplies(no), threats(1), urgency(1), skills(1)
-    _mock_input(monkeypatch, ["Alice", "1", "1", "1", "40.7,-74.0", "1", "n", "1", "1", "1"])
-    try:
-        r = _step_survivor_profile(db)
-        assert r["name"] == "Alice"
-        assert r["people_count"] == "1"
-        assert r["water"] == ""  # no supplies
-        assert db.get_survivor_state().get("name") == "Alice"
-    finally:
-        db.close()
+def test_initial_assessment_requires_explicit_unknown_for_every_domain(monkeypatch) -> None:
+    # people, health, urgency, shelter, threats, then amount/rate for 5 resources.
+    _mock_input(monkeypatch, ["2", "6", "5", "7", "3", *("2", "1") * 5])
+    result = _step_initial_assessment()
+    assert result["people_count"] == {"status": "unknown", "value": None}
+    assert result["threats"] == {"status": "unknown", "values": []}
+    assert all(
+        resource["status"] == "unknown"
+        and resource["rates"]["status"] == "unknown"
+        for resource in result["resources"].values()
+    )
 
 
-def test_survivor_profile_group_with_supplies(monkeypatch, tmp_path) -> None:
-    db = Database(tmp_path / "sv2.db")
-    # inputs: name, people_count(2->group), loc(1), shelter(1), gps, health(1),
-    # others, group_health, supplies(yes), water, food, power, tools,
-    # threats(1), urgency(1), skills(1)
-    _mock_input(monkeypatch, [
-        "Bob", "2", "1", "1", "", "1", "Carol", "good", "yes",
-        "10L", "5days", "100Wh", "knife,multi", "1", "1", "1",
-    ])
-    try:
-        r = _step_survivor_profile(db)
-        assert r["name"] == "Bob"
-        assert r["water"] == "10L"
-        assert r["food"] == "5days"
-        assert r["power"] == "100Wh"
-        assert r["tools"] == ["knife", "multi"]
-    finally:
-        db.close()
+def test_assessment_summary_requires_explicit_confirmation(monkeypatch) -> None:
+    from allspark.services.initial_assessment import validate_initial_assessment
+    from tests.assessment_helpers import valid_initial_assessment
+
+    _mock_input(monkeypatch, ["", "maybe", "yes"])
+    assert _step_assessment_summary(
+        validate_initial_assessment(valid_initial_assessment())
+    ) is True
 
 
 # ─── _select_multi remaining branches ────────────────────────────────────────
@@ -325,17 +314,21 @@ def test_step_summary_renders(monkeypatch) -> None:
 def test_run_init_wizard_orchestrates_without_publishing(monkeypatch, tmp_path) -> None:
     # The wizard writes draft data only; the adapter publishes after bootstrap.
     monkeypatch.setattr(init_wizard, "_step_language_select", lambda: "zh")
-    monkeypatch.setattr(init_wizard, "_step_hardware_detect",
-                        lambda db: {"profile": _profile(), "flags": SimpleNamespace(llm_model="x")})
-    monkeypatch.setattr(init_wizard, "_step_model_setup",
-                        lambda db, hw: {"model": "x", "downloaded": False})
-    monkeypatch.setattr(init_wizard, "_step_survivor_profile", lambda db: {"name": "Z"})
-    monkeypatch.setattr(init_wizard, "_step_summary", lambda r: None)
+    from tests.assessment_helpers import valid_initial_assessment
+    assessment = valid_initial_assessment()
+    monkeypatch.setattr(init_wizard, "_step_initial_assessment", lambda: assessment)
+    monkeypatch.setattr(init_wizard, "_step_assessment_summary", lambda value: True)
+    monkeypatch.setattr(
+        init_wizard,
+        "_prepare_hardware_automatically",
+        lambda db: {"profile": _profile(), "flags": SimpleNamespace(llm_model="x")},
+    )
     db = Database(tmp_path / "run.db")
     try:
         r = run_init_wizard(db)
         assert r["language"] == "zh"
-        assert r["survivor"]["name"] == "Z"
+        assert r["assessment"] is assessment
+        assert "survivor" not in r and "model" not in r
         assert db.is_initialized() is False
     finally:
         db.close()

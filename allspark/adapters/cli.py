@@ -73,6 +73,20 @@ class SparkCLI:
                 if self.init_result is None:
                     raise RuntimeError("Initialization wizard returned no result")
                 language = self.init_result.get("language", previous_language)
+                assessment = self.init_result.get("assessment")
+                if assessment is None:
+                    raise RuntimeError("Initialization wizard returned no assessment")
+                survivor = self.init_result.get("survivor", {})
+                self.db.save_survivor_state(
+                    "name", survivor.get("name") or t("init_default_name")
+                )
+                self.db.save_survivor_state(
+                    "gps_input", survivor.get("gps_input", "")
+                )
+                self.db.save_survivor_state(
+                    "skills", ",".join(survivor.get("skills", []))
+                )
+                prepared.container.require("initial_assessment").apply(assessment)
                 self.db.finalize_initialization(language)
 
             self._container = prepared.container

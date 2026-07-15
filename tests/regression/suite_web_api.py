@@ -36,7 +36,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from urllib.parse import quote, urlencode
+from urllib.parse import quote
 
 if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -64,8 +64,13 @@ def _run_lang(c: httpx.Client, recorder: Recorder, lang: str, *, fresh_init: boo
     H("GET", "/api/init/hardware")
     H("GET", "/api/init/models")
     if fresh_init:
-        qs = urlencode({"language": lang, "survivor_name": "TestRunner", "skip_model": "true"})
-        H("POST", f"/api/init/complete?{qs}")
+        from tests.assessment_helpers import valid_initial_assessment
+
+        H(
+            "POST",
+            "/api/init/complete",
+            json={"language": lang, "survivor_name": "TestRunner", "assessment": valid_initial_assessment()},
+        )
     H("POST", "/api/system/language", json={"language": lang})
 
     # ------------ Survival assessment & resources (M1, M7) ------------

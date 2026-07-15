@@ -60,6 +60,7 @@ class Database:
                 unit TEXT NOT NULL,
                 daily_consumption REAL DEFAULT 0,
                 daily_intake REAL DEFAULT 0,
+                rate_basis TEXT NOT NULL DEFAULT 'unknown',
                 estimated_remaining_hours REAL DEFAULT 0,
                 last_updated TEXT NOT NULL,
                 amount_known INTEGER NOT NULL DEFAULT 0,
@@ -67,6 +68,7 @@ class Database:
                 intake_known INTEGER NOT NULL DEFAULT 0,
                 source TEXT NOT NULL DEFAULT 'migration',
                 people_count INTEGER NOT NULL DEFAULT 1,
+                people_count_known INTEGER NOT NULL DEFAULT 0,
                 as_of TEXT NOT NULL DEFAULT '',
                 capacity REAL NOT NULL DEFAULT 0,
                 capacity_known INTEGER NOT NULL DEFAULT 0
@@ -305,8 +307,10 @@ class Database:
             ("amount_known", "INTEGER NOT NULL DEFAULT 0"),
             ("consumption_known", "INTEGER NOT NULL DEFAULT 0"),
             ("intake_known", "INTEGER NOT NULL DEFAULT 0"),
+            ("rate_basis", "TEXT NOT NULL DEFAULT 'unknown'"),
             ("source", "TEXT NOT NULL DEFAULT 'migration'"),
             ("people_count", "INTEGER NOT NULL DEFAULT 1"),
+            ("people_count_known", "INTEGER NOT NULL DEFAULT 0"),
             ("as_of", "TEXT NOT NULL DEFAULT ''"),
             ("capacity", "REAL NOT NULL DEFAULT 0"),
             ("capacity_known", "INTEGER NOT NULL DEFAULT 0"),
@@ -316,6 +320,16 @@ class Database:
             except sqlite3.OperationalError:
                 cur.execute(f"ALTER TABLE resources ADD COLUMN {col} {ctype}")
                 self.conn.commit()
+        # SHA-237 established all persisted daily rates as group totals. Rows
+        # whose explicit certainty flags survived that contract migration can
+        # therefore receive the matching basis; pre-contract unknown rows stay
+        # fail-closed.
+        cur.execute(
+            """UPDATE resources SET rate_basis='group_total'
+               WHERE consumption_known=1 AND intake_known=1
+                 AND rate_basis='unknown'"""
+        )
+        self.conn.commit()
         try:
             cur.execute("SELECT language FROM knowledge LIMIT 1")
         except sqlite3.OperationalError:
@@ -374,14 +388,16 @@ class Database:
             """INSERT OR REPLACE INTO resources
                (type, current_amount, unit, daily_consumption, daily_intake,
                 estimated_remaining_hours, last_updated, amount_known,
-                consumption_known, intake_known, source, people_count, as_of,
+                consumption_known, intake_known, rate_basis, source, people_count,
+                people_count_known, as_of,
                 capacity, capacity_known)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (r.type.value, r.current_amount, r.unit,
              r.daily_consumption, r.daily_intake,
              r.estimated_remaining_hours, self._now(),
              int(r.amount_known), int(r.consumption_known), int(r.intake_known),
-             r.source, r.people_count, r.as_of, r.capacity, int(r.capacity_known))
+             r.rate_basis, r.source, r.people_count, int(r.people_count_known), r.as_of,
+             r.capacity, int(r.capacity_known))
         )
         self.conn.commit()
 
@@ -397,6 +413,7 @@ class Database:
             unit=row["unit"],
             daily_consumption=row["daily_consumption"],
             daily_intake=row["daily_intake"],
+            rate_basis=row["rate_basis"],
             estimated_remaining_hours=row["estimated_remaining_hours"],
             last_updated=row["last_updated"],
             amount_known=bool(row["amount_known"]),
@@ -404,6 +421,7 @@ class Database:
             intake_known=bool(row["intake_known"]),
             source=row["source"],
             people_count=row["people_count"],
+            people_count_known=bool(row["people_count_known"]),
             as_of=row["as_of"],
             capacity=row["capacity"],
             capacity_known=bool(row["capacity_known"]),
@@ -417,6 +435,7 @@ class Database:
             unit=r["unit"],
             daily_consumption=r["daily_consumption"],
             daily_intake=r["daily_intake"],
+            rate_basis=r["rate_basis"],
             estimated_remaining_hours=r["estimated_remaining_hours"],
             last_updated=r["last_updated"],
             amount_known=bool(r["amount_known"]),
@@ -424,6 +443,7 @@ class Database:
             intake_known=bool(r["intake_known"]),
             source=r["source"],
             people_count=r["people_count"],
+            people_count_known=bool(r["people_count_known"]),
             as_of=r["as_of"],
             capacity=r["capacity"],
             capacity_known=bool(r["capacity_known"]),
@@ -437,6 +457,10 @@ class Database:
             (t.id, t.phase, t.priority, t.title, t.description,
              t.status, t.created_at, self._now())
         )
+        self.conn.commit()
+
+    def delete_task(self, task_id: str) -> None:
+        self.conn.execute("DELETE FROM tasks WHERE id=?", (task_id,))
         self.conn.commit()
 
     def get_tasks_by_phase(self, phase: int) -> list[Task]:

@@ -40,6 +40,7 @@ def _resource_payload(resource_mgr, r):
         "unit_label": t(f"resource_unit_{r.type.value}"),
         "daily_consumption": r.daily_consumption,
         "daily_intake": r.daily_intake,
+        "rate_basis": r.rate_basis,
         "amount_known": r.amount_known,
         "consumption_known": r.consumption_known,
         "intake_known": r.intake_known,
@@ -50,11 +51,16 @@ def _resource_payload(resource_mgr, r):
         "as_of": r.as_of,
         "last_updated": r.last_updated,
         "people_count": r.people_count,
+        "people_count_known": r.people_count_known,
         "amount_per_person": (
-            r.current_amount / r.people_count if r.amount_known and r.people_count else None
+            r.current_amount / r.people_count
+            if r.amount_known and r.people_count_known and r.people_count
+            else None
         ),
         "remaining_hours_per_person": (
-            r.estimated_remaining_hours if has_estimate and r.people_count else None
+            r.estimated_remaining_hours
+            if has_estimate and r.people_count_known and r.people_count
+            else None
         ),
         "remaining_hours": r.estimated_remaining_hours if has_estimate else None,
         "remaining_status": remaining_status,
@@ -101,6 +107,7 @@ def register_core_routes(app, check):
         intake = None
         source = "user_input"
         people_count = 1
+        people_count_known = True
         as_of = None
         unknown = False
         amount_known = None
@@ -118,6 +125,7 @@ def register_core_routes(app, check):
             consumption = data.get("daily_consumption", None)
             intake = data.get("daily_intake", None)
             people_count = data.get("people_count", people_count)
+            people_count_known = data.get("people_count_known", people_count_known)
             as_of = data.get("as_of", None)
             unknown = data.get("unknown", False) is True
             amount_known = data.get("amount_known", None)
@@ -136,6 +144,13 @@ def register_core_routes(app, check):
         kwargs: dict[str, Any] = {}
         try:
             resource_mgr = container.get("resource_manager")
+            current_resource = db.get_resource(rtype)
+            if "people_count_known" not in data:
+                if "people_count" in data:
+                    people_count_known = True
+                elif current_resource is not None:
+                    people_count = current_resource.people_count
+                    people_count_known = current_resource.people_count_known
             if "source" in data:
                 raise ResourceValidationError("source", "source_controlled")
             if not isinstance(input_kind, str) or input_kind not in {"observed", "estimate"}:
@@ -146,6 +161,7 @@ def register_core_routes(app, check):
                     rtype,
                     source=source,
                     people_count=people_count,
+                    people_count_known=people_count_known,
                     as_of=as_of,
                 )
                 return {"status": "ok", "resource_status": "unknown"}
@@ -159,6 +175,7 @@ def register_core_routes(app, check):
                 **kwargs,
                 source=source,
                 people_count=people_count,
+                people_count_known=people_count_known,
                 as_of=as_of,
                 amount_known=amount_known,
                 consumption_known=consumption_known,

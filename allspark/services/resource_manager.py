@@ -71,13 +71,20 @@ class ResourceManager:
         return "finite"
 
     def has_complete_rate_data(self, r: Resource) -> bool:
-        return r.amount_known and r.consumption_known and r.intake_known
+        return (
+            r.amount_known
+            and r.consumption_known
+            and r.intake_known
+            and r.rate_basis == "group_total"
+        )
 
     def update_resource(self, rtype: ResourceType, amount: Optional[float],
                         consumption: Optional[float] = None,
                         intake: Optional[float] = None,
                         *, source: str = "user_input",
+                        rate_basis: str = "group_total",
                         people_count: int = 1,
+                        people_count_known: bool = True,
                         as_of: Optional[str] = None,
                         amount_known: Optional[bool] = None,
                         consumption_known: Optional[bool] = None,
@@ -90,6 +97,7 @@ class ResourceManager:
             ("consumption_known", consumption_known),
             ("intake_known", intake_known),
             ("capacity_known", capacity_known),
+            ("people_count_known", people_count_known),
         ):
             if known is not None and not isinstance(known, bool):
                 raise ResourceValidationError(field, "not_boolean")
@@ -109,6 +117,11 @@ class ResourceManager:
             raise ResourceValidationError("capacity", "required")
         if capacity_known and rtype != ResourceType.STORAGE:
             raise ResourceValidationError("capacity", "capacity_storage_only")
+        if consumption_known or intake_known:
+            if rate_basis != "group_total":
+                raise ResourceValidationError("rate_basis", "invalid_rate_basis")
+        else:
+            rate_basis = "unknown"
         if not isinstance(confirm_outlier, bool):
             raise ResourceValidationError("confirm_outlier", "not_boolean")
         amount_value = self._validate_value("amount", amount) if amount_known else 0.0
@@ -144,6 +157,7 @@ class ResourceManager:
         r.current_amount = amount_value
         r.daily_consumption = consumption_value
         r.daily_intake = intake_value
+        r.rate_basis = rate_basis
         r.unit = RESOURCE_UNITS[rtype]
         r.amount_known = amount_known
         r.consumption_known = consumption_known
@@ -152,6 +166,7 @@ class ResourceManager:
         r.capacity_known = capacity_known
         r.source = source
         r.people_count = people_count
+        r.people_count_known = people_count_known
         r.as_of = snapshot_time
         r.estimated_remaining_hours = self._estimate_remaining(r)
         self.db.upsert_resource(r)
@@ -194,8 +209,10 @@ class ResourceManager:
                 current.daily_consumption if consumption is None else consumption
             ),
             intake=current.daily_intake if intake is None else intake,
+            rate_basis=current.rate_basis if current.rate_basis != "unknown" else "group_total",
             source=merged_source,
             people_count=current.people_count,
+            people_count_known=current.people_count_known,
             as_of=merged_as_of,
             amount_known=current.amount_known if amount is None else True,
             consumption_known=(
@@ -212,6 +229,7 @@ class ResourceManager:
         *,
         source: str = "user_input",
         people_count: int = 1,
+        people_count_known: bool = True,
         as_of: Optional[str] = None,
     ) -> None:
         """Persist an explicit unknown; unknown is never represented as zero."""
@@ -220,6 +238,7 @@ class ResourceManager:
             None,
             source=source,
             people_count=people_count,
+            people_count_known=people_count_known,
             as_of=as_of,
             amount_known=False,
             consumption_known=False,
@@ -301,6 +320,11 @@ class ResourceManager:
         return people_count
 
     @staticmethod
+    def validate_people_count(value: Any) -> int:
+        """Validate a group size without silently coercing ambiguous input."""
+        return ResourceManager._validate_people_count(value)
+
+    @staticmethod
     def _validate_as_of(value: Any) -> str:
         if value is None:
             return datetime.now().isoformat()
@@ -314,6 +338,11 @@ class ResourceManager:
         if parsed > now + timedelta(minutes=5):
             raise ResourceValidationError("as_of", "future_timestamp")
         return value
+
+    @staticmethod
+    def validate_as_of(value: Any) -> str:
+        """Validate or create one honest snapshot timestamp for shared inputs."""
+        return ResourceManager._validate_as_of(value)
 
     @staticmethod
     def _oldest_valid_timestamp(first: str, second: str) -> str:

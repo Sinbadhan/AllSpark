@@ -227,7 +227,18 @@ class SetCommand(BaseCommand):
 
         if args[1].lower() in ("unknown", "未知"):
             try:
-                people_count = args[2] if len(args) > 2 else 1
+                current = self.db.get_resource(rtype)
+                people_count = (
+                    args[2]
+                    if len(args) > 2
+                    else current.people_count
+                    if current is not None
+                    else 1
+                )
+                people_count_known = (
+                    len(args) > 2
+                    or (current.people_count_known if current is not None else False)
+                )
                 input_kind = args[3].lower() if len(args) > 3 else "observed"
                 if input_kind not in {"observed", "estimate", "观测", "估算"}:
                     raise ResourceValidationError("input_kind", "invalid_input_kind")
@@ -235,6 +246,7 @@ class SetCommand(BaseCommand):
                 resource_mgr.mark_unknown(
                     rtype,
                     people_count=people_count,
+                    people_count_known=people_count_known,
                     source=source,
                 )
             except (ValueError, ResourceValidationError) as exc:
@@ -248,7 +260,18 @@ class SetCommand(BaseCommand):
             amount = float(args[1])
             consumption = float(args[2]) if len(args) > 2 else None
             intake = float(args[3]) if len(args) > 3 else None
-            people_count = args[4] if len(args) > 4 else 1
+            current = self.db.get_resource(rtype)
+            people_count = (
+                args[4]
+                if len(args) > 4
+                else current.people_count
+                if current is not None
+                else 1
+            )
+            people_count_known = (
+                len(args) > 4
+                or (current.people_count_known if current is not None else False)
+            )
             capacity = (
                 float(args[5])
                 if rtype == ResourceType.STORAGE and len(args) > 5
@@ -270,6 +293,7 @@ class SetCommand(BaseCommand):
                 consumption,
                 intake,
                 people_count=people_count,
+                people_count_known=people_count_known,
                 capacity=capacity,
                 source=source,
             )

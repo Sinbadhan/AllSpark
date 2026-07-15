@@ -154,6 +154,7 @@ class Resource:
     unit: str
     daily_consumption: float = 0.0
     daily_intake: float = 0.0
+    rate_basis: str = "unknown"
     estimated_remaining_hours: float = 0.0
     last_updated: str = ""
     amount_known: bool = False
@@ -161,6 +162,7 @@ class Resource:
     intake_known: bool = False
     source: str = "migration"
     people_count: int = 1
+    people_count_known: bool = False
     as_of: str = ""
     capacity: float = 0.0
     capacity_known: bool = False

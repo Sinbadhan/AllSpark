@@ -1,706 +1,149 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="{{ lang }}">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ALLSPARK — INIT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALLSPARK — {{ t('web_init_document_title') }}</title>
 <style>
 :root {
-  --bg: #0a0a0a; --surface: #131313; --surface-dim: #131313; --surface-bright: #393939;
-  --surface-lowest: #0e0e0e; --surface-low: #1b1c1c; --surface-mid: #1f2020;
-  --surface-high: #2a2a2a; --surface-highest: #353535;
-  --primary: #ffb59d; --primary-container: #ff6b35;
-  --on-primary: #5d1900; --on-primary-container: #5f1900;
-  --secondary: #c5c5c5; --on-surface: #e0e0e0; --on-surface-variant: #c4c4c4;
-  --on-background: #e0e0e0; --border: #2a2a2a; --success: #44cc44;
-  --warning: #ffaa00; --critical: #ff4444; --info: #4488ff;
-  --radius: 4px; --radius-lg: 8px;
-  --font-mono: 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+  --bg:#0a0a0a;--surface:#131313;--surface-2:#1b1c1c;--border:#353535;
+  --primary:#ff6b35;--primary-soft:#ffb59d;--text:#e0e0e0;--muted:#b8b8b8;
+  --success:#44cc44;--warning:#ffaa00;--critical:#ff4444;--radius:8px;
+  --mono:'SF Mono','Menlo','Consolas','Liberation Mono',monospace;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: var(--font-mono); background: var(--bg); color: var(--on-background);
-  min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  -webkit-font-smoothing: antialiased;
-}
-a { color: inherit; text-decoration: none; }
-button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
-input { font-family: inherit; }
-.material-symbols-outlined {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 1em; font-family: var(--font-mono); font-weight: 700;
-  font-size: 0; vertical-align: middle; line-height: 1;
-}
-.icons-ready .material-symbols-outlined { font-size: 18px; }
-.hidden { display: none !important; }
-.init-container { max-width: 560px; width: 100%; padding: 16px; }
-.init-card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-  padding: 32px; margin-bottom: 16px;
-}
-.init-header { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
-.brand-icon {
-  width: 32px; height: 32px; border-radius: var(--radius); background: var(--primary-container);
-  display: flex; align-items: center; justify-content: center; color: var(--on-primary-container);
-  font-weight: 700; font-size: 13px;
-}
-.init-header h1 { font-size: 28px; font-weight: 700; color: var(--primary-container); letter-spacing: -0.02em; }
-.init-subtitle { font-size: 13px; color: var(--secondary); margin-bottom: 24px; margin-left: 44px; }
-.cursor-blink { animation: blink 1s step-end infinite; }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-/* Step dots */
-.step-dots { display: flex; gap: 8px; margin-bottom: 24px; }
-.step-dot { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-high); transition: background 0.3s; }
-.step-dot.active { background: var(--primary-container); }
-.step-dot.done { background: var(--success); }
-
-/* Step content */
-.step h2 { font-size: 18px; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
-.step h2 .material-symbols-outlined { font-size: 20px; }
-
-/* Buttons */
-.btn-primary {
-  background: var(--primary-container); color: var(--on-primary-container);
-  padding: 8px 24px; border-radius: var(--radius); font-weight: 600; font-size: 13px;
-  display: inline-flex; align-items: center; gap: 8px; transition: all 0.15s;
-}
-.btn-primary:hover { background: var(--primary); }
-.btn-primary:active { transform: scale(0.95); }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-outline {
-  background: var(--surface); border: 1px solid var(--border); color: var(--on-surface);
-  padding: 8px 16px; border-radius: var(--radius); font-weight: 600; font-size: 13px;
-  display: inline-flex; align-items: center; gap: 8px; transition: all 0.15s;
-}
-.btn-outline:hover { border-color: var(--primary-container); }
-
-/* Tier badges */
-.tier-phantom { background: #ff444433; color: #ff6666; }
-.tier-minimum { background: #ffaa0033; color: #ffcc44; }
-.tier-recommended { background: #44cc4433; color: #66ee66; }
-.tier-comfortable { background: #4488ff33; color: #66aaff; }
-.tier-flagship { background: #aa44ff33; color: #cc66ff; }
-
-/* HW grid */
-.hw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.hw-item {
-  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 10px; text-align: center;
-}
-.hw-item .label { font-size: 11px; color: var(--secondary); margin-bottom: 2px; }
-.hw-item .value { font-size: 13px; font-weight: 600; }
-
-/* Tier badge */
-.tier-badge {
-  display: inline-block; padding: 6px 16px; border-radius: var(--radius-lg);
-  font-weight: 700; font-size: 13px; margin-bottom: 12px;
-}
-
-/* Language buttons */
-.lang-grid { display: flex; gap: 12px; margin-bottom: 16px; }
-.lang-btn {
-  flex: 1; padding: 16px; border: 2px solid var(--border); border-radius: var(--radius-lg);
-  background: var(--bg); color: var(--on-surface); cursor: pointer; text-align: center;
-  transition: all 0.15s; font: inherit;
-}
-.lang-btn:hover { border-color: var(--primary-container); }
-.lang-btn.selected { border-color: var(--primary-container); background: rgba(255,107,53,0.1); }
-.lang-btn .lang-name { font-size: 18px; font-weight: 600; }
-.lang-btn .lang-sub { font-size: 11px; color: var(--secondary); margin-top: 4px; }
-
-/* Input */
-.init-input {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg); color: var(--on-surface); font-size: 13px; outline: none;
-  transition: border-color 0.15s; margin-bottom: 16px;
-}
-.init-input:focus { border-color: var(--primary-container); }
-
-/* Model card */
-.model-card {
-  background: var(--bg); border: 1px solid var(--primary-container); border-radius: var(--radius);
-  padding: 12px; margin-bottom: 12px;
-}
-.model-card .model-name { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
-.model-card .model-meta { font-size: 11px; color: var(--secondary); margin-top: 4px; }
-.model-card .model-status { font-size: 11px; margin-top: 8px; display: flex; align-items: center; gap: 4px; }
-
-/* Progress bar */
-.progress-bar { height: 6px; background: var(--surface-high); border-radius: 3px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--primary-container); border-radius: 3px; transition: width 0.5s; }
-
-/* Step footer */
-.step-footer { display: flex; justify-content: space-between; margin-top: 24px; }
-.step-footer-right { margin-left: auto; }
-.step-skip { border: 0; background: none; padding: 0; font: inherit; font-size: 11px; color: var(--secondary); cursor: pointer; margin-top: 12px; display: inline-block; }
-.step-skip:hover { color: var(--on-surface); }
-
-/* Status text */
-.text-success { color: var(--success); }
-.text-warn { color: var(--warning); }
-.text-critical { color: var(--critical); }
-.text-secondary { color: var(--secondary); }
-.text-primary { color: var(--primary); }
-.text-primary-container { color: var(--primary-container); }
-
-/* Loading */
-.loading-text { text-align: center; padding: 24px; color: var(--secondary); }
-
-/* Download section */
-.download-section { margin-top: 12px; }
-.download-progress { margin-top: 8px; }
-.download-status { font-size: 11px; color: var(--secondary); margin-top: 4px; }
-
-/* No LLM warning */
-.no-llm-warning { margin-top: 8px; font-size: 11px; color: var(--secondary); display: flex; align-items: center; gap: 4px; }
-
-/* Structured questionnaire (SHA-56) */
-.questionnaire { margin-bottom: 8px; }
-.q-field { margin-bottom: 14px; }
-.q-label { font-size: 12px; color: var(--secondary); margin-bottom: 6px; letter-spacing: 0.03em; }
-.q-select {
-  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg); color: var(--on-surface); font-size: 13px; outline: none;
-}
-.q-select:focus { border-color: var(--primary-container); }
-.q-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.q-chip {
-  padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 11px;
-  color: var(--on-surface-variant); cursor: pointer; transition: all 0.15s; background: var(--bg); font: inherit;
-}
-.q-chip:hover { border-color: var(--primary-container); }
-.q-chip.selected { border-color: var(--primary-container); background: rgba(255,107,53,0.12); color: var(--primary-container); }
-
-/* Spin animation */
-.animate-spin { animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+*{box-sizing:border-box}html,body{margin:0;min-width:0}
+body{min-height:100dvh;background:var(--bg);color:var(--text);font-family:var(--mono);display:flex;align-items:flex-start;justify-content:center}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer}
+.hidden{display:none!important}.init-container{width:min(760px,100%);padding:16px;margin:auto}
+.init-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);max-height:calc(100dvh - 32px);overflow-y:auto;scroll-padding-bottom:96px}
+.init-main{padding:28px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:8px}.brand-mark{display:grid;place-items:center;width:36px;height:36px;background:var(--primary);color:#3b1000;border-radius:4px;font-weight:800}.brand h1{margin:0;color:var(--primary);font-size:26px}.subtitle{margin:0 0 20px 48px;color:var(--muted);font-size:13px}
+.progress{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0;margin:0 0 22px}.progress li{height:4px;background:var(--border);border-radius:999px}.progress li.active{background:var(--primary)}.progress li.done{background:var(--success)}
+.step h2{font-size:20px;color:var(--primary-soft);margin:0 0 8px}.step-intro{color:var(--muted);font-size:13px;line-height:1.55;margin:0 0 18px}.promise{background:#0e0e0e;border-left:3px solid var(--primary);padding:16px;margin:16px 0}.promise strong{display:block;margin-bottom:6px}.danger-note{border:1px solid var(--warning);color:#ffd37a;padding:12px;margin:12px 0;font-size:13px;line-height:1.5}
+.language-grid,.choice-row{display:flex;gap:8px;flex-wrap:wrap}.choice-button,.language-button{min-height:44px;border:1px solid var(--border);background:var(--bg);border-radius:6px;padding:10px 14px}.language-button{flex:1}.language-button[aria-pressed="true"]{border-color:var(--primary);background:#ff6b351a}.choice-button:has(input:checked){border-color:var(--primary);background:#ff6b351a}
+fieldset{border:1px solid var(--border);border-radius:6px;padding:14px;margin:0 0 14px;min-width:0}legend{padding:0 6px;font-weight:700;color:var(--primary-soft)}label{font-size:13px}.field{margin:12px 0}.field>label{display:block;margin-bottom:6px;color:var(--muted)}input[type="number"],input[type="text"],select{width:100%;min-height:44px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:9px 10px}input:disabled{opacity:.55}.helper{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.45}.threat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.threat-grid label{min-height:40px;display:flex;align-items:center;gap:8px;border:1px solid var(--border);padding:8px;border-radius:4px}
+.resources{display:grid;grid-template-columns:1fr 1fr;gap:12px}.resource-panel{margin:0}.resource-panel .choice-row{margin-bottom:10px}.rate-fields{border-top:1px solid var(--border);margin-top:12px;padding-top:10px}.outlier{border:1px solid var(--warning);padding:10px;color:#ffd37a;margin-top:10px}.source-preview{font-size:11px;color:var(--muted);margin-top:8px}
+.error-summary{border:2px solid var(--critical);background:#ff444414;padding:14px;margin:0 0 18px;border-radius:4px}.error-summary h2{font-size:15px;color:#ff8a8a;margin:0 0 8px}.error-summary ul{margin:0;padding-left:22px;font-size:13px}.error-summary a{color:#ffb2b2}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.summary-box{border:1px solid var(--border);padding:14px;border-radius:5px;min-width:0}.summary-box h3{font-size:14px;margin:0 0 10px;color:var(--primary-soft)}.summary-box ul{padding-left:20px;margin:0;font-size:12px;line-height:1.7}.summary-box.actions{grid-column:1/-1}.deferred{color:var(--muted)}details{margin-top:14px;border:1px solid var(--border);padding:10px;border-radius:4px}summary{cursor:pointer}.confirm-row{display:flex;align-items:flex-start;gap:10px;margin:18px 0;padding:12px;border:1px solid var(--border)}.confirm-row input{margin-top:2px}
+.step-footer{position:sticky;bottom:-1px;z-index:3;display:flex;justify-content:space-between;gap:10px;margin:24px -28px -28px;padding:14px 28px;background:linear-gradient(180deg,rgba(19,19,19,.94),var(--surface) 30%);border-top:1px solid var(--border)}.btn{min-height:44px;border-radius:4px;padding:9px 18px;font-weight:700}.btn-primary{border:1px solid var(--primary);background:var(--primary);color:#421100;margin-left:auto}.btn-secondary{border:1px solid var(--border);background:var(--surface-2)}.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--primary-soft);outline-offset:3px}@media(max-width:560px){.init-container{padding:0}.init-card{border-radius:0;max-height:100dvh;border-left:0;border-right:0}.init-main{padding:16px}.subtitle{margin-left:0}.resources,.summary-grid{grid-template-columns:1fr}.summary-box.actions{grid-column:auto}.threat-grid{grid-template-columns:1fr}.step-footer{margin:20px -16px -16px;padding:12px 16px;flex-wrap:wrap}.step-footer .btn{flex:1}.choice-button{flex:1;padding:8px}.language-grid{flex-direction:column}}
+@media(max-height:520px){.init-container{padding:0}.init-card{max-height:100dvh}.init-main{padding-top:12px}.brand{margin-bottom:2px}.subtitle{margin-bottom:10px}.progress{margin-bottom:14px}.step-footer{padding-bottom:max(10px,env(safe-area-inset-bottom))}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
-<div class="init-container">
-  <div class="init-card">
-    <div class="init-header">
-      <div class="brand-icon">A</div>
-      <h1>ALLSPARK</h1>
-    </div>
-    <p class="init-subtitle"><span data-i18n="web_init_subtitle">Offline AI Survival System</span><span class="cursor-blink">_</span></p>
+<main class="init-container">
+  <div class="init-card" id="init-card">
+    <div class="init-main">
+      <header class="brand"><div class="brand-mark" aria-hidden="true">A</div><h1>ALLSPARK</h1></header>
+      <p class="subtitle" data-i18n="web_init_subtitle"></p>
+      <ol class="progress" aria-hidden="true">
+        <li id="dot-1"></li><li id="dot-2"></li><li id="dot-3"></li><li id="dot-4"></li>
+      </ol>
+      <section id="init-errors" class="error-summary hidden" role="alert" tabindex="-1" aria-labelledby="init-errors-title">
+        <h2 id="init-errors-title" data-i18n="web_init_error_summary_title"></h2><ul id="init-error-list"></ul>
+      </section>
 
-    <div class="step-dots">
-      <div class="step-dot" id="dot-1"></div>
-      <div class="step-dot" id="dot-2"></div>
-      <div class="step-dot" id="dot-3"></div>
-      <div class="step-dot" id="dot-4"></div>
-    </div>
+      <section class="step" id="step-1" aria-labelledby="step-1-title">
+        <h2 id="step-1-title" tabindex="-1" data-i18n="web_init_promise_title"></h2>
+        <div class="promise"><strong data-i18n="web_init_promise_heading"></strong><span data-i18n="web_init_promise_body"></span></div>
+        <div class="danger-note" data-sha256-placeholder="true" data-i18n="web_init_danger_boundary"></div>
+        <fieldset><legend data-i18n="web_init_lang_select"></legend>
+          <div class="language-grid" role="group">
+            <button type="button" class="language-button" id="lang-zh" data-action="language" data-lang="zh" aria-pressed="false">中文</button>
+            <button type="button" class="language-button" id="lang-en" data-action="language" data-lang="en" aria-pressed="false">English</button>
+          </div>
+        </fieldset>
+        <div class="step-footer"><button type="button" class="btn btn-primary" id="btn-step1-next" data-action="next" data-next="2" disabled data-i18n="web_init_begin_assessment"></button></div>
+      </section>
 
-    <!-- Step 1: Language -->
-    <div class="step hidden" id="step-1">
-      <h2><span class="material-symbols-outlined">language</span> <span data-i18n="web_init_lang_select">Language</span></h2>
-      <div class="lang-grid">
-        <button type="button" class="lang-btn" data-init-action="select-language" data-lang="zh" id="lang-zh" aria-pressed="false">
-          <div class="lang-name">中文</div>
-          <div class="lang-sub">Chinese UI</div>
-        </button>
-        <button type="button" class="lang-btn" data-init-action="select-language" data-lang="en" id="lang-en" aria-pressed="false">
-          <div class="lang-name">English</div>
-          <div class="lang-sub">English UI</div>
-        </button>
-      </div>
-      <div class="step-footer">
-        <div></div>
-        <button type="button" data-init-action="go-step" data-step="2" id="btn-step1-next" disabled class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
-      </div>
-    </div>
+      <section class="step hidden" id="step-2" aria-labelledby="step-2-title">
+        <h2 id="step-2-title" tabindex="-1" data-i18n="web_init_step_situation"></h2>
+        <p class="step-intro" data-i18n="web_init_explicit_intro"></p>
+        <form id="situation-form" novalidate>
+          <fieldset id="field-people_count"><legend data-i18n="assessment_field_people_count"></legend>
+            <div class="choice-row">
+              <label class="choice-button"><input type="radio" name="people-state" value="known"> <span data-i18n="init_assessment_known"></span></label>
+              <label class="choice-button"><input type="radio" name="people-state" value="unknown"> <span data-i18n="init_assessment_unknown"></span></label>
+            </div>
+            <div class="field"><label for="people-count" data-i18n="init_assessment_people_value"></label><input id="people-count" type="number" min="1" max="10000" step="1" disabled></div>
+          </fieldset>
+          <div class="field" id="field-health"><label for="health" data-i18n="assessment_field_health"></label><select id="health" required><option value="" data-i18n="web_init_choose_explicitly"></option><option value="healthy" data-i18n="q_health_healthy"></option><option value="minor_injury" data-i18n="q_health_minor"></option><option value="serious_injury" data-i18n="q_health_serious"></option><option value="chronic_condition" data-i18n="q_health_chronic"></option><option value="critical" data-i18n="q_health_critical"></option><option value="unknown" data-i18n="init_assessment_unknown"></option></select></div>
+          <div class="field" id="field-urgency"><label for="urgency" data-i18n="assessment_field_urgency"></label><select id="urgency" required><option value="" data-i18n="web_init_choose_explicitly"></option><option value="immediate_danger" data-i18n="q_urgency_immediate"></option><option value="stable_but_urgent" data-i18n="q_urgency_urgent"></option><option value="stable" data-i18n="q_urgency_stable"></option><option value="comfortable" data-i18n="q_urgency_comfortable"></option><option value="unknown" data-i18n="init_assessment_unknown"></option></select></div>
+          <div class="field" id="field-shelter"><label for="shelter" data-i18n="assessment_field_shelter"></label><select id="shelter" required><option value="" data-i18n="web_init_choose_explicitly"></option><option value="permanent_building" data-i18n="q_shelter_permanent"></option><option value="temporary_shelter" data-i18n="q_shelter_temporary"></option><option value="vehicle" data-i18n="q_shelter_vehicle"></option><option value="open_air" data-i18n="q_shelter_open_air"></option><option value="underground" data-i18n="q_shelter_underground"></option><option value="none" data-i18n="q_shelter_none"></option><option value="unknown" data-i18n="init_assessment_unknown"></option></select></div>
+          <fieldset id="field-threats"><legend data-i18n="assessment_field_threats"></legend>
+            <div class="choice-row">
+              <label class="choice-button"><input type="radio" name="threat-state" value="none"> <span data-i18n="init_assessment_threat_none"></span></label>
+              <label class="choice-button"><input type="radio" name="threat-state" value="selected"> <span data-i18n="init_assessment_threat_selected"></span></label>
+              <label class="choice-button"><input type="radio" name="threat-state" value="unknown"> <span data-i18n="init_assessment_unknown"></span></label>
+            </div>
+            <div id="threat-options" class="threat-grid hidden">
+              <label><input type="checkbox" value="extreme_weather"> <span data-i18n="q_threat_weather"></span></label><label><input type="checkbox" value="wildlife"> <span data-i18n="q_threat_wildlife"></span></label><label><input type="checkbox" value="contamination"> <span data-i18n="q_threat_contamination"></span></label><label><input type="checkbox" value="structural_collapse"> <span data-i18n="q_threat_collapse"></span></label><label><input type="checkbox" value="flooding"> <span data-i18n="q_threat_flooding"></span></label><label><input type="checkbox" value="fire_risk"> <span data-i18n="q_threat_fire"></span></label><label><input type="checkbox" value="human_threat"> <span data-i18n="q_threat_human"></span></label><label><input type="checkbox" value="disease"> <span data-i18n="q_threat_disease"></span></label>
+            </div>
+          </fieldset>
+        </form>
+        <div class="step-footer"><button type="button" class="btn btn-secondary" data-action="back" data-next="1" data-i18n="web_init_btn_back"></button><button type="button" class="btn btn-primary" data-action="situation-next" data-i18n="web_init_continue_resources"></button></div>
+      </section>
 
-    <!-- Step 2: Hardware -->
-    <div class="step hidden" id="step-2">
-      <h2><span class="material-symbols-outlined">bolt</span> <span data-i18n="web_init_hw_detect">Hardware Detection</span></h2>
-      <div id="hw-loading" class="loading-text" data-i18n="web_init_detecting">Detecting hardware...</div>
-      <div id="hw-info" class="hidden">
-        <div id="hw-tier-badge" class="tier-badge"></div>
-        <div class="hw-grid" id="hw-grid"></div>
-      </div>
-      <div class="step-footer">
-        <button type="button" data-init-action="go-step" data-step="1" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
-        <button data-init-action="go-step" data-step="3" id="btn-step2-next" disabled class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
-      </div>
-    </div>
+      <section class="step hidden" id="step-3" aria-labelledby="step-3-title">
+        <h2 id="step-3-title" tabindex="-1" data-i18n="web_init_step_resources"></h2>
+        <p class="step-intro" data-i18n="web_init_resource_intro"></p>
+        <form id="resource-form" class="resources" novalidate>
+        {% for resource, unit, max_value in [('power','Wh',1000000),('water','L',100000),('food','kcal',100000000),('fire','uses',100000),('storage','GB',100000)] %}
+          <fieldset class="resource-panel" id="field-{{ resource }}" data-resource="{{ resource }}" data-unit="{{ unit }}" data-soft-max="{{ max_value }}"><legend data-i18n="assessment_field_{{ resource }}"></legend>
+            <p class="helper" id="{{ resource }}-amount-status-label" data-i18n="web_init_amount_status"></p><div class="choice-row" role="radiogroup" aria-labelledby="{{ resource }}-amount-status-label">
+              <label class="choice-button"><input type="radio" name="{{ resource }}-amount-state" value="known"> <span data-i18n="init_assessment_known"></span></label>
+              <label class="choice-button"><input type="radio" name="{{ resource }}-amount-state" value="unknown"> <span data-i18n="init_assessment_unknown"></span></label>
+            </div>
+            <div class="field"><label for="{{ resource }}-amount"><span data-i18n="web_init_current_amount"></span> (<span data-i18n="resource_unit_{{ resource }}"></span>)</label><input id="{{ resource }}-amount" data-kind="amount" type="number" min="0" step="any" disabled></div>
+            <div class="rate-fields"><p class="helper" id="{{ resource }}-rate-status-label" data-i18n="web_init_rate_explicit"></p><div class="choice-row" role="radiogroup" aria-labelledby="{{ resource }}-rate-status-label">
+              <label class="choice-button"><input type="radio" name="{{ resource }}-rate-state" value="unknown"> <span data-i18n="init_assessment_rate_unknown"></span></label>
+              <label class="choice-button"><input type="radio" name="{{ resource }}-rate-state" value="estimate"> <span data-i18n="init_assessment_rate_estimate"></span></label>
+            </div><div class="rate-estimate hidden" id="{{ resource }}-rate-fields"><div class="field"><label for="{{ resource }}-consumption"><span data-i18n="init_assessment_daily_consumption"></span> (<span data-i18n="resource_unit_{{ resource }}"></span>/<span data-i18n="web_init_day_short"></span>)</label><input id="{{ resource }}-consumption" data-kind="rate" type="number" min="0" step="any" disabled></div><div class="field"><label for="{{ resource }}-intake"><span data-i18n="init_assessment_daily_intake"></span> (<span data-i18n="resource_unit_{{ resource }}"></span>/<span data-i18n="web_init_day_short"></span>)</label><input id="{{ resource }}-intake" data-kind="rate" type="number" min="0" step="any" disabled></div></div></div>
+            <label class="outlier hidden" id="{{ resource }}-outlier"><input type="checkbox" id="{{ resource }}-confirm-outlier"> <span data-i18n="web_init_outlier_ack"></span></label>
+          </fieldset>
+        {% endfor %}
+        </form>
+        <div class="step-footer"><button type="button" class="btn btn-secondary" data-action="back" data-next="2" data-i18n="web_init_btn_back"></button><button type="button" class="btn btn-primary" id="btn-review" data-action="review" data-i18n="web_init_review"></button></div>
+      </section>
 
-    <!-- Step 3: AI Model -->
-    <div class="step hidden" id="step-3">
-      <h2><span class="material-symbols-outlined">smart_toy</span> <span data-i18n="web_init_model_setup">AI Model Setup</span></h2>
-      <div id="model-info"></div>
-      <div id="model-actions"></div>
-      <div class="step-footer">
-        <button data-init-action="go-step" data-step="2" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
-        <button data-init-action="go-step" data-step="4" class="btn-primary"><span data-i18n="web_init_btn_next">Next →</span></button>
-      </div>
-      <button type="button" class="step-skip" data-init-action="go-step" data-step="4" data-i18n="web_init_btn_skip">Skip model setup →</button>
-    </div>
-
-    <!-- Step 4: Survivor -->
-    <div class="step hidden" id="step-4">
-      <h2><span class="material-symbols-outlined">person</span> <span data-i18n="web_init_survivor_profile">Survivor Profile</span></h2>
-      <input class="init-input" id="survivor-name" type="text" data-placeholder-zh="你的名字" data-placeholder-en="Your name" placeholder="Your name" value="Survivor">
-      <div id="questionnaire" class="questionnaire"></div>
-      <div class="step-footer">
-        <button data-init-action="go-step" data-step="3" class="btn-outline"><span data-i18n="web_init_btn_back">← Back</span></button>
-        <button data-init-action="complete" id="btn-complete" class="btn-primary">
-          <span class="material-symbols-outlined" style="font-size:16px;">local_fire_department</span> <span data-i18n="web_init_btn_init">Initialize AllSpark</span>
-        </button>
-      </div>
+      <section class="step hidden" id="step-4" aria-labelledby="step-4-title">
+        <h2 id="step-4-title" tabindex="-1" data-i18n="web_init_step_summary"></h2><p class="step-intro" data-i18n="web_init_summary_intro"></p>
+        <div class="summary-grid"><section class="summary-box"><h3 data-i18n="web_init_summary_known"></h3><ul id="summary-known"></ul></section><section class="summary-box"><h3 data-i18n="web_init_summary_unknown"></h3><ul id="summary-unknown"></ul></section><section class="summary-box actions"><h3 data-i18n="web_init_summary_resources"></h3><ul id="summary-resources"></ul></section><section class="summary-box actions"><h3 data-i18n="web_init_summary_actions"></h3><ul id="summary-actions"></ul></section></div>
+        <details><summary data-i18n="web_init_hardware_optional"></summary><p id="hardware-summary" class="helper"></p><p class="helper" data-i18n="web_init_model_deferred"></p></details>
+        <label class="confirm-row"><input id="assessment-confirmed" type="checkbox"> <span data-i18n="web_init_confirm_truth"></span></label>
+        <div class="step-footer"><button type="button" class="btn btn-secondary" data-action="back" data-next="3" data-i18n="web_init_btn_back"></button><button type="button" class="btn btn-primary" id="btn-complete" data-action="complete" disabled data-i18n="web_init_confirm_publish"></button></div>
+      </section>
     </div>
   </div>
-</div>
-
+</main>
 <script nonce="{{ csp_nonce }}">
-// Server-injected i18n keys (web_*/error_*/q_* ...) for label resolution.
-window.I18N = {{ web_i18n | tojson }};
-let currentStep = 0;
-// SHA-12: detect browser language as default so the wizard isn't English-by-accident.
-let selectedLang = (navigator.language && navigator.language.toLowerCase().startsWith('zh')) ? 'zh' : 'en';
-let hwData = null;
-let questionnaireData = null;
-let selectedThreats = new Set();
-let selectedSkills = new Set();
-
-function applyLocalIcons() {
-  const map = {
-    bolt: "⚡", language: "文", smart_toy: "◇", person: "●", download: "↓",
-    star: "★", warning: "!", check_circle: "✓", error: "×", sync: "↻",
-    local_fire_department: "△"
-  };
-  document.querySelectorAll(".material-symbols-outlined").forEach(el => {
-    const key = (el.textContent || "").trim();
-    if (key.length <= 1) return;
-    el.textContent = map[key] || key.slice(0, 1) || "•";
-  });
-  document.documentElement.classList.add("icons-ready");
-}
-
-const I18N = {
-  zh: {
-    web_init_hw_detect: "硬件检测",
-    web_init_detecting: "正在检测硬件...",
-    web_init_lang_select: "语言",
-    web_init_model_setup: "AI 模型设置",
-    web_init_survivor_profile: "生存者档案",
-    web_init_btn_next: "下一步 →",
-    web_init_btn_back: "← 上一步",
-    web_init_btn_skip: "跳过模型设置 →",
-    web_init_btn_init: "初始化火种",
-    web_init_name_placeholder: "你的名字",
-    web_init_download: "下载 {model}（约 {size}GB）",
-    web_init_downloading: "下载中...",
-    web_init_dl_starting: "开始下载...",
-    web_init_dl_done: "下载完成！",
-    web_init_dl_downloaded: "已下载：{mb} MB",
-    web_init_dl_error: "下载失败，已尝试备用源",
-    web_init_dl_manual_hint: "手动下载：访问 hf-mirror.com 搜索模型，下载 .gguf 文件放到 ~/.allspark/models/",
-    web_init_model_ready: "模型就绪",
-    web_init_model_found: "模型文件已找到",
-    web_init_model_not_downloaded: "尚未下载",
-    web_init_model_recommended: "推荐",
-    web_init_no_llm: "硬件不支持 LLM，将使用规则引擎提供生存建议。",
-    web_init_initializing: "初始化中...",
-    hw_label_cpu: "CPU",
-    hw_label_cores: "核心",
-    hw_label_ram: "内存",
-    hw_label_storage: "存储",
-    hw_label_gpu: "GPU",
-    hw_label_os: "系统",
-    model_size_speed: "大小：约 {size}GB | 速度：{speed} tokens/s",
-    web_init_subtitle: "离线 AI 生存系统",
-    web_init_default_survivor_name: "幸存者",
-    web_init_dl_error_prefix: "错误",
-    web_init_dl_failed: "失败",
-    web_init_dl_progress_error: "查询下载进度失败",
-    web_init_complete_error: "错误",
-    web_init_tier_phantom: "幻影 (2GB)",
-    web_init_tier_minimum: "最低 (4GB)",
-    web_init_tier_recommended: "推荐 (8GB)",
-    web_init_tier_comfortable: "舒适 (16GB)",
-    web_init_tier_flagship: "旗舰 (32GB+)",
-    web_init_tier_unknown: "未知",
-    web_init_value_none: "无",
-    web_init_q_location: "你的位置类型",
-    web_init_q_shelter: "当前庇护",
-    web_init_q_health: "健康状况",
-    web_init_q_urgency: "紧迫程度",
-    web_init_q_threats: "面临的威胁（可多选）",
-    web_init_q_skills: "已有技能（可多选）",
-    web_init_q_optional: "（可选，可跳过）",
-  },
-  en: {
-    web_init_hw_detect: "Hardware Detection",
-    web_init_detecting: "Detecting hardware...",
-    web_init_lang_select: "Language",
-    web_init_model_setup: "AI Model Setup",
-    web_init_survivor_profile: "Survivor Profile",
-    web_init_btn_next: "Next →",
-    web_init_btn_back: "← Back",
-    web_init_btn_skip: "Skip model setup →",
-    web_init_btn_init: "Initialize AllSpark",
-    web_init_name_placeholder: "Your name",
-    web_init_download: "Download {model} (~{size}GB)",
-    web_init_downloading: "Downloading...",
-    web_init_dl_starting: "Starting...",
-    web_init_dl_done: "Download complete!",
-    web_init_dl_downloaded: "Downloaded: {mb} MB",
-    web_init_dl_error: "Download failed, tried alternative source",
-    web_init_dl_manual_hint: "Manual: visit huggingface.co, search model, download .gguf to ~/.allspark/models/",
-    web_init_model_ready: "Model Ready",
-    web_init_model_found: "Model file found",
-    web_init_model_not_downloaded: "Not downloaded yet",
-    web_init_model_recommended: "Recommended",
-    web_init_no_llm: "Hardware does not support LLM. Rule engine will provide survival advice.",
-    web_init_initializing: "Initializing...",
-    hw_label_cpu: "CPU",
-    hw_label_cores: "Cores",
-    hw_label_ram: "RAM",
-    hw_label_storage: "Storage",
-    hw_label_gpu: "GPU",
-    hw_label_os: "OS",
-    model_size_speed: "Size: ~{size}GB | Speed: {speed} tokens/s",
-    web_init_subtitle: "Offline AI Survival System",
-    web_init_default_survivor_name: "Survivor",
-    web_init_dl_error_prefix: "Error",
-    web_init_dl_failed: "Failed",
-    web_init_dl_progress_error: "Error checking progress",
-    web_init_complete_error: "Error",
-    web_init_tier_phantom: "Phantom (2GB)",
-    web_init_tier_minimum: "Minimum (4GB)",
-    web_init_tier_recommended: "Recommended (8GB)",
-    web_init_tier_comfortable: "Comfortable (16GB)",
-    web_init_tier_flagship: "Flagship (32GB+)",
-    web_init_tier_unknown: "Unknown",
-    web_init_value_none: "None",
-    web_init_q_location: "Your location type",
-    web_init_q_shelter: "Current shelter",
-    web_init_q_health: "Health status",
-    web_init_q_urgency: "Urgency level",
-    web_init_q_threats: "Threats you face (multi-select)",
-    web_init_q_skills: "Skills you have (multi-select)",
-    web_init_q_optional: "(optional, skippable)",
-  }
-};
-
-function i18n(key, params) {
-  const lang = selectedLang || (navigator.language.startsWith('zh') ? 'zh' : 'en');
-  let text = (I18N[lang] && I18N[lang][key]) || (I18N.en[key]) || key;
-  if (params) {
-    for (const [k, v] of Object.entries(params)) {
-      text = text.replace(new RegExp("\\{" + k + "\\}", "g"), v);
-    }
-  }
-  return text;
-}
-
-function applyI18n() {
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    const key = el.getAttribute("data-i18n");
-    el.textContent = i18n(key);
-  });
-  const nameInput = document.getElementById("survivor-name");
-  if (nameInput) {
-    nameInput.placeholder = i18n("web_init_name_placeholder");
-  }
-  if (questionnaireData !== null) renderQuestionnaire();
-}
-
-async function api(path, opts = {}) {
-  const res = await fetch(path, opts);
-  return res.json();
-}
-
-function goStep(n) {
-  currentStep = n;
-  document.querySelectorAll(".step").forEach(el => el.classList.add("hidden"));
-  document.getElementById("step-" + n).classList.remove("hidden");
-  document.querySelectorAll(".step-dot").forEach((dot, i) => {
-    dot.classList.remove("active", "done");
-    if (i + 1 < n) dot.classList.add("done");
-    if (i + 1 === n) dot.classList.add("active");
-  });
-  if (n === 1) {
-    // SHA-12: pre-highlight the detected default language and enable Next.
-    const detected = selectedLang;
-    if (detected) {
-      document.querySelectorAll(".lang-btn").forEach(b => {
-        b.classList.remove("selected");
-        b.setAttribute("aria-pressed", "false");
-      });
-      const btn = document.getElementById("lang-" + detected);
-      if (btn) {
-        btn.classList.add("selected");
-        btn.setAttribute("aria-pressed", "true");
-      }
-      const next = document.getElementById("btn-step1-next");
-      if (next) next.disabled = false;
-    }
-  }
-  if (n === 2) loadHardware();
-  if (n === 3) loadModels();
-  if (n === 4) loadQuestionnaire();
-  applyI18n();
-  document.documentElement.lang = selectedLang === "zh" ? "zh-CN" : "en";
-}
-
-async function loadHardware() {
-  if (!hwData) hwData = await api("/api/init/hardware");
-  renderHardware();
-}
-
-function renderHardware() {
-  const data = hwData;
-  if (!data) return;
-  document.getElementById("hw-loading").classList.add("hidden");
-  document.getElementById("hw-info").classList.remove("hidden");
-
-  const tierMap = {
-    phantom: ["web_init_tier_phantom", "tier-phantom"],
-    minimum: ["web_init_tier_minimum", "tier-minimum"],
-    recommended: ["web_init_tier_recommended", "tier-recommended"],
-    comfortable: ["web_init_tier_comfortable", "tier-comfortable"],
-    flagship: ["web_init_tier_flagship", "tier-flagship"],
-  };
-  const [tierKey, tierClass] = tierMap[data.tier] || ["web_init_tier_unknown", "tier-minimum"];
-  const badge = document.getElementById("hw-tier-badge");
-  badge.textContent = i18n(tierKey);
-  badge.className = "tier-badge " + tierClass;
-
-  document.getElementById("hw-grid").innerHTML = [
-    [i18n("hw_label_cpu"), data.cpu_model || data.cpu_arch],
-    [i18n("hw_label_cores"), data.cpu_cores],
-    [i18n("hw_label_ram"), data.ram_total_gb + " GB"],
-    [i18n("hw_label_storage"), data.storage_available_gb + " / " + data.storage_total_gb + " GB"],
-    [i18n("hw_label_gpu"), data.gpu_info || i18n("web_init_value_none")],
-    [i18n("hw_label_os"), data.os_name],
-  ].map(([l, v]) => '<div class="hw-item"><div class="label">' + l + '</div><div class="value">' + v + '</div></div>').join("");
-
-  document.getElementById("btn-step2-next").disabled = false;
-}
-
-function selectLang(lang, el) {
-  selectedLang = lang;
-  document.querySelectorAll(".lang-btn").forEach(b => { b.classList.remove("selected"); b.setAttribute("aria-pressed", "false"); });
-  el.classList.add("selected");
-  el.setAttribute("aria-pressed", "true");
-  document.getElementById("btn-step1-next").disabled = false;
-  applyI18n();
-  if (hwData) renderHardware();
-  if (currentStep === 3) loadModels();
-}
-
-async function loadModels() {
-  const container = document.getElementById("model-info");
-  const actions = document.getElementById("model-actions");
-  if (!hwData) return;
-
-  const model = hwData.recommended_model;
-  const size = hwData.model_size_gb;
-  const speed = hwData.model_speed_tps;
-  const downloaded = hwData.model_downloaded;
-
-  let html = '<div class="model-card">';
-  html += '<div class="model-name"><span class="material-symbols-outlined text-primary-container" style="font-size:16px;">star</span> ' + model + ' (' + i18n("web_init_model_recommended") + ')</div>';
-  html += '<div class="model-meta">' + i18n("model_size_speed", {size: size, speed: speed}) + '</div>';
-
-  if (downloaded) {
-    html += '<div class="model-status text-success"><span class="material-symbols-outlined" style="font-size:14px;font-variation-settings:\'FILL\' 1">check_circle</span> ' + i18n("web_init_model_found") + '</div>';
-  } else {
-    html += '<div class="model-status text-warn"><span class="material-symbols-outlined" style="font-size:14px;">download</span> ' + i18n("web_init_model_not_downloaded") + '</div>';
-  }
-  html += '</div>';
-
-  if (!downloaded && hwData.llm_enabled) {
-    html += '<div class="download-section">';
-    html += '<button data-init-action="download-model" data-model="' + escQ(model) + '" id="btn-download" class="btn-primary">';
-    html += '<span class="material-symbols-outlined" style="font-size:16px;">download</span> ' + i18n("web_init_download", {model: model, size: size}) + '</button>';
-    html += '<div id="download-progress" class="download-progress hidden">';
-    html += '<div class="progress-bar"><div class="progress-fill" id="dl-fill" style="width:0%"></div></div>';
-    html += '<div class="download-status" id="dl-status">' + i18n("web_init_dl_starting") + '</div></div></div>';
-  } else if (!hwData.llm_enabled) {
-    html += '<div class="no-llm-warning"><span class="material-symbols-outlined" style="font-size:14px;">warning</span> ' + i18n("web_init_no_llm") + '</div>';
-  }
-
-  container.innerHTML = html;
-  actions.innerHTML = "";
-}
-
-async function downloadModel(modelName) {
-  const btn = document.getElementById("btn-download");
-  btn.disabled = true;
-  btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:16px;">sync</span> ' + i18n("web_init_downloading");
-  document.getElementById("download-progress").classList.remove("hidden");
-
-  try {
-    const result = await api("/api/init/download?model_name=" + encodeURIComponent(modelName), {method: "POST"});
-    if (result.status === "error") {
-      document.getElementById("dl-status").textContent = i18n("web_init_dl_error_prefix") + ": " + (result.message || i18n("web_init_dl_error"));
-      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> ' + i18n("web_init_dl_failed");
-      btn.disabled = false;
-      return;
-    }
-  } catch(e) {
-    document.getElementById("dl-status").textContent = i18n("web_init_dl_error_prefix") + ": " + e.message;
-    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> ' + i18n("web_init_dl_failed");
-    btn.disabled = false;
-    return;
-  }
-
-  const sizeBytes = (hwData.model_size_gb || 2) * 1024 * 1024 * 1024;
-  const checkInterval = setInterval(async () => {
-    try {
-      const prog = await api("/api/init/download_progress?model_name=" + encodeURIComponent(modelName));
-      if (prog.status === "done") {
-        clearInterval(checkInterval);
-        document.getElementById("dl-fill").style.width = "100%";
-        document.getElementById("dl-status").textContent = i18n("web_init_dl_done");
-        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">check_circle</span> ' + i18n("web_init_model_ready");
-        hwData.model_downloaded = true;
-      } else if (prog.status === "error") {
-        clearInterval(checkInterval);
-        document.getElementById("dl-status").innerHTML = i18n("web_init_dl_error") + '<br><span style="font-size:10px;">' + i18n("web_init_dl_manual_hint") + '</span>';
-        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">error</span> ' + i18n("web_init_dl_failed");
-        btn.disabled = false;
-      } else if (prog.status === "downloading") {
-        const pct = Math.min(95, (prog.current_bytes / sizeBytes) * 100);
-        document.getElementById("dl-fill").style.width = pct + "%";
-        const mb = (prog.current_bytes / (1024*1024)).toFixed(0);
-        document.getElementById("dl-status").textContent = i18n("web_init_dl_downloaded", {mb: mb});
-      }
-    } catch(e) {
-      clearInterval(checkInterval);
-      document.getElementById("dl-status").textContent = i18n("web_init_dl_progress_error");
-    }
-  }, 2000);
-}
-
-async function loadQuestionnaire() {
-  const el = document.getElementById("questionnaire");
-  if (!el) return;
-  // Already loaded — just re-apply i18n labels.
-  if (questionnaireData !== null) { renderQuestionnaire(); return; }
-  try {
-    const data = await api("/api/init/questionnaire");
-    questionnaireData = (data && data.questions) ? data.questions : {};
-  } catch (e) {
-    questionnaireData = {};
-  }
-  renderQuestionnaire();
-}
-
-function qLabel(opt) {
-  return (opt.labels && opt.labels[selectedLang]) || opt.label_key;
-}
-
-function renderQuestionnaire() {
-  const el = document.getElementById("questionnaire");
-  if (!el || !questionnaireData) return;
-  const previousValues = {};
-  el.querySelectorAll("select[id]").forEach(select => {
-    previousValues[select.id] = select.value;
-  });
-  const q = questionnaireData;
-  const optional = ' <span class="text-secondary" style="font-size:10px;">' + i18n("web_init_q_optional") + '</span>';
-
-  function selectField(id, opts, labelKey) {
-    const opts_html = ['<option value="">' + i18n("web_init_q_optional").replace(/[()]/g, '').trim() + '</option>']
-      .concat(opts.map(o => '<option value="' + o.key + '">' + escQ(qLabel(o)) + '</option>')).join("");
-    return '<div class="q-field"><label class="q-label" for="' + id + '">' + i18n(labelKey) + optional + '</label>' +
-      '<select class="q-select" id="' + id + '">' + opts_html + '</select></div>';
-  }
-
-  function chipField(id, opts, labelKey, selected) {
-    const chips = opts.map(o => {
-      const on = selected.has(o.key) ? ' selected' : '';
-      const pressed = selected.has(o.key) ? 'true' : 'false';
-      return '<button type="button" class="q-chip' + on + '" data-key="' + escQ(o.key) + '" data-question-id="' + escQ(id) + '" aria-pressed="' + pressed + '">' + escQ(qLabel(o)) + '</button>';
-    }).join("");
-    const labelId = id + '-label';
-    return '<div class="q-field"><div class="q-label" id="' + labelId + '">' + i18n(labelKey) + optional + '</div><div class="q-chips" id="' + id + '" role="group" aria-labelledby="' + labelId + '">' + chips + '</div></div>';
-  }
-
-  let html = "";
-  if (q.location_types) html += selectField("q-location", q.location_types, "web_init_q_location");
-  if (q.shelter_statuses) html += selectField("q-shelter", q.shelter_statuses, "web_init_q_shelter");
-  if (q.health_statuses) html += selectField("q-health", q.health_statuses, "web_init_q_health");
-  if (q.urgency_levels) html += selectField("q-urgency", q.urgency_levels, "web_init_q_urgency");
-  if (q.threat_types) html += chipField("q-threats", q.threat_types, "web_init_q_threats", selectedThreats);
-  if (q.skill_categories) html += chipField("q-skills", q.skill_categories, "web_init_q_skills", selectedSkills);
-  el.innerHTML = html;
-  Object.entries(previousValues).forEach(([id, value]) => {
-    const select = document.getElementById(id);
-    if (select) select.value = value;
-  });
-}
-
-function escQ(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-function toggleChip(el, id) {
-  const key = el.getAttribute("data-key");
-  const set = id === "q-threats" ? selectedThreats : selectedSkills;
-  if (set.has(key)) { set.delete(key); el.classList.remove("selected"); el.setAttribute("aria-pressed", "false"); }
-  else { set.add(key); el.classList.add("selected"); el.setAttribute("aria-pressed", "true"); }
-}
-
-async function completeInit() {
-  const btn = document.getElementById("btn-complete");
-  btn.disabled = true;
-  btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:16px;">sync</span> ' + i18n("web_init_initializing");
-
-  const name = document.getElementById("survivor-name").value.trim() || i18n("web_init_default_survivor_name");
-  const lang = selectedLang || "zh";
-
-  // Collect structured questionnaire fields (SHA-56). Empty values are allowed
-  // — the user may skip; the server still records questionnaire_version=2.
-  const val = id => { const el = document.getElementById(id); return el ? el.value : ""; };
-  const payload = {
-    language: lang,
-    survivor_name: name,
-    location_type: val("q-location"),
-    shelter: val("q-shelter"),
-    health: val("q-health"),
-    urgency: val("q-urgency"),
-    threats: Array.from(selectedThreats).join(","),
-    skills: Array.from(selectedSkills).join(","),
-  };
-
-  try {
-    await api("/api/init/complete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    window.location.reload();
-  } catch(e) {
-    btn.textContent = i18n("web_init_complete_error") + ": " + e.message;
-    btn.disabled = false;
-  }
-}
-
-window.addEventListener("load", () => {
-  applyLocalIcons();
-  const iconObserver = new MutationObserver(() => applyLocalIcons());
-  iconObserver.observe(document.body, { childList: true, subtree: true });
-});
-document.addEventListener("click", event => {
-  const target = event.target.closest("[data-init-action], .q-chip[data-question-id]");
-  if (!target) return;
-  if (target.classList.contains("q-chip")) {
-    toggleChip(target, target.dataset.questionId);
-    return;
-  }
-  const action = target.dataset.initAction;
-  if (action === "select-language") selectLang(target.dataset.lang, target);
-  else if (action === "go-step") goStep(Number(target.dataset.step));
-  else if (action === "download-model") downloadModel(target.dataset.model);
-  else if (action === "complete") completeInit();
-});
-goStep(1);
+const INIT_I18N={{ init_i18n|tojson }};
+let selectedLang=null,currentStep=1,lastAssessment=null,lastSummary=null,hardwareInfo=null;
+const $=id=>document.getElementById(id);
+function tr(key){return (INIT_I18N[selectedLang||'en']||{})[key]||key}
+function applyTranslations(){document.documentElement.lang=selectedLang||'en';document.title='ALLSPARK — '+tr('web_init_document_title');document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=tr(el.dataset.i18n)});document.querySelectorAll('[data-i18n-aria-label]').forEach(el=>el.setAttribute('aria-label',tr(el.dataset.i18nAriaLabel)));renderHardwareSummary()}
+function clearErrors(){ $('init-errors').classList.add('hidden');$('init-error-list').replaceChildren() }
+function fieldLabel(field){let domain=field.startsWith('resources.')?field.split('.')[1]:field.split('.')[0];return tr('assessment_field_'+domain)}
+function errorMessage(error){let template=tr('error_assessment_'+error.code);return template.replace('{field}',fieldLabel(error.field))}
+function errorFocusTarget(error){const parts=error.field.split('.');if(parts[0]==='resources'){const type=parts[1],leaf=parts.at(-1);if(error.code==='outlier_confirmation')return $(type+'-confirm-outlier');if(leaf==='amount')return $(type+'-amount');if(leaf==='daily_consumption')return $(type+'-consumption');if(leaf==='daily_intake')return $(type+'-intake');if(parts[2]==='rates')return document.querySelector(`input[name="${type}-rate-state"]`);if(leaf==='status')return document.querySelector(`input[name="${type}-amount-state"]`);return document.querySelector(`#field-${type} input:not([disabled])`)}if(parts[0]==='people_count')return $('people-count').disabled?document.querySelector('input[name="people-state"]'):$('people-count');if(parts[0]==='threats')return document.querySelector('input[name="threat-state"]');return $(parts[0])}
+function showErrors(errors){const summary=$('init-errors'),list=$('init-error-list');list.replaceChildren();errors.forEach(error=>{const li=document.createElement('li'),a=document.createElement('a'),fieldId='field-'+(error.field.startsWith('resources.')?error.field.split('.')[1]:error.field.split('.')[0]);a.href='#'+fieldId;a.textContent=errorMessage(error);a.addEventListener('click',event=>{event.preventDefault();const target=errorFocusTarget(error);target?.scrollIntoView({block:'center'});target?.focus()});li.append(a);list.append(li);if(error.code==='outlier_confirmation'&&error.field.startsWith('resources.')){$(error.field.split('.')[1]+'-outlier').classList.remove('hidden')}});summary.classList.remove('hidden');summary.focus()}
+function showStep(step){currentStep=step;document.querySelectorAll('.step').forEach(el=>el.classList.add('hidden'));$('step-'+step).classList.remove('hidden');for(let i=1;i<=4;i++){const dot=$('dot-'+i);dot.className=i<step?'done':i===step?'active':'';dot.setAttribute('aria-current',i===step?'step':'false')}clearErrors();$('init-card').scrollTop=0;$('step-'+step+'-title').focus()}
+function selectLanguage(lang){selectedLang=lang;document.querySelectorAll('.language-button').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.lang===lang)));$('btn-step1-next').disabled=false;applyTranslations();if(lastSummary)populateSummary(lastSummary)}
+function explicitFact(id){const value=$(id).value;if(value==='unknown')return {status:'unknown'};return {status:'known',value}}
+function collectAssessment(){const peopleState=document.querySelector('input[name="people-state"]:checked')?.value;const people=peopleState==='known'?{status:'known',value:$('people-count').value}:{status:peopleState};const threatState=document.querySelector('input[name="threat-state"]:checked')?.value;const threats={status:threatState,values:threatState==='selected'?Array.from(document.querySelectorAll('#threat-options input:checked')).map(input=>input.value):[]};const resources={};document.querySelectorAll('.resource-panel').forEach(panel=>{const type=panel.dataset.resource,amountState=document.querySelector(`input[name="${type}-amount-state"]:checked`)?.value,rateState=document.querySelector(`input[name="${type}-rate-state"]:checked`)?.value;const resource={status:amountState,rates:{status:rateState},confirm_outlier:$(type+'-confirm-outlier').checked};if(amountState==='known')resource.amount=$(type+'-amount').value;if(rateState==='estimate'){resource.rates.basis='group_total';resource.rates.daily_consumption=$(type+'-consumption').value;resource.rates.daily_intake=$(type+'-intake').value}resources[type]=resource});return {people_count:people,health:explicitFact('health'),urgency:explicitFact('urgency'),shelter:explicitFact('shelter'),threats,resources,confirmed:false}}
+function localSituationErrors(){const errors=[];const peopleState=document.querySelector('input[name="people-state"]:checked')?.value;if(!peopleState)errors.push({field:'people_count',code:'explicit_status_required'});else if(peopleState==='known'&&!$('people-count').value)errors.push({field:'people_count',code:'not_integer'});['health','urgency','shelter'].forEach(id=>{if(!$(id).value)errors.push({field:id,code:'explicit_status_required'})});const threatState=document.querySelector('input[name="threat-state"]:checked')?.value;if(!threatState)errors.push({field:'threats',code:'threat_status_required'});else if(threatState==='selected'&&!document.querySelector('#threat-options input:checked'))errors.push({field:'threats',code:'threat_selection_required'});return errors}
+async function api(path,options={}){const response=await fetch(path,options);let payload={};try{payload=await response.json()}catch(error){payload={detail:String(error)}}if(!response.ok){const problem=new Error(payload.detail||response.statusText);problem.payload=payload;problem.status=response.status;throw problem}return payload}
+function handleApiError(error){const errors=error.payload?.errors||[{field:'assessment',code:'object_required'}];const resourceError=errors.some(item=>item.field.startsWith('resources.'));showStep(resourceError?3:2);showErrors(errors)}
+function localizedUnit(domain){return tr('resource_unit_'+domain)}
+function displayValue(fact){if(fact.domain==='threats'){if(fact.status==='none')return tr('init_assessment_threat_none');return fact.value.map(value=>tr('q_threat_'+({extreme_weather:'weather',structural_collapse:'collapse',fire_risk:'fire',human_threat:'human'}[value]||value))).join(', ')}const keyMaps={health:'q_health_',urgency:'q_urgency_',shelter:'q_shelter_'};const prefixes=keyMaps[fact.domain];if(prefixes){const suffix={minor_injury:'minor',serious_injury:'serious',chronic_condition:'chronic',immediate_danger:'immediate',stable_but_urgent:'urgent',permanent_building:'permanent',temporary_shelter:'temporary',open_air:'open_air'}[fact.value]||fact.value;return tr(prefixes+suffix)}return String(fact.value)+(fact.unit?' '+localizedUnit(fact.domain):'')}
+function populateSummary(summary){const known=$('summary-known'),unknown=$('summary-unknown'),resources=$('summary-resources'),actions=$('summary-actions');known.replaceChildren();unknown.replaceChildren();resources.replaceChildren();actions.replaceChildren();summary.known.forEach(fact=>{const li=document.createElement('li');li.textContent=tr('assessment_field_'+fact.domain)+': '+displayValue(fact);known.append(li)});const localizedTime=new Date(summary.as_of).toLocaleString(selectedLang==='zh'?'zh-CN':'en-US');const time=document.createElement('li');time.textContent=tr('assessment_field_as_of')+': '+localizedTime;known.append(time);summary.resources.forEach(resource=>{const li=document.createElement('li'),unit=localizedUnit(resource.domain),amount=resource.amount_status==='known'?resource.amount+' '+unit:tr('init_assessment_unknown'),basis=resource.rate_basis==='group_total'?tr('web_init_group_total_basis'):tr('init_assessment_unknown'),rate=resource.rate_status==='estimate'?tr('web_init_rate_summary').replace('{consumption}',resource.daily_consumption+' '+unit+'/'+tr('web_init_day_short')).replace('{intake}',resource.daily_intake+' '+unit+'/'+tr('web_init_day_short')).replace('{source}',tr('resource_source_'+resource.source))+' · '+basis:tr('init_assessment_rate_unknown');li.textContent=tr('assessment_field_'+resource.domain)+': '+tr('web_init_amount_summary').replace('{amount}',amount)+'; '+rate+'; '+tr('assessment_field_as_of')+' '+localizedTime;resources.append(li)});summary.unknown.forEach(domain=>{const li=document.createElement('li'),rate=domain.endsWith('_rate'),base=rate?domain.slice(0,-5):domain;li.textContent=tr('assessment_field_'+base)+(rate?tr('init_assessment_rate_suffix'):'');unknown.append(li)});summary.actions.forEach(action=>{const li=document.createElement('li');li.textContent=tr('assessment_gap_'+action.domain+'_title')+' — '+tr(action.disposition==='created'?'web_init_action_created':'web_init_action_deferred');if(action.disposition==='deferred')li.className='deferred';actions.append(li)})}
+async function reviewAssessment(){clearErrors();const assessment=collectAssessment();try{const result=await api('/api/init/assessment/preview',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({language:selectedLang,assessment})});assessment.as_of=result.summary.as_of;lastAssessment=assessment;lastSummary=result.summary;populateSummary(lastSummary);$('assessment-confirmed').checked=false;$('btn-complete').disabled=true;showStep(4)}catch(error){handleApiError(error)}}
+async function completeInit(){if(!lastAssessment||!$('assessment-confirmed').checked)return;const button=$('btn-complete');button.disabled=true;lastAssessment.confirmed=true;try{await api('/api/init/complete',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({language:selectedLang,assessment:lastAssessment,skills:[]})});window.location.reload()}catch(error){lastAssessment.confirmed=false;button.disabled=false;handleApiError(error)}}
+document.addEventListener('click',event=>{const target=event.target.closest('[data-action]');if(!target)return;const action=target.dataset.action;if(action==='language')selectLanguage(target.dataset.lang);else if(action==='next')showStep(Number(target.dataset.next));else if(action==='back')showStep(Number(target.dataset.next));else if(action==='situation-next'){const errors=localSituationErrors();if(errors.length)showErrors(errors);else showStep(3)}else if(action==='review')reviewAssessment();else if(action==='complete')completeInit()});
+document.addEventListener('change',event=>{const input=event.target;if(input.name==='people-state'){const known=input.value==='known';$('people-count').disabled=!known;if(!known)$('people-count').value=''}if(input.name==='threat-state'){$('threat-options').classList.toggle('hidden',input.value!=='selected');if(input.value!=='selected')document.querySelectorAll('#threat-options input').forEach(box=>box.checked=false)}const amountMatch=input.name?.match(/^(.+)-amount-state$/);if(amountMatch){const field=$(amountMatch[1]+'-amount');field.disabled=input.value!=='known';if(input.value!=='known')field.value=''}const rateMatch=input.name?.match(/^(.+)-rate-state$/);if(rateMatch){const type=rateMatch[1],estimate=input.value==='estimate';$(type+'-rate-fields').classList.toggle('hidden',!estimate);[type+'-consumption',type+'-intake'].forEach(id=>{$(id).disabled=!estimate;if(!estimate)$(id).value=''})}if(input.id==='assessment-confirmed')$('btn-complete').disabled=!input.checked});
+function renderHardwareSummary(){const element=$('hardware-summary');if(!hardwareInfo){element.textContent=tr('web_init_hardware_loading');return}if(hardwareInfo.error){element.textContent=tr('web_init_hardware_unavailable');return}element.textContent=tr('web_init_hardware_summary').replace('{ram}',String(hardwareInfo.ram_total_gb)).replace('{tier}',String(hardwareInfo.tier))}
+api('/api/init/hardware').then(info=>{hardwareInfo=info;renderHardwareSummary()}).catch(()=>{hardwareInfo={error:true};renderHardwareSummary()});
+showStep(1);selectLanguage((navigator.language||'en').toLowerCase().startsWith('zh')?'zh':'en');
 </script>
 </body>
 </html>
