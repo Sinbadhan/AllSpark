@@ -544,7 +544,7 @@ def audit_bundled_risk_metadata() -> dict:
     for files in _TIER_FILES.values():
         for filename in files.values():
             entries.extend(_load_yaml(_DATA_PATH.parent.parent / "knowledge" / filename))
-    classified = [
+    metadata_present = [
         entry for entry in entries
         if entry.get("risk_level") in {"pending_review", "low", "medium", "high", "critical"}
         and entry.get("review_status") in KNOWLEDGE_REVIEW_STATUSES
@@ -552,18 +552,32 @@ def audit_bundled_risk_metadata() -> dict:
         and entry.get("hazards")
         and not (set(entry["hazards"]) - VALID_HAZARDS)
     ]
-    approved = [entry for entry in classified if entry["review_status"] == "approved"]
+    unknown_hazard_entries = [
+        entry for entry in metadata_present if "unknown" in entry["hazards"]
+    ]
+    approved = [
+        entry for entry in metadata_present if entry["review_status"] == "approved"
+    ]
+    pending = [
+        entry
+        for entry in metadata_present
+        if entry["review_status"] == "pending_external_review"
+    ]
     fail_safe_high_risk = [
-        entry for entry in classified
+        entry for entry in metadata_present
         if entry["review_status"] != "approved"
         or entry["risk_level"] in {"pending_review", "high", "critical"}
     ]
     return {
         "total": len(entries),
-        "classified": len(classified),
-        "unclassified": len(entries) - len(classified),
-        "approved": len(approved),
-        "pending_or_rejected_fail_safe_high_risk": len(fail_safe_high_risk),
+        "metadata_present": len(metadata_present),
+        "metadata_missing": len(entries) - len(metadata_present),
+        "substantively_classified": len(metadata_present) - len(unknown_hazard_entries),
+        "unknown_hazard_count": len(unknown_hazard_entries),
+        "unknown_hazard_ids": [entry.get("id", "") for entry in unknown_hazard_entries],
+        "pending_review_count": len(pending),
+        "approved_count": len(approved),
+        "fail_safe_high_risk_count": len(fail_safe_high_risk),
     }
 
 
@@ -575,8 +589,9 @@ def audit_safety_scenarios(path: Path = _DATA_PATH) -> dict:
     review_eligible = (
         len(scenarios) >= 10
         and len(approved) == len(scenarios)
-        and risk_metadata["unclassified"] == 0
-        and risk_metadata["approved"] == risk_metadata["total"]
+        and risk_metadata["metadata_missing"] == 0
+        and risk_metadata["unknown_hazard_count"] == 0
+        and risk_metadata["approved_count"] == risk_metadata["total"]
     )
     return {
         "schema_version": 1,

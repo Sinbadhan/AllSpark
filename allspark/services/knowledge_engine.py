@@ -94,6 +94,13 @@ class KnowledgeEngine:
             "source_label": t(source_keys.get(entry.source, "knowledge_source_other")),
             "language": entry.language,
             "high_risk": high_risk,
+            "risk_level": entry.risk_level or "pending_review",
+            "hazards": entry.hazards or ["unknown"],
+            "risk_review_status": entry.review_status or "pending_external_review",
+            "risk_review_counts": {
+                "local": len(entry.risk_reviews),
+                "external_claims": len(entry.risk_review_claims),
+            },
             "risk_notice": (
                 t("knowledge_high_risk_unverified_notice")
                 if high_risk and level == "unverified" else ""
@@ -147,6 +154,8 @@ class KnowledgeEngine:
                 "warnings": entry.warnings,
                 "verification_claim": entry.verification_claim,
                 "source_claim": entry.source_claim,
+                "risk_reviews": entry.risk_reviews,
+                "risk_review_claims": entry.risk_review_claims,
                 "references": references,
                 "field_records": field_records,
                 "applicable_when": entry.applicable_when,

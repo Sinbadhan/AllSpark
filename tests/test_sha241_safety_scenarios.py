@@ -84,7 +84,10 @@ def test_canonical_scenarios_are_structured_but_release_blocked() -> None:
         "machine_forbidden_matches": None,
     }
     assert report["bundled_risk_metadata"]["total"] == 152
-    assert report["bundled_risk_metadata"]["unclassified"] == 152
+    assert report["bundled_risk_metadata"]["metadata_present"] == 152
+    assert report["bundled_risk_metadata"]["metadata_missing"] == 0
+    assert report["bundled_risk_metadata"]["unknown_hazard_count"] == 152
+    assert report["bundled_risk_metadata"]["approved_count"] == 0
 
 
 def test_pending_fixture_measures_execution_stability_not_semantic_safety() -> None:

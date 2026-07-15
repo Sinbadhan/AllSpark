@@ -253,6 +253,9 @@ def test_database_migrates_legacy_claims_and_persists_evidence(tmp_path: Path) -
     assert migrated is not None
     assert migrated.verification == "unverified"
     assert migrated.verification_claim == "experience_based"
+    assert migrated.risk_level == "pending_review"
+    assert migrated.hazards == ["unknown"]
+    assert migrated.review_status == "pending_external_review"
     migrated.references = [_reference("a"), _reference("b")]
     migrated.applicable_when = ["only when tested"]
     db.save_knowledge(migrated)
@@ -634,8 +637,8 @@ def test_summary_payload_is_bounded_and_detail_preserves_evidence() -> None:
 def test_bundled_high_risk_audit_is_explicit_and_fail_closed() -> None:
     result = audit_bundled_knowledge()
     assert result["total"] == 152
-    assert result["high_risk"] == 96
-    assert result["classification_mode"] == "conservative_category_heuristic"
+    assert result["high_risk"] == 152
+    assert result["classification_mode"] == "explicit_metadata_fail_closed"
     assert "SHA-241" in result["classification_limit"]
     assert result["verified_high_risk"] + result["unverified_high_risk"] == result["high_risk"]
     assert result["violations"] == []

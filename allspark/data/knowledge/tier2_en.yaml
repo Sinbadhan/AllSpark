@@ -2,6 +2,9 @@
   category: agriculture
   subcategory: composting
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Composting System
   summary: Sustainable agriculture needs steady nutrient replacement. Composting turns
     organic waste into high-quality fertilizer — the cornerstone of self-sufficient
@@ -28,6 +31,9 @@
   category: agriculture
   subcategory: seed_saving
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Seed Saving Techniques
   summary: Seeds are the lifeblood of agriculture. Mastering seed saving lets you keep
     planting without relying on external supply.
@@ -54,6 +60,9 @@
   category: chemistry
   subcategory: paper
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Handmade Paper
   summary: Paper is the foundation of recording and transmitting knowledge. Make paper
     from plant fiber to carry civilization's memory forward.
@@ -83,6 +92,9 @@
   category: chemistry
   subcategory: dye
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Natural Dye Extraction
   summary: Natural dyes color and mark. Different plants yield different hues — indigo
     (blue), madder (red), cork tree (yellow).
@@ -109,6 +121,9 @@
   category: mechanical
   subcategory: watermill
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Simple Watermill
   summary: Use flowing water to grind grain and saw wood. Water power is a sustainable
     mechanical energy source.
@@ -136,6 +151,9 @@
   category: mechanical
   subcategory: generator
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Bicycle Generator
   summary: Convert a scrap bicycle and a generator into a human-powered generator to
     charge small devices and light a lamp.
@@ -163,6 +181,9 @@
   category: weather
   subcategory: shelter
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Climate-Adaptive Shelter Design
   summary: Long-term settlement requires shelters designed for the local climate. Different
     climates need different insulation, ventilation, and waterproofing strategies.
@@ -187,6 +208,9 @@
   category: energy
   subcategory: wind
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Simple Wind Turbine
   summary: Wind is a sustainable energy source. Build a small wind generator from simple
     materials to power lighting and comms.
@@ -216,6 +240,9 @@
   category: energy
   subcategory: biogas
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Biogas Digester
   summary: Biogas is combustible gas from anaerobic digestion of organic waste. The
     effluent is excellent fertilizer — two benefits at once.
@@ -245,6 +272,9 @@
   category: medicine
   subcategory: herbal
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Common Herbs and Their Uses
   summary: When medicine runs short, common herbs can treat basic complaints. But identification
     must be exact — misuse can be fatal.
@@ -271,6 +301,9 @@
   category: weather
   subcategory: extreme
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Extreme Weather Response
   summary: Thunderstorms, floods, and high winds are common deadly weather after a
     collapse. Standardized sheltering actions for each scenario let you make life-saving
@@ -299,6 +332,9 @@
   category: medicine
   subcategory: public_health
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Public Health and Environmental Sanitation
   summary: In disaster settings disease is deadlier than trauma. Systematic management
     of excreta, water sources, waste, and isolation is the foundation of community
@@ -326,6 +362,9 @@
   category: medicine
   subcategory: first_aid
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Burn and Scald First Aid
   summary: Burns are a common emergency injury. Correct handling limits damage and
     prevents infection. This entry is first-aid common sense only — no drug dosages.

@@ -2,6 +2,9 @@
   category: agriculture
   subcategory: composting
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 堆肥系统建设
   summary: 持续农业需要持续补充土壤养分。堆肥将有机废物转化为优质肥料，是自给农业的基石。
   steps:
@@ -26,6 +29,9 @@
   category: agriculture
   subcategory: seed_saving
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 种子保存技术
   summary: 种子是农业的命脉。掌握种子保存技术可以持续种植，不必依赖外部种子供应。
   steps:
@@ -51,6 +57,9 @@
   category: chemistry
   subcategory: paper
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 手工造纸
   summary: 纸张是记录和传播知识的基础。用植物纤维制作纸张，延续文明的记忆。
   steps:
@@ -79,6 +88,9 @@
   category: chemistry
   subcategory: dye
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 天然染料提取
   summary: 天然染料用于染色和标记。不同植物可提取不同颜色：蓝靛（蓝色）、茜草（红色）、黄柏（黄色）。
   steps:
@@ -104,6 +116,9 @@
   category: mechanical
   subcategory: watermill
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 简易水力磨坊
   summary: 利用水流动力研磨谷物、锯木。水力是可持续的机械动力来源。
   steps:
@@ -130,6 +145,9 @@
   category: mechanical
   subcategory: generator
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 自行车发电装置
   summary: 用废旧自行车和发电机改装成人力发电装置，可为小电器充电和照明。
   steps:
@@ -156,6 +174,9 @@
   category: weather
   subcategory: shelter
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 气候适应性庇护所设计
   summary: 长期定居需要根据当地气候设计庇护所。不同气候需要不同的保温、通风、防水策略。
   steps:
@@ -179,6 +200,9 @@
   category: energy
   subcategory: wind
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 简易风力发电
   summary: 风力是可持续能源。用简单材料制作小型风力发电机，为照明和通讯供电。
   steps:
@@ -207,6 +231,9 @@
   category: energy
   subcategory: biogas
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 沼气池建设
   summary: 沼气是有机废物厌氧发酵产生的可燃气体。同时产出沼液沼渣作为优质肥料，一举两得。
   steps:
@@ -235,6 +262,9 @@
   category: medicine
   subcategory: herbal
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 常见草药识别与应用
   summary: 药物短缺时，常见草药可处理基础病症。但必须准确识别，误用可能致命。
   steps:
@@ -260,6 +290,9 @@
   category: weather
   subcategory: extreme
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 极端天气应对
   summary: 雷暴、洪水、暴风是灾后常见致命天气。掌握每种场景的标准化避险动作，可在数秒内做出保命决策。
   steps:
@@ -286,6 +319,9 @@
   category: medicine
   subcategory: public_health
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 公共卫生与环境卫生
   summary: 灾难环境下疾病传播比外伤更致命。系统管理排泄物、水源、垃圾与隔离，是社区公共卫生的基石。
   steps:
@@ -311,6 +347,9 @@
   category: medicine
   subcategory: first_aid
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 烧烫伤急救
   summary: 烧烫伤是常见应急伤害。正确处理能减轻损伤、避免感染。本条为急救常识，不涉及药物剂量。
   steps:

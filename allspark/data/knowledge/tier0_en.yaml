@@ -2,6 +2,9 @@
   category: survival
   subcategory: water
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Water Purification by Boiling
   summary: The most reliable water purification method. Boiling kills most pathogens.
     1 minute below 2000m, 3 minutes above 2000m.
@@ -25,6 +28,9 @@
   category: survival
   subcategory: water
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Finding Surface Water Sources
   summary: 'Methods to locate surface water: observe terrain, vegetation, and animal
     behavior. Water flows downhill — valleys and foothills are most likely to have
@@ -49,6 +55,9 @@
   category: survival
   subcategory: water
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Improvised Water Filtration
   summary: Build a simple filter using layered materials to remove most suspended
     particles and some microorganisms. Use together with boiling for safety.
@@ -74,6 +83,9 @@
   category: survival
   subcategory: fire
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Flint Steel Fire Starting
   summary: Using a flint/magnesium rod is one of the most reliable fire-starting methods.
     Works even when wet, reusable thousands of times.
@@ -99,6 +111,9 @@
   category: survival
   subcategory: fire
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Bow Drill Fire Starting
   summary: The classic friction fire method. Requires a bow, drill spindle, hearth
     board, and bearing block. Friction generates heat to ignite wood dust.
@@ -127,6 +142,9 @@
   category: survival
   subcategory: food
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Common Edible Wild Plants
   summary: 'Widely distributed and easy to identify: dandelion, purslane, wild garlic,
     fiddlehead fern, shepherd''s purse.'
@@ -153,6 +171,9 @@
   category: survival
   subcategory: shelter
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Lean-to Shelter
   summary: The simplest practical shelter. One cross-pole and angled sticks, covered
     with leaves/grass/earth for wind and rain protection.
@@ -180,6 +201,9 @@
   category: survival
   subcategory: medical
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Bleeding Control
   summary: Severe bleeding is one of the most urgent threats. Direct pressure is the
     most effective method and must be applied immediately.
@@ -208,6 +232,9 @@
   category: survival
   subcategory: medical
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Cardiopulmonary Resuscitation (CPR)
   summary: When a person is unresponsive and not breathing, begin CPR immediately.
     Chest compressions + rescue breaths maintain blood circulation.
@@ -234,6 +261,9 @@
   category: survival
   subcategory: medical
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Hypothermia Treatment
   summary: Body temperature below 35°C is hypothermia. One of the most common fatal
     factors in the wild — early detection is critical.
@@ -265,6 +295,9 @@
   category: survival
   subcategory: water
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Plant Water Sources
   summary: Some plants can serve as water sources. Morning dew, succulent plants,
     bamboo, and vines can all provide moisture.
@@ -287,6 +320,9 @@
   category: survival
   subcategory: water
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Rainwater Collection
   summary: Rainwater is one of the safest natural water sources. Collection is simple
     — any large waterproof sheet will do.
@@ -310,6 +346,9 @@
   category: survival
   subcategory: fire
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Battery Fire Starting
   summary: Use a battery short-circuit to generate high heat and ignite tinder. A 9V
     battery or multiple AA/AAA alkaline cells with steel wool or fine wire works
@@ -337,6 +376,9 @@
   category: survival
   subcategory: fire
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Fuel Types and Selection
   summary: Different fuels have different properties. Dry wood is the most common;
     in emergencies, animal dung and fat also work.
@@ -360,6 +402,9 @@
   category: survival
   subcategory: fire
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Fire Lay Types
   summary: Different purposes call for different fire lays. Teepee for quick warmth,
     star for fuel efficiency, long fire for group heating.
@@ -384,6 +429,9 @@
   category: survival
   subcategory: food
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Universal Plant Edibility Test
   summary: When you cannot confirm a plant is edible, use this step-by-step test.
     It takes about 24 hours but can save your life.
@@ -412,6 +460,9 @@
   category: survival
   subcategory: food
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Simple Traps
   summary: In the wild, traps are more efficient than active hunting. The most basic
     are the snare trap and the pit trap.
@@ -441,6 +492,9 @@
   category: survival
   subcategory: food
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Basic Fishing Methods
   summary: Near water, fishing is more reliable than hunting. Multiple methods work
     even without proper gear.
@@ -463,6 +517,9 @@
   category: survival
   subcategory: food
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Food Drying and Preservation
   summary: Drying is the oldest food preservation method. Without moisture, microbes
     cannot grow. Meat and fruit can both be dried.
@@ -490,6 +547,9 @@
   category: survival
   subcategory: shelter
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Debris Hut Shelter
   summary: An insulating shelter built from leaves and branches, requiring no cordage.
     Excellent warmth, suitable for cold environments.
@@ -516,6 +576,9 @@
   category: survival
   subcategory: shelter
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Urban Ruins Shelter
   summary: In post-collapse urban ruins, using existing buildings is the fastest shelter
     option. Watch for structural safety and contamination.
@@ -542,6 +605,9 @@
   category: survival
   subcategory: medical
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Basic Wound Care
   summary: All wounds carry infection risk. Proper cleaning and dressing are the keys
     to field wound care.
@@ -569,6 +635,9 @@
   category: survival
   subcategory: medical
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Fracture First Aid
   summary: Field fractures cannot be professionally treated, but proper splinting reduces
     pain and prevents further injury, buying time.

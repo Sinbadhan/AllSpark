@@ -19,8 +19,11 @@ def audit_bundled_knowledge() -> dict:
         ):
             violations.append(entry.id)
     return {
-        "classification_mode": "conservative_category_heuristic",
-        "classification_limit": "May over- or under-classify until named domain review (SHA-241)",
+        "classification_mode": "explicit_metadata_fail_closed",
+        "classification_limit": (
+            "All pending, rejected, missing, or unknown-hazard classifications remain "
+            "high risk until named domain review (SHA-241)"
+        ),
         "total": len(entries),
         "high_risk": len(high_risk),
         "verified_high_risk": sum(

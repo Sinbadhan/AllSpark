@@ -15,6 +15,7 @@ from allspark.core.models import (
     MapPOI,
     externalize_knowledge_evidence,
     normalize_knowledge_evidence,
+    normalize_knowledge_risk_metadata,
     review_claim_payload,
     validate_knowledge_entry_schema,
 )
@@ -200,6 +201,15 @@ def _entry_checksum(k: KnowledgeEntry) -> str:
     if k.verification_claim or k.source_claim:
         payload["verification_claim"] = k.verification_claim
         payload["source_claim"] = k.source_claim
+    risk_fields = {
+        "risk_level": k.risk_level,
+        "hazards": k.hazards,
+        "review_status": k.review_status,
+        "risk_reviews": k.risk_reviews,
+        "risk_review_claims": k.risk_review_claims,
+    }
+    if any(risk_fields.values()):
+        payload.update(risk_fields)
     canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False)
     return _checksum(canonical)
 
@@ -287,6 +297,11 @@ class SKFPackage:
                 "verification_claim": k.verification_claim,
                 "source_claim": k.source_claim,
                 "review_claim": review_claim_payload(k),
+                "risk_level": k.risk_level,
+                "hazards": k.hazards,
+                "review_status": k.review_status,
+                "risk_reviews": k.risk_reviews,
+                "risk_review_claims": k.risk_review_claims,
                 "version": k.version,
                 "language": k.language,
                 "checksum": _entry_checksum(k),
@@ -389,12 +404,18 @@ class SKFPackage:
                         ),
                         source_claim=_sanitize_kf_field(item.get("source_claim"), "source", ""),
                         review_claim=item.get("review_claim", {}),
+                        risk_level=item.get("risk_level", ""),
+                        hazards=item.get("hazards", []),
+                        review_status=item.get("review_status", ""),
+                        risk_reviews=item.get("risk_reviews", []),
+                        risk_review_claims=item.get("risk_review_claims", []),
                         version=item.get("version", 1),
                         language=item.get("language", "zh"),
                     )
                     try:
-                        validate_knowledge_entry_schema(entry)
+                        normalize_knowledge_risk_metadata(entry)
                         normalize_knowledge_evidence(entry)
+                        validate_knowledge_entry_schema(entry)
                     except KnowledgeValidationError as exc:
                         pkg._import_errors.append(
                             f"Knowledge {entry.id}: invalid evidence envelope ({exc.reason})"
@@ -427,6 +448,11 @@ class SKFPackage:
                             verification_claim=item.get("verification_claim", ""),
                             source_claim=item.get("source_claim", ""),
                             review_claim=item.get("review_claim", {}),
+                            risk_level=item.get("risk_level", ""),
+                            hazards=item.get("hazards", []),
+                            review_status=item.get("review_status", ""),
+                            risk_reviews=item.get("risk_reviews", []),
+                            risk_review_claims=item.get("risk_review_claims", []),
                             version=item.get("version", 1),
                             language=item.get("language", "zh"),
                         )

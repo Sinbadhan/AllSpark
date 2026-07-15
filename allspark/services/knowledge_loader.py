@@ -8,6 +8,8 @@ from allspark.core.models import (
     KnowledgeEntry,
     derive_verification_level,
     normalize_knowledge_evidence,
+    normalize_knowledge_risk_metadata,
+    validate_knowledge_entry_schema,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,6 +54,11 @@ def _dict_to_entry(d: dict) -> KnowledgeEntry:
         applicable_when=d.get("applicable_when", []),
         contraindications=d.get("contraindications", []),
         review_claim=d.get("review_claim", {}),
+        risk_level=d.get("risk_level", ""),
+        hazards=d.get("hazards", []),
+        review_status=d.get("review_status", ""),
+        risk_reviews=d.get("risk_reviews", []),
+        risk_review_claims=d.get("risk_review_claims", []),
         language=d.get("language", "zh"),
         # SHA-148: auditable signoff fields (all empty/0 by default).
         reviewer=d.get("reviewer", ""),
@@ -61,7 +68,9 @@ def _dict_to_entry(d: dict) -> KnowledgeEntry:
         content_hash=d.get("content_hash", ""),
         signoff_version=d.get("signoff_version", 0),
     )
+    normalize_knowledge_risk_metadata(entry)
     normalize_knowledge_evidence(entry)
+    validate_knowledge_entry_schema(entry)
     entry.verification = derive_verification_level(entry)
     if entry.verification_claim != entry.verification:
         logger.debug(

@@ -2,6 +2,9 @@
   category: agriculture
   subcategory: soil
   priority: 1
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Soil Preparation and Improvement
   summary: After short-term survival, a stable food supply must be established. Soil
     preparation is the foundation of agriculture — clear weeds, till the soil, add
@@ -29,6 +32,9 @@
   category: agriculture
   subcategory: crops
   priority: 1
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Fast-Growing Crops
   summary: After a disaster, rapid food output matters most. Recommended fast crops
     — radish (30 days), bok choy (25 days), lettuce (30 days), bean sprouts (5-7 days).
@@ -53,6 +59,9 @@
   category: agriculture
   subcategory: preservation
   priority: 1
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Food Drying and Preservation
   summary: Drying is the oldest food preservation method. Removing water stops microbial
     growth, preserving food for months to years.
@@ -78,6 +87,9 @@
   category: chemistry
   subcategory: soap
   priority: 1
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Handmade Soap
   summary: Hygiene is key to survival. Make soap from fats and lye (extracted from
     wood ash) for cleaning body and gear, preventing disease.
@@ -106,6 +118,9 @@
   category: chemistry
   subcategory: charcoal
   priority: 1
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Charcoal Production
   summary: Charcoal is a key fuel and material. It burns hotter and cleaner than wood,
     useful for smelting, filtration, and medicine.
@@ -132,6 +147,9 @@
   category: mechanical
   subcategory: tools
   priority: 1
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Basic Forging and Tool Repair
   summary: Metal tools are key to sustaining civilization. Basic forging lets you
     repair and make knives, hoes, nails and other essentials.
@@ -163,6 +181,9 @@
   category: mechanical
   subcategory: rope_knots
   priority: 1
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Essential Survival Knots
   summary: Knots are a fundamental survival skill. Six core knots cover most needs
     — building, securing, rescue, and binding.
@@ -186,6 +207,9 @@
   category: weather
   subcategory: observation
   priority: 1
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Basic Weather Observation
   summary: Without forecasts, reading natural signs to predict weather is vital for
     survival decisions.
@@ -210,6 +234,9 @@
   category: energy
   subcategory: fire
   priority: 1
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Simple Charcoal Gasifier
   summary: A charcoal gasifier incompletely burns wood to produce combustible gas for
     cooking and heating, 2-3x more efficient than direct burning.
@@ -236,6 +263,9 @@
   category: energy
   subcategory: solar
   priority: 1
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Basic Solar Thermal Use
   summary: Solar is the most reliable energy source. Without complex gear you can
     heat water, dry food, and cook with sunlight.
@@ -259,6 +289,9 @@
   category: weather
   subcategory: prediction
   priority: 1
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Barometer Weather Prediction
   summary: Air pressure trend is a leading indicator of weather shifts. Steadily falling
     pressure signals worsening weather; rising pressure signals improvement. A simple
@@ -285,6 +318,9 @@
   category: weather
   subcategory: clouds
   priority: 1
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Reading Clouds for Weather
   summary: Cloud form and evolution are the most intuitive basis for short-term forecasting.
     Identifying major cloud types and what they signal lets you read weather 1-24

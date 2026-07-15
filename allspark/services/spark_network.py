@@ -25,8 +25,8 @@ from allspark.core.models import (
     externalize_knowledge_evidence,
     knowledge_transport_payload,
     normalize_knowledge_evidence,
+    normalize_knowledge_risk_metadata,
     validate_knowledge_entry_schema,
-    validate_knowledge_evidence,
 )
 
 logger = logging.getLogger(__name__)
@@ -389,12 +389,18 @@ class SparkNetwork:
                 verification_claim=item.get("verification_claim", ""),
                 source_claim=item.get("source_claim", ""),
                 review_claim=item.get("review_claim", {}),
+                risk_level=item.get("risk_level", ""),
+                hazards=item.get("hazards", []),
+                review_status=item.get("review_status", ""),
+                risk_reviews=item.get("risk_reviews", []),
+                risk_review_claims=item.get("risk_review_claims", []),
                 version=item.get("version", 1),
                 language=item.get("language", "zh"),
             )
             try:
+                normalize_knowledge_risk_metadata(entry)
+                normalize_knowledge_evidence(entry)
                 validate_knowledge_entry_schema(entry)
-                validate_knowledge_evidence(entry)
             except KnowledgeValidationError as exc:
                 rejected += 1
                 logger.warning(
@@ -412,22 +418,13 @@ class SparkNetwork:
                     logger.warning("Rejected knowledge entry %s: missing or invalid signature", entry.id)
                     continue
 
-            try:
-                normalize_knowledge_evidence(entry)
-            except KnowledgeValidationError as exc:
-                rejected += 1
-                logger.warning(
-                    "Rejected knowledge entry %s: invalid evidence envelope (%s)",
-                    entry.id, exc.reason,
-                )
-                continue
-
             if not entry.source_claim:
                 entry.source_claim = entry.source
             if not entry.verification_claim:
                 entry.verification_claim = entry.verification
             entry.source = "other_spark"
             externalize_knowledge_evidence(entry)
+            validate_knowledge_entry_schema(entry)
             entry.verification = "unverified"
             report = verifier.verify_entry(entry)
             format_result = next(

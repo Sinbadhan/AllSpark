@@ -231,6 +231,13 @@ class KnowledgeEntry:
     source_claim: str = ""
     source_content_hash: str = ""
     review_claim: dict = field(default_factory=dict)
+    # SHA-241: explicit safety classification. Empty values only exist for
+    # legacy transport compatibility and are treated fail-closed as high risk.
+    risk_level: str = ""
+    hazards: list[str] = field(default_factory=list)
+    review_status: str = ""
+    risk_reviews: list[dict] = field(default_factory=list)
+    risk_review_claims: list[dict] = field(default_factory=list)
 
     def is_signed_off(self) -> bool:
         """True only when a named expert has signed off AND the content is
@@ -273,6 +280,12 @@ def compute_content_hash(entry: "KnowledgeEntry") -> str:
     }
     if any(evidence_fields.values()):
         parts.append(json.dumps(evidence_fields, ensure_ascii=False, sort_keys=True))
+    risk_fields = {
+        "risk_level": entry.risk_level,
+        "hazards": entry.hazards,
+    }
+    if any(risk_fields.values()):
+        parts.append(json.dumps(risk_fields, ensure_ascii=False, sort_keys=True))
     return "sha256:" + hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
 
 
@@ -357,6 +370,37 @@ def validate_knowledge_entry_schema(entry: "KnowledgeEntry") -> None:
         raise KnowledgeValidationError("knowledge_verification_invalid")
     if entry.language not in {"zh", "en"}:
         raise KnowledgeValidationError("knowledge_language_invalid")
+    risk_values_present = bool(
+        entry.risk_level
+        or entry.hazards
+        or entry.review_status
+        or entry.risk_reviews
+        or entry.risk_review_claims
+    )
+    if risk_values_present:
+        if entry.risk_level not in KNOWLEDGE_RISK_LEVELS:
+            raise KnowledgeValidationError("knowledge_risk_level_invalid")
+        if entry.review_status not in KNOWLEDGE_RISK_REVIEW_STATUSES:
+            raise KnowledgeValidationError("knowledge_review_status_invalid")
+        if (
+            not isinstance(entry.hazards, list)
+            or not entry.hazards
+            or len(entry.hazards) > 16
+            or len(entry.hazards) != len(set(entry.hazards))
+            or any(
+                not isinstance(hazard, str) or hazard not in KNOWLEDGE_HAZARDS
+                for hazard in entry.hazards
+            )
+        ):
+            raise KnowledgeValidationError("knowledge_hazards_invalid")
+        covered = _validate_risk_reviews(entry, entry.risk_reviews, local=True)
+        _validate_risk_reviews(entry, entry.risk_review_claims, local=False)
+        if entry.review_status == "approved" and covered != set(entry.hazards):
+            raise KnowledgeValidationError("knowledge_approved_risk_review_incomplete")
+        if entry.review_status == "rejected" and not entry.risk_reviews:
+            raise KnowledgeValidationError("knowledge_rejected_risk_review_required")
+        if entry.review_status == "pending_external_review" and entry.risk_reviews:
+            raise KnowledgeValidationError("knowledge_pending_local_risk_review_forbidden")
     if any(char in entry.id for char in '<>"\'`&') or any(
         ord(char) < 32 for char in entry.id
     ):
@@ -388,6 +432,135 @@ KNOWLEDGE_VERIFICATION_LEVELS = {
     "expert_verified", "cross_ref", "field_tested", "partially_verified",
     "unverified", "conflict",
 }
+KNOWLEDGE_RISK_LEVELS = {"pending_review", "low", "medium", "high", "critical"}
+KNOWLEDGE_RISK_REVIEW_STATUSES = {
+    "pending_external_review",
+    "approved",
+    "rejected",
+}
+KNOWLEDGE_HAZARDS = {
+    "biological",
+    "electrical",
+    "environmental",
+    "explosion",
+    "fire",
+    "mechanical",
+    "medical",
+    "structural",
+    "toxic",
+    "unknown",
+    "violence",
+}
+RISK_QUALIFICATIONS_BY_HAZARD = {
+    "biological": {"biology", "environmental_health", "emergency_medicine"},
+    "electrical": {"electrical_engineering"},
+    "environmental": {"environmental_health", "survival_operations"},
+    "explosion": {"fire_safety", "mechanical_engineering"},
+    "fire": {"fire_safety"},
+    "mechanical": {"mechanical_engineering"},
+    "medical": {"emergency_medicine"},
+    "structural": {"structural_engineering"},
+    "toxic": {"toxicology", "environmental_health"},
+    "unknown": {"cross_domain_panel"},
+    "violence": {"violence_prevention"},
+}
+_RISK_REVIEW_FIELDS = {
+    "signoff_version",
+    "reviewer_id",
+    "reviewer",
+    "qualification_type",
+    "qualification_evidence",
+    "covered_hazards",
+    "reviewed_at",
+    "conclusion",
+    "reservations",
+    "classification_hash",
+}
+
+
+def compute_risk_classification_hash(entry: "KnowledgeEntry") -> str:
+    """Pin knowledge semantics plus risk level/hazards, excluding the review."""
+    return compute_content_hash(entry)
+
+
+def normalize_knowledge_risk_metadata(entry: "KnowledgeEntry") -> None:
+    """Convert only a wholly absent legacy classification to fail-closed state."""
+    if not any(
+        (
+            entry.risk_level,
+            entry.hazards,
+            entry.review_status,
+            entry.risk_reviews,
+            entry.risk_review_claims,
+        )
+    ):
+        entry.risk_level = "pending_review"
+        entry.hazards = ["unknown"]
+        entry.review_status = "pending_external_review"
+
+
+def _validate_risk_reviews(
+    entry: "KnowledgeEntry", reviews: object, *, local: bool
+) -> set[str]:
+    if not isinstance(reviews, list) or len(reviews) > 16:
+        raise KnowledgeValidationError("knowledge_risk_reviews_invalid")
+    all_covered: set[str] = set()
+    for review in reviews:
+        if not isinstance(review, dict) or set(review) != _RISK_REVIEW_FIELDS:
+            raise KnowledgeValidationError("knowledge_risk_review_invalid_fields")
+        version = review.get("signoff_version")
+        if not isinstance(version, int) or isinstance(version, bool) or version < 1:
+            raise KnowledgeValidationError("knowledge_risk_review_invalid_version")
+        for field_name in (
+            "reviewer_id",
+            "reviewer",
+            "qualification_type",
+            "qualification_evidence",
+            "conclusion",
+            "classification_hash",
+        ):
+            value = review.get(field_name)
+            if not isinstance(value, str) or not value.strip() or len(value) > 4096:
+                raise KnowledgeValidationError(
+                    f"knowledge_risk_review_{field_name}_invalid"
+                )
+        if not _valid_iso_datetime(review.get("reviewed_at")):
+            raise KnowledgeValidationError("knowledge_risk_review_reviewed_at_invalid")
+        covered = review.get("covered_hazards")
+        if (
+            not isinstance(covered, list)
+            or not covered
+            or len(covered) != len(set(covered))
+            or not set(covered) <= set(entry.hazards)
+        ):
+            raise KnowledgeValidationError("knowledge_risk_review_hazards_invalid")
+        reservations = review.get("reservations")
+        if (
+            not isinstance(reservations, list)
+            or len(reservations) > 32
+            or any(
+                not isinstance(value, str) or not value.strip() or len(value) > 4096
+                for value in reservations
+            )
+        ):
+            raise KnowledgeValidationError("knowledge_risk_review_reservations_invalid")
+        qualification = review["qualification_type"]
+        if any(
+            qualification not in RISK_QUALIFICATIONS_BY_HAZARD[hazard]
+            for hazard in covered
+        ):
+            raise KnowledgeValidationError(
+                "knowledge_risk_review_qualification_invalid"
+            )
+        conclusion = review["conclusion"].strip().casefold()
+        if conclusion not in {"approved", "rejected"}:
+            raise KnowledgeValidationError("knowledge_risk_review_conclusion_invalid")
+        if local and conclusion != entry.review_status:
+            raise KnowledgeValidationError("knowledge_risk_review_decision_mismatch")
+        if review["classification_hash"] != compute_risk_classification_hash(entry):
+            raise KnowledgeValidationError("knowledge_risk_review_hash_mismatch")
+        all_covered.update(covered)
+    return all_covered
 
 
 def _validate_text(value, field: str) -> None:
@@ -617,6 +790,14 @@ def is_high_risk_knowledge(entry: "KnowledgeEntry") -> bool:
     failure, poisoning, or violent escalation. This is a fail-safe review
     queue, not a claim that category names fully model risk.
     """
+    if entry.review_status != "approved":
+        return True
+    if "unknown" in entry.hazards:
+        return True
+    if entry.risk_level in {"pending_review", "high", "critical"}:
+        return True
+    if entry.risk_level in {"low", "medium"}:
+        return False
     category = canonical_source_id(entry.category or "")
     subcategory = canonical_source_id(entry.subcategory or "")
     return (
@@ -648,6 +829,17 @@ def externalize_knowledge_evidence(entry: "KnowledgeEntry") -> None:
     entry.citation = ""
     entry.content_hash = ""
     entry.signoff_version = 0
+    if entry.risk_reviews:
+        entry.risk_review_claims = [
+            *[dict(value) for value in entry.risk_review_claims],
+            *[dict(value) for value in entry.risk_reviews],
+        ]
+    entry.risk_reviews = []
+    entry.review_status = "pending_external_review"
+    if not entry.risk_level:
+        entry.risk_level = "pending_review"
+    if not entry.hazards:
+        entry.hazards = ["unknown"]
 
 
 def review_claim_payload(entry: "KnowledgeEntry") -> dict:
@@ -675,6 +867,7 @@ KNOWLEDGE_TRANSPORT_FIELDS = (
     "steps", "prerequisites", "warnings", "references", "field_records",
     "applicable_when", "contraindications", "verification", "source",
     "verification_claim", "source_claim", "review_claim", "version", "language",
+    "risk_level", "hazards", "review_status", "risk_reviews", "risk_review_claims",
 )
 
 

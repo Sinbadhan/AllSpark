@@ -2,6 +2,9 @@
   category: community
   subcategory: governance
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Community Governance Design
   summary: Long-term survival needs stable community organization. Design a suitable
     power structure and division of labor based on headcount and skill distribution.
@@ -28,6 +31,9 @@
   category: community
   subcategory: conflict
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Conflict Mediation and Arbitration
   summary: Living together inevitably produces conflict. Build a systematic resolution
     process so disputes don't escalate and threaten group survival.
@@ -53,6 +59,9 @@
   category: community
   subcategory: education
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Knowledge Transfer and Education
   summary: Civilizational continuity depends on passing down knowledge. Build a systematic
     education system so critical skills don't die with any one person.
@@ -78,6 +87,9 @@
   category: engineering
   subcategory: blacksmithing
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Basic Blacksmithing
   summary: Metalworking is a core rebuilding skill. Start with a simple forge and build
     up basic forging technique to make tools and parts.
@@ -106,6 +118,9 @@
   category: engineering
   subcategory: electricity
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Simple Generator
   summary: Electricity underpins modern civilization. Build a simple generator from
     available materials to power AllSpark and key equipment.
@@ -133,6 +148,9 @@
   category: engineering
   subcategory: electricity
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Basic Wiring
   summary: Build a simple electrical system from scratch — wiring layout, protection,
     and basic repair.
@@ -161,6 +179,9 @@
   category: engineering
   subcategory: masonry
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Basic Masonry and Building
   summary: Long-term settlement needs permanent structures. Master basic masonry to
     build sturdy shelters and facilities.
@@ -187,6 +208,9 @@
   category: agriculture
   subcategory: livestock
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Poultry — Chickens
   summary: Chickens are the easiest poultry, providing eggs and meat. Simple to manage
     and fast-breeding, ideal for community raising.
@@ -215,6 +239,9 @@
   category: agriculture
   subcategory: livestock
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Goat Raising
   summary: Goats are hardy, providing milk, meat, and hides. A key protein and nutrition
     source after a disaster.
@@ -244,6 +271,9 @@
   category: agriculture
   subcategory: aquaculture
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Simple Fish Pond
   summary: A fish pond is a stable protein source. Build a simple pond from natural
     water or rain and raise freshwater fish.
@@ -273,6 +303,9 @@
   category: medicine
   subcategory: herbal
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Common Medicinal Plant Reference
   summary: Once modern drugs run out, traditional herbs are the main treatment. Know
     how to identify, collect, and use common medicinal plants.
@@ -300,6 +333,9 @@
   category: medicine
   subcategory: surgery
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Emergency Surgery Basics
   summary: When professional care is unavailable, some procedures must be done by laypeople.
     This is a last resort, only when no other option exists.
@@ -328,6 +364,9 @@
   category: communication
   subcategory: radio
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Amateur Radio Communication
   summary: Radio is the only reliable long-distance communication. Set up a ham station
     to stay in touch with the outside world.
@@ -357,6 +396,9 @@
   category: communication
   subcategory: morse
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Morse Code Quick Reference
   summary: Morse is the most basic long-distance signaling code, sendable with simple
     gear. SOS is the international distress signal.
@@ -381,6 +423,9 @@
   category: defense
   subcategory: perimeter
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Community Defense Design
   summary: A long-term settlement needs a systematic defense — from early warning to
     denial, build layered defense in depth.
@@ -410,6 +455,9 @@
   category: civilization
   subcategory: record
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Civilizational Archive Recording
   summary: Recording and preserving human knowledge is one of AllSpark's core missions.
     Build a systematic archive.
@@ -436,6 +484,9 @@
   category: civilization
   subcategory: law
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Basic Community Legal Framework
   summary: A long-term community needs a basic legal framework to keep order. Start
     from the most fundamental survival rules and refine over time.
@@ -464,6 +515,9 @@
   category: community
   subcategory: children
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Childhood Education and Survival Skill Transfer
   summary: Children are the community's continuity. Teach survival skills by age band,
     balance safety education, emotional support, and task participation, and protect
@@ -491,6 +545,9 @@
   category: community
   subcategory: psychology
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Psychological Support and PTSD Recognition
   summary: Psychological trauma is unavoidable in disasters. Group support, breakdown-signal
     monitoring, and rotating listeners are key to long-term cohesion.
@@ -517,6 +574,9 @@
   category: defense
   subcategory: warning
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Community Self-Defense Warning System
   summary: Build a multi-channel warning system so the community can respond quickly
     when threats appear. For self-defense warning only — does not authorize preemptive
@@ -544,6 +604,9 @@
   category: defense
   subcategory: shelter
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Shelter Hardening and Defense
   summary: Harden the shelter against intrusion, eliminate blind spots, and keep emergency
     exits clear. For lawful self-defense only — no offensive fortifications.
@@ -570,6 +633,9 @@
   category: defense
   subcategory: nonlethal
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Non-Lethal Deterrents
   summary: Use noise, light, obstacles, and alarms as non-lethal deterrents to avoid
     direct confrontation. Force is the last resort.
@@ -596,6 +662,9 @@
   category: communication
   subcategory: signals
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Visual Distress Signals
   summary: When radios fail, visual signals are the primary way to attract rescue. Knowing
     the international visual-signal conventions lets you convey distress at long range.
@@ -621,6 +690,9 @@
   category: communication
   subcategory: signals
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Audio Distress Signals
   summary: When sight is blocked or at night, sound is key to signaling for help. Standard
     audio-signal conventions work in fog and dense forest.
@@ -645,6 +717,9 @@
   category: communication
   subcategory: low_tech
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Low-Tech Communication Relay
   summary: Without electronic communications, human-powered relays and simple tools can
     keep information flowing between scattered settlements.
@@ -670,6 +745,9 @@
   category: civilization
   subcategory: education
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Oral Transmission System
   summary: Without writing, oral transmission is the main way to pass on knowledge and
     history. A systematic oral method greatly reduces information distortion.
@@ -696,6 +774,9 @@
   category: civilization
   subcategory: currency
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Barter and Commodity Money
   summary: When currency collapses, barter is the basic form of trade. Establishing commodity
     money and exchange ratios greatly improves efficiency.
@@ -721,6 +802,9 @@
   category: civilization
   subcategory: governance
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: Council System
   summary: Mid-size communities (30+ people) suit a council. Regular meetings, deliberative
     voting, and rotation balance efficiency with fairness.

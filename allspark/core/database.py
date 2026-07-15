@@ -16,6 +16,8 @@ from allspark.core.models import (
     compute_source_content_hash,
     derive_verification_level,
     normalize_knowledge_evidence,
+    normalize_knowledge_risk_metadata,
+    validate_knowledge_entry_schema,
 )
 from allspark.core.tokenizer import tokenize, tokenize_query
 
@@ -73,6 +75,13 @@ class Database:
                 r["source_content_hash"] if "source_content_hash" in r.keys() else ""
             ),
             review_claim=Database._json_dict(r, "review_claim"),
+            risk_level=r["risk_level"] if "risk_level" in r.keys() else "",
+            hazards=Database._json_list(r, "hazards"),
+            review_status=(
+                r["review_status"] if "review_status" in r.keys() else ""
+            ),
+            risk_reviews=Database._json_list(r, "risk_reviews"),
+            risk_review_claims=Database._json_list(r, "risk_review_claims"),
         )
 
     def __init__(self, db_path: Optional[Path] = None):
@@ -147,7 +156,12 @@ class Database:
                 verification_claim TEXT DEFAULT '',
                 source_claim TEXT DEFAULT '',
                 source_content_hash TEXT DEFAULT '',
-                review_claim TEXT DEFAULT '{}'
+                review_claim TEXT DEFAULT '{}',
+                risk_level TEXT DEFAULT '',
+                hazards TEXT DEFAULT '[]',
+                review_status TEXT DEFAULT '',
+                risk_reviews TEXT DEFAULT '[]',
+                risk_review_claims TEXT DEFAULT '[]'
             );
 
             CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_fts USING fts5(
@@ -395,12 +409,27 @@ class Database:
             ("source_claim", "TEXT DEFAULT ''"),
             ("source_content_hash", "TEXT DEFAULT ''"),
             ("review_claim", "TEXT DEFAULT '{}'"),
+            ("risk_level", "TEXT DEFAULT ''"),
+            ("hazards", "TEXT DEFAULT '[]'"),
+            ("review_status", "TEXT DEFAULT ''"),
+            ("risk_reviews", "TEXT DEFAULT '[]'"),
+            ("risk_review_claims", "TEXT DEFAULT '[]'"),
         ]:
             try:
                 cur.execute(f"SELECT {col} FROM knowledge LIMIT 1")
             except sqlite3.OperationalError:
                 cur.execute(f"ALTER TABLE knowledge ADD COLUMN {col} {ctype}")
                 self.conn.commit()
+
+        # SHA-241: legacy rows have no reviewed risk classification. They are
+        # explicitly migrated to pending/unknown, never inferred as low risk.
+        cur.execute(
+            """UPDATE knowledge
+               SET risk_level='pending_review', hazards='[\"unknown\"]',
+                   review_status='pending_external_review'
+               WHERE risk_level='' OR review_status='' OR hazards='[]'"""
+        )
+        self.conn.commit()
 
         # SHA-240: provenance and legacy labels are claims, not evidence. Keep
         # the old label for audit, then recompute the persisted level from the
@@ -551,7 +580,9 @@ class Database:
     # --- Knowledge ---
 
     def save_knowledge(self, k: KnowledgeEntry):
+        normalize_knowledge_risk_metadata(k)
         normalize_knowledge_evidence(k)
+        validate_knowledge_entry_schema(k)
         k.verification = derive_verification_level(k)
         steps_json = json.dumps(k.steps, ensure_ascii=False)
         prereq_json = json.dumps(k.prerequisites, ensure_ascii=False)
@@ -561,6 +592,11 @@ class Database:
         applicable_json = json.dumps(k.applicable_when, ensure_ascii=False)
         contraindications_json = json.dumps(k.contraindications, ensure_ascii=False)
         review_claim_json = json.dumps(k.review_claim, ensure_ascii=False, sort_keys=True)
+        hazards_json = json.dumps(k.hazards, ensure_ascii=False, sort_keys=True)
+        risk_reviews_json = json.dumps(k.risk_reviews, ensure_ascii=False, sort_keys=True)
+        risk_review_claims_json = json.dumps(
+            k.risk_review_claims, ensure_ascii=False, sort_keys=True
+        )
         self.conn.execute(
             """INSERT OR REPLACE INTO knowledge
                (id, category, subcategory, priority, title, summary, steps,
@@ -568,8 +604,9 @@ class Database:
                 language, reviewer, qualification, review_date, citation,
                 content_hash, signoff_version, evidence_references, field_records,
                 applicable_when, contraindications, verification_claim, source_claim,
-                source_content_hash, review_claim)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                source_content_hash, review_claim, risk_level, hazards, review_status,
+                risk_reviews, risk_review_claims)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (k.id, k.category, k.subcategory, k.priority, k.title,
              k.summary, steps_json, prereq_json, warn_json,
              k.verification, k.source, k.version, k.language,
@@ -577,7 +614,8 @@ class Database:
              k.content_hash, k.signoff_version, references_json,
              field_records_json, applicable_json, contraindications_json,
              k.verification_claim, k.source_claim, k.source_content_hash,
-             review_claim_json)
+             review_claim_json, k.risk_level, hazards_json, k.review_status,
+             risk_reviews_json, risk_review_claims_json)
         )
         self.conn.execute(
             "DELETE FROM knowledge_fts WHERE id=?", (k.id,)
@@ -633,6 +671,11 @@ class Database:
             incoming.citation = existing.citation
             incoming.content_hash = existing.content_hash
             incoming.signoff_version = existing.signoff_version
+            incoming.risk_level = existing.risk_level
+            incoming.hazards = existing.hazards
+            incoming.review_status = existing.review_status
+            incoming.risk_reviews = existing.risk_reviews
+            incoming.risk_review_claims = existing.risk_review_claims
         incoming.source_content_hash = incoming_hash
         self.save_knowledge(incoming)
 

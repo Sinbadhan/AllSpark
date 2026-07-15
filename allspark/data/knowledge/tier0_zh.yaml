@@ -2,6 +2,9 @@
   category: survival
   subcategory: water
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 煮沸净水法
   summary: 最可靠的净水方法。将水煮沸可杀灭绝大多数病原体。低海拔（2000m以下）煮沸1分钟，高海拔（2000m以上）煮沸3分钟。
   steps:
@@ -24,6 +27,9 @@
   category: survival
   subcategory: water
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 简易过滤净水法
   summary: 使用分层材料制作简易过滤器，可去除大部分悬浮物和部分微生物。可与煮沸法结合使用。
   steps:
@@ -47,6 +53,9 @@
   category: survival
   subcategory: water
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 寻找地表水源
   summary: 在野外寻找地表水源的方法：观察地势、植被、动物行为。水往低处流，谷底和山脚最可能有水。
   steps:
@@ -69,6 +78,9 @@
   category: survival
   subcategory: water
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 从植物获取水分
   summary: 某些植物可以作为水源。清晨露水、多汁植物、竹子、藤蔓等均可提供水分。
   steps:
@@ -90,6 +102,9 @@
   category: survival
   subcategory: water
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 雨水收集
   summary: 雨水是最安全的天然水源之一。收集方法简单，可利用任何大面挡水材料。
   steps:
@@ -112,6 +127,9 @@
   category: survival
   subcategory: fire
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 打火石取火法
   summary: 使用打火石（镁棒）是最可靠的野外取火方式之一，不受潮湿影响，可重复使用数千次。
   steps:
@@ -136,6 +154,9 @@
   category: survival
   subcategory: fire
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 弓钻取火法
   summary: 最经典的摩擦取火法。需要弓、钻杆、底板和轴承石。原理是摩擦生热点燃木屑。
   steps:
@@ -163,6 +184,9 @@
   category: survival
   subcategory: fire
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 电池取火法
   summary: 利用电池短路产生高温点燃引火物。9V电池或多节AA/AAA碱性电池组配合钢丝棉或细导线即可（严禁锂电池，有爆炸风险）。
   steps:
@@ -188,6 +212,9 @@
   category: survival
   subcategory: fire
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 燃料类型与选择
   summary: 不同燃料有不同特性。干柴是最常用燃料，紧急时动物粪便、油脂等也可使用。
   steps:
@@ -210,6 +237,9 @@
   category: survival
   subcategory: fire
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 火堆搭建类型
   summary: 不同用途需要不同火堆：锥形火堆适合快速取暖，星形火堆节省燃料，长火适合多人取暖。
   steps:
@@ -233,6 +263,9 @@
   category: survival
   subcategory: food
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 常见可食用野菜识别
   summary: 以下野菜广泛分布且容易识别：蒲公英、马齿苋、野蒜、蕨菜、荠菜。它们是野外最容易获取的食物来源。
   steps:
@@ -257,6 +290,9 @@
   category: survival
   subcategory: food
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 植物可食性通用测试法
   summary: 在无法确认植物是否可食用时，使用此分步测试法。整个过程约需24小时，但可以救命。
   steps:
@@ -284,6 +320,9 @@
   category: survival
   subcategory: food
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 简易陷阱制作
   summary: 在野外，陷阱比主动狩猎效率更高。最基础的是落坑陷阱和绳套陷阱。
   steps:
@@ -312,6 +351,9 @@
   category: survival
   subcategory: food
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 基础捕鱼方法
   summary: 在有水域的地方，捕鱼比狩猎更可靠。无渔具时也有多种方法可用。
   steps:
@@ -333,6 +375,9 @@
   category: survival
   subcategory: food
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 食物干燥保存法
   summary: 干燥是最古老的食物保存方法。去除水分后微生物无法生长，肉类和水果均可干燥保存。
   steps:
@@ -359,6 +404,9 @@
   category: survival
   subcategory: shelter
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 单坡庇护所（Lean-to）
   summary: 最简单实用的庇护所。利用一根横木和多根斜木搭建，覆盖树叶/草/土即可防风挡雨。
   steps:
@@ -385,6 +433,9 @@
   category: survival
   subcategory: shelter
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 落叶庇护所（Debris Hut）
   summary: 利用大量落叶和树枝搭建的保温庇护所，不需要绳索，保暖性极好，适合寒冷环境。
   steps:
@@ -410,6 +461,9 @@
   category: survival
   subcategory: shelter
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 城市废墟庇护所
   summary: 在核危机或社会崩溃后的城市废墟中，利用现有建筑是最快的庇护方式。需注意结构安全和污染。
   steps:
@@ -435,6 +489,9 @@
   category: survival
   subcategory: medical
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 出血止血法
   summary: 严重出血是最紧急的威胁之一。直接压迫是最有效的止血方法，必须在出血后立即实施。
   steps:
@@ -462,6 +519,9 @@
   category: survival
   subcategory: medical
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 心肺复苏术（CPR）
   summary: 当人无意识且无呼吸时，立即进行CPR。胸外按压+人工呼吸可维持血液循环。
   steps:
@@ -491,6 +551,9 @@
   category: survival
   subcategory: medical
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 伤口处理基础
   summary: 所有伤口都有感染风险。正确清洗和包扎是野外伤口处理的关键。
   steps:
@@ -517,6 +580,9 @@
   category: survival
   subcategory: medical
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 失温症处理
   summary: 体温低于35°C即为失温。在野外，失温是最常见的致命因素之一，必须早发现早处理。
   steps:
@@ -547,6 +613,9 @@
   category: survival
   subcategory: medical
   priority: 0
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 骨折临时处理
   summary: 野外骨折无法进行专业治疗，但正确固定可减轻疼痛、防止进一步损伤，为后续治疗争取时间。
   steps:

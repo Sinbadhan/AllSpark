@@ -2,6 +2,9 @@
   category: community
   subcategory: governance
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 社区组织架构设计
   summary: 长期生存需要建立稳定的社区组织。根据人数和技能分布，设计合理的权力结构和分工体系。火种可以辅助评估和推荐架构。
   steps:
@@ -26,6 +29,9 @@
   category: community
   subcategory: conflict
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 冲突调解与仲裁
   summary: 多人共处必然产生冲突。建立系统化的冲突解决机制，避免矛盾升级影响群体生存。
   steps:
@@ -50,6 +56,9 @@
   category: community
   subcategory: education
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 知识传承与教育体系
   summary: 文明延续依赖知识传承。建立系统化的教育体系，确保关键技能不会因人员损失而失传。
   steps:
@@ -74,6 +83,9 @@
   category: engineering
   subcategory: blacksmithing
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 基础锻造技术
   summary: 金属加工是文明重建的核心技能。从简易锻造炉开始，逐步掌握基础锻造技术，制作工具和零件。
   steps:
@@ -101,6 +113,9 @@
   category: engineering
   subcategory: electricity
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 简易发电装置
   summary: 电力是现代文明的基础。利用现有材料搭建简易发电装置，为火种和关键设备供电。
   steps:
@@ -127,6 +142,9 @@
   category: engineering
   subcategory: electricity
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 基础电路搭建
   summary: 从零搭建简易电路系统，包括线路规划、安全保护和基本维修。
   steps:
@@ -154,6 +172,9 @@
   category: engineering
   subcategory: masonry
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 基础砌筑与建筑
   summary: 长期定居需要永久性建筑。掌握基础砌筑技术，建造坚固的住所和设施。
   steps:
@@ -179,6 +200,9 @@
   category: agriculture
   subcategory: livestock
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 家禽养殖——鸡
   summary: 鸡是最容易养殖的家禽，提供蛋和肉。管理简单，繁殖快，适合社区养殖。
   steps:
@@ -206,6 +230,9 @@
   category: agriculture
   subcategory: livestock
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 山羊养殖
   summary: 山羊适应性强，提供奶、肉和皮毛。是灾后重要的蛋白质和营养来源。
   steps:
@@ -234,6 +261,9 @@
   category: agriculture
   subcategory: aquaculture
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 简易鱼塘养殖
   summary: 鱼塘提供稳定的蛋白质来源。利用天然水源或雨水建造简易鱼塘，养殖淡水鱼。
   steps:
@@ -262,6 +292,9 @@
   category: medicine
   subcategory: herbal
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 常见药用植物手册
   summary: 现代药物耗尽后，传统草药是主要治疗手段。掌握常见药用植物的识别、采集和使用方法。
   steps:
@@ -288,6 +321,9 @@
   category: medicine
   subcategory: surgery
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 紧急外科基础
   summary: 当无法获得专业医疗时，部分外科操作必须由非专业人员执行。这是最后手段，仅在其他选择都不存在时使用。
   steps:
@@ -315,6 +351,9 @@
   category: communication
   subcategory: radio
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 业余无线电通信
   summary: 无线电是远距离通信的唯一可靠手段。建立业余电台，与外界保持联系。
   steps:
@@ -343,6 +382,9 @@
   category: communication
   subcategory: morse
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 莫尔斯电码速查
   summary: 莫尔斯电码是最基本的远距离通信编码，只需简单设备即可发送。SOS是国际通用求救信号。
   steps:
@@ -367,6 +409,9 @@
   category: defense
   subcategory: perimeter
   priority: 2
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 社区防御体系设计
   summary: 长期定居点需要系统化的防御体系。从预警到拒止，建立多层防御。
   steps:
@@ -395,6 +440,9 @@
   category: civilization
   subcategory: record
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 文明档案记录
   summary: 记录和保存人类文明知识是火种的核心使命之一。建立系统化的档案记录体系。
   steps:
@@ -420,6 +468,9 @@
   category: civilization
   subcategory: law
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 社区基本法规框架
   summary: 长期社区需要基本法律框架维持秩序。从最基本的生存规则开始，逐步完善。
   steps:
@@ -447,6 +498,9 @@
   category: communication
   subcategory: signals
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 视觉求救信号
   summary: 无线电失效时，视觉信号是吸引救援的主要手段。掌握国际通用视觉信号规范，可在远距离传递求救意图。
   steps:
@@ -471,6 +525,9 @@
   category: communication
   subcategory: signals
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 音频求救信号
   summary: 视线受阻或夜间时，声音是传递求救的关键。掌握标准音频信号规范，可在雾天、密林中有效呼救。
   steps:
@@ -494,6 +551,9 @@
   category: communication
   subcategory: low_tech
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 低技术通信中继
   summary: 无电子通信时，靠人力与简单工具建立中继网络，可在分散社区间维持信息传递。
   steps:
@@ -518,6 +578,9 @@
   category: civilization
   subcategory: education
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 口述传承体系
   summary: 无书写条件时，口述是知识与历史传承的主要方式。系统化的口述方法可大幅降低信息失真。
   steps:
@@ -543,6 +606,9 @@
   category: civilization
   subcategory: currency
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 物物交换与等价物
   summary: 货币失效后，物物交换是基本贸易形式。建立等价物与交换比例，可大幅提升交换效率。
   steps:
@@ -567,6 +633,9 @@
   category: civilization
   subcategory: governance
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 议事会制度
   summary: 中等规模社区（30人以上）适合议事会制度。通过定期议事、协商投票与轮值制，平衡效率与公正。
   steps:
@@ -594,6 +663,9 @@
   category: community
   subcategory: children
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 儿童教育与生存技能传承
   summary: 儿童是社区延续的希望。按年龄段传授生存技能，兼顾安全教育、情感支持与任务参与，在保护童年的同时培养独立生存能力。
   steps:
@@ -619,6 +691,9 @@
   category: community
   subcategory: psychology
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 心理支持与创伤后应激识别
   summary: 灾难情境下心理创伤不可避免。建立团体支持机制、识别崩溃信号、轮值倾听，是社区长期凝聚力的关键。
   steps:
@@ -644,6 +719,9 @@
   category: defense
   subcategory: warning
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 社区自卫预警系统
   summary: 建立多通道预警系统，确保社区在威胁出现时能快速响应。仅用于自卫预警，不授权先发制人。
   steps:
@@ -669,6 +747,9 @@
   category: defense
   subcategory: shelter
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 避难所加固与防御
   summary: 加固避难所防止入侵，消除死角、保障紧急出口。仅用于合法自卫，不构筑攻击性工事。
   steps:
@@ -694,6 +775,9 @@
   category: defense
   subcategory: nonlethal
   priority: 3
+  risk_level: pending_review
+  hazards: [unknown]
+  review_status: pending_external_review
   title: 非致命威慑手段
   summary: 使用噪声、光、障碍、警报等非致命手段威慑入侵，避免正面冲突。武力是最后手段。
   steps:
