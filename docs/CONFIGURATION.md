@@ -72,11 +72,15 @@ Local model files can be large and sensitive to licensing constraints. Keep mode
 
 LLM, RAG, vision, and voice capabilities are optional and should degrade gracefully when dependencies or model files are unavailable.
 
-### Default LLM per hardware tier
+### Experimental LLM selection metadata
 
-The recommended LLM is picked automatically by the init wizard, based on detected hardware. Each tier has exactly one recommended model — sized to fit its RAM threshold, no auto-OOM risk:
+The optional init flow can select one catalog default from a detected RAM tier.
+This is an Experimental eligibility heuristic, not a minimum-device,
+compatibility, performance, or out-of-memory guarantee. No real release GGUF
+runtime has been certified. File and runtime sizes below are catalog estimates
+that must be remeasured for the exact artifact and backend before use.
 
-| Tier | RAM threshold | Default model | GGUF size | Runtime RAM |
+| Tier | Eligibility threshold (heuristic) | Catalog default | Estimated GGUF size | Estimated runtime RAM |
 |------|--------------:|---------------|----------:|------------:|
 | Phantom | ≥ 2 GB | `qwen3-1_7b-instruct-q4` | ~1 GB | ~1.2 GB |
 | Minimum | ≥ 4 GB | `qwen3-4b-instruct-q4` | ~2.5 GB | ~3 GB |
@@ -84,7 +88,9 @@ The recommended LLM is picked automatically by the init wizard, based on detecte
 | Comfortable | ≥ 16 GB | `qwen3-14b-instruct-q4` | ~9 GB | ~11 GB |
 | Flagship | ≥ 32 GB | `qwen3-32b-instruct-q4` | ~20 GB | ~24 GB |
 
-The full catalog (defaults + override candidates) lives in `allspark/data/models.yaml`.
+The implementation catalog (defaults + override candidates) lives in
+`allspark/data/models.yaml`. These rows describe current configuration behavior
+only and do not expand the v1.0.3 Stable support boundary.
 
 ### Overriding the default model
 

@@ -15,7 +15,7 @@ Use this checklist before tagging or publishing an AllSpark release.
 - Confirm Bluetooth and Wi-Fi Direct are not advertised as transports; v1.0.3
   implements LAN TCP transport and radio availability detection only.
 - Confirm the accessibility boundary is macOS VoiceOver for the validated core
-  Web flow. Windows + NVDA remains Testing/Experimental until real-environment
+  Web flow. Windows + NVDA remains Testing until real-environment
   evidence passes and must not be advertised as Stable.
 - Confirm psychology and crisis support remain Experimental. They may not be
   advertised as clinically validated or promoted until SHA-260 contains a
@@ -63,7 +63,7 @@ Python 3.10 is the canonical coverage environment; CI still runs the complete
 test suite and collection gate independently on Python 3.11 and 3.12.
 Run §1 of `docs/MANUAL_CHECKLIST.md` and attach the keyboard, macOS VoiceOver,
 and 200% browser-zoom evidence to the release PR. Attach Windows + NVDA evidence
-only when promoting that compatibility out of Testing/Experimental.
+only when promoting that compatibility out of Testing.
 
 ## 4. Check package metadata
 

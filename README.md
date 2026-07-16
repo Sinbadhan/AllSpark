@@ -4,16 +4,16 @@
 
 > **In extreme conditions, preserve and rebuild human civilization.**
 
-AllSpark (AllSpark: A Survival-centric Offline AI Resource Kit) is an offline-first AI survival assistance system. The codebase includes desktop and Raspberry Pi adapters, but the v1.0.3 stable support boundary is the desktop PROCESS-mode core described below.
+AllSpark (AllSpark: A Survival-centric Offline AI Resource Kit) is an offline-first AI survival assistance system. The codebase includes desktop and Raspberry Pi adapters, but the v1.0.3 candidate targets only the desktop PROCESS-mode core described below. It has not been published as Stable.
 
 ---
 
 ## Core Principles
 
 - **Offline First** — Runs without network; all data and models stored locally
-- **Progressive Intelligence** — From pure rule engine to local LLM, elastically upgraded by hardware capability
+- **Deterministic Core** — The supported loop works without a model; local LLM integration remains optional and Experimental
 - **Knowledge is Life** — Built-in multi-tier survival knowledge base with inter-node knowledge exchange
-- **Adaptive Survival** — Automatically adjusts operation mode and interaction personality based on resource status
+- **Evidence Before Inference** — Unknown facts stay unknown; phase, urgency, and plans come from explicit observations and auditable rules
 - **Civilization Preservation** — Records experience, verifies knowledge, passes on skills, rebuilds the foundation of civilization
 
 ---
@@ -26,9 +26,10 @@ passes; code presence alone is not validation.
 
 | Status | Scope |
 |--------|-------|
-| Supported | Python 3.10-3.12; desktop PROCESS mode; CLI and Web UI; local SQLite; rule-based assessment; knowledge search/import/export; resources, goals, tasks and diary; local snapshot/restore; core Web flows with macOS VoiceOver |
-| Experimental | Psychology and non-clinical crisis support (independent qualified expert review pending); Governance/RBAC (disabled until member identity and server-side authorization are verified); Windows screen-reader compatibility (NVDA, testing); Docker/INTEGRATION mode; real GGUF/LLM and GPU acceleration; microphone/STT/TTS; camera/vision; Raspberry Pi GPIO/I2C/Serial, sensors, power and hardware GPS; cross-host Spark Network; removable-media disaster recovery |
-| Not supported in v1.0.3 | Bluetooth and Wi-Fi Direct transports. The current Spark Network transport is TCP over LAN; radio availability detection is not a transport implementation. |
+| Supported | Python 3.10-3.12 desktop PROCESS mode; CLI and Web UI; local SQLite; the **Assess -> Decide -> Act -> Reassess** loop; evidence-aware knowledge search/import/export; confirmed 24h plans; tasks and outcome reassessment; local snapshot/restore; Chinese/English; core Web flows with macOS VoiceOver |
+| Testing | Windows screen-reader compatibility with NVDA. Design and automated checks are complete; a real Windows + NVDA run is still required. |
+| Experimental | Psychology and non-clinical crisis support (independent qualified expert review pending); personality adaptation; Governance/RBAC (disabled until member identity and server-side authorization are verified); knowledge trading; Docker/INTEGRATION; real GGUF/LLM and GPU acceleration; microphone/STT/TTS; camera/vision; Raspberry Pi GPIO/I2C/Serial, sensors, power and hardware GPS; cross-host Spark Network; weather/environment/map automation; removable-media disaster recovery |
+| Future / not supported in v1.0.3 | Bluetooth, Wi-Fi Direct and LoRa transports; signed knowledge packs; complete multiplayer identity and governance. The current Spark Network transport is TCP over LAN; radio availability detection is not a transport implementation. |
 
 Single-host, independent-process Spark Network exchange is covered by automated
 integration tests. It does not certify cross-host radios or field deployment.
@@ -41,13 +42,17 @@ accessibility claim.
 
 ## Feature Overview
 
+This is a capability inventory, not a Stable commitment. Status labels here are
+subordinate to the release support boundary above; unlabeled supporting tools
+do not expand the primary v1.0.3 product promise.
+
 ### 🧠 Intelligence Engine
 | Feature | Description |
 |---------|-------------|
 | Rule Engine | Deterministic survival advice based on knowledge base, intent recognition + knowledge retrieval |
 | Local LLM (Experimental) | llama-cpp-python inference path and Qwen3 sizing recommendations; a release GGUF runtime has not been certified |
-| Survival Assessment | 5-dimensional resource assessment + phase determination + bottleneck identification |
-| Personality System | Crisis/Stable/Companion/Multiplayer/Renaissance — 5 adaptive modes |
+| Survival Assessment | Explicit Known/Unknown observations + normalized resources + auditable phase and bottleneck rules |
+| Personality System (Experimental) | Crisis/Stable/Companion/Multiplayer/Renaissance adaptation prototype |
 | Experience Accumulation | Experience recording → pattern recognition → knowledge entry loop |
 | Daily Briefing | Auto-generated survival report: resources + warnings + goals + tasks + knowledge tip |
 | Psychology Tracking (Experimental) | Non-clinical loneliness/stress prompts and self-assessment; explicit self-harm language enters private, deterministic safety confirmation before rules/LLM. No diagnosis, automatic notification, or silent timeline recording; qualified external review is pending. |
@@ -131,7 +136,7 @@ accessibility claim.
 |-----------|-------------|
 | CLI | Rich-enhanced terminal, bilingual Chinese/English commands (30+ commands) |
 | Web UI | FastAPI + responsive frontend, accessible from phone/tablet/desktop |
-| Init Wizard | CLI/Web dual mode, language → hardware check → model → survivor profile |
+| Init Wizard | CLI/Web flow: language -> immediate-danger availability -> minimum assessment -> confirmed 24h plan; hardware and model setup remain optional |
 | i18n | Full Chinese/English bilingual system with runtime language switching |
 
 ---
@@ -188,21 +193,18 @@ help                    — Full help
 
 ---
 
-## Hardware Sizing Recommendations
+## Evidence-Based Deployment Planning
 
-| Tier | RAM | Storage | Device | LLM Model | Deploy Mode |
-|------|-----|---------|--------|-----------|-------------|
-| Phantom | 2 GB | 16 GB | Raspberry Pi 4 | Qwen3-1.7B-Instruct-Q4 | Process |
-| Minimum | 4 GB | 32 GB | Raspberry Pi 5 | Qwen3-4B-Instruct-Q4 | Process |
-| Recommended | 8 GB | 64 GB | Mini PC | Qwen3-8B-Instruct-Q4 | Docker |
-| Comfortable | 16 GB | 128 GB | Laptop | Qwen3-14B-Instruct-Q4 | Docker |
-| Flagship | 32 GB+ | 256 GB+ | Workstation | Qwen3-32B-Instruct-Q4 | Integration |
+v1.0.3 does not publish a universal minimum RAM tier, recommended device, model,
+tokens-per-second figure, power draw, or battery-life promise. Those outcomes
+depend on the exact OS, CPU/GPU, storage, display, peripherals, content pack, and
+model. The supported rule-based loop does not require an LLM.
 
-> Without LLM, the system still runs normally via the rule engine, only losing open-ended Q&A capability.
->
-> Model and deploy-mode rows are sizing guidance, not v1.0.3 support
-> certification. Docker/INTEGRATION, Raspberry Pi and real GGUF execution remain
-> Experimental until their rows in the real-world validation matrix pass.
+Use [real-world validation](docs/REAL_WORLD_VALIDATION.md) for the current test
+matrix. Docker/INTEGRATION, Raspberry Pi, real GGUF execution, sensors, and
+removable-media recovery remain Experimental until reproducible evidence for a
+named configuration is attached there. Offline delivery artifacts will carry
+their own measured size, checksum, target platform, and rollback instructions.
 
 ---
 

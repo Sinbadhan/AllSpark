@@ -98,7 +98,7 @@ allspark/
 
 ## 当前状态（v1.0.3 Release Candidate）
 
-- v1.0.3 尚未 tag 或发布；SHA-158 是实时发布状态权威入口，当前结论为 On track / Release-ready，但仍不得称为 Stable
+- v1.0.3 尚未 tag 或发布；SHA-158 是实时发布状态权威入口，当前工程基线 On track，但 M4 产品门禁与外部复核未完成，因此 Stable 结论仍为 No-Go
 - 2026-07-15 发现的 8 个 High/P1、本轮 CLI/Repository/CI P2、执行中心入口、CSP enforcing、发布事务一致性与最终 RC 跨流程复验均已闭环
 - 完整 tracked tests 已收集（以 `pytest tests/ -q` / CI 实际输出为准；CI 在 Python 3.10/3.11/3.12 复现，SHA-28）
 - SHA-151 质量门禁：Python 3.10 为权威覆盖环境，总行覆盖率 ≥75%，10 个关键路径模块分支覆盖率均 ≥90%；3.10/3.11/3.12 均运行完整测试与收集数防回退门禁
@@ -110,6 +110,6 @@ allspark/
 - Scheduler 已接入 bootstrap
 - 命令自动发现注册已实现（10 个命令模块 / 32 个 Command 类）
 - Web 脚本使用逐请求 nonce，`script-src-attr 'none'` 禁止内联事件处理器；七页面真实 Chrome CSP violation 门禁为 0
-- 当前没有可在本机继续收敛的发布必要项；真实硬件、Docker daemon、独立介质与 v2+ 能力按 Linear 保持 Testing/Experimental 或未来版本边界
+- 当前仍需完成 M4 信息架构、支持状态语义、离线交付与目标用户试点；真实硬件、Docker daemon、独立介质与 v2+ 能力按 Linear 保持 Testing/Experimental 或未来版本边界
 - 当前开放轨道与实时计数以 Linear SHA-158 正文为准
 - 当前基线的精确 commit、测试计数和 GitHub Actions 证据维护在 Linear SHA-158，仓库文档不复制易漂移的 run 编号

@@ -17,6 +17,13 @@ documentation. Linear SHA-158 is the live source for issue status; this section
 records shipped behavior and does not claim release readiness before the RC
 workflow and supported hardware scope are approved.
 
+**Product scope (P1):**
+- SHA-257: PRD and bilingual README now define one v1.0.3 Stable target around
+  the Assess -> Decide -> Act -> Reassess desktop PROCESS loop. Windows + NVDA
+  is Testing; LLM, Docker, hardware, network, psychology, personality and
+  governance paths are Experimental or Future. Unverified device, model,
+  tokens-per-second, power and battery recommendations were removed.
+
 **Security (P0):**
 - SHA-142: Web auth boundary - token moved out of HTML to httpOnly+SameSite
   cookie; `/login` + `/api/auth/login`; one-time bootstrap (init/complete 410

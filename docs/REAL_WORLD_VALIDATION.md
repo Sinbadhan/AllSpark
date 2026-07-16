@@ -33,7 +33,7 @@ removable storage.
 | Sensor hub | blocked_by_hardware | I2C/GPIO/Serial sensors and GPS | Temperature/humidity/barometer/GPS readings, stale data handling, manual fallback. |
 | Data preservation on real media | software verified; external media environment-blocked | Removable storage or independent filesystem | WAL-consistent atomic snapshot/restore, full SHA-256 verification, valid-SQLite tamper rejection, interrupted creation cleanup and failed-replace reconnect pass. APFS disk-image creation did not complete in this desktop environment, so removable/independent media remains Experimental (SHA-181). |
 | Offline web assets | ready | Browser with network disabled | UI remains readable with local CSS/icon fallbacks. |
-| Web accessibility | macOS VoiceOver + zoom verified; Windows NVDA testing | Chrome at 1280 px / 200%; macOS VoiceOver; future Windows + NVDA host | Core dashboard, navigation, resource edit, Repository filter/detail, dialogs and live status pass VoiceOver after `d3c9a6c`; 200% zoom passed after `421d040`. Windows + NVDA is `not_run` and remains Experimental (SHA-152). |
+| Web accessibility | macOS VoiceOver + zoom verified; Windows NVDA Testing | Chrome at 1280 px / 200%; macOS VoiceOver; future Windows + NVDA host | Core dashboard, navigation, resource edit, Repository filter/detail, dialogs and live status pass VoiceOver after `d3c9a6c`; 200% zoom passed after `421d040`. Windows + NVDA is `not_run` and remains Testing (SHA-152). |
 
 ## 2026-07-14 Evidence
 
@@ -106,14 +106,14 @@ removable storage.
   trigger restoration, and the live status message. Real-Chrome regression plus
   static/runtime gates: `35 passed` for the focused SHA-152/SHA-212 set.
 - Boundary: no Windows + NVDA host was available. That row is `not_run`, remains
-  Testing/Experimental, and is excluded from the v1.0.3 Stable accessibility
+  Testing, and is excluded from the v1.0.3 Stable accessibility
   claim until real evidence passes.
 
 ## v1.0.3 Support Decision
 
 The Stable candidate scope is desktop PROCESS mode, local core workflows and
 the macOS VoiceOver-validated core Web flow. Windows screen-reader compatibility
-(NVDA) remains Testing/Experimental. Docker/INTEGRATION, real model/GPU, voice,
+(NVDA) remains Testing. Docker/INTEGRATION, real model/GPU, voice,
 vision, Raspberry Pi hardware,
 physical sensors/GPS/power, cross-host networking and removable-media disaster
 recovery remain Experimental. Bluetooth and Wi-Fi Direct transports are not
@@ -136,15 +136,17 @@ implemented in v1.0.3; channel detection must not be presented as transport.
 - [GitHub Actions Run #97](https://github.com/Sinbadhan/AllSpark/actions/runs/29371977980):
   test and clean-wheel smoke jobs succeeded on Python 3.10/3.11/3.12; six
   checks reported zero warning/failure annotations.
-- Decision: **Go / Release-ready for the documented desktop PROCESS-mode
-  support boundary.** This is approval of the candidate scope, not evidence for
-  excluded hardware or a claim that an untagged candidate is already Stable.
+- Decision at this engineering baseline: **Go for continued Product RC
+  validation of the documented desktop PROCESS-mode support boundary.** This
+  is not launch approval, evidence for excluded hardware, or a claim that an
+  untagged candidate is already Stable. The current release decision remains
+  governed by Linear SHA-158 and the incomplete M4 product gates.
 
 ## Remaining External Validation Order
 
 The unrestricted automated baseline and loopback regression are complete. The
-remaining work can expand future support claims, but is excluded from the
-current release-ready boundary:
+remaining work can expand future support claims and is excluded from the
+current candidate support boundary:
 
 1. On a post-release hardware-validation track, validate Docker on a
    daemon-enabled host and move SHA-179 out of Experimental only with evidence.

@@ -165,28 +165,48 @@ def test_changelog_unreleased_does_not_overclaim_release_closure() -> None:
 
 def test_public_docs_define_honest_release_support_boundary() -> None:
     agents = Path("AGENTS.md").read_text(encoding="utf-8")
+    prd = Path("PRD.md").read_text(encoding="utf-8")
     readme = Path("README.md").read_text(encoding="utf-8")
     readme_cn = Path("README_CN.md").read_text(encoding="utf-8")
     validation = Path("docs/REAL_WORLD_VALIDATION.md").read_text(encoding="utf-8")
 
-    assert "On track / Release-ready" in agents
+    assert "Stable 结论仍为 No-Go" in agents
     assert "2026-07-15 Final RC Review" in validation
-    assert "Go / Release-ready" in validation
+    assert "Go for continued Product RC" in validation
+    assert "validation of the documented desktop PROCESS-mode" in validation
+    assert "not launch approval" in validation
 
     assert "v1.0.3 Release Support Boundary" in readme
     assert "v1.0.3 发布支持边界" in readme_cn
+    assert "Stable Supported（v1.0.3 唯一公开承诺）" in prd
+    assert "Testing / Experimental / Future" in prd
     for content in (readme, readme_cn, validation):
         assert "PROCESS" in content
         assert "Experimental" in content
 
-    assert "Windows screen-reader compatibility (NVDA, testing)" in readme
-    assert "Windows 读屏兼容性（NVDA，测试阶段）" in readme_cn
-    assert "macOS VoiceOver + zoom verified; Windows NVDA testing" in validation
+    assert "| Testing | Windows screen-reader compatibility with NVDA." in readme
+    assert "| Testing | Windows + NVDA 读屏兼容性。" in readme_cn
+    assert "macOS VoiceOver + zoom verified; Windows NVDA Testing" in validation
+
+    assert "Assess -> Decide -> Act -> Reassess" in readme
+    assert "评估 -> 决策 -> 行动 -> 重评" in readme_cn
+    assert "| Future / not supported in v1.0.3 |" in readme
+    assert "| Future / v1.0.3 不支持 |" in readme_cn
+
+    for obsolete_claim in (
+        "### ✅ In Scope（v1.0 包含）",
+        "## 三、核心模块",
+        "10000mAh",
+        "LLM 推理速度 | 1-2 tokens/s",
+    ):
+        assert obsolete_claim not in prd
+    assert "| Phantom |" not in readme
+    assert "| 残影 | 2 GB" not in readme_cn
 
     assert "LAN/Bluetooth/WiFi Direct" not in readme
     assert "局域网/蓝牙/WiFi Direct" not in readme_cn
-    assert "Bluetooth and Wi-Fi Direct transports" in readme
-    assert "蓝牙和 Wi-Fi Direct 传输" in readme_cn
+    assert "Bluetooth, Wi-Fi Direct and LoRa transports" in readme
+    assert "蓝牙、Wi-Fi Direct 和 LoRa 传输" in readme_cn
 
     experimental_feature_rows = {
         readme: (
@@ -214,6 +234,9 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
             row = next(line for line in content.splitlines() if line.startswith(f"| {feature_name}"))
             assert "Experimental" in row, f"{feature_name} must match the release registry"
 
+    assert "| Personality System (Experimental) |" in readme
+    assert "| 人格系统（Experimental） |" in readme_cn
+
     supported_en = next(
         line for line in readme.splitlines() if line.startswith("| Supported |")
     )
@@ -234,5 +257,5 @@ def test_manual_release_gate_covers_accessibility_and_transport_boundary() -> No
     assert "not presented as working data transports" in manual
     assert "macOS VoiceOver" in release
     assert "Windows + NVDA" in release
-    assert "Testing/Experimental" in release
+    assert "Windows + NVDA remains Testing" in release
     assert "Automated DOM tests and screenshots do not substitute" in release
