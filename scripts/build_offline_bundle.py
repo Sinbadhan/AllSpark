@@ -16,6 +16,7 @@ import os
 import platform
 import shutil
 import stat
+import struct
 import subprocess
 import sys
 import tarfile
@@ -94,6 +95,49 @@ def _normalize_tree(root: Path, epoch: int) -> None:
         else:
             path.chmod(0o644)
         os.utime(path, (epoch, epoch), follow_symlinks=False)
+
+
+def _normalize_macho_uuid(executable: Path) -> None:
+    """Replace PyInstaller's random arm64 Mach-O UUID with a content-derived UUID."""
+    data = bytearray(executable.read_bytes())
+    if data[:4] != b"\xcf\xfa\xed\xfe":
+        raise ValueError("expected a thin little-endian 64-bit Mach-O executable")
+    ncmds = struct.unpack_from("<I", data, 16)[0]
+    offset = 32
+    uuid_offset = None
+    for _ in range(ncmds):
+        command, command_size = struct.unpack_from("<II", data, offset)
+        if command_size < 8 or offset + command_size > len(data):
+            raise ValueError("invalid Mach-O load command")
+        if command == 0x1B:  # LC_UUID
+            if command_size != 24:
+                raise ValueError("invalid Mach-O LC_UUID command")
+            uuid_offset = offset + 8
+            break
+        offset += command_size
+    if uuid_offset is None:
+        raise ValueError("Mach-O executable has no LC_UUID command")
+
+    data[uuid_offset : uuid_offset + 16] = b"\0" * 16
+    normalized_uuid = bytearray(hashlib.sha256(data).digest()[:16])
+    normalized_uuid[6] = (normalized_uuid[6] & 0x0F) | 0x50
+    normalized_uuid[8] = (normalized_uuid[8] & 0x3F) | 0x80
+    data[uuid_offset : uuid_offset + 16] = normalized_uuid
+    executable.write_bytes(data)
+
+
+def _resign_main_executable(payload: Path, sign_identity: str | None) -> None:
+    executable = payload / "AllSpark"
+    subprocess.run(["codesign", "--remove-signature", str(executable)], check=True)
+    _normalize_macho_uuid(executable)
+    command = ["codesign", "--force", "--identifier", "io.github.sinbadhan.allspark"]
+    if sign_identity:
+        command.extend(["--options", "runtime", "--timestamp", "--sign", sign_identity])
+    else:
+        command.extend(["--sign", "-"])
+    command.append(str(executable))
+    subprocess.run(command, check=True)
+    subprocess.run(["codesign", "--verify", "--strict", "--verbose=2", str(executable)], check=True)
 
 
 def _shell_quote(value: str) -> str:
@@ -436,7 +480,9 @@ def _freeze_payload(work_dir: Path, sign_identity: str | None, epoch: int) -> Pa
         "SOURCE_DATE_EPOCH": str(epoch),
     }
     subprocess.run(command, cwd=ROOT, check=True, env=env)
-    return dist_dir / "AllSpark"
+    payload = dist_dir / "AllSpark"
+    _resign_main_executable(payload, sign_identity)
+    return payload
 
 
 def _build_release_dmg(
