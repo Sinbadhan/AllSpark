@@ -112,7 +112,8 @@ class ResourceManager:
                         intake_known: Optional[bool] = None,
                         capacity: Optional[float] = None,
                         capacity_known: Optional[bool] = None,
-                        confirm_outlier: bool = False):
+                        confirm_outlier: bool = False,
+                        commit: bool = True):
         for field, known in (
             ("amount_known", amount_known),
             ("consumption_known", consumption_known),
@@ -190,7 +191,7 @@ class ResourceManager:
         r.people_count_known = people_count_known
         r.as_of = snapshot_time
         r.estimated_remaining_hours = self._estimate_remaining(r)
-        self.db.upsert_resource(r)
+        self.db.upsert_resource(r, commit=commit)
 
     def merge_resource_observation(
         self,
@@ -201,6 +202,7 @@ class ResourceManager:
         intake: Optional[float] = None,
         source: str,
         as_of: Optional[str] = None,
+        commit: bool = True,
     ) -> None:
         """Merge a controlled partial observation without erasing known fields."""
         current = self.db.get_resource(rtype)
@@ -242,6 +244,7 @@ class ResourceManager:
             intake_known=current.intake_known if intake is None else True,
             capacity=current.capacity if current.capacity_known else None,
             capacity_known=current.capacity_known,
+            commit=commit,
         )
 
     def mark_unknown(
@@ -561,6 +564,50 @@ class ResourceManager:
                         "message": t("warning_storage_low", pct=pct),
                     })
         return warnings
+
+    def resource_risk_status(self, resource: Resource) -> str:
+        """Return an evidence-based display state for one resource type."""
+        if not self.is_configured(resource) or not self.is_snapshot_current(resource):
+            return "unknown"
+
+        if resource.type == ResourceType.FIRE:
+            threshold = RESOURCE_WARNING_THRESHOLDS["fire"]
+            if resource.current_amount < threshold["critical_uses"]:
+                return "critical"
+            if resource.current_amount < threshold["warning_uses"]:
+                return "warning"
+            return "normal"
+
+        if resource.type == ResourceType.STORAGE:
+            if not resource.capacity_known or resource.capacity <= 0:
+                return "unknown"
+            percent = resource.current_amount / resource.capacity * 100
+            threshold = RESOURCE_WARNING_THRESHOLDS["storage"]
+            if percent < threshold["critical_percent"]:
+                return "critical"
+            if percent < threshold["warning_percent"]:
+                return "warning"
+            return "normal"
+
+        status = self.remaining_status(resource)
+        if status == "sustained":
+            return "sustained"
+        if status != "finite":
+            return "unknown"
+
+        hours = resource.estimated_remaining_hours
+        threshold = RESOURCE_WARNING_THRESHOLDS[resource.type.value]
+        if resource.type == ResourceType.POWER:
+            critical = threshold["critical_hours"]
+            warning = threshold["warning_hours"]
+        else:
+            critical = threshold["critical_days"] * 24
+            warning = threshold["warning_days"] * 24
+        if hours < critical:
+            return "critical"
+        if hours < warning:
+            return "warning"
+        return "normal"
 
     def get_power_savings_advice(self, mode: OperatingMode) -> list[str]:
         advice = []

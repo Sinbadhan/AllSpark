@@ -25,7 +25,7 @@
   </div>
 </div>
 
-<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
   <div class="bg-[#141414] border border-surface-container-high rounded p-3 text-center hover:border-primary transition-colors">
     <div class="text-xl font-bold text-on-surface" id="stat-total">0</div>
     <div class="text-[11px] font-semibold tracking-wider text-secondary">{{ t('web_executions_total') }}</div>
@@ -42,11 +42,15 @@
     <div class="text-xl font-bold text-critical" id="stat-failed">0</div>
     <div class="text-[11px] font-semibold tracking-wider text-secondary">{{ t('web_executions_failed') }}</div>
   </div>
+  <div class="bg-[#141414] border border-surface-container-high rounded p-3 text-center hover:border-primary transition-colors">
+    <div class="text-xl font-bold text-secondary" id="stat-skipped">0</div>
+    <div class="text-[11px] font-semibold tracking-wider text-secondary">{{ t('web_executions_skipped') }}</div>
+  </div>
 </div>
 
 <!-- Tab bar: Tasks | Goals | Timeline -->
 <div class="subtab-bar" style="margin-bottom:12px;">
-  <button class="sub-tab active" data-exectab="tasks">{{ t('web_active_tasks') }}</button>
+  <button class="sub-tab active" data-exectab="tasks">{{ t('web_task_history') }}</button>
   <button class="sub-tab" data-exectab="goals">{{ t('web_goals_tab') }}</button>
   <button class="sub-tab" data-exectab="timeline">{{ t('web_tab_timeline') }}</button>
 </div>
@@ -69,6 +73,46 @@
 <div id="exectab-timeline" class="exec-tab-content" style="display:none;">
   <div id="timeline-list" class="text-sm text-on-surface-variant">{{ t('web_loading') }}</div>
 </div>
+
+<div id="task-outcome-modal" class="modal-overlay" style="display:none;" aria-hidden="true">
+  <form id="task-outcome-form" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="task-outcome-title" style="width:min(520px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;">
+    <h2 id="task-outcome-title" class="modal-title">{{ t('web_task_outcome_title') }}</h2>
+    <div id="task-outcome-task" class="text-sm text-on-surface" style="margin-bottom:10px;"></div>
+    <label for="task-outcome-result" class="text-xs text-secondary">{{ t('web_task_outcome_result') }}</label>
+    <textarea id="task-outcome-result" class="modal-input" rows="4" maxlength="2000" required placeholder="{{ t('web_task_outcome_result_placeholder') }}" style="resize:vertical;"></textarea>
+    <label for="task-outcome-evidence" class="text-xs text-secondary">{{ t('web_task_outcome_evidence') }}</label>
+    <textarea id="task-outcome-evidence" class="modal-input" rows="3" maxlength="5000" placeholder="{{ t('web_task_outcome_evidence_placeholder') }}" style="resize:vertical;"></textarea>
+    <label style="display:flex;align-items:flex-start;gap:8px;margin:8px 0;font-size:13px;">
+      <input id="task-outcome-resource-toggle" type="checkbox" style="margin-top:3px;">
+      <span>{{ t('web_task_outcome_resource_toggle') }}</span>
+    </label>
+    <fieldset id="task-outcome-resource-fields" disabled style="border:1px solid var(--surface-container-high);padding:10px;margin-bottom:10px;">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;">
+        <label class="text-xs text-secondary">{{ t('web_task_outcome_resource_type') }}
+          <select id="task-outcome-resource-type" class="modal-input" style="margin-top:4px;">
+            <option value="water">{{ t('resource_water') }}</option>
+            <option value="food">{{ t('resource_food') }}</option>
+            <option value="fire">{{ t('resource_fire') }}</option>
+            <option value="power">{{ t('resource_power') }}</option>
+            <option value="storage">{{ t('resource_storage') }}</option>
+          </select>
+        </label>
+        <label class="text-xs text-secondary">{{ t('web_task_outcome_resource_amount') }}
+          <input id="task-outcome-resource-amount" class="modal-input" type="number" min="0" step="any" inputmode="decimal" style="margin-top:4px;">
+        </label>
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:8px;margin-top:8px;font-size:12px;">
+        <input id="task-outcome-resource-confirm" type="checkbox" style="margin-top:3px;">
+        <span>{{ t('web_task_outcome_resource_confirm') }}</span>
+      </label>
+    </fieldset>
+    <div id="task-outcome-error" class="text-sm text-critical" role="alert" style="min-height:20px;"></div>
+    <div class="modal-actions">
+      <button type="button" class="action-btn action-outline" data-exec-action="close-outcome">{{ t('web_task_outcome_cancel') }}</button>
+      <button type="submit" class="action-btn action-primary"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">check_circle</span> {{ t('web_task_outcome_save') }}</button>
+    </div>
+  </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -78,8 +122,19 @@ const TASK_I18N = {
   start: "{{ t('web_task_action_start') }}",
   complete: "{{ t('web_task_action_complete') }}",
   fail: "{{ t('web_task_action_fail') }}",
+  skip: "{{ t('web_task_action_skip') }}",
   done: "{{ t('web_task_action_done') }}",
   failed_action: "{{ t('web_task_action_failed') }}",
+  saved: "{{ t('web_task_outcome_saved') }}",
+  plan_changed: "{{ t('web_task_outcome_plan_changed') }}",
+  plan_unchanged: "{{ t('web_task_outcome_plan_unchanged') }}",
+  empty_reason: "{{ t('web_executions_empty_reason') }}",
+  track_plan: "{{ t('web_executions_track_plan') }}",
+  result: "{{ t('web_executions_result_label') }}",
+  evidence: "{{ t('web_executions_evidence_label') }}",
+  completed_at: "{{ t('web_executions_completed_at_label') }}",
+  source: "{{ t('web_executions_source_label') }}",
+  priority: "{{ t('priority') }}",
 };
 const GOAL_I18N = {
   empty: "{{ t('web_goals_no_goals') }}",
@@ -87,6 +142,7 @@ const GOAL_I18N = {
   view: "{{ t('web_goals_btn_view') }}",
   milestones: "{{ t('web_goals_milestones') }}",
   ms_complete: "{{ t('web_goals_milestone_complete') }}",
+  progress: "{{ t('web_progress_label') }}",
 };
 
 async function refreshExecutions() {
@@ -97,14 +153,16 @@ async function refreshExecutions() {
 
     const completed = tasks.filter(t => t.status === "completed").length;
     const failed = tasks.filter(t => t.status === "failed").length;
+    const skipped = tasks.filter(t => t.status === "skipped").length;
     const pending = tasks.filter(t => t.status === "pending" || t.status === "in_progress").length;
     document.getElementById("stat-total").textContent = tasks.length;
     document.getElementById("stat-pending").textContent = pending;
     document.getElementById("stat-success").textContent = completed;
     document.getElementById("stat-failed").textContent = failed;
+    document.getElementById("stat-skipped").textContent = skipped;
 
     if (!tasks.length && !experiences.length) {
-      container.innerHTML = '<div class="text-secondary text-sm p-4 text-center">' + I18N.web_executions_empty + '</div>';
+      container.innerHTML = '<div class="text-secondary text-sm p-4 text-center"><p>' + TASK_I18N.empty_reason + '</p><button class="action-btn action-primary" style="margin-top:10px;" data-exec-action="track-plan"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">note_add</span> ' + TASK_I18N.track_plan + '</button></div>';
       return;
     }
 
@@ -112,28 +170,43 @@ async function refreshExecutions() {
       const isActive = t.status === "in_progress";
       const isFailed = t.status === "failed";
       const isSuccess = t.status === "completed";
-      const borderColor = isActive ? "border-l-primary" : isFailed ? "border-l-error" : isSuccess ? "border-l-secondary" : "border-l-surface-container-high";
-      const icon = isActive ? "sync" : isFailed ? "error" : isSuccess ? "check_circle" : "schedule";
+      const isSkipped = t.status === "skipped";
+      const isTerminal = isFailed || isSuccess || isSkipped;
+      const borderColor = isActive ? "border-l-primary" : isFailed ? "border-l-error" : isSuccess ? "border-l-secondary" : isSkipped ? "border-l-surface-container-high" : "border-l-surface-container-high";
+      const icon = isActive ? "sync" : isFailed ? "error" : isSuccess ? "check_circle" : isSkipped ? "skip_next" : "schedule";
       const iconClass = isActive ? "text-primary animate-spin" : isFailed ? "text-error" : isSuccess ? "text-secondary" : "text-on-surface-variant";
       const taskId = escHtml(String(t.id || ""));
 
       // Action buttons depend on current status; click handlers stop propagation
       // so they don't toggle the detail panel.
       let actions = "";
-      if (!isSuccess && !isFailed) {
+      if (!isTerminal) {
         if (!isActive) {
-          actions += `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" title="${TASK_I18N.start}" data-exec-action="task" data-task-id="${taskId}" data-task-action="start">▶</button>`;
+          actions += `<button class="action-btn action-outline" style="padding:3px 8px;" title="${TASK_I18N.start}" aria-label="${TASK_I18N.start}" data-exec-action="task" data-task-id="${taskId}" data-task-action="start"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">play_arrow</span></button>`;
         }
-        actions += `<button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" title="${TASK_I18N.complete}" data-exec-action="task" data-task-id="${taskId}" data-task-action="complete">✓</button>`;
-        actions += `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;color:var(--critical, #ff4444);" title="${TASK_I18N.fail}" data-exec-action="task" data-task-id="${taskId}" data-task-action="fail">✗</button>`;
+        actions += `<button class="action-btn action-primary" style="padding:3px 8px;" title="${TASK_I18N.complete}" aria-label="${TASK_I18N.complete}" data-exec-action="task-outcome" data-task-id="${taskId}" data-task-title="${escHtml(t.title)}" data-task-action="complete"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">check_circle</span></button>`;
+        actions += `<button class="action-btn action-outline" style="padding:3px 8px;color:var(--critical, #ff4444);" title="${TASK_I18N.fail}" aria-label="${TASK_I18N.fail}" data-exec-action="task-outcome" data-task-id="${taskId}" data-task-title="${escHtml(t.title)}" data-task-action="fail"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">close</span></button>`;
+        actions += `<button class="action-btn action-outline" style="padding:3px 8px;" title="${TASK_I18N.skip}" aria-label="${TASK_I18N.skip}" data-exec-action="task-outcome" data-task-id="${taskId}" data-task-title="${escHtml(t.title)}" data-task-action="skip"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">skip_next</span></button>`;
       }
+
+      const phaseLabel = t.phase_status === "known"
+        ? I18N.web_phase_label.replace("{phase}", t.phase)
+        : I18N.web_phase_pending;
+      const sourceLabel = I18N["web_task_source_" + (t.source || "unknown")]
+        || I18N.web_task_source_unknown;
+      const resultRows = [
+        t.result ? `<div><strong>${TASK_I18N.result}:</strong> ${escHtml(t.result)}</div>` : "",
+        t.evidence && t.evidence.length ? `<div><strong>${TASK_I18N.evidence}:</strong><ul style="margin:4px 0 0 18px;list-style:disc;">${t.evidence.map(item => `<li>${escHtml(item)}</li>`).join("")}</ul></div>` : "",
+        t.completed_at ? `<div><strong>${TASK_I18N.completed_at}:</strong> ${escHtml(t.completed_at)}</div>` : "",
+        `<div><strong>${TASK_I18N.source}:</strong> ${sourceLabel}</div>`,
+      ].join("");
 
       return `<div class="bg-surface-container border border-surface-container-high flex flex-col border-l-[3px] ${borderColor}">
         <div class="grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 items-center p-2 cursor-pointer hover:bg-surface-container-highest transition-colors" data-exec-action="toggle-detail">
           <span class="material-symbols-outlined ${iconClass}">${icon}</span>
           <div>
             <div class="font-semibold text-on-surface text-sm">${escHtml(t.title)}</div>
-            <div class="text-on-surface-variant text-xs mt-0.5">Phase ${t.phase} · Priority ${t.priority}</div>
+            <div class="text-on-surface-variant text-xs mt-0.5">${phaseLabel} · ${TASK_I18N.priority} ${t.priority}</div>
           </div>
           <div class="text-on-surface-variant text-right hidden md:block">
             <div class="text-sm ${isFailed ? 'text-critical' : isSuccess ? 'text-success' : isActive ? 'text-primary' : 'text-secondary'}">${I18N['web_task_status_' + t.status] || t.status}</div>
@@ -142,7 +215,8 @@ async function refreshExecutions() {
           <span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
         </div>
         <div class="bg-surface-dim border-t border-surface-container-high p-3 hidden">
-          <pre class="text-xs leading-relaxed text-on-surface-variant">${escHtml(t.description || '')}</pre>
+          <div class="text-xs leading-relaxed text-on-surface-variant" style="white-space:pre-wrap;overflow-wrap:anywhere;">${escHtml(t.description || '')}</div>
+          <div class="text-xs leading-relaxed text-on-surface-variant" style="display:grid;gap:6px;margin-top:8px;overflow-wrap:anywhere;">${resultRows}</div>
         </div>
       </div>`;
     }).join("");
@@ -206,24 +280,99 @@ async function taskAction(taskId, action) {
   } catch(e) { notify(e); }
 }
 
+async function trackPrimaryPlan() {
+  try {
+    const response = await fetch("/api/tasks/from-plan", {method: "POST"});
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || data.error || TASK_I18N.failed_action);
+    await refreshExecutions();
+  } catch (error) { notify(error); }
+}
+
+function openTaskOutcome(taskId, taskTitle, action, trigger) {
+  const modal = document.getElementById("task-outcome-modal");
+  modal._taskId = taskId;
+  modal._taskAction = action;
+  modal._trigger = trigger || document.activeElement;
+  document.getElementById("task-outcome-task").textContent = taskTitle;
+  document.getElementById("task-outcome-result").value = "";
+  document.getElementById("task-outcome-evidence").value = "";
+  document.getElementById("task-outcome-resource-toggle").checked = false;
+  document.getElementById("task-outcome-resource-fields").disabled = true;
+  document.getElementById("task-outcome-resource-amount").value = "";
+  document.getElementById("task-outcome-resource-confirm").checked = false;
+  document.getElementById("task-outcome-error").textContent = "";
+  modal.style.display = "flex";
+  modal.setAttribute("aria-hidden", "false");
+  document.getElementById("task-outcome-result").focus();
+}
+
+function closeTaskOutcome() {
+  const modal = document.getElementById("task-outcome-modal");
+  modal.style.display = "none";
+  modal.setAttribute("aria-hidden", "true");
+  if (modal._trigger && modal._trigger.isConnected) modal._trigger.focus();
+}
+
+async function saveTaskOutcome(event) {
+  event.preventDefault();
+  const modal = document.getElementById("task-outcome-modal");
+  const changed = document.getElementById("task-outcome-resource-toggle").checked;
+  const evidence = document.getElementById("task-outcome-evidence").value.split("\n").map(item => item.trim()).filter(Boolean);
+  const payload = {
+    result: document.getElementById("task-outcome-result").value.trim(),
+    evidence: evidence,
+  };
+  if (changed) {
+    payload.resource_update = {
+      type: document.getElementById("task-outcome-resource-type").value,
+      amount: document.getElementById("task-outcome-resource-amount").value,
+    };
+    payload.confirm_resource_update = document.getElementById("task-outcome-resource-confirm").checked;
+  }
+  try {
+    const response = await fetch("/api/tasks/" + encodeURIComponent(modal._taskId) + "/" + modal._taskAction, {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      document.getElementById("task-outcome-error").textContent = data.detail || data.error || TASK_I18N.failed_action;
+      return;
+    }
+    closeTaskOutcome();
+    toast(TASK_I18N.saved + " " + (data.plan_changed ? TASK_I18N.plan_changed : TASK_I18N.plan_unchanged), "success");
+    await refreshExecutions();
+  } catch (error) {
+    document.getElementById("task-outcome-error").textContent = String(error);
+  }
+}
+
 /* === Goals === */
 async function refreshGoals() {
   const el = document.getElementById("goal-list");
   try {
     const goals = await api("/api/goals");
     if (!goals.length) { el.textContent = GOAL_I18N.web_executions_empty; return; }
-    el.innerHTML = goals.map(g => `
+    el.innerHTML = goals.map(g => {
+      const phaseLabel = g.phase === null || g.phase === undefined
+        ? I18N.web_phase_pending
+        : I18N.web_phase_label.replace("{phase}", g.phase);
+      const statusLabel = I18N["web_goal_status_" + g.status] || "-";
+      return `
       <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:10px;margin-bottom:8px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <div>
             <div style="font-weight:600;color:var(--on-surface);">${escHtml(g.description || g.title || g.id)}</div>
-            <div class="text-xs text-secondary">Phase ${g.phase || '-'} · ${g.status || '-'} · ${g.progress || 0}%</div>
+            <div class="text-xs text-secondary">${phaseLabel} · ${statusLabel} · ${GOAL_I18N.progress} ${g.progress || 0}%</div>
           </div>
           <div style="display:flex;gap:4px;">
             <button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" data-exec-action="complete-goal" data-goal-id="${escHtml(String(g.id || ''))}">${GOAL_I18N.complete}</button>
           </div>
         </div>
-      </div>`).join("");
+      </div>`;
+    }).join("");
   } catch(e) { el.textContent = String(e); }
 }
 async function addGoal() {
@@ -278,10 +427,34 @@ document.addEventListener("click", event => {
   else if (action === "refresh-goals") refreshGoals();
   else if (action === "toggle-detail") toggleExecDetail(target);
   else if (action === "complete-goal") completeGoal(target.dataset.goalId);
+  else if (action === "track-plan") trackPrimaryPlan();
+  else if (action === "close-outcome") closeTaskOutcome();
   else if (action === "task") {
     event.stopPropagation();
     taskAction(target.dataset.taskId, target.dataset.taskAction);
   }
+  else if (action === "task-outcome") {
+    event.stopPropagation();
+    openTaskOutcome(target.dataset.taskId, target.dataset.taskTitle, target.dataset.taskAction, target);
+  }
+});
+document.getElementById("task-outcome-form").addEventListener("submit", saveTaskOutcome);
+document.getElementById("task-outcome-resource-toggle").addEventListener("change", event => {
+  document.getElementById("task-outcome-resource-fields").disabled = !event.target.checked;
+});
+document.getElementById("task-outcome-modal").addEventListener("click", event => {
+  if (event.target.id === "task-outcome-modal") closeTaskOutcome();
+});
+document.getElementById("task-outcome-modal").addEventListener("keydown", event => {
+  if (event.key === "Escape") closeTaskOutcome();
+  if (event.key !== "Tab") return;
+  const modal = document.getElementById("task-outcome-modal");
+  const focusable = Array.from(modal.querySelectorAll("input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled])"));
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 });
 </script>
 {% endblock %}

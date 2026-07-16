@@ -1,6 +1,7 @@
 import json
 import logging
 import sqlite3
+from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -535,7 +536,7 @@ class Database:
 
     # --- Resources ---
 
-    def upsert_resource(self, r: Resource):
+    def upsert_resource(self, r: Resource, *, commit: bool = True):
         from allspark.core.models import RESOURCE_UNITS
 
         canonical_unit = RESOURCE_UNITS[r.type]
@@ -558,7 +559,8 @@ class Database:
              r.rate_basis, r.source, r.people_count, int(r.people_count_known), r.as_of,
              r.capacity, int(r.capacity_known))
         )
-        self.conn.commit()
+        if commit:
+            self.conn.commit()
 
     def get_resource(self, rtype: ResourceType) -> Optional[Resource]:
         row = self.conn.execute(
@@ -610,7 +612,7 @@ class Database:
 
     # --- Tasks ---
 
-    def save_task(self, t: Task):
+    def save_task(self, t: Task, *, commit: bool = True):
         self.conn.execute(
             """INSERT OR REPLACE INTO tasks
                (id, phase, priority, title, description, status, task_type,
@@ -634,7 +636,8 @@ class Database:
                 self._now(),
             ),
         )
-        self.conn.commit()
+        if commit:
+            self.conn.commit()
 
     @staticmethod
     def _row_to_task(row) -> Task:
@@ -696,13 +699,44 @@ class Database:
         )
         self.conn.commit()
 
+    def record_task_outcome(
+        self,
+        task_id: str,
+        *,
+        status: str,
+        result: str,
+        evidence: list[str],
+        commit: bool = True,
+    ) -> Optional[Task]:
+        """Persist one terminal task outcome without overwriting history."""
+        now = self._now()
+        with self.conn if commit else nullcontext():
+            cursor = self.conn.execute(
+                """UPDATE tasks
+                   SET status=?, result=?, evidence=?, completed_at=?, updated_at=?
+                   WHERE id=? AND status IN ('pending','in_progress')""",
+                (
+                    status,
+                    result,
+                    json.dumps(evidence, ensure_ascii=False),
+                    now,
+                    now,
+                    task_id,
+                ),
+            )
+            if cursor.rowcount != 1:
+                return None
+        return self.get_task(task_id)
+
     # --- Deterministic 24-hour survival plans (PRD §10.1) ---
 
-    def save_survival_plan(self, plan: SurvivalPlan) -> None:
+    def save_survival_plan(
+        self, plan: SurvivalPlan, *, commit: bool = True
+    ) -> None:
         """Atomically replace one draft plan and its structured actions."""
         now = self._now()
         created_at = plan.created_at or now
-        with self.conn:
+        with self.conn if commit else nullcontext():
             if plan.status == "active":
                 self.conn.execute(
                     """UPDATE survival_plans SET status='archived'
@@ -838,6 +872,7 @@ class Database:
         plan: SurvivalPlan,
         *,
         accepted_action_id: str,
+        commit: bool = True,
     ) -> None:
         """Publish one reassessed plan and archive the previous active plan."""
         if not accepted_action_id or accepted_action_id not in {
@@ -846,7 +881,7 @@ class Database:
             raise ValueError("accepted_action_id must belong to the plan")
         plan.status = "active"
         plan.accepted_action_id = accepted_action_id
-        self.save_survival_plan(plan)
+        self.save_survival_plan(plan, commit=commit)
 
     # --- Knowledge ---
 

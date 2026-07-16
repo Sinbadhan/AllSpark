@@ -190,6 +190,7 @@ class MissionPlanner:
         priority: int = 20,
         source: str = "manual",
         source_ref: str = "",
+        commit: bool = True,
     ) -> tuple[Task, bool]:
         normalized_title = title.strip()
         if not normalized_title:
@@ -218,8 +219,56 @@ class MissionPlanner:
             created_at=now,
             updated_at=now,
         )
-        self.db.save_task(task)
+        self.db.save_task(task, commit=commit)
         return task, True
+
+    def create_task_from_active_plan(
+        self, survival_plan, *, commit: bool = True
+    ) -> tuple[Task, bool] | None:
+        """Create an idempotent executable task for the accepted 24h action."""
+        plan = self.db.get_survival_plan(active_only=True)
+        if plan is None or not plan.accepted_action_id:
+            return None
+        payload = survival_plan.payload(plan)
+        action = next(
+            (
+                item
+                for item in payload["actions"]
+                if item["id"] == payload["accepted_action_id"]
+            ),
+            None,
+        )
+        if action is None:
+            return None
+        source_ref = f"{plan.id}:{action['id']}"
+        existing = self.db.get_task_by_source("survival_plan", source_ref)
+        if existing is not None and existing.status in {"pending", "in_progress"}:
+            return existing, False
+        if existing is not None:
+            terminal_count = self.db.conn.execute(
+                """SELECT COUNT(*) AS count FROM tasks
+                   WHERE source='survival_plan' AND source_ref LIKE ?""",
+                (source_ref + "%",),
+            ).fetchone()["count"]
+            source_ref = f"{source_ref}:follow-up-{terminal_count}"
+        description = "\n\n".join(
+            part
+            for part in (
+                action["why_now_text"],
+                action["done_when_text"],
+                action["reassess_at_text"],
+            )
+            if part
+        )
+        return self.create_task(
+            title=action["title"],
+            description=description,
+            phase=plan.phase,
+            priority=action["priority"],
+            source="survival_plan",
+            source_ref=source_ref,
+            commit=commit,
+        )
 
     def calculate_priority(self, task: Task, *,
                            urgency: float = 0.5,
@@ -329,7 +378,10 @@ class MissionPlanner:
             lines.append(t("current_tasks_label"))
             for task in main:
                 status_icon = {"pending": "⬜", "in_progress": "🔄", "completed": "✅", "failed": "❌"}.get(task.status, "❓")
-                lines.append(f"  {status_icon} [{task.id}] {render(task.title)} (Phase {task.phase})")
+                lines.append(
+                    f"  {status_icon} [{task.id}] {render(task.title)} "
+                    f"{t('task_phase_suffix', phase=task.phase)}"
+                )
                 if task.description:
                     lines.append(f"     {render(task.description)}")
         if side:

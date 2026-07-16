@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from allspark.adapters.routes.helpers import _get_service, error_response
 from allspark.core.i18n import set_language, t
+from allspark.core.models import ResourceType
 
 
 class ChatRequest:
@@ -67,6 +68,7 @@ def _resource_payload(resource_mgr, r):
         "configured": configured,
         "offline": not configured,
         "status": "configured" if configured else "unconfigured",
+        "risk_status": resource_mgr.resource_risk_status(r),
     }
 
 
@@ -76,11 +78,25 @@ def register_core_routes(app, check):
         container, db = check()
         assessment = container.get("survival_engine").assess()
         resource_mgr = container.get("resource_manager")
-        mode, _ = resource_mgr.update_operating_mode()
         warnings = resource_mgr.check_warnings()
         resources = resource_mgr.get_all_resources()
+        power = db.get_resource(ResourceType.POWER)
+        operating_state = db.get_operating_state()
+        mode_known = bool(
+            operating_state.mode_manual_override
+            or (
+                power is not None
+                and resource_mgr.is_configured(power)
+                and resource_mgr.is_snapshot_current(power)
+                and resource_mgr.has_complete_rate_data(power)
+            )
+        )
+        mode = None
+        if mode_known:
+            mode, _ = resource_mgr.update_operating_mode()
         exp_stats = container.get("experience").get_stats()
         llm_status = container.get("llm").get_status()
+        resource_payloads = [_resource_payload(resource_mgr, r) for r in resources]
 
         return {
             "phase": assessment["phase"],
@@ -88,9 +104,15 @@ def register_core_routes(app, check):
             "phase_description": assessment["phase_description"],
             "missing_fields": assessment["missing_fields"],
             "stale_fields": assessment["stale_fields"],
-            "mode": mode.value if hasattr(mode, "value") else str(mode),
+            "mode": (
+                mode.value if hasattr(mode, "value") else str(mode)
+            ) if mode is not None else None,
+            "mode_status": "known" if mode_known else "unknown",
             "warnings": warnings,
-            "resources": [_resource_payload(resource_mgr, r) for r in resources],
+            "resources": resource_payloads,
+            "configured_resource_count": sum(
+                1 for resource in resource_payloads if resource["configured"]
+            ),
             "experience": exp_stats,
             "llm": llm_status,
             "modules": container.get("registry").format_status_dict(),
@@ -444,6 +466,23 @@ def register_core_routes(app, check):
         )
         if result is None:
             raise HTTPException(404, t("error_knowledge_not_found"))
+        task, created = result
+        return JSONResponse(
+            status_code=201 if created else 200,
+            content={
+                "created": created,
+                "task": container.get("action_loop").task_payload(task),
+            },
+        )
+
+    @app.post("/api/tasks/from-plan")
+    async def create_task_from_plan():
+        container, db = check()
+        result = container.get("mission_planner").create_task_from_active_plan(
+            container.get("survival_plan")
+        )
+        if result is None:
+            raise HTTPException(409, t("error_active_plan_unavailable"))
         task, created = result
         return JSONResponse(
             status_code=201 if created else 200,

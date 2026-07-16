@@ -629,7 +629,8 @@ function applyLocalIcons() {
     expand_less: "⌃", trending_up: "↗", flag: "⚑", chat: "□", psychology: "◎",
     history: "↺", download: "↓", upload: "↑", snippet_folder: "▤",
     description: "≡", inventory_2: "▤", edit: "✎", arrow_back: "←",
-    computer: "▣", smart_toy: "◇", person: "●", language: "文", sync: "↻"
+    computer: "▣", smart_toy: "◇", person: "●", language: "文", sync: "↻", skip_next: "≫",
+    schedule: "◷"
   };
   document.querySelectorAll(".material-symbols-outlined").forEach(el => {
     const key = (el.textContent || "").trim();
@@ -783,8 +784,11 @@ async function updateFooter() {
     const phaseText = data.phase_status === "known" && data.phase !== null
       ? FOOTER_I18N.phase + " " + data.phase
       : FOOTER_I18N.phase_pending;
+    const modeText = data.mode_status === "known" && data.mode
+      ? data.mode
+      : I18N.web_mode_pending;
     document.getElementById("footer-resources").textContent =
-      FOOTER_I18N.resources + ": " + res.length + " | " + phaseText + " | " + FOOTER_I18N.mode + ": " + data.mode;
+      FOOTER_I18N.resources + ": " + (data.configured_resource_count || 0) + " | " + phaseText + " | " + FOOTER_I18N.mode + ": " + modeText;
     let statusText;
     const state = health && health.state;
     if (state === "degraded") {

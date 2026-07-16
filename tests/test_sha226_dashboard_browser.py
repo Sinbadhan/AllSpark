@@ -89,14 +89,17 @@ def test_dashboard_mobile_core_states_do_not_overflow(
               window.api = async path => {
                 if (path === '/api/status') return {
                   phase: 2,
+                  phase_status: 'known',
                   mode: 'standard',
+                  mode_status: 'known',
+                  configured_resource_count: 5,
                   warnings: [],
                   resources: [
-                    {type:'power', amount:123456789.25, unit:'kWh/day-equivalent-storage', remaining_hours:1, remaining_status:'finite', configured:true},
-                    {type:'water', amount:98765, unit:'litres-of-purified-water', remaining_hours:60, remaining_status:'finite', configured:true},
-                    {type:'food', amount:50, unit:'kg', remaining_hours:200, remaining_status:'finite', configured:true},
-                    {type:'fire', amount:8, unit:'hours-of-safe-combustion', remaining_hours:8, remaining_status:'finite', configured:true},
-                    {type:'storage', amount:4, unit:'long-term-containers', remaining_hours:null, remaining_status:'unknown', configured:true},
+                    {type:'power', amount:123456789.25, unit:'kWh/day-equivalent-storage', remaining_hours:1, remaining_status:'finite', risk_status:'critical', configured:true},
+                    {type:'water', amount:98765, unit:'litres-of-purified-water', remaining_hours:60, remaining_status:'finite', risk_status:'warning', configured:true},
+                    {type:'food', amount:50, unit:'kg', remaining_hours:200, remaining_status:'finite', risk_status:'normal', configured:true},
+                    {type:'fire', amount:8, unit:'hours-of-safe-combustion', remaining_hours:8, remaining_status:'finite', risk_status:'warning', configured:true},
+                    {type:'storage', amount:4, unit:'long-term-containers', remaining_hours:null, remaining_status:'unknown', risk_status:'unknown', configured:true},
                   ],
                 };
                 if (path === '/api/tasks') return [];

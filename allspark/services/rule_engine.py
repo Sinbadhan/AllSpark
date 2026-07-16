@@ -63,6 +63,10 @@ class RuleEngine:
         self._assessment_cache_time = now
         return self._assessment_cache
 
+    def invalidate_assessment_cache(self) -> None:
+        self._assessment_cache = None
+        self._assessment_cache_time = 0.0
+
     def process_input(
         self,
         user_input: str,

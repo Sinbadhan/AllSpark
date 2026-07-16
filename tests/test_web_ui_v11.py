@@ -525,14 +525,16 @@ def test_briefing_endpoints_reachable():
         assert c.get("/api/briefing/short").status_code == 200
 
 
-def test_task_action_endpoint_responds():
-    """An unknown task ID shouldn't 500; the action verb dispatch must work."""
+def test_task_action_endpoint_rejects_unknown_task():
+    """Unknown task IDs fail closed instead of reporting a fake transition."""
     with TempDb() as path:
         c = _client(path)
         for action in ("start", "complete", "fail"):
-            r = c.post(f"/api/tasks/T-NONEXISTENT/{action}")
-            assert r.status_code == 200, f"{action}: {r.text}"
-            assert r.json()["status"] in ("ok", "error")
+            r = c.post(
+                f"/api/tasks/T-NONEXISTENT/{action}",
+                json={"result": "not applicable"},
+            )
+            assert r.status_code == 404, f"{action}: {r.text}"
 
 
 def test_task_action_unknown_verb_400():

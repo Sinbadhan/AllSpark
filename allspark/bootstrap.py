@@ -30,6 +30,7 @@ from allspark.services.rule_engine import RuleEngine
 from allspark.services.scheduler import create_default_scheduler
 from allspark.services.survival_engine import SurvivalAssessmentEngine
 from allspark.services.survival_plan import SurvivalPlanService
+from allspark.services.task_outcome import TaskOutcomeService
 from allspark.services.vision_engine import VisionEngine
 
 logger = logging.getLogger(__name__)
@@ -294,6 +295,16 @@ class ApplicationBootstrap:
             timeline_provider=lambda: self.container.get("timeline"),
         )
         self.container.register("action_loop", action_loop)
+
+        task_outcome = TaskOutcomeService(
+            self.db,
+            resource_mgr,
+            survival_plan,
+            planner,
+            timeline_provider=lambda: self.container.get("timeline"),
+            rule_engine_provider=lambda: self.container.get("rule_engine"),
+        )
+        self.container.register("task_outcome", task_outcome)
 
     def _load_knowledge(self):
         registry = self.registry

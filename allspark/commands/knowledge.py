@@ -2,7 +2,8 @@ from rich.panel import Panel
 from rich.table import Table
 
 from allspark.commands.base import BaseCommand
-from allspark.core.i18n import t
+from allspark.core.i18n import render, t
+from allspark.services.task_outcome import TaskOutcomeError
 
 
 class MapCommand(BaseCommand):
@@ -59,6 +60,112 @@ class MapCommand(BaseCommand):
 class TaskCommand(BaseCommand):
     COMMAND_NAME = "task"
     ALIASES = ("任务", "tasks")
+    _OUTCOME_FLAGS = {
+        "--evidence",
+        "--resource",
+        "--confirm-resource",
+        "--证据",
+        "--资源",
+        "--确认资源",
+    }
+    _RESOURCE_TYPES = {
+        "power": "power",
+        "water": "water",
+        "food": "food",
+        "fire": "fire",
+        "storage": "storage",
+        "电力": "power",
+        "水": "water",
+        "食物": "food",
+        "火": "fire",
+        "存储": "storage",
+    }
+
+    @classmethod
+    def _outcome_payload(cls, args: list[str]) -> dict | None:
+        if len(args) < 3:
+            return None
+        option_start = next(
+            (index for index in range(2, len(args)) if args[index] in cls._OUTCOME_FLAGS),
+            len(args),
+        )
+        result = " ".join(args[2:option_start]).strip()
+        if not result:
+            return None
+
+        evidence: list[str] = []
+        resource_update = None
+        confirm_resource_update = False
+        index = option_start
+        while index < len(args):
+            flag = args[index]
+            if flag in {"--evidence", "--证据"}:
+                end = index + 1
+                while end < len(args) and args[end] not in cls._OUTCOME_FLAGS:
+                    end += 1
+                item = " ".join(args[index + 1:end]).strip()
+                if not item:
+                    return None
+                evidence.append(item)
+                index = end
+                continue
+            if flag in {"--resource", "--资源"}:
+                if index + 2 >= len(args) or resource_update is not None:
+                    return None
+                resource_type = cls._RESOURCE_TYPES.get(args[index + 1].lower())
+                if resource_type is None:
+                    return None
+                resource_update = {
+                    "type": resource_type,
+                    "amount": args[index + 2],
+                }
+                index += 3
+                continue
+            if flag in {"--confirm-resource", "--确认资源"}:
+                confirm_resource_update = True
+                index += 1
+                continue
+            return None
+
+        return {
+            "result": result,
+            "evidence": evidence,
+            "resource_update": resource_update,
+            "confirm_resource_update": confirm_resource_update,
+        }
+
+    def _record_outcome(self, args: list[str], *, status: str) -> bool | None:
+        payload = self._outcome_payload(args)
+        if payload is None:
+            return None
+        try:
+            outcome = self.container.require("task_outcome").record(
+                args[1], status=status, **payload
+            )
+        except TaskOutcomeError as exc:
+            self.console.print(
+                f"[red]{t(f'error_task_outcome_{exc.code}')}[/]"
+            )
+            return False
+
+        if outcome["resource_changed"]:
+            self.console.print(f"[green]{t('task_resource_updated_msg')}[/]")
+        plan_key = (
+            "task_reassessment_changed_msg"
+            if outcome["plan_changed"]
+            else "task_reassessment_unchanged_msg"
+        )
+        self.console.print(f"[dim]{t(plan_key)}[/]")
+        next_task = outcome["next_task"]
+        if next_task is not None:
+            self.console.print(
+                t(
+                    "task_next_action_msg",
+                    id=next_task.id,
+                    title=render(next_task.title),
+                )
+            )
+        return True
 
     def execute(self, args: list[str]) -> None:
         planner = self.container.require("mission_planner")
@@ -87,15 +194,33 @@ class TaskCommand(BaseCommand):
             )
             if created:
                 self.console.print(f"[green]{t('task_added_msg', id=task.id)}[/]")
-        elif subcmd in ("完成", "done", "complete") and len(args) > 1:
-            planner.complete_task(args[1])
+        elif subcmd in ("完成", "done", "complete"):
+            recorded = self._record_outcome(args, status="completed")
+            if recorded is None:
+                self.console.print(f"[dim]{t('task_usage_msg')}[/]")
+                return
+            if not recorded:
+                return
             self.console.print(f"[green]{t('task_done_msg', id=args[1])}[/]")
         elif subcmd in ("开始", "start") and len(args) > 1:
             planner.start_task(args[1])
             self.console.print(f"[green]{t('task_start_msg', id=args[1])}[/]")
-        elif subcmd in ("失败", "fail") and len(args) > 1:
-            planner.fail_task(args[1])
+        elif subcmd in ("失败", "fail"):
+            recorded = self._record_outcome(args, status="failed")
+            if recorded is None:
+                self.console.print(f"[dim]{t('task_usage_msg')}[/]")
+                return
+            if not recorded:
+                return
             self.console.print(f"[yellow]{t('task_fail_msg', id=args[1])}[/]")
+        elif subcmd in ("跳过", "skip"):
+            recorded = self._record_outcome(args, status="skipped")
+            if recorded is None:
+                self.console.print(f"[dim]{t('task_usage_msg')}[/]")
+                return
+            if not recorded:
+                return
+            self.console.print(f"[dim]{t('task_skip_msg', id=args[1])}[/]")
         else:
             self.console.print(f"[dim]{t('task_usage_msg')}[/]")
 

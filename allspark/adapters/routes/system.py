@@ -1,6 +1,7 @@
 """Platform-level system routes: language, mode, modules, about, task actions."""
 
 from fastapi import HTTPException, Request
+from fastapi.responses import JSONResponse
 
 import allspark
 from allspark.adapters.routes.helpers import (
@@ -12,6 +13,7 @@ from allspark.adapters.routes.helpers import (
 from allspark.core.i18n import get_language, set_language, t
 from allspark.core.models import OperatingMode, PersonalityMode
 from allspark.services.system_health import assess_system_health
+from allspark.services.task_outcome import TaskOutcomeError
 
 _VALID_LANGS = {"zh", "en"}
 
@@ -155,7 +157,7 @@ def register_system_routes(app, check):
             )
         return {"status": "ok", "module": module_name, "enabled": False}
 
-    # ---------------- Tasks: start / complete / fail ----------------
+    # ---------------- Tasks: start / terminal outcome ----------------
 
     @app.post("/api/tasks/{task_id}/{action}")
     async def task_action(task_id: str, action: str, request: Request):
@@ -170,14 +172,56 @@ def register_system_routes(app, check):
             return service_unavailable("mission_planner", app=app)
 
         if action == "start":
+            task = db.get_task(task_id)
+            if task is None:
+                raise HTTPException(404, t("error_task_not_found"))
+            if task.status not in {"pending", "in_progress"}:
+                raise HTTPException(409, t("error_task_already_terminal"))
             planner.start_task(task_id)
             return {"status": "ok", "task_id": task_id, "new_status": "in_progress"}
-        if action == "complete":
-            planner.complete_task(task_id)
-            return {"status": "ok", "task_id": task_id, "new_status": "completed"}
-        if action == "fail":
-            planner.fail_task(task_id)
-            return {"status": "ok", "task_id": task_id, "new_status": "failed"}
+        terminal_status = {
+            "complete": "completed",
+            "fail": "failed",
+            "skip": "skipped",
+        }.get(action)
+        if terminal_status is not None:
+            body = await _safe_json(request)
+            try:
+                outcome = container.get("task_outcome").record(
+                    task_id,
+                    status=terminal_status,
+                    result=body.get("result"),
+                    evidence=body.get("evidence"),
+                    resource_update=body.get("resource_update"),
+                    confirm_resource_update=body.get(
+                        "confirm_resource_update", False
+                    ),
+                )
+            except TaskOutcomeError as exc:
+                return JSONResponse(
+                    status_code=exc.status_code,
+                    content={
+                        "status": "error",
+                        "error": f"task_outcome_{exc.code}",
+                        "detail": t(f"error_task_outcome_{exc.code}"),
+                        "errors": [{"field": exc.field, "code": exc.code}],
+                    },
+                )
+            action_loop = container.get("action_loop")
+            survival_plan = container.get("survival_plan")
+            return {
+                "status": "ok",
+                "task": action_loop.task_payload(outcome["task"]),
+                "new_status": terminal_status,
+                "resource_changed": outcome["resource_changed"],
+                "plan_changed": outcome["plan_changed"],
+                "plan": survival_plan.payload(outcome["plan"]),
+                "next_task": (
+                    action_loop.task_payload(outcome["next_task"])
+                    if outcome["next_task"] is not None
+                    else None
+                ),
+            }
         raise HTTPException(400, t("error_unknown_task_action", action=action))
 
 

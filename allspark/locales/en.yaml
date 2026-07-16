@@ -383,7 +383,13 @@ set_remaining_hours: '  Estimated remaining: {hours:.1f}h'
 task_done_msg: ✓ Task {id} completed
 task_start_msg: ✓ Task {id} started
 task_fail_msg: ✓ Task {id} marked as failed
-task_usage_msg: 'Usage: tasks | tasks add <title> | tasks done <id> | tasks start <id> | tasks fail <id>'
+task_skip_msg: ◇ Task {id} skipped
+task_usage_msg: 'Usage: tasks | tasks add <title> | tasks done/fail/skip <id> <result> [--evidence <evidence>] [--resource <type> <new-total> --confirm-resource] | tasks start <id>'
+task_resource_updated_msg: Confirmed and updated the resource snapshot
+task_reassessment_changed_msg: The result changed the 24-hour plan
+task_reassessment_unchanged_msg: The current facts did not change the 24-hour plan
+task_next_action_msg: 'Next tracked action: [{id}] {title}'
+task_phase_suffix: '(Phase {phase})'
 map_add_cancelled: Cancelled
 map_no_type_locations: No locations of type '{type}'
 map_usage_msg: 'Usage: map | map add | map remove <id> | map <type>'
@@ -2360,6 +2366,59 @@ web_init_plan_risk_label: Risk boundary
 web_primary_plan_heading: What to do now
 web_primary_plan_unavailable: No confirmed 24-hour plan is available. Reassess the current situation.
 web_primary_plan_reassess: Reassess
+web_primary_plan_track: Track this action
+web_primary_plan_tracked: Action is ready in the execution center
+web_mode_pending: Pending assessment
+web_task_action_skip: Skip
+web_task_outcome_title: Record task result
+web_task_outcome_result: Result
+web_task_outcome_result_placeholder: What happened, in observable terms?
+web_task_outcome_evidence: Evidence (one item per line)
+web_task_outcome_evidence_placeholder: Measurement, observation, or source
+web_task_outcome_resource_toggle: This result changes a resource snapshot
+web_task_outcome_resource_type: Resource
+web_task_outcome_resource_amount: New current total
+web_task_outcome_resource_confirm: I confirm this is the new total, not an amount added or consumed.
+web_task_outcome_save: Save result and reassess
+web_task_outcome_cancel: Cancel
+web_task_outcome_saved: Result saved and plan reassessed
+web_task_outcome_plan_changed: The 24-hour plan changed from this result.
+web_task_outcome_plan_unchanged: The current facts did not change the 24-hour plan.
+web_executions_skipped: Skipped
+web_executions_track_plan: Track the current primary action
+web_executions_empty_reason: No task history is recorded yet.
+web_executions_result_label: Result
+web_executions_evidence_label: Evidence
+web_executions_completed_at_label: Recorded
+web_executions_source_label: Source
+web_task_history: Task History
+web_progress_label: Progress
+web_goal_status_active: Active
+web_goal_status_completed: Completed
+web_goal_status_abandoned: Abandoned
+web_goal_status_paused: Paused
+web_task_source_manual: Manual
+web_task_source_knowledge: Knowledge advice
+web_task_source_survival_plan: 24-hour plan
+web_task_source_unknown: Unknown source
+error_task_not_found: Task not found.
+error_task_already_terminal: This task already has a terminal result.
+error_active_plan_unavailable: No confirmed primary action is available to track.
+error_task_outcome_required: A result is required before closing the task.
+error_task_outcome_too_long: This result is too long.
+error_task_outcome_invalid_list: Evidence must be a list of up to 10 non-empty items.
+error_task_outcome_invalid_object: Resource update must be a structured object.
+error_task_outcome_invalid_choice: Choose a supported task status or resource.
+error_task_outcome_confirmation_required: Confirm the new resource total before saving it.
+error_task_outcome_not_found: The task or resource no longer exists.
+error_task_outcome_already_terminal: This task already has a terminal result.
+error_task_outcome_not_numeric: Enter a numeric resource total.
+error_task_outcome_not_finite: Enter a finite resource total.
+error_task_outcome_negative: Resource totals cannot be negative.
+error_task_outcome_too_large: The resource total exceeds the supported limit.
+error_task_outcome_capacity_below_remaining: The new storage total exceeds its confirmed capacity.
+timeline_task_outcome: 'Task result: {title} ({status})'
+timeline_task_outcome_desc: 'Recorded result: {result}'
 storage_path_not_owned: "Sensitive storage path is not owned by the current user: {path}"
 storage_path_not_directory: "Sensitive storage path is not a directory: {path}"
 storage_parent_writable: "Unsafe database path ancestor {path} (mode {mode}): group or other users can replace entries below it"

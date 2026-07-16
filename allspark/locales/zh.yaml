@@ -349,7 +349,13 @@ set_remaining_hours: '  预计可用：{hours:.1f}小时'
 task_done_msg: ✓ 任务 {id} 已完成
 task_start_msg: ✓ 任务 {id} 已开始
 task_fail_msg: ✓ 任务 {id} 已标记失败
-task_usage_msg: '用法: 任务 | 任务 添加 <标题> | 任务 完成 <id> | 任务 开始 <id> | 任务 失败 <id>'
+task_skip_msg: ◇ 任务 {id} 已跳过
+task_usage_msg: '用法: 任务 | 任务 添加 <标题> | 任务 完成/失败/跳过 <id> <结果> [--证据 <证据>] [--资源 <类型> <新总量> --确认资源] | 任务 开始 <id>'
+task_resource_updated_msg: 已确认并更新资源快照
+task_reassessment_changed_msg: 结果已改变未来 24 小时计划
+task_reassessment_unchanged_msg: 当前事实未改变未来 24 小时计划
+task_next_action_msg: '下一项已跟踪行动：[{id}] {title}'
+task_phase_suffix: （阶段 {phase}）
 map_add_cancelled: 已取消
 map_no_type_locations: 没有类型为 '{type}' 的地点
 map_usage_msg: '用法: map | map add | map remove <id> | map <类型>'
@@ -2299,6 +2305,59 @@ web_init_plan_risk_label: 风险边界
 web_primary_plan_heading: 现在做什么
 web_primary_plan_unavailable: 尚无已确认的 24 小时计划，请重新评估当前状况。
 web_primary_plan_reassess: 重新评估
+web_primary_plan_track: 跟踪这个行动
+web_primary_plan_tracked: 行动已进入执行中心
+web_mode_pending: 待评估
+web_task_action_skip: 跳过
+web_task_outcome_title: 记录任务结果
+web_task_outcome_result: 结果
+web_task_outcome_result_placeholder: 用可观察的事实说明发生了什么
+web_task_outcome_evidence: 证据（每行一项）
+web_task_outcome_evidence_placeholder: 测量、观察或来源
+web_task_outcome_resource_toggle: 这个结果改变了资源快照
+web_task_outcome_resource_type: 资源
+web_task_outcome_resource_amount: 新的当前总量
+web_task_outcome_resource_confirm: 我确认这是新的总量，不是新增量或消耗量。
+web_task_outcome_save: 保存结果并重新评估
+web_task_outcome_cancel: 取消
+web_task_outcome_saved: 结果已保存，计划已重新评估
+web_task_outcome_plan_changed: 该结果改变了未来 24 小时计划。
+web_task_outcome_plan_unchanged: 当前事实没有改变未来 24 小时计划。
+web_executions_skipped: 已跳过
+web_executions_track_plan: 跟踪当前首要行动
+web_executions_empty_reason: 尚未记录任务历史。
+web_executions_result_label: 结果
+web_executions_evidence_label: 证据
+web_executions_completed_at_label: 记录时间
+web_executions_source_label: 来源
+web_task_history: 任务记录
+web_progress_label: 进度
+web_goal_status_active: 进行中
+web_goal_status_completed: 已完成
+web_goal_status_abandoned: 已放弃
+web_goal_status_paused: 已暂停
+web_task_source_manual: 手动创建
+web_task_source_knowledge: 知识建议
+web_task_source_survival_plan: 24 小时计划
+web_task_source_unknown: 未知来源
+error_task_not_found: 未找到该任务。
+error_task_already_terminal: 该任务已经有终态结果。
+error_active_plan_unavailable: 当前没有可跟踪的已确认首要行动。
+error_task_outcome_required: 结束任务前必须填写结果。
+error_task_outcome_too_long: 结果内容过长。
+error_task_outcome_invalid_list: 证据必须是最多 10 项的非空列表。
+error_task_outcome_invalid_object: 资源更新必须使用结构化对象。
+error_task_outcome_invalid_choice: 请选择受支持的任务状态或资源类型。
+error_task_outcome_confirmation_required: 保存前必须确认新的资源总量。
+error_task_outcome_not_found: 任务或资源已不存在。
+error_task_outcome_already_terminal: 该任务已经有终态结果。
+error_task_outcome_not_numeric: 请输入数字格式的资源总量。
+error_task_outcome_not_finite: 请输入有限的资源总量。
+error_task_outcome_negative: 资源总量不能为负数。
+error_task_outcome_too_large: 资源总量超过支持的上限。
+error_task_outcome_capacity_below_remaining: 新的存储总量超过已确认容量。
+timeline_task_outcome: '任务结果：{title}（{status}）'
+timeline_task_outcome_desc: '记录结果：{result}'
 storage_path_not_owned: "敏感数据路径不属于当前用户：{path}"
 storage_path_not_directory: "敏感数据路径不是目录：{path}"
 storage_parent_writable: "数据库路径祖先目录不安全 {path}（权限 {mode}）：同组或其他用户可替换其下目录项"

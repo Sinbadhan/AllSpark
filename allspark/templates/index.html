@@ -376,7 +376,17 @@ async function refreshSurvivalPlan() {
   risk.className = "primary-plan-risk text-sm";
   risk.style.marginTop = "10px";
   risk.textContent = I18N.web_init_plan_risk_label + ": " + action.risk_text;
-  panel.append(title, meta, risk);
+  const track = document.createElement("button");
+  track.className = "action-btn action-primary";
+  track.style.marginTop = "12px";
+  track.dataset.indexAction = "track-primary-plan";
+  const trackIcon = document.createElement("span");
+  trackIcon.className = "material-symbols-outlined";
+  trackIcon.setAttribute("aria-hidden", "true");
+  trackIcon.style.fontSize = "18px";
+  trackIcon.textContent = "note_add";
+  track.append(trackIcon, document.createTextNode(" " + I18N.web_primary_plan_track));
+  panel.append(title, meta, risk, track);
 }
 
 function switchTab(tab) {
@@ -414,9 +424,11 @@ async function refreshDashboard() {
   }
 
   // Mode badge — prefer localized mode name from i18n (mode_<value>); fallback to raw uppercased value.
-  const rawMode = data.mode || "";
+  const rawMode = data.mode_status === "known" ? (data.mode || "") : "";
   const modeKey = "mode_" + rawMode;
-  const modeLabel = I18N[modeKey] || (rawMode ? rawMode.toUpperCase() : "--");
+  const modeLabel = data.mode_status === "known"
+    ? (I18N[modeKey] || (rawMode ? rawMode.toUpperCase() : I18N.web_mode_pending))
+    : I18N.web_mode_pending;
   document.getElementById("mode-badge").textContent = I18N.web_mode_prefix + ": " + modeLabel;
 
   // Resource cards
@@ -438,13 +450,9 @@ async function refreshDashboard() {
     const remainingStatus = r.remaining_status || "unknown";
     const hasEstimate = remainingStatus === "finite";
     const sustained = remainingStatus === "sustained";
-    const pct = sustained ? 100 : hasEstimate ? Math.min(100, Math.max(0, (r.remaining_hours / 168) * 100)) : 0;
-    const statusColor = sustained ? "#44cc44" : !hasEstimate ? "#888" : pct > 70 ? "#44cc44" : pct > 30 ? "#ffaa00" : "#ff4444";
-    const statusText = sustained ? I18N.web_status_ok : !hasEstimate
-      ? I18N.web_status_unknown
-      : pct > 70 ? I18N.web_status_ok
-      : pct > 30 ? I18N.web_status_low
-      : I18N.web_status_critical;
+    const riskStatus = r.risk_status || "unknown";
+    const statusColor = riskStatus === "critical" ? "#ff4444" : riskStatus === "warning" ? "#ffaa00" : riskStatus === "normal" || riskStatus === "sustained" ? "#44cc44" : "#888";
+    const statusText = riskStatus === "critical" ? I18N.web_status_critical : riskStatus === "warning" ? I18N.web_status_low : riskStatus === "normal" || riskStatus === "sustained" ? I18N.web_status_ok : I18N.web_status_unknown;
     const remainingText = sustained
       ? I18N.web_remaining_sustained
       : hasEstimate
@@ -452,7 +460,6 @@ async function refreshDashboard() {
       : I18N.web_remaining_unknown;
     return '<div class="resource-card span-4" ' + resourceAttrs + ' role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;">' +
       '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + r.amount + (r.unit_label || r.unit) + ' ' + editBtn + '</span></div>' +
-      '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;background:' + statusColor + '"></div></div>' +
       '<div class="card-status">' + statusText + ' · ' + escHtml(String(r.source_label || '-')) + '</div>' +
       '<div class="card-remaining">' + remainingText + ' · ' + (r.people_count_known === true && r.amount_per_person !== null ? RES_I18N.perPerson.replace('{amount}', Number(r.amount_per_person).toFixed(2)).replace('{unit}', escHtml(String(r.unit_label || r.unit || ''))) : RES_I18N.perPersonUnknown) + '</div></div>';
   }).join("");
@@ -481,7 +488,7 @@ async function refreshDashboard() {
       tasks.slice(0, 8).map(t => '<tr><td class="text-primary font-semibold">' + (t.phase_status === 'known' ? 'P' + t.phase : I18N.web_phase_pending) + '</td><td>' + escHtml(t.title) + '</td><td class="text-success">' + (I18N['web_task_status_' + t.status] || t.status) + '</td></tr>').join("") +
       '</tbody></table>';
   } else {
-    tlist.innerHTML = '<div class="text-secondary text-sm p-3">' + I18N.web_no_active_tasks + '</div>';
+    tlist.innerHTML = '<div class="text-secondary text-sm p-3"><p>' + I18N.web_no_active_tasks + '</p><button class="action-btn action-primary" style="margin-top:8px;" data-index-action="track-primary-plan"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">note_add</span> ' + I18N.web_primary_plan_track + '</button></div>';
   }
   await planRefresh;
 }
@@ -568,6 +575,16 @@ async function createKnowledgeTask(knowledgeId, button) {
     button.disabled = false;
     notify(e);
   }
+}
+
+async function trackPrimaryPlan() {
+  try {
+    const response = await fetch("/api/tasks/from-plan", {method: "POST"});
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || data.error || I18N.web_task_action_failed);
+    toast(I18N.web_primary_plan_tracked, "success");
+    refreshDashboard();
+  } catch (error) { notify(error); }
 }
 
 function backToResults() {
@@ -1116,6 +1133,7 @@ document.addEventListener("click", event => {
   else if (action === "search-knowledge") searchKnowledge();
   else if (action === "send-chat") sendChat();
   else if (action === "knowledge-task") createKnowledgeTask(target.dataset.knowledgeId, target);
+  else if (action === "track-primary-plan") trackPrimaryPlan();
   else if (action === "log-experience") logExperience();
   else if (action === "load-llm") loadLLM();
   else if (action === "submit-assessment") submitAssessment();

@@ -249,11 +249,17 @@ def test_active_task_contract_excludes_terminal_rows_by_default(tmp_path: Path) 
         json={"knowledge_id": "survival/water/purification/boiling"},
     ).json()["task"]
 
-    completed = client.post(f"/api/tasks/{task['id']}/complete")
+    completed = client.post(
+        f"/api/tasks/{task['id']}/complete",
+        json={"result": "Reviewed the knowledge action"},
+    )
     assert completed.status_code == 200
-    assert client.get("/api/tasks").json() == []
+    active = client.get("/api/tasks").json()
+    assert all(item["id"] != task["id"] for item in active)
     history = client.get("/api/tasks?include_terminal=true").json()
-    assert len(history) == 1 and history[0]["status"] == "completed"
+    completed_history = [item for item in history if item["id"] == task["id"]]
+    assert len(completed_history) == 1
+    assert completed_history[0]["status"] == "completed"
 
     template = (Path(__file__).parents[1] / "allspark/templates/index.html").read_text()
     assert "t.phase_status === 'known'" in template
