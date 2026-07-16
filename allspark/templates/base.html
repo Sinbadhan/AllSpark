@@ -784,11 +784,22 @@ function promptDialog(title, opts) {
   });
 }
 async function updateFooter() {
+  const setUnavailable = () => {
+    document.getElementById("footer-resources").textContent =
+      FOOTER_I18N.resources + ": -- | " + FOOTER_I18N.phase_pending + " | " +
+      FOOTER_I18N.mode + ": " + I18N.web_mode_pending;
+    document.getElementById("footer-status").textContent =
+      FOOTER_I18N.status_label + ": " + FOOTER_I18N.status_unavailable;
+  };
   try {
     // Footer health follows the Supported core contract. Situation warnings
     // remain a separate alert signal and optional Experimental services do not
     // degrade the product loop.
-    const [data, health] = await Promise.all([api("/api/status"), api("/api/system/health").catch(() => null)]);
+    const [data, health] = await Promise.all([api("/api/status"), api("/api/system/health")]);
+    if (data?._http_error || health?._http_error) {
+      setUnavailable();
+      return;
+    }
     const res = data.resources || [];
     const phaseText = data.phase_status === "known" && data.phase !== null
       ? FOOTER_I18N.phase + " " + data.phase
@@ -807,11 +818,12 @@ async function updateFooter() {
     } else if (state === "healthy") {
       statusText = (data.warnings && data.warnings.length > 0) ? FOOTER_I18N.status_alert : FOOTER_I18N.status_nominal;
     } else {
-      // health unknown (e.g. init page / fetch failed): fall back to warnings.
-      statusText = (data.warnings && data.warnings.length > 0) ? FOOTER_I18N.status_alert : FOOTER_I18N.status_nominal;
+      statusText = FOOTER_I18N.status_unavailable;
     }
     document.getElementById("footer-status").textContent = FOOTER_I18N.status_label + ": " + statusText;
-  } catch(e) {}
+  } catch(e) {
+    setUnavailable();
+  }
 }
 updateFooter();
 setInterval(updateFooter, 30000);
