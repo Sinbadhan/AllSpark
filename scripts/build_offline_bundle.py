@@ -414,6 +414,8 @@ def _freeze_payload(work_dir: Path, sign_identity: str | None, epoch: int) -> Pa
         "--onedir",
         "--name",
         "AllSpark",
+        "--osx-bundle-identifier",
+        "io.github.sinbadhan.allspark",
         "--distpath",
         str(dist_dir),
         "--workpath",

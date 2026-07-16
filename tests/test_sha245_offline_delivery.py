@@ -242,3 +242,11 @@ def test_release_dmg_uses_apple_supported_notarization_container(
     assert any(command[:3] == ["xcrun", "stapler", "staple"] for command in calls)
     assert any(command[:3] == ["xcrun", "stapler", "validate"] for command in calls)
     assert any(command[:4] == ["spctl", "--assess", "--type", "open"] for command in calls)
+
+
+def test_freezer_uses_stable_macos_signing_identifier() -> None:
+    source = (Path(__file__).resolve().parents[1] / "scripts" / "build_offline_bundle.py").read_text(
+        encoding="utf-8"
+    )
+    assert '"--osx-bundle-identifier"' in source
+    assert '"io.github.sinbadhan.allspark"' in source
