@@ -227,3 +227,21 @@ def test_repository_shows_explicit_failure_for_invalid_trade_contract_in_chrome(
         assert "No trades yet" not in text
         assert browser.evaluate("document.querySelectorAll('.trade-item').length") == 0
         _assert_clean(browser, "Repository invalid trade list")
+
+
+@pytest.mark.parametrize("invalid_target", [None, ""])
+def test_trade_list_rejects_invalid_scalar_contract(
+    tmp_path: Path, invalid_target: str | None
+) -> None:
+    client = _client(str(tmp_path / f"invalid-scalar-{invalid_target!r}.db"))
+    client.post("/api/system/language", json={"language": "en"})
+    trade_id = _propose(client)
+    service = client.app.state.container.get("trade_engine")
+    offer = service.get_trade(trade_id)
+    assert offer is not None
+    offer.target_spark_id = invalid_target
+
+    response = client.get("/api/trade/list")
+    assert response.status_code == 500
+    assert response.json()["status"] == "error"
+    assert response.json()["error"] == "Unable to read the trade list"
