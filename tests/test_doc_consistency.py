@@ -120,6 +120,7 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     assert "python scripts/build_offline_bundle.py verify" in workflow
     assert 'pip install -e ".[delivery]"' in workflow
     assert '"pytest-cov>=7.1,<8"' in pyproject
+    assert '"httpx>=0.28,<1"' in pyproject
     assert 'patch = ["subprocess"]' in pyproject
     assert 'omit = ["allspark/templates/*", "allspark/static/*"]' in pyproject
     collection_floor = re.search(r'test "\$\{COUNT:-0\}" -ge (\d+)', workflow)

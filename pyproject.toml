@@ -47,6 +47,10 @@ dev = [
     # starlette 1.x TestClient requires httpx2 (httpx is deprecated; SHA-145).
     # Declared so CI fresh installs can collect the Web/TestClient test modules.
     "httpx2>=0.2,<3",
+    # Direct ASGI client and regression harness tests still import the standard
+    # httpx package. Keep it explicit so a clean CI environment matches local
+    # collection instead of inheriting an unrelated global installation.
+    "httpx>=0.28,<1",
     # Coverage gate (SHA-151): JSON-backed total-line and per-module branch
     # floors. pytest-cov 7 delegates subprocess measurement to coverage.py's
     # explicit patch mechanism configured below.
