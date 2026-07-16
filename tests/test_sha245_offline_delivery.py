@@ -5,7 +5,6 @@ import io
 import json
 import os
 import shutil
-import struct
 import subprocess
 import tarfile
 from pathlib import Path
@@ -251,29 +250,3 @@ def test_freezer_uses_stable_macos_signing_identifier() -> None:
     )
     assert '"--osx-bundle-identifier"' in source
     assert '"io.github.sinbadhan.allspark"' in source
-
-
-def test_macho_uuid_is_content_derived_and_stable(tmp_path: Path) -> None:
-    module = _module()
-    header = bytearray(32)
-    header[:4] = b"\xcf\xfa\xed\xfe"
-    struct.pack_into("<I", header, 16, 1)
-    struct.pack_into("<I", header, 20, 24)
-    command = struct.pack("<II", 0x1B, 24) + b"random-uuid-here"
-    assert len(command) == 24
-    first = tmp_path / "first"
-    second = tmp_path / "second"
-    first.write_bytes(header + command + b"payload")
-    second.write_bytes(header + struct.pack("<II", 0x1B, 24) + b"other-uuid-value" + b"payload")
-
-    module._normalize_macho_uuid(first)
-    module._normalize_macho_uuid(second)
-    assert first.read_bytes() == second.read_bytes()
-
-
-def test_macho_uuid_rejects_non_macho(tmp_path: Path) -> None:
-    module = _module()
-    path = tmp_path / "not-macho"
-    path.write_bytes(b"plain text")
-    with pytest.raises(ValueError, match="Mach-O"):
-        module._normalize_macho_uuid(path)

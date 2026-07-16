@@ -119,7 +119,7 @@ jobs:
           /tmp/venv/bin/allspark --help
 
   offline-macos:
-    # SHA-245: prove the non-developer artifact can be reproduced and launched
+    # SHA-245: prove the non-developer artifact can be rebuilt and launched
     # without a target-side Python installation. Signing/notarization remains a
     # release-environment gate because CI never receives release credentials.
     runs-on: macos-14

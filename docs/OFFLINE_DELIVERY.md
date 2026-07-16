@@ -23,7 +23,7 @@ python3 -m venv .venv-delivery
 .venv-delivery/bin/python scripts/build_offline_bundle.py build
 ```
 
-The command creates a versioned directory and deterministic `.tar.gz` under
+The command creates a versioned directory and a normalized `.tar.gz` under
 `dist/offline/`. It prints the archive SHA256. The archive contains:
 
 - the Python runtime and all required dependencies;
@@ -33,14 +33,16 @@ The command creates a versioned directory and deterministic `.tar.gz` under
 - double-click verify, install, Web launch, CLI launch, rollback, and optional
   model side-load commands.
 
-Unsigned RC reproducibility is checked by rebuilding with the same clean source
-commit, target toolchain, and `SOURCE_DATE_EPOCH`; those inputs must produce the
-same assembled archive. Developer ID timestamps and Apple notarization records
-are external release evidence and may make signed bytes differ. The manifest records
-the exact source commit, target, release channel, signature state, file hashes,
-sizes, and modes. PyInstaller and its hook dependencies are pinned in the
-`delivery` dependency group; a release record must also retain the build-host
-OS/Python output and final archive checksum.
+Assembly is deterministic for an identical frozen payload and
+`SOURCE_DATE_EPOCH`. PyInstaller's Mach-O UUID and code-signing data, Developer
+ID timestamps, and Apple notarization records can make independent end-to-end
+build bytes differ, so AllSpark does not claim bit-for-bit reproducible frozen
+executables. Instead, the manifest records the exact source commit, dirty state,
+target, release channel, signature state, file hashes, sizes, and modes.
+PyInstaller and its hook dependencies are pinned in the `delivery` dependency
+group; a release record must retain the build-host OS/Python output and final
+artifact checksum. The Stable requirement is satisfied by the independently
+verifiable signed, notarized, stapled DMG path, not by overstating byte identity.
 
 ## Signing And Notarization
 
@@ -63,7 +65,7 @@ the delivery archive. Release builds also fail when the Git worktree is dirty;
 internal RC manifests explicitly record a dirty source state instead of
 pretending the commit alone identifies their contents.
 
-The `.tar.gz` is reproducibility evidence and an internal transfer format. The
+The `.tar.gz` is build/provenance evidence and an internal transfer format. The
 signed, notarized, stapled `.dmg` is the Stable end-user artifact. Do not submit
 the tar to `notarytool`; Apple's supported upload containers are ZIP, flat PKG,
 and UDIF DMG.
