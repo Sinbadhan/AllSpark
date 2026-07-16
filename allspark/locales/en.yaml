@@ -167,12 +167,17 @@ module_disabled: ✓ Module {name} disabled, takes effect on next startup
 module_usage: 'Usage: module | module list | module enable <name> | module disable
   <name>'
 llm_usage: 'Usage: llm | llm load | llm chat <message>'
-governance_usage: "Usage:\n  community add <name> [role]  — Add member\n  community\
-  \ remove <ID>  — Remove member\n  community role <ID> <role>  — Assign role\n  community\
-  \ list  — List all members\n  community assess  — Assess organization\n  community\
-  \ recommend  — Role recommendations\n  community value <ID>  — Survival value\n\
-  \  community conflict <title> <parties>  — Create conflict\n  community mediate\
-  \ <ID>  — Mediate conflict\n  community resolve <ID> <resolution>  — Resolve conflict"
+governance_usage: |-
+  Usage:
+    community add <name> [role]  — Add member
+    community remove <ID>  — Remove member
+    community role <ID> <role>  — Assign role
+    community list  — List all members
+    community assess  — Assess organization
+    community recommend  — Role recommendations
+    community conflict <title> <parties>  — Create conflict
+    community mediate <ID>  — Mediate conflict
+    community resolve <ID> <resolution>  — Resolve conflict
 trade_usage: "Usage:\n  trade propose <target> <offer_ids> <request_ids>\n  trade\
   \ accept <ID>  — Accept trade\n  trade reject <ID>  — Reject trade\n  trade cancel\
   \ <ID>  — Cancel trade\n  trade evaluate <ID>  — Evaluate trade value\n  trade list\
@@ -338,8 +343,6 @@ field_phase: Phase
 field_estimated: Est.
 field_phase_col: Phase
 field_task: Task
-field_dimension: Dimension
-field_composite: Composite
 field_evaluation: Evaluation
 field_reason: Reason
 field_your_value: Your Offer Value
@@ -352,7 +355,6 @@ no_active_trades: No active trades
 active_trades: Active Trades
 no_trade_history: No trade history
 trade_eval_title: 'Trade Evaluation: {id}'
-survival_value_title: 'Survival Value: {name}'
 known_nodes: Known Nodes
 scanning_channels: Scanning channels...
 analyzing_image: Analyzing image...
@@ -466,12 +468,17 @@ module_usage_detail: 'Usage: module | module list | module enable <name> | modul
   disable <name>'
 llm_usage_detail: 'Usage: llm | llm load | llm chat <message>'
 exp_log_usage: 'Usage: exp log <event> <outcome> [lesson]'
-community_usage_detail: "Usage:\n  community add <name> [role] — Add member\n  community\
-  \ remove <ID> — Remove member\n  community role <ID> <role> — Assign role\n  community\
-  \ list — List all members\n  community assess — Org structure assessment\n  community\
-  \ recommend — Role recommendations\n  community value <ID> — Survival value assessment\n\
-  \  community conflict <title> <parties> — Create conflict\n  community mediate <ID>\
-  \ — Mediate conflict\n  community resolve <ID> <solution> — Resolve conflict"
+community_usage_detail: |-
+  Usage:
+    community add <name> [role] — Add member
+    community remove <ID> — Remove member
+    community role <ID> <role> — Assign role
+    community list — List all members
+    community assess — Org structure assessment
+    community recommend — Role recommendations
+    community conflict <title> <parties> — Create conflict
+    community mediate <ID> — Mediate conflict
+    community resolve <ID> <solution> — Resolve conflict
 set_remaining_days: '  Estimated: {days:.1f} days'
 task_phase_0: Urgent
 task_phase_1: Short-term
@@ -726,7 +733,6 @@ help_vision: '  vision <image_path>          — Image analysis'
 help_vision_type: '  vision plant/wound/hazard    — Specify recognition type'
 help_community_add: '  community add <name> [role]  — Add member'
 help_community_list: '  community list / assess      — Member list/org assessment'
-help_community_value: '  community value <ID>         — Survival value assessment'
 help_community_conflict: '  community conflict <title> <parties> — Create conflict
   record'
 help_community_mediate: '  community mediate <ID>       — AI conflict mediation'
@@ -2079,6 +2085,9 @@ governance_access_status: Governance status · Experimental
 governance_access_unavailable: Governance is unavailable in the v1 Stable boundary.
 governance_access_unavailable_detail: Community roles are not bound to an authenticated member, so Web and CLI governance operations are disabled rather than presenting unenforced permissions.
 governance_access_unavailable_next: Use the supported single-operator survival workflow. Governance remains Experimental until identity and server-side authorization are verified.
+survival_value_removed: Person-value ranking has been removed.
+survival_value_removed_detail: AllSpark does not score or rank people by health, psychological state, contribution, or other personal attributes. The same response is returned for every member ID.
+survival_value_removed_next: Use task-fit and skill-coverage planning without assigning a value to any person.
 error_name_required: Name required
 error_body_name: 'Body must contain {name: ''<member-name>''}.'
 error_member_id_required: member_id required

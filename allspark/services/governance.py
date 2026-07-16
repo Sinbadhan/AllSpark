@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 PERMISSIONS = {
     GovernanceRole.COMMANDER: {
-        "manage_members", "assign_roles", "trigger_survival_value",
+        "manage_members", "assign_roles",
         "approve_tasks", "resolve_conflicts", "manage_resources",
-        "view_survival_value", "initiate_trade", "declare_emergency",
+        "initiate_trade", "declare_emergency",
     },
     GovernanceRole.SPECIALIST: {
         "domain_advice", "execute_domain_tasks", "view_resources",
@@ -236,38 +236,12 @@ class GovernanceEngine:
             "recommendations": recommendations,
         }
 
-    def calculate_survival_value(self, member_id: str) -> Optional[dict]:
-        member = self._members.get(member_id)
-        if not member:
-            return None
-
-        skill_rarity = min(1.0, len(member.skills) / 10.0)
-        health_map = {"excellent": 1.0, "good": 0.8, "fair": 0.6, "poor": 0.3, "critical": 0.1, "unknown": 0.5}
-        health_status = health_map.get(member.health_status, 0.5)
-        psychological_stability = member.psychological_stability
-        knowledge_uniqueness = min(1.0, len(member.domains) / 5.0)
-        contribution_factor = min(1.0, member.contribution_score / 50.0)
-
-        composite = (
-            0.25 * skill_rarity +
-            0.25 * health_status +
-            0.20 * psychological_stability +
-            0.15 * knowledge_uniqueness +
-            0.15 * contribution_factor
-        )
-
+    def calculate_survival_value(self, member_id: str) -> dict:
+        """Return a non-disclosing compatibility response for the removed feature."""
         return {
-            "member_id": member.id,
-            "member_name": member.name,
-            "dimensions": {
-                "skill_rarity": round(skill_rarity, 3),
-                "health_status": round(health_status, 3),
-                "psychological_stability": round(psychological_stability, 3),
-                "knowledge_uniqueness": round(knowledge_uniqueness, 3),
-                "contribution_factor": round(contribution_factor, 3),
-            },
-            "composite_value": round(composite, 3),
-            "disclaimer": "This is advisory only. AllSpark does not issue directives based on survival value.",
+            "status": "unsupported",
+            "release_status": "removed",
+            "reason": "person_value_ranking_removed",
         }
 
     # --- Conflict Resolution ---
@@ -367,7 +341,10 @@ class GovernanceEngine:
         return {
             "conflict_id": conflict.id,
             "strategies": strategies,
-            "principle": "Group survival takes priority over individual preference.",
+            "principle": (
+                "Prioritize immediate safety and reversible options while preserving "
+                "each person's agency."
+            ),
         }
 
     # --- Persistence ---

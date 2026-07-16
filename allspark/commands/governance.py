@@ -16,6 +16,11 @@ class GovernanceCommand(BaseCommand):
         return gov
 
     def execute(self, args: list[str]) -> None:
+        if args and args[0].lower() in ("value", "价值"):
+            self.console.print(f"[yellow]{t('survival_value_removed')}[/]")
+            self.console.print(f"[dim]{t('survival_value_removed_detail')}[/]")
+            return
+
         gov = self._get_gov()
         if gov is None:
             self.console.print(f"[yellow]{t('governance_access_unavailable')}[/]")
@@ -101,22 +106,6 @@ class GovernanceCommand(BaseCommand):
                 for r in recs:
                     self.console.print(f"  📋 {r['member_name']} ({r['member_id']}): {r['current_role']} → {r['recommended_role']}")
                     self.console.print(f"     [dim]{r['reason']}[/]")
-
-        elif sub in ("value", "价值"):
-            mid = args[1] if len(args) > 1 else ""
-            result = gov.calculate_survival_value(mid)
-            if not result:
-                self.console.print(f"[red]{t('community_member_not_found', id=mid)}[/]")
-                return
-            table = Table(title=t("survival_value_title", name=result['member_name']))
-            table.add_column(t("field_dimension"), style="cyan")
-            table.add_column(t("field_score"))
-            for dim, val in result["dimensions"].items():
-                bar = "█" * int(val * 10) + "░" * (10 - int(val * 10))
-                table.add_row(dim, f"{val:.3f} {bar}")
-            table.add_row(f"[bold]{t('field_composite')}[/]", f"[bold]{result['composite_value']:.3f}[/]")
-            self.console.print(table)
-            self.console.print(f"[dim]{result['disclaimer']}[/]")
 
         elif sub in ("conflict", "冲突"):
             title = args[1] if len(args) > 1 else "Untitled"

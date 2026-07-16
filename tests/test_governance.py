@@ -19,6 +19,8 @@ class TestGovernancePermissions:
         assert "manage_members" in perms
         assert "resolve_conflicts" in perms
         assert "declare_emergency" in perms
+        assert "trigger_survival_value" not in perms
+        assert "view_survival_value" not in perms
 
     def test_observer_permissions_limited(self):
         perms = PERMISSIONS[GovernanceRole.OBSERVER]
@@ -90,15 +92,17 @@ class TestGovernanceConflicts:
 
 
 class TestGovernanceSurvivalValue:
-    def test_calculate_survival_value(self, gov):
+    def test_calculate_survival_value_is_removed(self, gov):
         member = gov.add_member("Alice", role="specialist",
                                 domains=["medical"], skills=["surgery"])
         gov.update_contribution(member.id, 15.0)
-        result = gov.calculate_survival_value(member.id)
-        assert result is not None
-        assert "composite_value" in result
-        assert "dimensions" in result
-        assert 0 <= result["composite_value"] <= 1.0
+        known = gov.calculate_survival_value(member.id)
+        unknown = gov.calculate_survival_value("member-does-not-exist")
+        assert known == unknown == {
+            "status": "unsupported",
+            "release_status": "removed",
+            "reason": "person_value_ranking_removed",
+        }
 
     def test_organization_assessment(self, gov):
         gov.add_member("Alice", role="commander")

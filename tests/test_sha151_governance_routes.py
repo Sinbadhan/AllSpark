@@ -46,7 +46,6 @@ def client() -> TestClient:
         ("get", "/api/governance/members", None),
         ("get", "/api/governance/assess", None),
         ("get", "/api/governance/recommend", None),
-        ("get", "/api/governance/survival-value", None),
         ("get", "/api/governance/conflicts", None),
         ("post", "/api/governance/member/add", {"name": "alice"}),
         ("post", "/api/governance/member/remove", {"member_id": "member-1"}),

@@ -228,7 +228,6 @@ class RuleEngine:
             t("help_section_governance"),
             f"  {t('help_community_add')}",
             f"  {t('help_community_list')}",
-            f"  {t('help_community_value')}",
             f"  {t('help_community_conflict')}",
             f"  {t('help_community_mediate')}",
             f"  {t('help_trade')}",

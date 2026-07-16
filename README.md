@@ -88,7 +88,7 @@ do not expand the primary v1.0.3 product promise.
 |---------|-------------|
 | Permission System (Experimental) | A role matrix exists in prototype code, but no request or CLI subject is bound to a community member; it is not an enforced RBAC boundary. |
 | Governance operations (Unavailable) | Web and CLI member, role and conflict operations fail closed in v1. |
-| Survival Value (Unavailable) | Not exposed in the v1 product; a commander-only claim cannot be enforced without authenticated member identity. |
+| Person-value ranking (Removed) | AllSpark does not score or rank people by health, psychological state, contribution, or other personal attributes. Legacy API/CLI calls return a uniform unsupported response. |
 
 ### 🌍 Environment & Navigation
 | Feature | Description |

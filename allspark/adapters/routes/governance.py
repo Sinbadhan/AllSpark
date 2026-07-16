@@ -8,6 +8,7 @@ which silently 422'd and made the form do nothing.
 """
 
 from fastapi import Query, Request
+from fastapi.responses import JSONResponse
 
 from allspark.adapters.routes.helpers import _require_service, error_response
 from allspark.core.i18n import t
@@ -34,6 +35,20 @@ def _governance_unavailable():
         status=503,
         detail=t("governance_access_unavailable_detail"),
         next_action=t("governance_access_unavailable_next"),
+    )
+
+
+def _survival_value_removed() -> JSONResponse:
+    return JSONResponse(
+        status_code=410,
+        content={
+            "status": "unsupported",
+            "release_status": "removed",
+            "reason": "person_value_ranking_removed",
+            "error": t("survival_value_removed"),
+            "detail": t("survival_value_removed_detail"),
+            "next_action": t("survival_value_removed_next"),
+        },
     )
 
 
@@ -66,9 +81,9 @@ def register_governance_routes(app, check):
     async def governance_recommend():
         return _governance_unavailable()
 
-    @app.get("/api/governance/survival-value")
+    @app.get("/api/governance/survival-value", include_in_schema=False)
     async def governance_survival_value(member_id: str | None = Query(None)):
-        return _governance_unavailable()
+        return _survival_value_removed()
 
     @app.post("/api/governance/conflict/create")
     async def governance_conflict_create(request: Request):
