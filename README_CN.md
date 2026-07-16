@@ -140,6 +140,13 @@ Windows 读屏兼容性仍处于测试阶段；在真实 Windows + NVDA 证据�
 
 ### 安装
 
+非开发者离线路径请使用 [离线交付说明](docs/OFFLINE_DELIVERY.md) 中的目标平台完整包。
+该产物内含 Python、依赖、核心知识、完整性校验以及安装/回滚入口；稳定支持闭环不需要模型。
+当前可复现目标为 Apple Silicon macOS。未签名产物仅用于内部 RC 验证；Stable 产物必须完成
+Developer ID 签名与 Apple 公证。
+
+以下源码安装仅面向开发者与高级运维者：
+
 ```bash
 # 克隆仓库
 git clone https://github.com/Sinbadhan/AllSpark.git && cd AllSpark

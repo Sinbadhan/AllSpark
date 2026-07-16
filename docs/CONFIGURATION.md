@@ -4,6 +4,11 @@ This guide summarizes the local runtime layout, optional features, and operation
 
 ## Installation
 
+The non-developer offline installation path is the self-contained Apple Silicon
+macOS bundle described in [Offline Delivery](OFFLINE_DELIVERY.md). It does not
+require Python, pip, Git, Xcode, a model, or a network connection on the target
+Mac. The commands below are source/developer installation paths.
+
 ```bash
 pip install -e .
 ```

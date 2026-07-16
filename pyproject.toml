@@ -71,6 +71,12 @@ voice = [
     "webrtcvad>=2.0",
     "openwakeword>=0.6",
 ]
+delivery = [
+    # Build-only dependency for the self-contained macOS delivery artifact.
+    # Pin the freezer and hook set so artifact inputs cannot drift silently.
+    "pyinstaller==6.21.0",
+    "pyinstaller-hooks-contrib==2026.6",
+]
 
 [project.urls]
 Homepage = "https://github.com/Sinbadhan/AllSpark"

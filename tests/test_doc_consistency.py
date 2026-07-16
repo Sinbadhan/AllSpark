@@ -106,8 +106,8 @@ def test_ignored_working_notes_are_explicitly_non_authoritative() -> None:
 def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert workflow.count("actions/checkout@v7") == 2
-    assert workflow.count("actions/setup-python@v6") == 2
+    assert workflow.count("actions/checkout@v7") == 3
+    assert workflow.count("actions/setup-python@v6") == 3
     assert "FORCE_JAVASCRIPT_ACTIONS_TO_NODE" not in workflow
     assert "permissions:\n  contents: read" in workflow
     assert "pytest -q --tb=short --cov=allspark --cov-branch" in workflow
@@ -116,6 +116,9 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     assert "if: matrix.python-version != '3.10'" in workflow
     assert "run: pytest -q --tb=short\n" in workflow
     assert "python scripts/check_coverage.py --coverage-json coverage.json" in workflow
+    assert "offline-macos:" in workflow
+    assert "python scripts/build_offline_bundle.py verify" in workflow
+    assert 'pip install -e ".[delivery]"' in workflow
     assert '"pytest-cov>=7.1,<8"' in pyproject
     assert 'patch = ["subprocess"]' in pyproject
     assert 'omit = ["allspark/templates/*", "allspark/static/*"]' in pyproject

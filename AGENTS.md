@@ -110,6 +110,7 @@ allspark/
 - Scheduler 已接入 bootstrap
 - 命令自动发现注册已实现（10 个命令模块 / 32 个 Command 类）
 - Web 脚本使用逐请求 nonce，`script-src-attr 'none'` 禁止内联事件处理器；七页面真实 Chrome CSP violation 门禁为 0
-- 当前仍需完成 M4 信息架构、支持状态语义、离线交付与目标用户试点；真实硬件、Docker daemon、独立介质与 v2+ 能力按 Linear 保持 Testing/Experimental 或未来版本边界
+- M4 信息架构、支持状态语义与 Stable 声明已闭环；Apple Silicon macOS 离线 RC 构建、完整性校验、安装/回滚和无模型启动已在本机通过，SHA-245 仍需 Developer ID/公证后的干净断网设备验收
+- Stable 仍受 SHA-241/260 外部专业复核、SHA-258 品牌清查、SHA-246 五人试点及 SHA-262/264 等本地产品项阻断；真实硬件、Docker daemon、独立介质与 v2+ 能力按 Linear 保持 Testing/Experimental 或未来版本边界
 - 当前开放轨道与实时计数以 Linear SHA-158 正文为准
 - 当前基线的精确 commit、测试计数和 GitHub Actions 证据维护在 Linear SHA-158，仓库文档不复制易漂移的 run 编号

@@ -74,6 +74,32 @@ python3 -m twine check dist/*
 
 If `build` or `twine` is not installed, install them in a release environment rather than adding them as runtime dependencies.
 
+## 4A. Build the offline desktop artifact
+
+For the current non-developer target, follow `docs/OFFLINE_DELIVERY.md` on an
+Apple Silicon macOS build host. A Stable artifact must be built with
+`--release`, Developer ID signed, notarized, and then verified from its archive:
+
+```bash
+python scripts/build_offline_bundle.py build --release \
+  --sign-identity "Developer ID Application: ORGANIZATION (TEAMID)" \
+  --notary-profile allspark-notary
+python scripts/build_offline_bundle.py verify dist/offline/*.tar.gz
+xcrun stapler validate dist/offline/*.dmg
+```
+
+- Record reproducibility archive SHA256, end-user DMG SHA256, artifact ID,
+  source commit, target, size, signature, notarization and stapler result in
+  SHA-245 and the GitHub Release.
+- Run the clean-device, disconnected acceptance flow in
+  `docs/OFFLINE_DELIVERY.md`; CI's unsigned bundle is only a reproducibility and
+  launch gate.
+- Confirm core knowledge is present and no model is required.
+- Verify install, failed-checksum no-write behavior, side-by-side upgrade and
+  rollback without changing `~/.allspark` data.
+- Optional model sidecars must include checksum and distribution metadata;
+  checksum success does not promote LLM support out of Experimental.
+
 ## 5. Check repository hygiene
 
 Verify no sensitive or generated files are staged:

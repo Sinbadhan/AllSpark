@@ -145,6 +145,15 @@ do not expand the primary v1.0.3 product promise.
 
 ### Installation
 
+For the non-developer offline path, use the target-specific self-contained
+bundle documented in [Offline Delivery](docs/OFFLINE_DELIVERY.md). The bundle
+includes Python, dependencies, core knowledge, integrity verification, and
+install/rollback launchers; the supported loop requires no model. The current
+reproducible target is macOS Apple Silicon. Unsigned bundles are internal RC
+proofs only; Stable artifacts require Developer ID signing and notarization.
+
+The source installation below is for developers and advanced operators:
+
 ```bash
 # Clone repository
 git clone https://github.com/Sinbadhan/AllSpark.git && cd AllSpark
