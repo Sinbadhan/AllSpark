@@ -1738,7 +1738,17 @@ web_community_member_save: 添加
 web_community_assess: 组织评估
 web_community_recommend: 角色推荐
 web_trade_title: 知识交易
+web_trade_loading: 正在加载交易…
 web_trade_no_trades: 暂无交易
+web_trade_load_failed: 无法加载交易，请检查系统状态后重试
+web_trade_list_label: 活跃知识交易
+web_trade_target: 目标节点
+web_trade_status: 状态
+web_trade_offered: 提供条目
+web_trade_requested: 请求条目
+web_trade_status_proposed: 已提议
+web_trade_status_accepted: 已接受
+web_trade_status_unknown: 未知
 timeline_personality_change: 人格转变：{from_mode} → {to_mode}
 timeline_personality_change_desc: 运行模式：{operating_mode}，阶段：{phase}
 
@@ -1884,6 +1894,9 @@ error_trade_id_required: trade_id 必填
 error_trade_id_format: 请求体必须包含 {trade_id}
 error_trade_not_found: 交易未找到
 error_trade_not_found_detail: 未找到交易 '{trade_id}'
+error_trade_list_unavailable: 无法读取交易列表
+error_trade_list_unavailable_detail: 活跃交易数据不符合列表契约，未返回不完整结果
+error_trade_list_unavailable_next: 检查本地交易数据完整性后重试
 error_not_initialized: AllSpark 尚未初始化，请先完成设置
 error_invalid_resource_type: "无效资源类型：{type}"
 error_resource_not_numeric: "{field} 必须是数值；资源数据未更改。"

@@ -21,6 +21,15 @@
   }
   .file-tree-item.file-tree-child { padding-left: 32px; }
   .repo-mobile-list { display: none; }
+  .trade-list { display: grid; gap: 8px; }
+  .trade-item {
+    min-width: 0; padding: 8px 0; border-bottom: 1px solid var(--surface-container-high);
+  }
+  .trade-item:last-child { border-bottom: 0; }
+  .trade-item-id, .trade-item-target, .trade-item-summary { overflow-wrap: anywhere; }
+  .trade-item-id { color: var(--outline); font-size: 11px; }
+  .trade-item-target { color: var(--on-surface); font-weight: 600; }
+  .trade-item-summary { color: var(--on-surface-variant); }
   @media (max-width: 767px) {
     #repo-content { overflow-x: hidden; }
     .repo-desktop-table { display: none; }
@@ -225,7 +234,7 @@ async function showSection(section, trigger) {
     case "community":
       titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">groups</span> ' + I18N.web_tab_community;
       contentEl.innerHTML = renderCommunityPanel();
-      loadCommunityData();
+      await loadCommunityData();
       break;
   }
 }
@@ -331,7 +340,20 @@ const COMM_I18N = {
   unavailable_detail: "{{ t('governance_access_unavailable_detail') }}",
   unavailable_next: "{{ t('governance_access_unavailable_next') }}",
   trade: "{{ t('web_trade_title') }}",
+  loading: "{{ t('web_trade_loading') }}",
   no_trades: "{{ t('web_trade_no_trades') }}",
+  load_failed: "{{ t('web_trade_load_failed') }}",
+  list_label: "{{ t('web_trade_list_label') }}",
+  id: "{{ t('web_th_id') }}",
+  target: "{{ t('web_trade_target') }}",
+  status: "{{ t('web_trade_status') }}",
+  offered: "{{ t('web_trade_offered') }}",
+  requested: "{{ t('web_trade_requested') }}",
+  status_labels: {
+    proposed: "{{ t('web_trade_status_proposed') }}",
+    accepted: "{{ t('web_trade_status_accepted') }}",
+  },
+  status_unknown: "{{ t('web_trade_status_unknown') }}",
 };
 
 function renderCommunityPanel() {
@@ -349,25 +371,38 @@ function renderCommunityPanel() {
         </div>
         <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:12px;">
           <h4 style="margin:0 0 8px;">${COMM_I18N.trade}</h4>
-          <div id="trade-list" class="text-sm" style="color:var(--on-surface-variant);">${COMM_I18N.no_trades}</div>
+          <div id="trade-list" class="trade-list text-sm" role="status" aria-live="polite"
+               aria-atomic="true" aria-label="${COMM_I18N.list_label}">${COMM_I18N.loading}</div>
         </div>
       </div>
     </div>`;
 }
 
 async function loadCommunityData() {
+  const el = document.getElementById("trade-list");
   try {
     const trades = await api("/api/trade/list");
-    const list = trades.trades || trades || [];
-    const el = document.getElementById("trade-list");
+    if (trades._http_error || !Array.isArray(trades.trades)) throw new Error("Invalid trade list contract");
+    const list = trades.trades;
     if (Array.isArray(list) && list.length) {
-      el.innerHTML = list.map(t =>
-        `<div style="padding:4px 0;border-bottom:1px solid var(--surface-container-high);">
-           ${escHtml(t.id || '')} · ${escHtml(t.status || '-')} · ${escHtml(t.from_node || '')} → ${escHtml(t.to_node || '')}
+      el.innerHTML = list.map(trade => {
+        const status = COMM_I18N.status_labels[trade.status] || COMM_I18N.status_unknown;
+        return `<div class="trade-item">
+           <div class="trade-item-id">${COMM_I18N.id}: ${escHtml(trade.id)}</div>
+           <div class="trade-item-target">${COMM_I18N.target}: ${escHtml(trade.target)}</div>
+           <div class="trade-item-summary">
+             ${COMM_I18N.status}: ${escHtml(status)} ·
+             ${COMM_I18N.offered}: ${escHtml(trade.offer_ids.length)} ·
+             ${COMM_I18N.requested}: ${escHtml(trade.request_ids.length)}
+           </div>
          </div>`
-      ).join("");
+      }).join("");
+    } else {
+      el.textContent = COMM_I18N.no_trades;
     }
-  } catch(e) {}
+  } catch(e) {
+    el.textContent = COMM_I18N.load_failed;
+  }
 }
 
 let _repoEl = null;

@@ -1795,7 +1795,17 @@ web_community_member_save: Add
 web_community_assess: Org assessment
 web_community_recommend: Role suggestions
 web_trade_title: Knowledge trade
+web_trade_loading: Loading trades…
 web_trade_no_trades: No trades yet
+web_trade_load_failed: Unable to load trades. Check system status and retry.
+web_trade_list_label: Active knowledge trades
+web_trade_target: Target node
+web_trade_status: Status
+web_trade_offered: Offered entries
+web_trade_requested: Requested entries
+web_trade_status_proposed: Proposed
+web_trade_status_accepted: Accepted
+web_trade_status_unknown: Unknown
 timeline_personality_change: 'Personality: {from_mode} → {to_mode}'
 timeline_personality_change_desc: 'Operating mode: {operating_mode}, Phase: {phase}'
 
@@ -1941,6 +1951,9 @@ error_trade_id_required: trade_id required
 error_trade_id_format: Body must contain {trade_id}.
 error_trade_not_found: Trade not found
 error_trade_not_found_detail: No trade '{trade_id}'.
+error_trade_list_unavailable: Unable to read the trade list
+error_trade_list_unavailable_detail: Active trade data violates the list contract; no partial result was returned.
+error_trade_list_unavailable_next: Check local trade data integrity, then retry.
 error_not_initialized: AllSpark not initialized. Complete setup first.
 error_invalid_resource_type: "Invalid resource type: {type}"
 error_resource_not_numeric: "{field} must be a number. No resource data was changed."
