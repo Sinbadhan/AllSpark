@@ -58,6 +58,23 @@ MODULE_DEFINITIONS = [
 
 # Optional capabilities that have implementation and automated coverage but no
 # release-grade validation on their target hardware/runtime yet (SHA-33d).
+SUPPORTED_MODULES = frozenset({
+    "rule_engine",
+    "knowledge_fts",
+    "multilingual",
+    "text_interaction",
+    "web_ui",
+    "skf_manager",
+    "knowledge_verifier",
+    "tier3_knowledge",
+    "data_preservation",
+    "goal_engine",
+    "reset_manager",
+    "daily_briefing",
+    "timeline",
+    "diary",
+})
+
 EXPERIMENTAL_MODULES = frozenset({
     "knowledge_vector",
     "kiwix",
@@ -70,6 +87,7 @@ EXPERIMENTAL_MODULES = frozenset({
     "spark_network",
     "vision_engine",
     "multimodal",
+    "self_learning",
     "governance",
     "trade_engine",
     "power_monitor",
@@ -87,6 +105,12 @@ EXPERIMENTAL_MODULES = frozenset({
 # caller sets the old hardware flag. Governance currently has no authenticated
 # CommunityMember subject, so loading it would expose an unenforced RBAC claim.
 PRODUCT_DISABLED_MODULES = frozenset({"governance"})
+
+_DEFINED_MODULES = frozenset(module.name for module in MODULE_DEFINITIONS)
+if SUPPORTED_MODULES & EXPERIMENTAL_MODULES:
+    raise RuntimeError("Module release status sets overlap")
+if SUPPORTED_MODULES | EXPERIMENTAL_MODULES != _DEFINED_MODULES:
+    raise RuntimeError("Every module must have an explicit release status")
 
 DEPENDENCY_IMPORTS = {
     "knowledge_vector": ("sentence_transformers",),
@@ -277,10 +301,12 @@ class ModuleRegistry:
         instance = self._loaded[module_name]
         get_status = getattr(instance, "get_status", None)
         if not callable(get_status):
-            return True
+            return False
         try:
             status = get_status()
         except Exception:
+            return False
+        if not isinstance(status, dict):
             return False
         runtime_keys = {
             "llm": "available",
@@ -292,7 +318,10 @@ class ModuleRegistry:
             return bool(status.get(runtime_key))
         if module_name == "voice":
             return bool(status.get("is_listening") or status.get("session_active"))
-        return True
+        for key in ("running", "monitoring", "polling", "is_listening"):
+            if key in status:
+                return bool(status.get(key))
+        return False
 
     def format_status_dict(
         self,
@@ -306,6 +335,7 @@ class ModuleRegistry:
         running_overrides = running_overrides or {}
         result = []
         for name, mod in self._modules.items():
+            release_status = "supported" if name in SUPPORTED_MODULES else "experimental"
             flag_on = bool(getattr(self.flags, mod.feature_flag, False))
             hardware_capable = (
                 self.flags.docker_eligible
@@ -355,7 +385,9 @@ class ModuleRegistry:
                 "configured": configured,
                 "running": running,
                 "capability_state": capability_state,
-                "experimental": name in EXPERIMENTAL_MODULES,
+                "runtime_state": capability_state,
+                "release_status": release_status,
+                "experimental": release_status == "experimental",
             })
         return result
 

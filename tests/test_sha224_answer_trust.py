@@ -25,14 +25,14 @@ def test_rule_answer_separates_health_resources_and_match() -> None:
 
         assert health == assess_system_health(client.app.state.container)
 
-    assert health["state"] == "degraded"
+    assert health["state"] == "healthy"
     assert "Standard guidance" in response
     assert "Status Normal" not in response
-    assert "System health: degraded" in response
+    assert "System health: healthy" in response
     assert "Resource data: unknown" in response
     assert "Answer match: specific" in response
     assert "Battery Fire Starting" in response
-    assert "System health: degraded" in direct
+    assert "System health: healthy" in direct
     assert "Answer match: specific" in direct
 
 
@@ -63,7 +63,7 @@ def test_bilingual_resource_trust_tracks_real_configuration() -> None:
 
         client.post("/api/system/language", json={"language": "zh"})
         unknown = engine.process_input("用电池取火")
-        assert "系统健康：降级" in unknown
+        assert "系统健康：健康" in unknown
         assert "资源数据：未知" in unknown
         assert "答案匹配：具体匹配" in unknown
 
@@ -96,7 +96,7 @@ def test_browser_chat_health_matches_footer(tmp_path: Path) -> None:
     ) as browser:
         browser.navigate(base_url)
         browser.wait_for(
-            "document.getElementById('footer-status').textContent.includes('degraded')"
+            "document.getElementById('footer-status').textContent.includes('nominal')"
         )
         browser.evaluate(
             "document.getElementById('chat-input').value = "
@@ -115,7 +115,7 @@ def test_browser_chat_health_matches_footer(tmp_path: Path) -> None:
             })"""
         )
 
-    assert "degraded" in state["footer"]
-    assert "System health: degraded" in state["response"]
+    assert "nominal" in state["footer"]
+    assert "System health: healthy" in state["response"]
     assert "Resource data: unknown" in state["response"]
     assert "Status Normal" not in state["response"]

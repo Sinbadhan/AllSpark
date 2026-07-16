@@ -6,7 +6,7 @@
 <style>
 .sys-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
 @media (min-width: 768px) { .sys-header { flex-direction: row; justify-content: space-between; align-items: flex-end; } }
-.sys-header h1 { font-size: 28px; font-weight: 700; color: var(--primary-container); text-transform: uppercase; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+.sys-header h1 { font-size: 28px; font-weight: 700; color: var(--primary-container); text-transform: uppercase; letter-spacing: 0; display: flex; align-items: center; gap: 8px; }
 .sys-header p { font-size: 13px; color: var(--secondary); margin-top: 4px; }
 .sys-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 @media (min-width: 768px) { .sys-grid { grid-template-columns: repeat(12, 1fr); } }
@@ -20,7 +20,7 @@
   padding: 16px; position: relative; overflow: hidden; transition: border-color 0.3s;
 }
 .integrity-card:hover { border-color: var(--primary-container); }
-.integrity-card .integrity-value { font-size: 56px; font-weight: 700; color: var(--primary-container); line-height: 1; margin-bottom: 8px; text-align: center; }
+.integrity-card .integrity-value { font-size: 44px; font-weight: 700; color: var(--primary-container); line-height: 1; margin-bottom: 8px; text-align: center; }
 .integrity-card .integrity-status { font-size: 13px; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 4px; justify-content: center; }
 .integrity-card .integrity-footer { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); }
 .module-card, .info-card {
@@ -40,13 +40,16 @@
 .module-card .data-table { min-width: 620px; }
 .module-table-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
 .info-card .info-title { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); margin-bottom: 12px; display: flex; align-items: center; gap: 4px; }
+.release-badge { display: inline-block; border: 1px solid currentColor; border-radius: 2px; padding: 1px 4px; font-size: 9px; font-weight: 700; letter-spacing: 0; }
+.health-explanation { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; }
+.health-explanation > div + div { margin-top: 4px; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="sys-header">
   <div>
-    <h1><span class="material-symbols-outlined">memory</span> {{ t('web_system_title') }}</h1>
+    <h1><span class="material-symbols-outlined" aria-hidden="true">memory</span> {{ t('web_system_title') }}</h1>
     <p>{{ t('web_system_subtitle') }}</p>
   </div>
 </div>
@@ -54,40 +57,42 @@
 <div class="sys-grid">
 
   <div class="integrity-card span-4">
-    <h3 style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--secondary);margin-bottom:12px;">{{ t('web_system_integrity') }}</h3>
+    <h3 style="font-size:11px;font-weight:600;letter-spacing:0;color:var(--secondary);margin-bottom:12px;">{{ t('web_system_supported_health') }}</h3>
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 0;">
       <div class="integrity-value" id="integrity-value">--</div>
       <div class="integrity-status" id="integrity-status">
-        <span class="material-symbols-outlined" style="font-size:16px;">help</span> {{ t('web_system_loading') }}
+        <span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">help</span> {{ t('web_system_loading') }}
       </div>
     </div>
+    <div id="health-explanation" class="health-explanation" aria-live="polite">{{ t('web_loading') }}</div>
     <div class="integrity-footer">
-      <span id="error-count">{{ t('web_system_errors') }}: --</span>
-      <span id="warning-count">{{ t('web_system_warnings') }}: --</span>
+      <span id="error-count">{{ t('web_system_supported_operational') }}: --</span>
+      <span id="warning-count">{{ t('web_system_experimental_active') }}: --</span>
     </div>
   </div>
 
   <div class="info-card span-8">
-    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">computer</span> {{ t('web_system_hw_profile') }}</h3>
+    <h3 class="info-title"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">computer</span> {{ t('web_system_hw_profile') }}</h3>
+    <div class="text-secondary text-xs" style="margin-bottom:10px;">{{ t('web_system_hw_diagnostic_note') }}</div>
     <div id="hw-detail" class="text-sm text-on-surface-variant">{{ t('web_system_hardware_profile_loading') }}</div>
   </div>
 
   <div class="module-card span-12">
     <div class="module-header">
-      <h3 class="module-title">{{ t('web_system_modules_title') }}</h3>
+      <h3 class="module-title">{{ t('web_system_capabilities_title') }}</h3>
       <button data-system-action="refresh-system" class="sync-btn">
-        <span class="material-symbols-outlined" style="font-size:14px;">refresh</span> {{ t('web_system_sync') }}
+        <span class="material-symbols-outlined" aria-hidden="true" style="font-size:14px;">refresh</span> {{ t('web_system_sync') }}
       </button>
     </div>
     <div class="module-table-scroll">
       <table class="data-table">
         <thead>
           <tr>
-            <th>{{ t('web_system_module_id') }}</th>
-            <th>{{ t('web_system_status') }}</th>
+            <th>{{ t('web_system_capability') }}</th>
+            <th>{{ t('web_system_release_status') }}</th>
+            <th>{{ t('web_system_runtime_status') }}</th>
             <th>{{ t('web_system_dependency') }}</th>
             <th>{{ t('web_system_configuration') }}</th>
-            <th style="text-align:right;">{{ t('web_system_action') }}</th>
           </tr>
         </thead>
         <tbody id="module-table">
@@ -98,18 +103,19 @@
   </div>
 
   <div class="info-card span-12">
-    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">smart_toy</span> {{ t('web_system_llm_engine') }}</h3>
+    <h3 class="info-title"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">smart_toy</span> {{ t('web_system_llm_engine') }} <span class="release-badge" style="color:var(--warning);">{{ t('web_release_experimental') }}</span></h3>
+    <div class="text-secondary text-xs" style="margin-bottom:8px;">{{ t('web_system_experimental_not_required') }}</div>
     <div id="llm-detail" class="text-sm text-on-surface-variant">{{ t('web_loading') }}</div>
     <button data-system-action="load-llm" class="btn-primary mt-3">{{ t('web_system_load_model') }}</button>
   </div>
 
   <!-- Mode control -->
   <div class="info-card span-12">
-    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">tune</span> {{ t('web_mode_card_title') }}</h3>
+    <h3 class="info-title"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">tune</span> {{ t('web_mode_card_title') }}</h3>
     <div class="text-secondary text-sm" style="margin-bottom:12px;">{{ t('web_mode_card_subtitle') }}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div>
-        <label class="text-xs text-secondary">{{ t('web_mode_personality_label') }}</label>
+        <label class="text-xs text-secondary">{{ t('web_mode_personality_label') }} · {{ t('web_release_experimental') }}</label>
         <select id="mode-personality" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;margin-top:4px;">
           <option value="crisis">{{ t('web_mode_personality_crisis') }}</option>
           <option value="stable" selected>{{ t('web_mode_personality_stable') }}</option>
@@ -134,7 +140,7 @@
 
   <!-- Backups card -->
   <div class="info-card span-12">
-    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">save</span> {{ t('web_backup_title') }}</h3>
+    <h3 class="info-title"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">save</span> {{ t('web_backup_title') }}</h3>
     <div class="text-secondary text-sm" style="margin-bottom:8px;">{{ t('web_backup_subtitle') }}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
       <input id="backup-label" type="text" placeholder="{{ t('web_backup_label_placeholder') }}"
@@ -149,7 +155,7 @@
   <!-- Danger zone -->
   <div class="info-card span-12" style="border-color:var(--critical, #ff4444);">
     <h3 class="info-title" style="color:var(--critical, #ff4444);">
-      <span class="material-symbols-outlined" style="font-size:16px;">warning</span> {{ t('web_danger_zone') }}
+      <span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">warning</span> {{ t('web_danger_zone') }}
     </h3>
     <div class="text-secondary text-sm" style="margin-bottom:12px;">{{ t('web_danger_zone_subtitle') }}</div>
     <div style="display:grid;gap:12px;">
@@ -173,7 +179,7 @@
 
   <!-- Location card -->
   <div class="info-card span-12">
-    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">place</span> {{ t('web_location_title') }}</h3>
+    <h3 class="info-title"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">place</span> {{ t('web_location_title') }}</h3>
     <div id="loc-gps" class="text-sm text-on-surface-variant" style="margin-bottom:10px;">{{ t('web_location_gps') }}: {{ t('web_location_unknown') }}</div>
     <h4 style="margin:8px 0 6px;font-size:13px;">{{ t('web_location_pois') }}</h4>
     <div id="poi-list" class="text-sm text-on-surface-variant" style="margin-bottom:10px;">{{ t('web_loading') }}</div>
@@ -190,7 +196,7 @@
 
   <!-- Comms card -->
   <div class="info-card span-12">
-    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">cell_tower</span> {{ t('web_comms_title') }}</h3>
+    <h3 class="info-title"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">cell_tower</span> {{ t('web_comms_title') }} <span class="release-badge" style="color:var(--warning);">{{ t('web_release_experimental') }}</span></h3>
     <div id="comms-status" class="text-sm text-on-surface-variant" style="margin-bottom:10px;">{{ t('web_loading') }}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="action-btn action-primary" data-system-action="comms" data-comms-action="start">{{ t('web_comms_start') }}</button>
@@ -202,7 +208,7 @@
 
   <!-- Weather card -->
   <div class="info-card span-12">
-    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">cloud</span> {{ t('web_weather_title') }}</h3>
+    <h3 class="info-title"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">cloud</span> {{ t('web_weather_title') }} <span class="release-badge" style="color:var(--warning);">{{ t('web_release_experimental') }}</span></h3>
     <div id="weather-current" class="text-sm text-on-surface-variant" style="margin-bottom:8px;">{{ t('web_loading') }}</div>
     <div id="weather-forecast" class="text-sm" style="margin-bottom:10px;"></div>
     <details>
@@ -216,7 +222,7 @@
 
   <!-- Environment card -->
   <div class="info-card span-12">
-    <h3 class="info-title"><span class="material-symbols-outlined" style="font-size:16px;">eco</span> {{ t('web_environment_title') }}</h3>
+    <h3 class="info-title"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">eco</span> {{ t('web_environment_title') }} <span class="release-badge" style="color:var(--warning);">{{ t('web_release_experimental') }}</span></h3>
     <div id="env-result" class="text-sm text-on-surface-variant">{{ t('web_environment_loading') }}</div>
   </div>
 </div>
@@ -230,17 +236,26 @@ function escHtml(s) { const d = document.createElement("div"); d.textContent = s
 
 async function refreshSystem() {
   try {
-    const data = await api("/api/status");
-    const modules = await api("/api/modules");
-    const llm = await api("/api/llm/status");
-    const hw = await api("/api/init/hardware");
+    const [modulesResult, llmResult, hwResult, healthResult] = await Promise.allSettled([
+      api("/api/modules"),
+      api("/api/llm/status"),
+      api("/api/init/hardware"),
+      api("/api/system/health"),
+    ]);
+    const settledValue = result => (
+      result.status === "fulfilled" &&
+      !(result.value && result.value._http_error)
+    ) ? result.value : null;
+    const modules = settledValue(modulesResult) || [];
+    const moduleEntries = Array.isArray(modules) ? modules : Object.values(modules || {});
+    const llm = settledValue(llmResult);
+    const hw = settledValue(hwResult);
 
-    const warningCount = (data.warnings || []).length;
-    const errorCount = (data.warnings || []).filter(w => w.level === "critical").length;
-    // SHA-149: integrity comes from /api/system/health (factors in LLM/modules,
-    // not just warning count) so an unloaded LLM or unsupported modules never
-    // show 100% / "stable".
-    const health = await api("/api/system/health");
+    // Product health measures the Supported loop. Situation warnings and
+    // optional Experimental runtimes remain visible, but do not lower it.
+    const health = settledValue(healthResult)
+      ? healthResult.value
+      : {score: null, state: "unknown", reasons: [], factors: {}};
     const score = (health && typeof health.score === "number") ? health.score : null;
     const state = (health && health.state) || "unknown";
     document.getElementById("integrity-value").textContent = (score === null) ? "--" : score.toFixed(0) + "%";
@@ -252,49 +267,80 @@ async function refreshSystem() {
       unknown: {icon: "help", color: "var(--secondary)", label: I18N.web_system_integrity_unknown},
     };
     const s = stateMap[state] || stateMap.unknown;
-    intStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">' + s.icon + '</span> ' + s.label;
+    intStatus.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">' + s.icon + '</span> ' + s.label;
     intStatus.style.color = s.color;
-    document.getElementById("error-count").textContent = I18N.web_system_errors + ": " + errorCount;
-    document.getElementById("warning-count").textContent = I18N.web_system_warnings + ": " + warningCount;
+    const factors = health.factors || {};
+    document.getElementById("error-count").textContent = I18N.web_system_supported_operational + ": " +
+      (factors.supported_operational ?? "--") + "/" + (factors.supported_total ?? "--");
+    document.getElementById("warning-count").textContent = I18N.web_system_experimental_active + ": " +
+      (factors.experimental_active ?? "--");
+    const reason = (health.reasons || [])[0] || {};
+    const reasonLabels = {
+      supported_core_operational: I18N.web_health_reason_supported_core_operational,
+      supported_capability_unavailable: I18N.web_health_reason_supported_capability_unavailable,
+      supported_core_service_unavailable: I18N.web_health_reason_supported_core_service_unavailable,
+      supported_core_probe_failed: I18N.web_health_reason_supported_core_probe_failed,
+      capability_registry_unavailable: I18N.web_health_reason_capability_registry_unavailable,
+    };
+    const impactLabels = {
+      core_loop_available: I18N.web_health_impact_core_loop_available,
+      core_loop_unavailable: I18N.web_health_impact_core_loop_unavailable,
+      supported_workflow_at_risk: I18N.web_health_impact_supported_workflow_at_risk,
+      core_loop_unverified: I18N.web_health_impact_core_loop_unverified,
+    };
+    const actionLabels = {
+      none: I18N.web_health_action_none,
+      review_supported_capabilities: I18N.web_health_action_review_supported_capabilities,
+      restart_and_review_logs: I18N.web_health_action_restart_and_review_logs,
+    };
+    const moduleLabels = Object.fromEntries(moduleEntries.map(module => [
+      module.name,
+      (document.documentElement.lang === "zh" ? module.description_zh : module.description_en) || module.name,
+    ]));
+    const coreCapabilityLabels = {
+      resource_tracking: I18N.web_health_capability_resource_tracking,
+      phase_assessment: I18N.web_health_capability_phase_assessment,
+      survival_decision: I18N.web_health_capability_survival_decision,
+      action_planning: I18N.web_health_capability_action_planning,
+      outcome_reassessment: I18N.web_health_capability_outcome_reassessment,
+      initial_assessment: I18N.web_health_capability_initial_assessment,
+      confirmed_action_loop: I18N.web_health_capability_confirmed_action_loop,
+      workflow_orchestration: I18N.web_health_capability_workflow_orchestration,
+    };
+    const affected = (reason.capabilities || [])
+      .map(name => moduleLabels[name] || coreCapabilityLabels[name] || name).join(", ");
+    document.getElementById("health-explanation").innerHTML =
+      '<div><strong>' + I18N.web_health_reason_label + ':</strong> ' + escHtml(reasonLabels[reason.code] || I18N.web_system_integrity_unknown) + '</div>' +
+      '<div><strong>' + I18N.web_health_impact_label + ':</strong> ' + escHtml(impactLabels[reason.impact] || I18N.web_system_integrity_unknown) + '</div>' +
+      '<div><strong>' + I18N.web_health_action_label + ':</strong> ' + escHtml(actionLabels[reason.action] || I18N.web_system_integrity_unknown) + '</div>' +
+      (affected ? '<div><strong>' + I18N.web_health_affected_label + ':</strong> ' + escHtml(affected) + '</div>' : '');
 
     const modTable = document.getElementById("module-table");
-    if (modules && Object.keys(modules).length) {
-      const entries = Array.isArray(modules) ? modules : Object.values(modules);
-      modTable.innerHTML = entries.map(m => {
+    if (moduleEntries.length) {
+      modTable.innerHTML = moduleEntries.map(m => {
         const legacyStatus = m.status || (m.loaded ? "loaded" : m.can_load ? "available" : "disabled");
         const capabilityState = m.capability_state || ({
           loaded: "running", available: "ready", unsupported: "unsupported", disabled: "disabled"
         }[legacyStatus] || "unsupported");
-        const hwSupported = m.hardware_capable !== false;
-        let statusColor, statusText, action;
+        let statusColor, statusText;
         if (capabilityState === "running") {
           statusColor = "var(--success)";
           statusText = I18N.web_system_module_running;
-          action = m.is_core
-            ? '<span class="text-secondary" style="font-size:11px;">—</span>'
-            : `<button class="action-btn action-outline" style="padding:3px 8px;font-size:11px;" data-system-action="module" data-module="${escHtml(String(m.name || ''))}" data-module-action="disable">${MODULE_I18N.disable}</button>`;
         } else if (capabilityState === "ready") {
           statusColor = "var(--warning)";
           statusText = I18N.web_system_module_ready;
-          action = '<span class="text-secondary" style="font-size:11px;">—</span>';
         } else if (capabilityState === "missing_dependency") {
           statusColor = "var(--critical)";
           statusText = I18N.web_system_module_missing_dependency;
-          action = '<span class="text-secondary" style="font-size:11px;">—</span>';
         } else if (capabilityState === "not_configured") {
           statusColor = "var(--warning)";
           statusText = I18N.web_system_module_not_configured;
-          action = '<span class="text-secondary" style="font-size:11px;">—</span>';
         } else if (capabilityState === "unsupported") {
           statusColor = "var(--secondary)";
           statusText = I18N.web_system_module_unsupported;
-          action = '<span class="text-secondary" style="font-size:11px;">—</span>';
         } else { // disabled
           statusColor = "var(--secondary)";
           statusText = I18N.web_system_module_disabled;
-          action = hwSupported && m.dependency_installed
-            ? `<button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" data-system-action="module" data-module="${escHtml(String(m.name || ''))}" data-module-action="enable">${MODULE_I18N.enable}</button>`
-            : '<span class="text-secondary" style="font-size:11px;">—</span>';
         }
         const dependencyText = m.dependency_installed
           ? I18N.web_system_dependency_installed
@@ -302,14 +348,22 @@ async function refreshSystem() {
         const configurationText = m.configured
           ? I18N.web_system_configured
           : I18N.web_system_not_configured;
-        // SHA-33d: the server registry is the single source for release status.
-        if (m.experimental) {
-          statusText += ' <span title="' + I18N.web_system_experimental + '" style="font-size:9px;background:var(--warning);color:var(--bg);padding:1px 4px;border-radius:2px;font-weight:600;">EXP</span>';
-        }
-        return '<tr><td style="color:var(--primary-container);font-weight:600;">' + escHtml(m.name) + '</td>' +
+        const releaseStatus = m.release_status || (m.experimental ? "experimental" : "supported");
+        const releaseLabels = {
+          supported: I18N.web_release_supported,
+          testing: I18N.web_release_testing,
+          experimental: I18N.web_release_experimental,
+          future: I18N.web_release_future,
+        };
+        const releaseColors = {
+          supported: "var(--success)", testing: "var(--info)",
+          experimental: "var(--warning)", future: "var(--secondary)",
+        };
+        const description = (document.documentElement.lang === "zh" ? m.description_zh : m.description_en) || m.name;
+        return '<tr><td><div style="color:var(--primary-container);font-weight:600;">' + escHtml(description) + '</div></td>' +
+          '<td><span class="release-badge" style="color:' + (releaseColors[releaseStatus] || releaseColors.future) + ';">' + escHtml(releaseLabels[releaseStatus] || releaseStatus) + '</span></td>' +
           '<td style="color:' + statusColor + '">' + statusText + '</td>' +
-          '<td>' + dependencyText + '</td><td>' + configurationText + '</td>' +
-          '<td style="text-align:right;">' + action + '</td></tr>';
+          '<td>' + dependencyText + '</td><td>' + configurationText + '</td></tr>';
       }).join("");
     } else {
       modTable.innerHTML = '<tr><td colspan="5" class="text-secondary" style="padding:12px;">' + I18N.web_system_no_modules + '</td></tr>';
@@ -319,6 +373,8 @@ async function refreshSystem() {
     if (llm) {
       llmDetail.innerHTML = '<div style="margin-bottom:8px;"><strong>' + I18N.web_system_health_status_label + ':</strong> <span class="' + (llm.loaded ? 'text-success' : 'text-secondary') + '">' + (llm.loaded ? I18N.web_system_llm_loaded : I18N.web_system_llm_unloaded) + '</span></div>' +
         (llm.model ? '<div><strong>' + I18N.web_system_model_label + ':</strong> ' + escHtml(llm.model) + '</div>' : '');
+    } else {
+      llmDetail.textContent = I18N.web_system_integrity_unknown;
     }
 
     const hwDetail = document.getElementById("hw-detail");
@@ -335,6 +391,8 @@ async function refreshSystem() {
         rows.map(([l, v]) =>
           '<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:8px;text-align:center;"><div style="font-size:11px;color:var(--secondary);margin-bottom:2px;">' + l + '</div><div style="font-size:13px;font-weight:600;">' + escHtml(String(v)) + '</div></div>'
         ).join("") + '</div>';
+    } else {
+      hwDetail.textContent = I18N.web_system_integrity_unknown;
     }
   } catch(e) { console.error("System refresh error:", e); }
 }

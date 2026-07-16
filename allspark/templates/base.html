@@ -201,7 +201,7 @@ table { border-collapse: collapse; width: 100%; }
   display: flex; align-items: center; justify-content: center; color: var(--on-primary-container);
   font-weight: 700; font-size: 13px;
 }
-.sidebar .brand h1 { font-size: 18px; font-weight: 700; color: var(--primary-container); letter-spacing: -0.02em; line-height: 1; }
+.sidebar .brand h1 { font-size: 18px; font-weight: 700; color: var(--primary-container); letter-spacing: 0; line-height: 1; }
 .sidebar .brand p { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: var(--secondary); margin-top: 4px; }
 .sidebar nav { flex: 1; padding: 0 8px; display: flex; flex-direction: column; gap: 2px; }
 .sidebar nav a {
@@ -213,6 +213,10 @@ table { border-collapse: collapse; width: 100%; }
   background: var(--primary-container); color: var(--on-primary-container); font-weight: 600;
 }
 .sidebar nav a .material-symbols-outlined { font-size: 20px; }
+.nav-section-label {
+  color: var(--on-surface-variant); font-size: 10px; font-weight: 700;
+  letter-spacing: 0; padding: 14px 12px 5px; text-transform: uppercase;
+}
 .sidebar .sidebar-footer { border-top: 1px solid var(--border); padding: 8px; margin-top: auto; }
 
 /* ===== Layout: Main ===== */
@@ -270,6 +274,7 @@ table { border-collapse: collapse; width: 100%; }
   color: var(--secondary); transition: all 0.15s;
 }
 .mobile-nav-overlay nav a.active { background: var(--primary-container); color: var(--on-primary-container); font-weight: 600; }
+.mobile-nav-overlay .nav-section-label { padding: 12px 16px 4px; }
 
 /* ===== Responsive ===== */
 @media (min-width: 768px) {
@@ -510,11 +515,13 @@ table { border-collapse: collapse; width: 100%; }
     <input type="text" id="mobile-global-search" placeholder="{{ t('web_search_placeholder') }}" aria-label="{{ t('web_search_placeholder') }}" style="width:100%;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:8px 10px;border-radius:4px;font-size:13px;"/>
   </div>
   <nav>
-    <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span> {{ t('web_nav_dashboard') }}</a>
-    <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">terminal</span> {{ t('web_nav_system') }}</a>
+    <div class="nav-section-label">{{ t('web_nav_core') }}</div>
+    <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"{% if nav_active == 'dashboard' %} aria-current="page"{% endif %}><span class="material-symbols-outlined" aria-hidden="true">dashboard</span> {{ t('web_nav_dashboard') }}</a>
     <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"{% if nav_active == 'executions' %} aria-current="page"{% endif %}><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span> {{ t('web_nav_executions') }}</a>
-    <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">settings_input_component</span> {{ t('web_nav_config') }}</a>
-    <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">folder_open</span> {{ t('web_nav_repository') }}</a>
+    <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"{% if nav_active == 'repository' %} aria-current="page"{% endif %}><span class="material-symbols-outlined" aria-hidden="true">folder_open</span> {{ t('web_nav_repository') }}</a>
+    <div class="nav-section-label">{{ t('web_nav_management') }}</div>
+    <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"{% if nav_active == 'system' %} aria-current="page"{% endif %}><span class="material-symbols-outlined" aria-hidden="true">terminal</span> {{ t('web_nav_system') }}</a>
+    <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"{% if nav_active == 'config' %} aria-current="page"{% endif %}><span class="material-symbols-outlined" aria-hidden="true">settings_input_component</span> {{ t('web_nav_config') }}</a>
   </nav>
 </div>
 
@@ -528,11 +535,13 @@ table { border-collapse: collapse; width: 100%; }
     </div>
   </div>
   <nav>
-    <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">dashboard</span> {{ t('web_nav_dashboard') }}</a>
-    <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">terminal</span> {{ t('web_nav_system') }}</a>
+    <div class="nav-section-label">{{ t('web_nav_core') }}</div>
+    <a href="/" class="{{ 'active' if nav_active == 'dashboard' else '' }}"{% if nav_active == 'dashboard' %} aria-current="page"{% endif %}><span class="material-symbols-outlined" aria-hidden="true">dashboard</span> {{ t('web_nav_dashboard') }}</a>
     <a href="/executions" class="{{ 'active' if nav_active == 'executions' else '' }}"{% if nav_active == 'executions' %} aria-current="page"{% endif %}><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span> {{ t('web_nav_executions') }}</a>
-    <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">settings_input_component</span> {{ t('web_nav_config') }}</a>
-    <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"><span class="material-symbols-outlined" aria-hidden="true">folder_open</span> {{ t('web_nav_repository') }}</a>
+    <a href="/repository" class="{{ 'active' if nav_active == 'repository' else '' }}"{% if nav_active == 'repository' %} aria-current="page"{% endif %}><span class="material-symbols-outlined" aria-hidden="true">folder_open</span> {{ t('web_nav_repository') }}</a>
+    <div class="nav-section-label">{{ t('web_nav_management') }}</div>
+    <a href="/system" class="{{ 'active' if nav_active == 'system' else '' }}"{% if nav_active == 'system' %} aria-current="page"{% endif %}><span class="material-symbols-outlined" aria-hidden="true">terminal</span> {{ t('web_nav_system') }}</a>
+    <a href="/config" class="{{ 'active' if nav_active == 'config' else '' }}"{% if nav_active == 'config' %} aria-current="page"{% endif %}><span class="material-symbols-outlined" aria-hidden="true">settings_input_component</span> {{ t('web_nav_config') }}</a>
   </nav>
 </div>
 
@@ -776,9 +785,9 @@ function promptDialog(title, opts) {
 }
 async function updateFooter() {
   try {
-    // SHA-177: footer status must match /api/system/health (which factors in
-    // LLM/modules/critical), not just resource warnings - otherwise the global
-    // footer shows "正常" while the System card shows degraded.
+    // Footer health follows the Supported core contract. Situation warnings
+    // remain a separate alert signal and optional Experimental services do not
+    // degrade the product loop.
     const [data, health] = await Promise.all([api("/api/status"), api("/api/system/health").catch(() => null)]);
     const res = data.resources || [];
     const phaseText = data.phase_status === "known" && data.phase !== null
@@ -888,6 +897,32 @@ async function toggleLanguage() {
 }
 
 /* === Global: About modal === */
+const ABOUT_I18N = {
+  releaseCandidate: "{{ t('web_release_candidate') }}",
+  stable: "{{ t('web_release_stable') }}",
+  notStable: "{{ t('web_release_not_stable') }}",
+  unavailable: "{{ t('web_config_unavailable') }}",
+  supportedScope: "{{ t('web_about_supported_scope') }}",
+  runtimeMode: "{{ t('web_about_runtime_mode') }}",
+  supported: "{{ t('web_release_supported') }}",
+  testing: "{{ t('web_release_testing') }}",
+  experimental: "{{ t('web_release_experimental') }}",
+  future: "{{ t('web_release_future') }}",
+  scope: {
+    desktop_process_core_loop: "{{ t('web_scope_desktop_process_core_loop') }}",
+    macos_voiceover_core_web: "{{ t('web_scope_macos_voiceover_core_web') }}",
+    windows_nvda: "{{ t('web_scope_windows_nvda') }}",
+    optional_capabilities: "{{ t('web_scope_optional_capabilities') }}",
+    physical_transports_signing_governance: "{{ t('web_scope_future_capabilities') }}",
+  },
+};
+
+function aboutEsc(value) {
+  const node = document.createElement("div");
+  node.textContent = value == null ? "" : String(value);
+  return node.innerHTML;
+}
+
 async function openAbout() {
   let modal = document.getElementById("about-modal");
   if (!modal) {
@@ -916,19 +951,32 @@ async function openAbout() {
   document.getElementById("about-close").focus();
   try {
     const data = await api("/api/system/about");
-    const flags = data.feature_flags || {};
-    const flagsHtml = Object.keys(flags).sort().map(k =>
-      `<tr><td style="padding:2px 8px;">${k}</td><td style="color:${flags[k] ? 'var(--success)' : 'var(--secondary)'};">${flags[k] ? '✓' : '✗'}</td></tr>`
-    ).join("");
+    const release = data.release || {};
+    const channelLabels = {
+      release_candidate: ABOUT_I18N.releaseCandidate,
+      stable: ABOUT_I18N.stable,
+    };
+    const channelLabel = channelLabels[release.channel] || release.channel || ABOUT_I18N.unavailable;
+    const stabilityLabel = release.stable === true ? ABOUT_I18N.stable : ABOUT_I18N.notStable;
+    const releaseLabel = channelLabel === stabilityLabel
+      ? channelLabel
+      : `${channelLabel} · ${stabilityLabel}`;
+    const groups = release.support_groups || {};
+    const groupRows = ["supported", "testing", "experimental", "future"].map(status => {
+      const labels = (groups[status] || []).map(id => ABOUT_I18N.scope[id] || id);
+      return `<div style="display:grid;grid-template-columns:minmax(84px,auto) 1fr;gap:10px;padding:6px 0;border-top:1px solid var(--border);">
+        <strong>${aboutEsc(ABOUT_I18N[status])}</strong><span>${aboutEsc(labels.join("; "))}</span>
+      </div>`;
+    }).join("");
     document.getElementById("about-body").innerHTML = `
-      <p><strong>${data.name_zh || ''} ${data.name_en || 'AllSpark'}</strong></p>
-      <p>{{ t('web_about_version') }}: <code>${data.version}</code></p>
-      <p>{{ t('web_about_license') }}: ${data.license}</p>
-      <p>{{ t('web_about_homepage') }}: <a href="${data.homepage}" target="_blank" rel="noopener" style="color:var(--primary);">${data.homepage}</a></p>
-      <details style="margin-top:12px;">
-        <summary style="cursor:pointer;color:var(--secondary);">{{ t('web_about_features') }}</summary>
-        <table style="margin-top:8px;font-family:JetBrains Mono,monospace;font-size:12px;">${flagsHtml}</table>
-      </details>`;
+      <p><strong>${aboutEsc(data.name_zh || '')} ${aboutEsc(data.name_en || 'AllSpark')}</strong></p>
+      <p><span style="display:inline-block;background:var(--primary-container);color:var(--on-primary-container);padding:2px 6px;border-radius:2px;font-weight:700;">${aboutEsc(releaseLabel)}</span></p>
+      <p>${aboutEsc(ABOUT_I18N.supportedScope)}: ${aboutEsc(ABOUT_I18N.scope[release.supported_scope] || release.supported_scope)}</p>
+      <p>${aboutEsc(ABOUT_I18N.runtimeMode)}: ${aboutEsc(String(release.actual_runtime_mode || "process").toUpperCase())}${release.actual_runtime_mode !== release.supported_runtime_mode ? ` · ${aboutEsc(ABOUT_I18N.experimental)}` : ""}</p>
+      <div style="margin-top:12px;">${groupRows}</div>
+      <p style="margin-top:12px;">{{ t('web_about_version') }}: <code>${aboutEsc(data.version)}</code></p>
+      <p>{{ t('web_about_license') }}: ${aboutEsc(data.license)}</p>
+      <p>{{ t('web_about_homepage') }}: <a href="${aboutEsc(data.homepage)}" target="_blank" rel="noopener" style="color:var(--primary);">${aboutEsc(data.homepage)}</a></p>`;
   } catch(e) {
     document.getElementById("about-body").textContent = String(e);
   }

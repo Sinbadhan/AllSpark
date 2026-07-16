@@ -331,7 +331,7 @@ def test_dashboard_template_renders_localized_strings():
         zh_response = client.get("/")
         assert zh_response.status_code == 200
         zh_html = zh_response.text
-        assert "系统健康总览" in zh_html
+        assert "当前状况" in zh_html
         assert "活跃任务" in zh_html
         from allspark import __version__
         assert __version__ in zh_html
@@ -350,9 +350,9 @@ def test_dashboard_template_supports_english_locale(monkeypatch):
             response = client.get("/")
             assert response.status_code == 200
             html = response.text
-            assert "System Health Matrix" in html
+            assert "Known facts, the confirmed 24-hour plan" in html
             assert "Active Tasks" in html
-            assert "Dashboard" in html
+            assert "Situation" in html
             assert 'lang="en"' in html
     finally:
         monkeypatch.setattr(i18n, "_current_lang", "zh")
@@ -371,10 +371,10 @@ def test_localized_web_pages_render_zh_strings():
     with TempDb() as path:
         client = TestClient(_initialized_app(path))
         for url, marker in [
-            ("/system", "系统监控"),
-            ("/executions", "任务执行日志"),
-            ("/config", "配置"),
-            ("/repository", "资料库"),
+            ("/system", "系统与能力"),
+            ("/executions", "行动"),
+            ("/config", "产品与运行环境"),
+            ("/repository", "知识"),
         ]:
             response = client.get(url)
             assert response.status_code == 200, url

@@ -135,19 +135,23 @@ def test_api_schema_contains_capability_truth() -> None:
                 "running",
                 "experimental",
                 "capability_state",
+                "runtime_state",
+                "release_status",
             } <= module.keys()
         rule_engine = next(
             module for module in modules if module["name"] == "rule_engine"
         )
-        assert rule_engine["running"] is True
-        assert rule_engine["capability_state"] == "running"
+        assert rule_engine["running"] is False
+        assert rule_engine["capability_state"] == "ready"
 
 
 def test_system_page_consumes_capability_state() -> None:
     with TempDb() as path:
         html = _client(path).get("/system").text
         assert "m.capability_state" in html
-        assert "m.is_core" in html
+        assert "m.release_status" in html
+        assert "m.description_zh" in html
+        assert "m.description_en" in html
 
 
 def test_idle_runtime_is_configured_but_not_running() -> None:

@@ -72,7 +72,7 @@ v1.0.3 Stable 的首要产品承诺收敛为：
 ### Testing / Experimental / Future（不属于 v1.0.3 Stable）
 
 - **Testing：** Windows + NVDA 兼容性；需真实 Windows 环境后才能扩大无障碍声明。
-- **Experimental：** 本地 GGUF/LLM 与 GPU、心理追踪与非临床危机支持、人格自适应、治理/RBAC、知识交易、Spark Network、天气/环境/地图自动判断、语音、视觉、Docker/INTEGRATION、真实 RPi/传感器/电力/GPS、可移动介质恢复。
+- **Experimental：** 本地 GGUF/LLM 与 GPU、经验/自学习沉淀、心理追踪与非临床危机支持、人格自适应、治理/RBAC、知识交易、Spark Network、天气/环境/地图自动判断、语音、视觉、Docker/INTEGRATION、真实 RPi/传感器/电力/GPS、可移动介质恢复。
 - **Future：** 蓝牙/Wi-Fi Direct/LoRa 等灾后物理传输、知识包签名、多人身份与完整治理、人格参数化进化、NOMAD 集成和大规模社区能力。
 - Experimental 功能可以保留实现与测试，但默认入口、About、README 和发布材料不得把它们描述为已安装、正在运行、已验证或可依赖。
 
@@ -140,7 +140,7 @@ v1.0.3 Stable 的首要产品承诺收敛为：
 | CLI、Web、中英文与本地 SQLite | Supported | 桌面 PROCESS 模式；核心 Web 流程已验证 macOS VoiceOver |
 | 重置、快照/恢复、日记、时间线、简报 | Supported supporting tools | 不作为首次价值前置；遵守本地明文与权限边界 |
 | Windows + NVDA | Testing | 设计与自动化完成，真实环境未验收 |
-| LLM、人格自适应、心理/危机支持 | Experimental | 规则主链不依赖；危机支持等待独立合格专家复核 |
+| LLM、经验/自学习、人格自适应、心理/危机支持 | Experimental | 规则主链不依赖；危机支持等待独立合格专家复核 |
 | 治理、成员权限、生存价值、知识交易 | Experimental / Unavailable | 无可验证成员身份时服务端 fail closed；生存价值不进入 v1 |
 | Spark Network、天气/环境/地图自动判断 | Experimental | 单机或局部代码证据不等于跨主机/传感器/野外验证 |
 | 语音、视觉、Docker、真实硬件与可移动介质 | Experimental | 需要对应真实环境矩阵，不得由绿色 CI 代替 |

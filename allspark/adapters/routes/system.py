@@ -26,13 +26,42 @@ def register_system_routes(app, check):
     @app.get("/api/system/about")
     async def system_about():
         container, db = check()
-        flags = getattr(container.get("registry"), "flags", None) if container else None
+        registry = container.get("registry") if container else None
+        flags = getattr(registry, "flags", None)
+        capabilities = registry.format_status_dict() if registry else []
+        capability_summary = {
+            status: sum(
+                1 for capability in capabilities
+                if capability.get("release_status") == status
+            )
+            for status in ("supported", "testing", "experimental", "future")
+        }
         return {
             "name_zh": allspark.__name_zh__,
             "name_en": allspark.__name_en__,
             "version": allspark.__version__,
             "language": get_language(),
             "feature_flags": _flags_to_dict(flags),
+            "release": {
+                "channel": "release_candidate",
+                "stable": False,
+                "supported_scope": "desktop_process_core_loop",
+                "supported_runtime_mode": "process",
+                "actual_runtime_mode": getattr(flags, "deploy_mode", "process"),
+                "accessibility_supported": "macos_voiceover_core_web",
+                "accessibility_testing": "windows_nvda",
+                "support_groups": {
+                    "supported": [
+                        "desktop_process_core_loop",
+                        "macos_voiceover_core_web",
+                    ],
+                    "testing": ["windows_nvda"],
+                    "experimental": ["optional_capabilities"],
+                    "future": ["physical_transports_signing_governance"],
+                },
+            },
+            "capabilities": capabilities,
+            "module_release_summary": capability_summary,
             "license": "Apache-2.0",
             "homepage": "https://github.com/Sinbadhan/AllSpark",
         }
@@ -43,9 +72,8 @@ def register_system_routes(app, check):
     async def system_health():
         """Honest integrity score + state.
 
-        Factors in core capabilities (LLM loaded, module support, warnings),
-        not just error/warning count, so an unloaded LLM or unsupported
-        modules never display 100% / "stable". State is one of
+        Measures the supported core separately from resource warnings and
+        optional Experimental runtimes. State is one of
         healthy / degraded / unavailable (unknown is client-side, on fetch
         failure).
         """

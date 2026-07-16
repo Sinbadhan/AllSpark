@@ -20,7 +20,7 @@ def _restore_process_language():
 
 @pytest.mark.parametrize(
     ("language", "expected_label"),
-    [("zh", "执行中心"), ("en", "Executions")],
+    [("zh", "行动"), ("en", "Actions")],
 )
 def test_execution_navigation_is_consistent_across_pages_and_viewports(
     tmp_path: Path, language: str, expected_label: str

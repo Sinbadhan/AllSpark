@@ -23,6 +23,11 @@ workflow and supported hardware scope are approved.
   is Testing; LLM, Docker, hardware, network, psychology, personality and
   governance paths are Experimental or Future. Unverified device, model,
   tokens-per-second, power and battery recommendations were removed.
+- SHA-244: primary navigation now follows Situation -> Actions -> Knowledge,
+  with System and Product/Runtime grouped under Management. About, System and
+  Config consume one release/runtime capability schema. Supported-core health
+  no longer penalizes absent Experimental LLM or hardware; every non-healthy
+  result carries a reason, impact, next action and affected capabilities.
 
 **Security (P0):**
 - SHA-142: Web auth boundary - token moved out of HTML to httpOnly+SameSite

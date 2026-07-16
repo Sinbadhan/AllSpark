@@ -26,9 +26,10 @@ class TestExperimentalLabeling:
 
     def test_exp_badge_rendered(self):
         t = _read("system.html")
-        assert "if (m.experimental)" in t
+        assert "const releaseStatus = m.release_status" in t
+        assert "releaseLabels[releaseStatus]" in t
         assert "EXPERIMENTAL_MODULES" not in t
-        assert "EXP" in t
+        assert "I18N.web_release_experimental" in t
 
     def test_cli_and_api_contract_expose_experimental_state(self):
         registry = ModuleRegistry(FeatureFlags())

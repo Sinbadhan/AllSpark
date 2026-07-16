@@ -28,7 +28,7 @@ passes; code presence alone is not validation.
 |--------|-------|
 | Supported | Python 3.10-3.12 desktop PROCESS mode; CLI and Web UI; local SQLite; the **Assess -> Decide -> Act -> Reassess** loop; evidence-aware knowledge search/import/export; confirmed 24h plans; tasks and outcome reassessment; local snapshot/restore; Chinese/English; core Web flows with macOS VoiceOver |
 | Testing | Windows screen-reader compatibility with NVDA. Design and automated checks are complete; a real Windows + NVDA run is still required. |
-| Experimental | Psychology and non-clinical crisis support (independent qualified expert review pending); personality adaptation; Governance/RBAC (disabled until member identity and server-side authorization are verified); knowledge trading; Docker/INTEGRATION; real GGUF/LLM and GPU acceleration; microphone/STT/TTS; camera/vision; Raspberry Pi GPIO/I2C/Serial, sensors, power and hardware GPS; cross-host Spark Network; weather/environment/map automation; removable-media disaster recovery |
+| Experimental | Experience/self-learning promotion; psychology and non-clinical crisis support (independent qualified expert review pending); personality adaptation; Governance/RBAC (disabled until member identity and server-side authorization are verified); knowledge trading; Docker/INTEGRATION; real GGUF/LLM and GPU acceleration; microphone/STT/TTS; camera/vision; Raspberry Pi GPIO/I2C/Serial, sensors, power and hardware GPS; cross-host Spark Network; weather/environment/map automation; removable-media disaster recovery |
 | Future / not supported in v1.0.3 | Bluetooth, Wi-Fi Direct and LoRa transports; signed knowledge packs; complete multiplayer identity and governance. The current Spark Network transport is TCP over LAN; radio availability detection is not a transport implementation. |
 
 Single-host, independent-process Spark Network exchange is covered by automated
@@ -53,7 +53,7 @@ do not expand the primary v1.0.3 product promise.
 | Local LLM (Experimental) | llama-cpp-python inference path and Qwen3 sizing recommendations; a release GGUF runtime has not been certified |
 | Survival Assessment | Explicit Known/Unknown observations + normalized resources + auditable phase and bottleneck rules |
 | Personality System (Experimental) | Crisis/Stable/Companion/Multiplayer/Renaissance adaptation prototype |
-| Experience Accumulation | Experience recording → pattern recognition → knowledge entry loop |
+| Experience Accumulation (Experimental) | Experience recording → pattern recognition → knowledge entry promotion prototype |
 | Daily Briefing | Auto-generated survival report: resources + warnings + goals + tasks + knowledge tip |
 | Psychology Tracking (Experimental) | Non-clinical loneliness/stress prompts and self-assessment; explicit self-harm language enters private, deterministic safety confirmation before rules/LLM. No diagnosis, automatic notification, or silent timeline recording; qualified external review is pending. |
 

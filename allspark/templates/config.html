@@ -23,6 +23,8 @@
     <h2 class="text-xs font-semibold tracking-wider text-secondary uppercase mb-2">{{ t('web_config_section_identity') }}</h2>
     <dl class="text-sm grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
       <dt class="text-secondary">{{ t('web_config_version') }}</dt><dd id="cfg-version" class="text-on-surface">--</dd>
+      <dt class="text-secondary">{{ t('web_config_release_channel') }}</dt><dd id="cfg-release" class="text-on-surface">--</dd>
+      <dt class="text-secondary">{{ t('web_config_supported_scope') }}</dt><dd id="cfg-scope" class="text-on-surface">--</dd>
       <dt class="text-secondary">{{ t('web_config_language') }}</dt><dd id="cfg-language" class="text-on-surface">--</dd>
       <dt class="text-secondary">{{ t('web_config_license') }}</dt><dd id="cfg-license" class="text-on-surface">--</dd>
       <dt class="text-secondary">{{ t('web_config_homepage') }}</dt><dd id="cfg-homepage" class="text-on-surface truncate">--</dd>
@@ -34,17 +36,19 @@
     <dl class="text-sm grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
       <dt class="text-secondary">{{ t('web_config_health') }}</dt><dd id="cfg-health" class="text-on-surface">--</dd>
       <dt class="text-secondary">{{ t('web_config_llm') }}</dt><dd id="cfg-llm" class="text-on-surface">--</dd>
-      <dt class="text-secondary">{{ t('web_config_hw_tier') }}</dt><dd id="cfg-tier" class="text-on-surface">--</dd>
+      <dt class="text-secondary">{{ t('web_config_runtime_mode') }}</dt><dd id="cfg-mode" class="text-on-surface">--</dd>
     </dl>
   </section>
 
   <section class="border border-surface-container-high bg-[#141414] rounded p-3 md:col-span-2">
-    <h2 class="text-xs font-semibold tracking-wider text-secondary uppercase mb-2">{{ t('web_config_section_flags') }}</h2>
-    <div id="cfg-flags" class="grid grid-cols-2 md:grid-cols-3 gap-1 text-sm">{{ t('web_loading') }}</div>
+    <h2 class="text-xs font-semibold tracking-wider text-secondary uppercase mb-2">{{ t('web_config_section_capabilities') }}</h2>
+    <div class="text-xs text-secondary mb-2">{{ t('web_config_capability_note') }}</div>
+    <div id="cfg-capabilities" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">{{ t('web_loading') }}</div>
+    <a href="/system" class="btn-outline" style="display:inline-flex;margin-top:10px;">{{ t('web_config_view_system') }}</a>
   </section>
 </div>
 
-<p class="text-xs text-secondary mt-3">{{ t('web_config_disabled_note') }}</p>
+<p class="text-xs text-secondary mt-3">{{ t('web_config_status_note') }}</p>
 {% endblock %}
 
 {% block scripts %}
@@ -54,42 +58,88 @@ const CONFIG_I18N = {
   unavailable: "{{ t('web_config_unavailable') }}",
   llmLoaded: "{{ t('web_config_llm_loaded') }}",
   llmUnloaded: "{{ t('web_config_llm_unloaded') }}",
+  releaseCandidate: "{{ t('web_release_candidate') }}",
+  stable: "{{ t('web_release_stable') }}",
+  notStable: "{{ t('web_release_not_stable') }}",
+  experimental: "{{ t('web_release_experimental') }}",
+  supportedScope: "{{ t('web_scope_desktop_process_core_loop') }}",
+  releaseLabels: {
+    supported: "{{ t('web_release_supported') }}",
+    testing: "{{ t('web_release_testing') }}",
+    experimental: "{{ t('web_release_experimental') }}",
+    future: "{{ t('web_release_future') }}",
+  },
+  scopeLabels: {
+    desktop_process_core_loop: "{{ t('web_scope_desktop_process_core_loop') }}",
+    macos_voiceover_core_web: "{{ t('web_scope_macos_voiceover_core_web') }}",
+    windows_nvda: "{{ t('web_scope_windows_nvda') }}",
+    optional_capabilities: "{{ t('web_scope_optional_capabilities') }}",
+    physical_transports_signing_governance: "{{ t('web_scope_future_capabilities') }}",
+  },
+  healthStates: {
+    healthy: "{{ t('web_system_integrity_healthy') }}",
+    degraded: "{{ t('web_system_integrity_degraded') }}",
+    unavailable: "{{ t('web_system_integrity_unavailable') }}",
+    unknown: "{{ t('web_system_integrity_unknown') }}",
+  },
 };
 
 function setConfigText(id, value) {
   document.getElementById(id).textContent = value || CONFIG_I18N.unavailable;
 }
 
-function renderConfigFlags(flags) {
-  const root = document.getElementById("cfg-flags");
+function renderCapabilityGroups(groups) {
+  const root = document.getElementById("cfg-capabilities");
   root.replaceChildren();
-  const keys = Object.keys(flags || {}).sort();
-  if (!keys.length) {
+  const statuses = ["supported", "testing", "experimental", "future"];
+  if (!groups || !statuses.some(status => (groups[status] || []).length)) {
     root.textContent = CONFIG_I18N.unavailable;
     return;
   }
-  keys.forEach(key => {
+  statuses.forEach(status => {
     const row = document.createElement("div");
-    row.style.cssText = "display:flex;justify-content:space-between;gap:6px;padding:2px 0;";
+    row.style.cssText = "border-top:1px solid var(--surface-container-high);padding:8px 0;min-width:0;";
     const label = document.createElement("span");
-    label.className = "text-on-surface-variant";
-    label.textContent = key;
-    const mark = document.createElement("span");
-    mark.style.color = flags[key] ? "var(--success)" : "var(--secondary)";
-    mark.textContent = flags[key] ? "✓" : "✗";
-    row.append(label, mark);
+    label.style.cssText = "display:block;font-weight:700;margin-bottom:4px;";
+    label.textContent = CONFIG_I18N.releaseLabels[status];
+    const detail = document.createElement("span");
+    detail.className = "text-secondary";
+    detail.textContent = (groups[status] || [])
+      .map(id => CONFIG_I18N.scopeLabels[id] || id).join("; ");
+    row.append(label, detail);
     root.appendChild(row);
   });
 }
 
 async function loadConfig() {
-  ["cfg-version", "cfg-language", "cfg-license", "cfg-homepage", "cfg-health", "cfg-llm", "cfg-tier"]
+  ["cfg-version", "cfg-release", "cfg-scope", "cfg-language", "cfg-license", "cfg-homepage", "cfg-health", "cfg-llm", "cfg-mode"]
     .forEach(id => setConfigText(id, CONFIG_I18N.loading));
-  document.getElementById("cfg-flags").textContent = CONFIG_I18N.loading;
+  document.getElementById("cfg-capabilities").textContent = CONFIG_I18N.loading;
 
   try {
     const about = await api("/api/system/about");
     setConfigText("cfg-version", about.version);
+    const channelLabels = {
+      release_candidate: CONFIG_I18N.releaseCandidate,
+      stable: CONFIG_I18N.stable,
+    };
+    const channelLabel = channelLabels[about.release?.channel]
+      || about.release?.channel
+      || CONFIG_I18N.unavailable;
+    const stabilityLabel = about.release?.stable === true
+      ? CONFIG_I18N.stable
+      : CONFIG_I18N.notStable;
+    setConfigText(
+      "cfg-release",
+      channelLabel === stabilityLabel
+        ? channelLabel
+        : `${channelLabel} · ${stabilityLabel}`,
+    );
+    setConfigText("cfg-scope", CONFIG_I18N.scopeLabels[about.release?.supported_scope] || CONFIG_I18N.supportedScope);
+    const supportedMode = about.release?.supported_runtime_mode || "process";
+    const actualMode = about.release?.actual_runtime_mode || CONFIG_I18N.unavailable;
+    const modeStatus = actualMode === supportedMode ? "" : ` · ${CONFIG_I18N.experimental}`;
+    setConfigText("cfg-mode", actualMode.toUpperCase() + modeStatus);
     setConfigText("cfg-language", about.language);
     setConfigText("cfg-license", about.license);
     const homepage = document.getElementById("cfg-homepage");
@@ -105,26 +155,24 @@ async function loadConfig() {
     } else {
       homepage.textContent = CONFIG_I18N.unavailable;
     }
-    renderConfigFlags(about.feature_flags);
+    renderCapabilityGroups(about.release?.support_groups);
   } catch (e) {
-    ["cfg-version", "cfg-language", "cfg-license", "cfg-homepage"]
+    ["cfg-version", "cfg-release", "cfg-scope", "cfg-language", "cfg-license", "cfg-homepage", "cfg-mode"]
       .forEach(id => setConfigText(id, CONFIG_I18N.unavailable));
-    renderConfigFlags({});
+    renderCapabilityGroups({});
   }
   try {
     const health = await api("/api/system/health");
     const score = typeof health.score === "number" ? health.score + "%" : CONFIG_I18N.unavailable;
-    setConfigText("cfg-health", `${score} · ${health.state || CONFIG_I18N.unavailable}`);
+    const state = CONFIG_I18N.healthStates[health.state] || CONFIG_I18N.healthStates.unknown;
+    setConfigText("cfg-health", `${score} · ${state}`);
   } catch (e) { setConfigText("cfg-health", CONFIG_I18N.unavailable); }
   try {
     const llm = await api("/api/llm/status");
     const state = llm && llm.available ? CONFIG_I18N.llmLoaded : CONFIG_I18N.llmUnloaded;
-    setConfigText("cfg-llm", llm && llm.model_name ? `${state} · ${llm.model_name}` : state);
+    const runtime = llm && llm.model_name ? `${state} · ${llm.model_name}` : state;
+    setConfigText("cfg-llm", `${CONFIG_I18N.experimental} · ${runtime}`);
   } catch (e) { setConfigText("cfg-llm", CONFIG_I18N.unavailable); }
-  try {
-    const hw = await api("/api/init/hardware");
-    setConfigText("cfg-tier", hw && hw.tier);
-  } catch (e) { setConfigText("cfg-tier", CONFIG_I18N.unavailable); }
 }
 const initialConfigLoad = loadConfig();
 </script>

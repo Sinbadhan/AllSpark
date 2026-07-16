@@ -211,6 +211,7 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
     experimental_feature_rows = {
         readme: (
             ("Permission System (Experimental)", "governance"),
+            ("Experience Accumulation (Experimental)", "self_learning"),
             ("Psychology Tracking", "psychology"),
             ("Weather-Goal Linkage", "weather"),
             ("Knowledge Trading", "trade_engine"),
@@ -220,6 +221,7 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
         ),
         readme_cn: (
             ("权限系统（Experimental）", "governance"),
+            ("经验积累（Experimental）", "self_learning"),
             ("心理追踪", "psychology"),
             ("天气-目标联动", "weather"),
             ("知识交易", "trade_engine"),

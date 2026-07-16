@@ -1,9 +1,4 @@
-"""SHA-149: System page honest health + structured weather.
-
-The integrity score must factor in core capabilities (LLM loaded, module
-support), not just warning count, so an unloaded LLM or unsupported modules
-never display 100% / "stable". Weather must never leak raw keys/JSON/null.
-"""
+"""SHA-149/SHA-244: supported product health + structured weather."""
 import os
 import tempfile
 
@@ -39,26 +34,34 @@ class TestSystemHealth:
             r = client.get("/api/system/health")
             assert r.status_code == 200, r.text
             h = r.json()
-            assert "score" in h and "state" in h and "factors" in h
+            assert {"score", "state", "scope", "reasons", "factors"} <= h.keys()
             assert 0 <= h["score"] <= 100
             assert h["state"] in ("healthy", "degraded", "unavailable")
+            assert h["scope"] == "supported_core"
             f = h["factors"]
             for key in ("llm_loaded", "modules_total", "modules_loaded",
                         "modules_unsupported", "modules_experimental",
-                        "critical_count", "warning_count"):
+                        "critical_count", "warning_count", "supported_total",
+                        "supported_operational", "supported_unavailable",
+                        "experimental_active"):
                 assert key in f, f"missing factor {key}"
         finally:
             if os.path.exists(path):
                 os.unlink(path)
 
-    def test_health_not_100_when_llm_unloaded(self):
-        """SHA-149 headline: LLM not loaded -> score < 100, not 'healthy'."""
+    def test_experimental_llm_does_not_degrade_supported_health(self):
         client, path = _init_client()
         try:
             h = client.get("/api/system/health").json()
             assert h["factors"]["llm_loaded"] is False
-            assert h["score"] < 100, f"score should be <100 when LLM unloaded, got {h['score']}"
-            assert h["state"] in ("degraded", "unavailable"), h["state"]
+            assert h["score"] == 100
+            assert h["state"] == "healthy"
+            assert h["reasons"] == [{
+                "code": "supported_core_operational",
+                "impact": "core_loop_available",
+                "action": "none",
+                "capabilities": [],
+            }]
         finally:
             if os.path.exists(path):
                 os.unlink(path)
@@ -71,6 +74,10 @@ class TestSystemHealth:
             for m in mods:
                 assert "status" in m, m
                 assert isinstance(m["experimental"], bool)
+                assert m["release_status"] in {
+                    "supported", "testing", "experimental", "future"
+                }
+                assert m["runtime_state"] == m["capability_state"]
                 assert m["status"] in ("loaded", "available", "unsupported", "disabled")
         finally:
             if os.path.exists(path):

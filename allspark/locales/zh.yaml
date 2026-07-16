@@ -1287,21 +1287,23 @@ voice_no_llm_response: 当前未加载 LLM，无法进行开放式语音对话
 # ─── Web UI Shell ───────────────────────────────────────────────────────
 web_app_title: 火种 AllSpark
 web_kernel_version: 内核 {version}
-web_nav_dashboard: 仪表盘
+web_nav_dashboard: 状况
 web_nav_system: 系统
-web_nav_executions: 执行中心
+web_nav_executions: 行动
 web_nav_config: 配置
-web_nav_repository: 资料库
+web_nav_repository: 知识
 web_nav_docs: 文档
-web_page_title_dashboard: 仪表盘
-web_page_title_system: 系统监控
-web_page_title_executions: 执行中心
-web_page_title_config: 配置
+web_nav_core: 核心流程
+web_nav_management: 管理
+web_page_title_dashboard: 状况
+web_page_title_system: 系统与能力
+web_page_title_executions: 行动
+web_page_title_config: 产品与运行环境
 web_mobile_menu_open: 打开菜单
 web_mobile_menu_close: 关闭菜单
 web_nav_menu_label: 导航菜单
 web_repository_file_tree_toggle: 切换文件树
-web_page_title_repository: 资料库
+web_page_title_repository: 知识
 web_login_title: ALLSPARK 登录
 web_login_hint: 请输入服务启动时打印的访问令牌
 web_login_token_label: 访问令牌
@@ -1314,8 +1316,8 @@ web_global_search_sent: 正在搜索「{query}」
 web_notifications_title: 通知
 web_notifications_empty: 当前没有告警
 web_notifications_active: 当前有 {count} 条告警
-web_dashboard_title: 系统健康总览
-web_dashboard_subtitle: 实时遥测与资源监控。
+web_dashboard_title: 当前状况
+web_dashboard_subtitle: 已知事实、确认后的 24 小时计划与下一步行动。
 web_active_tasks: 活跃任务
 web_loading: 加载中...
 web_quick_actions: 快捷操作
@@ -1348,9 +1350,31 @@ web_remaining_unknown: 剩余时间未知
 web_remaining_sustained: 持续可用
 
 # ─── Web System / Executions / Config / Repository ───────────────────────
-web_system_title: 系统监控
-web_system_subtitle: 实时硬件与服务状态
+web_system_title: 系统与能力
+web_system_subtitle: 稳定支持主链与本机运行状态
 web_system_integrity: 系统完整性
+web_system_supported_health: 稳定支持主链健康度
+web_system_supported_operational: 稳定能力可用
+web_system_experimental_active: 实验能力活跃
+web_system_hw_diagnostic_note: 硬件检测仅用于诊断，不代表支持认证。
+web_system_capabilities_title: 能力状态
+web_system_capability: 能力
+web_system_release_status: 发布状态
+web_system_runtime_status: 运行状态
+web_system_experimental_not_required: 可选能力；稳定支持主链不依赖它。
+web_health_reason_label: 原因
+web_health_impact_label: 影响
+web_health_action_label: 下一步
+web_health_affected_label: 受影响能力
+web_health_reason_supported_core_operational: 所有稳定支持能力均可用。
+web_health_reason_supported_capability_unavailable: 一个或多个稳定支持能力不可用。
+web_health_reason_capability_registry_unavailable: 无法读取能力状态。
+web_health_impact_core_loop_available: 评估、决策、行动与重评闭环可用。
+web_health_impact_supported_workflow_at_risk: 部分稳定支持流程可能不可用。
+web_health_impact_core_loop_unverified: 无法验证核心闭环是否可用。
+web_health_action_none: 无需操作。
+web_health_action_review_supported_capabilities: 查看下方受影响的能力状态。
+web_health_action_restart_and_review_logs: 重启 AllSpark 并检查本地日志。
 web_system_loading: 加载中
 web_system_errors: 错误
 web_system_warnings: 警告
@@ -1375,8 +1399,8 @@ web_system_action: 操作
 web_system_restart: 重启
 web_system_module_id: 模块 ID
 web_system_hardware_profile_loading: 正在读取硬件信息...
-web_executions_title: 任务执行日志
-web_executions_subtitle: 当前任务与近期经验记录
+web_executions_title: 行动
+web_executions_subtitle: 当前、已完成、失败与跳过的行动
 web_executions_search_placeholder: 搜索任务 ID 或命令...
 web_executions_refresh: 刷新
 web_executions_total: 总任务
@@ -1386,8 +1410,8 @@ web_executions_pending: 待执行
 web_executions_empty: 当前没有任务记录
 web_executions_promoted: 已沉淀
 web_executions_raw: 原始
-web_config_title: 配置
-web_config_subtitle: 系统配置查看（只读）
+web_config_title: 产品与运行环境
+web_config_subtitle: 发布边界与本机事实
 web_config_section_general: 通用
 web_config_section_resources: 资源
 web_config_section_system: 系统
@@ -1401,6 +1425,8 @@ web_config_awaiting: 请选择需要查看的配置项。
 web_config_disabled_note: 当前为只读视图，保存与校验已禁用。
 web_config_section_identity: 身份与版本
 web_config_version: 版本
+web_config_release_channel: 发布通道
+web_config_supported_scope: 稳定支持范围
 web_config_language: 语言
 web_config_license: 许可证
 web_config_homepage: 主页
@@ -1408,12 +1434,17 @@ web_config_section_runtime: 运行时
 web_config_health: 健康度
 web_config_llm: LLM
 web_config_hw_tier: 硬件档位
+web_config_runtime_mode: 运行模式
 web_config_section_flags: 功能开关
+web_config_section_capabilities: 发布支持
+web_config_capability_note: 发布支持与当前运行状态是两类不同事实。
+web_config_view_system: 查看能力详情
+web_config_status_note: 当前页面只读；运行控制请前往“系统”。
 web_config_llm_loaded: 已加载
 web_config_llm_unloaded: 未加载
 web_config_unavailable: 不可用
-web_repository_title: 资料库
-web_repository_subtitle: 知识、经验、模型与 SKF 包概览
+web_repository_title: 知识
+web_repository_subtitle: 按证据、验证状态与适用条件检索建议
 web_repository_files: 文件
 web_repository_knowledge_entries: 知识条目
 web_repository_experience_log: 经验日志
@@ -1461,6 +1492,31 @@ web_about_homepage: 项目主页
 web_about_features: 功能特性
 web_about_close: 关闭
 web_about_loading: 加载中…
+web_about_supported_scope: 稳定支持范围
+web_about_runtime_mode: 当前运行模式
+web_release_candidate: 发布候选版
+web_release_stable: Stable
+web_release_not_stable: 尚非 Stable
+web_health_reason_supported_core_service_unavailable: 核心闭环所需服务不可用。
+web_health_reason_supported_core_probe_failed: 核心闭环所需状态检查失败。
+web_health_impact_core_loop_unavailable: 受支持的评估、决策、行动与重评闭环不可用。
+web_health_capability_resource_tracking: 资源追踪
+web_health_capability_phase_assessment: 阶段评估
+web_health_capability_survival_decision: 生存决策
+web_health_capability_action_planning: 行动规划
+web_health_capability_outcome_reassessment: 结果重评
+web_health_capability_initial_assessment: 初始评估
+web_health_capability_confirmed_action_loop: 经确认的行动更新
+web_health_capability_workflow_orchestration: 工作流编排
+web_release_supported: 稳定支持
+web_release_testing: 测试中
+web_release_experimental: 实验性
+web_release_future: 未来能力
+web_scope_desktop_process_core_loop: 桌面 PROCESS 评估 → 决策 → 行动 → 重评闭环
+web_scope_macos_voiceover_core_web: 已通过 macOS VoiceOver 的核心 Web 流程
+web_scope_windows_nvda: Windows + NVDA 兼容性等待真实环境运行
+web_scope_optional_capabilities: LLM、经验/自学习、心理、人格、治理、网络、天气/地图、传感器、语音、视觉、Docker 等可选运行时
+web_scope_future_capabilities: 物理传输、签名知识包与完整多人身份/治理
 web_btn_refresh: 刷新
 web_btn_save: 保存
 web_btn_cancel: 取消
@@ -1907,7 +1963,7 @@ web_system_module_disabled: 已禁用
 web_system_experimental: 未真机验证（Experimental）
 web_system_module_unsupported: 不支持
 web_system_module_running: 运行中
-web_system_module_ready: 已就绪，未运行
+web_system_module_ready: 已就绪
 web_system_module_missing_dependency: 缺少依赖
 web_system_module_not_configured: 未配置
 web_system_dependency: 依赖
