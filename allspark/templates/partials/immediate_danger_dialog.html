@@ -1,0 +1,13 @@
+<section id="immediate-danger-dialog" class="danger-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="immediate-danger-title">
+  <div class="danger-dialog-card">
+    <header class="danger-dialog-header">
+      <h2 id="immediate-danger-title" tabindex="-1" data-i18n="immediate_danger_dialog_title">{{ t('immediate_danger_dialog_title') }}</h2>
+      <button type="button" class="danger-button" id="immediate-danger-close" data-action="danger-close" data-i18n="immediate_danger_dialog_close">{{ t('immediate_danger_dialog_close') }}</button>
+    </header>
+    <div id="immediate-danger-content" aria-live="polite"></div>
+    <div class="danger-actions">
+      <button type="button" class="danger-button hidden" id="immediate-danger-back" data-action="danger-back" data-i18n="immediate_danger_back">{{ t('immediate_danger_back') }}</button>
+      <button type="button" class="danger-button" data-action="danger-close" data-i18n="immediate_danger_dialog_close">{{ t('immediate_danger_dialog_close') }}</button>
+    </div>
+  </div>
+</section>

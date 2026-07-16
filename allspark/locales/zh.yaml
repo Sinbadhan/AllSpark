@@ -2227,6 +2227,8 @@ web_init_promise_body: 记录已知事实、明确未知，以及火种需要创
 web_init_hardware_not_requested: 硬件检测尚未开始；仅在需要查看可选详情时展开此区域。
 web_init_immediate_danger_button: 立即危险
 web_init_immediate_danger_hint: 立即获得确定性的首个动作，无需账户、模型、硬件检测或完成设置。
+web_immediate_danger_global_button: 立即危险
+web_immediate_danger_global_hint: 打开持续可达的立即危险分流；不会保存或发布你在流程中选择的事实
 immediate_danger_dialog_title: 立即危险
 immediate_danger_dialog_close: 关闭并返回
 immediate_danger_back: 返回

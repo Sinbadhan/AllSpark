@@ -1,0 +1,50 @@
+.danger-dialog {
+  position: fixed; inset: 0; z-index: 10000; background: rgba(0, 0, 0, .86);
+  display: grid; place-items: center; padding: 16px;
+}
+.danger-dialog-card {
+  width: min(680px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto;
+  background: var(--surface); border: 2px solid var(--critical); border-radius: 8px; padding: 22px;
+  color: var(--on-surface, var(--text)); overflow-wrap: anywhere;
+}
+.danger-dialog-header { display: flex; align-items: flex-start; gap: 12px; }
+.danger-dialog-header h2 { margin: 0; color: #ff8a8a; font-size: 21px; }
+.danger-dialog-header .danger-button { margin-left: auto; }
+.danger-question h3, .danger-action h3 { color: var(--primary, var(--primary-soft)); font-size: 17px; }
+.danger-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.danger-button {
+  min-height: 44px; border: 1px solid var(--border); border-radius: 4px; padding: 9px 14px;
+  background: var(--surface-2, var(--surface-low)); color: var(--on-surface, var(--text));
+  font: inherit; font-weight: 700; cursor: pointer;
+}
+.danger-button:hover, .danger-button:focus-visible { border-color: var(--primary-container, var(--primary)); }
+.danger-button:disabled { opacity: .45; cursor: not-allowed; }
+.danger-options .danger-button { margin: 0; text-align: left; }
+.danger-review { border-left: 3px solid var(--warning); padding: 10px 12px; color: #ffd37a; font-size: 12px; }
+.danger-action-text { font-size: 17px; line-height: 1.55; border: 1px solid var(--critical); padding: 14px; }
+.danger-evidence { overflow-wrap: anywhere; }
+.danger-evidence h4 { margin: 16px 0 6px; color: var(--primary, var(--primary-soft)); }
+.danger-evidence ul { margin: 0; padding-left: 20px; font-size: 12px; line-height: 1.6; }
+.danger-source { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; font-size: 11px; color: var(--muted, var(--on-surface-variant)); }
+.danger-ephemeral { font-size: 11px; color: var(--muted, var(--on-surface-variant)); margin-top: 5px; line-height: 1.45; }
+.danger-actions {
+  position: sticky; bottom: -22px; display: flex; gap: 8px; margin: 20px -22px -22px;
+  padding: 12px 22px; background: var(--surface); border-top: 1px solid var(--border);
+}
+.danger-global-trigger {
+  min-height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--warning); border-radius: 4px; padding: 5px 9px;
+  background: rgba(255, 170, 0, .08); color: #ffd37a; font: inherit; font-size: 12px;
+  font-weight: 700; white-space: nowrap;
+}
+.danger-global-trigger:hover, .danger-global-trigger:focus-visible { background: rgba(255, 170, 0, .16); }
+.danger-global-trigger .material-symbols-outlined { color: var(--warning); }
+@media (max-width: 767px) {
+  .danger-global-trigger { min-height: 36px; padding: 5px 7px; font-size: 11px; }
+}
+@media (max-width: 560px) {
+  .danger-dialog { padding: 0; }
+  .danger-dialog-card { max-height: 100dvh; border-radius: 0; border-left: 0; border-right: 0; padding: 16px; }
+  .danger-options { grid-template-columns: 1fr; }
+  .danger-actions { bottom: -16px; margin: 16px -16px -16px; padding: 12px 16px; }
+}

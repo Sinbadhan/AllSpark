@@ -2284,6 +2284,8 @@ web_init_promise_body: Record what is known, what is unknown, and the informatio
 web_init_hardware_not_requested: Hardware detection has not started. Open this section only when you want the optional details.
 web_init_immediate_danger_button: Immediate danger
 web_init_immediate_danger_hint: Get a deterministic first action now. No account, model, hardware check, or setup completion is required.
+web_immediate_danger_global_button: Immediate danger
+web_immediate_danger_global_hint: Open the always-available immediate-danger flow; choices made in the flow are not saved or published
 immediate_danger_dialog_title: Immediate danger
 immediate_danger_dialog_close: Close and return
 immediate_danger_back: Back

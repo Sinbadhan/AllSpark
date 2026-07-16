@@ -309,6 +309,12 @@ table { border-collapse: collapse; width: 100%; }
   .md-col-span-4, .md-col-span-6, .md-col-span-8, .md-col-span-12 { grid-column: span 12; }
   .grid-responsive { grid-template-columns: 1fr; }
 }
+@media (min-width: 768px) and (max-width: 959px) {
+  .topbar { padding: 0 10px; }
+  .topbar .title { min-width: 0; font-size: 15px; }
+  .topbar .search-box { display: none; }
+  .topbar > div:last-child { gap: 8px !important; }
+}
 
 /* ===== Card ===== */
 .card {
@@ -490,6 +496,7 @@ table { border-collapse: collapse; width: 100%; }
   .footer > div:last-child { justify-content: flex-end; gap: 8px !important; }
   .footer #footer-uptime { display: none; }
 }
+{% include "partials/immediate_danger_styles.html" %}
 </style>
 {% block head %}{% endblock %}
 </head>
@@ -498,6 +505,13 @@ table { border-collapse: collapse; width: 100%; }
 <!-- Mobile TopBar -->
 <div class="mobile-topbar">
   <div style="font-size:20px;font-weight:700;color:var(--primary-container);letter-spacing:-0.02em;">ALLSPARK</div>
+  <button type="button" class="danger-global-trigger" id="immediate-danger-mobile-open"
+          data-action="danger-open" data-danger-entry
+          title="{{ t('web_immediate_danger_global_hint') }}"
+          aria-label="{{ t('web_immediate_danger_global_button') }}">
+    <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+    <span>{{ t('web_immediate_danger_global_button') }}</span>
+  </button>
   <button id="mobile-nav-toggle" style="color:var(--primary-container);" aria-label="{{ t('web_mobile_menu_open') }}" aria-expanded="false" aria-controls="mobile-nav">
     <span class="material-symbols-outlined" aria-hidden="true">menu</span>
   </button>
@@ -555,6 +569,13 @@ table { border-collapse: collapse; width: 100%; }
       <span id="topbar-title">{{ page_title }}</span>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
+      <button type="button" class="danger-global-trigger" id="immediate-danger-global-open"
+              data-action="danger-open" data-danger-entry
+              title="{{ t('web_immediate_danger_global_hint') }}"
+              aria-label="{{ t('web_immediate_danger_global_button') }}">
+        <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+        <span>{{ t('web_immediate_danger_global_button') }}</span>
+      </button>
       <div class="search-box">
         <input placeholder="{{ t('web_search_placeholder') }}" type="text" id="global-search"/>
         <span class="material-symbols-outlined" style="color:var(--on-surface-variant);font-size:18px;" aria-hidden="true">search</span>
@@ -589,6 +610,8 @@ table { border-collapse: collapse; width: 100%; }
 
 </div>
 
+{% include "partials/immediate_danger_dialog.html" %}
+
 <script nonce="{{ csp_nonce }}">
 const I18N = {{ web_i18n | tojson }};
 const LANG = "{{ lang }}";
@@ -622,6 +645,19 @@ async function api(path, opts = {}) {
   }
   return data;
 }
+{% include "partials/immediate_danger_script.html" %}
+const immediateDanger = createImmediateDanger({
+  api: api,
+  language: () => LANG,
+  translate: key => I18N[key] || key,
+  backgroundElements: () => [
+    document.querySelector('.mobile-topbar'),
+    document.getElementById('mobile-nav'),
+    document.querySelector('.sidebar'),
+    document.querySelector('.main-wrapper'),
+  ],
+  fallbackTrigger: () => document.querySelector('[data-danger-entry]'),
+});
 function notify(msg) {
   toast(typeof msg === 'string' ? msg : (I18N.web_error_occurred || 'An error occurred'), 'error');
 }

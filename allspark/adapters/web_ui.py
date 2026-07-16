@@ -130,6 +130,7 @@ def _render_template(name: str, **context) -> str:
         or k.startswith("resource_")
         or k.startswith("knowledge_")
         or k.startswith("q_")
+        or k.startswith("immediate_danger_")
         or k.startswith("survival_plan_")
     }
     context.setdefault("web_i18n", web_i18n)

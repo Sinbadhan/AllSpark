@@ -1,0 +1,261 @@
+function createImmediateDanger(config) {
+  const dialog = document.getElementById('immediate-danger-dialog');
+  const content = document.getElementById('immediate-danger-content');
+  const back = document.getElementById('immediate-danger-back');
+  if (!dialog || !content || !back) return null;
+
+  let facts = {};
+  let history = [];
+  let returnFocus = null;
+  let generation = 0;
+  let inertState = [];
+
+  const translate = key => config.translate(key) || key;
+  const dangerLabel = value => translate('immediate_danger_option_' + value);
+  const isOpen = () => !dialog.classList.contains('hidden');
+
+  function setBackgroundInert(value) {
+    if (value) {
+      inertState = config.backgroundElements().filter(Boolean).map(element => ({
+        element: element,
+        inert: element.inert,
+      }));
+      inertState.forEach(item => { item.element.inert = true; });
+      return;
+    }
+    inertState.forEach(item => { item.element.inert = item.inert; });
+    inertState = [];
+  }
+
+  function appendList(parent, headingKey, values) {
+    const heading = document.createElement('h4');
+    const list = document.createElement('ul');
+    heading.textContent = translate(headingKey);
+    values.forEach(value => {
+      const item = document.createElement('li');
+      item.textContent = value;
+      list.append(item);
+    });
+    parent.append(heading, list);
+  }
+
+  function renderAction(result) {
+    const action = result.action;
+    const wrapper = document.createElement('section');
+    const heading = document.createElement('h3');
+    const text = document.createElement('p');
+    const boundary = document.createElement('p');
+    const ephemeral = document.createElement('p');
+    const evidenceDetails = document.createElement('details');
+    const evidenceSummary = document.createElement('summary');
+    const evidence = document.createElement('div');
+    const communication = document.createElement('section');
+    wrapper.className = 'danger-action';
+    wrapper.dataset.actionId = action.action_id;
+    wrapper.dataset.actionRevision = String(action.revision);
+    wrapper.dataset.actionHash = action.content_hash;
+    heading.id = 'danger-action-title';
+    heading.tabIndex = -1;
+    heading.textContent = translate('immediate_danger_action_heading');
+    text.className = 'danger-action-text';
+    text.textContent = action.text;
+    communication.id = 'danger-communication';
+    const communicationLabel = document.createElement('h4');
+    communicationLabel.id = 'danger-communication-title';
+    communicationLabel.textContent = translate('immediate_danger_fact_communication');
+    communication.append(communicationLabel);
+    if (result.follow_up_question) {
+      const options = document.createElement('div');
+      options.className = 'danger-options';
+      options.setAttribute('role', 'group');
+      options.setAttribute('aria-labelledby', communicationLabel.id);
+      result.follow_up_question.options.forEach(value => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'danger-button';
+        button.dataset.action = 'danger-choice';
+        button.dataset.field = 'communication';
+        button.dataset.value = value;
+        button.textContent = dangerLabel(value);
+        options.append(button);
+      });
+      communication.append(options);
+    } else {
+      const selected = document.createElement('p');
+      selected.id = 'danger-communication-selected';
+      selected.textContent = translate('immediate_danger_communication_selected')
+        .replace('{status}', dangerLabel(action.communication_status));
+      communication.append(selected);
+    }
+    boundary.className = 'danger-review';
+    boundary.textContent = translate('immediate_danger_source_boundary');
+    ephemeral.className = 'danger-ephemeral';
+    ephemeral.textContent = translate('immediate_danger_ephemeral_boundary');
+    evidenceSummary.textContent = translate('immediate_danger_evidence_disclosure');
+    evidence.className = 'danger-evidence';
+    appendList(evidence, 'immediate_danger_applicable_heading', action.applicable_when_labels);
+    appendList(evidence, 'immediate_danger_contraindications_heading', action.contraindications);
+    const escalationHeading = document.createElement('h4');
+    const escalation = document.createElement('p');
+    escalationHeading.textContent = translate('immediate_danger_escalation_heading');
+    escalation.textContent = action.escalation;
+    evidence.append(escalationHeading, escalation);
+    if (action.sources.length) {
+      const sourceHeading = document.createElement('h4');
+      sourceHeading.textContent = translate('immediate_danger_sources_heading');
+      evidence.append(sourceHeading);
+      action.sources.forEach(source => {
+        const item = document.createElement('div');
+        item.className = 'danger-source';
+        item.textContent = source.organization + ' · ' + source.title + ' · ' +
+          source.locator + ' · ' + source.revision;
+        evidence.append(item);
+      });
+    }
+    const notContacted = document.createElement('p');
+    notContacted.textContent = translate('immediate_danger_not_contacted');
+    evidence.append(notContacted);
+    evidenceDetails.append(evidenceSummary, evidence);
+    wrapper.append(heading, text, communication, boundary, ephemeral, evidenceDetails);
+    content.append(wrapper);
+    heading.focus();
+  }
+
+  async function refresh() {
+    const requestGeneration = ++generation;
+    back.disabled = true;
+    content.replaceChildren();
+    try {
+      const result = await config.api('/api/immediate-danger/assess', {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({language: config.language(), facts: facts}),
+      });
+      if (result?._http_error) {
+        const error = new Error(result.detail || result.error || 'Immediate danger request failed');
+        error.payload = result;
+        throw error;
+      }
+      if (requestGeneration !== generation || !isOpen()) return;
+      back.disabled = false;
+      back.classList.toggle('hidden', history.length === 0);
+      if (result.status === 'needs_fact') {
+        const wrapper = document.createElement('section');
+        const heading = document.createElement('h3');
+        const options = document.createElement('div');
+        wrapper.className = 'danger-question';
+        heading.id = 'danger-question-title';
+        heading.tabIndex = -1;
+        heading.textContent = translate('immediate_danger_fact_' + result.question.field);
+        options.className = 'danger-options';
+        options.setAttribute('role', 'group');
+        options.setAttribute('aria-labelledby', heading.id);
+        result.question.options.forEach(value => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'danger-button';
+          button.dataset.action = 'danger-choice';
+          button.dataset.field = result.question.field;
+          button.dataset.value = value;
+          button.textContent = dangerLabel(value);
+          options.append(button);
+        });
+        wrapper.append(heading, options);
+        content.append(wrapper);
+        heading.focus();
+        return;
+      }
+      renderAction(result);
+    } catch (error) {
+      if (requestGeneration !== generation || !isOpen()) return;
+      back.disabled = false;
+      const message = document.createElement('p');
+      message.tabIndex = -1;
+      message.setAttribute('role', 'alert');
+      message.textContent = translate(
+        error.payload?.error === 'immediate_danger_catalog_unavailable'
+          ? 'immediate_danger_catalog_unavailable'
+          : 'immediate_danger_error_invalid_input'
+      );
+      content.append(message);
+      message.focus();
+    }
+  }
+
+  function open(trigger) {
+    returnFocus = trigger || document.activeElement;
+    facts = {};
+    history = [];
+    setBackgroundInert(true);
+    dialog.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    refresh();
+  }
+
+  function close() {
+    generation++;
+    dialog.classList.add('hidden');
+    setBackgroundInert(false);
+    document.body.style.overflow = '';
+    facts = {};
+    history = [];
+    content.replaceChildren();
+    const target = returnFocus || config.fallbackTrigger();
+    returnFocus = null;
+    if (target && document.body.contains(target)) target.focus();
+  }
+
+  document.addEventListener('click', event => {
+    const target = event.target.closest('[data-action]');
+    if (!target) return;
+    const action = target.dataset.action;
+    if (action === 'danger-open') open(target);
+    else if (action === 'danger-close') close();
+    else if (action === 'danger-choice') {
+      target.closest('[role=group]')?.querySelectorAll('button').forEach(button => {
+        button.disabled = true;
+      });
+      back.disabled = true;
+      history.push({...facts});
+      facts[target.dataset.field] = target.dataset.value;
+      refresh();
+    } else if (action === 'danger-back') {
+      target.disabled = true;
+      generation++;
+      facts = history.pop() || {};
+      refresh();
+    }
+  });
+
+  dialog.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      close();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(dialog.querySelectorAll(
+      'button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(element => !element.classList.contains('hidden'));
+    if (!focusable.length) {
+      event.preventDefault();
+      dialog.focus();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+
+  const instance = {open: open, close: close, refresh: refresh, isOpen: isOpen};
+  window.openDanger = open;
+  window.closeDanger = close;
+  window.updateDanger = refresh;
+  return instance;
+}
