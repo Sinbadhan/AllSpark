@@ -1688,6 +1688,9 @@ web_task_action_failed: Operation failed
 web_goals_tab: Goals
 web_goals_title: Survival goals
 web_goals_no_goals: No goals yet
+web_goals_load_failed: Unable to load goals. Check system status and retry.
+web_timeline_empty: No timeline events yet
+web_timeline_load_failed: Unable to load the timeline. Check system status and retry.
 web_goals_add_title: Add goal
 web_goals_add_desc_placeholder: Goal description
 web_goals_add_btn: Add

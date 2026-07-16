@@ -71,7 +71,8 @@
 </div>
 
 <div id="exectab-timeline" class="exec-tab-content" style="display:none;">
-  <div id="timeline-list" class="text-sm text-on-surface-variant">{{ t('web_loading') }}</div>
+  <div id="timeline-list" class="text-sm text-on-surface-variant" role="status"
+       aria-live="polite" aria-atomic="true">{{ t('web_loading') }}</div>
 </div>
 
 <div id="task-outcome-modal" class="modal-overlay" style="display:none;" aria-hidden="true">
@@ -138,11 +139,16 @@ const TASK_I18N = {
 };
 const GOAL_I18N = {
   empty: "{{ t('web_goals_no_goals') }}",
+  load_failed: "{{ t('web_goals_load_failed') }}",
   complete: "{{ t('web_goals_btn_complete') }}",
   view: "{{ t('web_goals_btn_view') }}",
   milestones: "{{ t('web_goals_milestones') }}",
   ms_complete: "{{ t('web_goals_milestone_complete') }}",
   progress: "{{ t('web_progress_label') }}",
+};
+const TIMELINE_I18N = {
+  empty: "{{ t('web_timeline_empty') }}",
+  load_failed: "{{ t('web_timeline_load_failed') }}",
 };
 
 async function refreshExecutions() {
@@ -353,19 +359,21 @@ async function saveTaskOutcome(event) {
 async function refreshGoals() {
   const el = document.getElementById("goal-list");
   try {
-    const goals = await api("/api/goals");
-    if (!goals.length) { el.textContent = GOAL_I18N.web_executions_empty; return; }
+    const response = await api("/api/goals");
+    if (response._http_error || !Array.isArray(response.goals)) {
+      throw new Error("Invalid goals contract");
+    }
+    const goals = response.goals;
+    if (!goals.length) { el.textContent = GOAL_I18N.empty; return; }
     el.innerHTML = goals.map(g => {
-      const phaseLabel = g.phase === null || g.phase === undefined
-        ? I18N.web_phase_pending
-        : I18N.web_phase_label.replace("{phase}", g.phase);
-      const statusLabel = I18N["web_goal_status_" + g.status] || "-";
+      const statusLabel = I18N["web_goal_status_" + g.status] || I18N.web_status_unknown;
+      const progress = Math.round(Number(g.progress) * 100);
       return `
-      <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:10px;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <div>
+      <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:10px;margin-bottom:8px;min-width:0;overflow-wrap:anywhere;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <div style="min-width:0;flex:1;">
             <div style="font-weight:600;color:var(--on-surface);">${escHtml(g.description || g.title || g.id)}</div>
-            <div class="text-xs text-secondary">${phaseLabel} · ${statusLabel} · ${GOAL_I18N.progress} ${g.progress || 0}%</div>
+            <div class="text-xs text-secondary">${statusLabel} · ${GOAL_I18N.progress} ${progress}%</div>
           </div>
           <div style="display:flex;gap:4px;">
             <button class="action-btn action-primary" style="padding:3px 8px;font-size:11px;" data-exec-action="complete-goal" data-goal-id="${escHtml(String(g.id || ''))}">${GOAL_I18N.complete}</button>
@@ -373,7 +381,7 @@ async function refreshGoals() {
         </div>
       </div>`;
     }).join("");
-  } catch(e) { el.textContent = String(e); }
+  } catch(e) { el.textContent = GOAL_I18N.load_failed; }
 }
 async function addGoal() {
   const desc = document.getElementById("goal-add-desc").value.trim();
@@ -399,19 +407,23 @@ async function completeGoal(id) {
 async function refreshTimeline() {
   const el = document.getElementById("timeline-list");
   try {
-    const data = await api("/api/timeline/recent");
-    const events = data.events || data.timeline || data || [];
-    if (!Array.isArray(events) || !events.length) {
-      el.textContent = "—";
+    const response = await api("/api/timeline");
+    if (response._http_error || !Array.isArray(response.events)) {
+      throw new Error("Invalid timeline contract");
+    }
+    const events = response.events;
+    if (!events.length) {
+      el.textContent = TIMELINE_I18N.empty;
       return;
     }
     el.innerHTML = events.map(e =>
-      `<div style="padding:6px 10px;border-left:2px solid var(--primary);margin-bottom:6px;background:var(--surface-low);">
-         <div class="text-xs text-secondary">${escHtml(e.timestamp || e.date || '')}</div>
-         <div>${escHtml(e.description || e.event || JSON.stringify(e))}</div>
+      `<div style="padding:6px 10px;border-left:2px solid var(--primary);margin-bottom:6px;background:var(--surface-low);min-width:0;overflow-wrap:anywhere;">
+         <div class="text-xs text-secondary">${escHtml(e.timestamp)}</div>
+         <div style="font-weight:600;color:var(--on-surface);">${escHtml(e.title)}</div>
+         <div>${escHtml(e.description)}</div>
        </div>`
     ).join("");
-  } catch(e) { el.textContent = String(e); }
+  } catch(e) { el.textContent = TIMELINE_I18N.load_failed; }
 }
 
 document.addEventListener("click", event => {

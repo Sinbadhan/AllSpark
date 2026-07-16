@@ -1631,6 +1631,9 @@ web_task_action_failed: 操作失败
 web_goals_tab: 目标
 web_goals_title: 生存目标
 web_goals_no_goals: 暂无目标
+web_goals_load_failed: 无法加载目标，请检查系统状态后重试
+web_timeline_empty: 暂无时间线事件
+web_timeline_load_failed: 无法加载时间线，请检查系统状态后重试
 web_goals_add_title: 新增目标
 web_goals_add_desc_placeholder: 目标描述
 web_goals_add_btn: 新增
