@@ -132,6 +132,17 @@ def _prepare_hardware_automatically(db: Database) -> dict:
     profile = detect_hardware()
     flags = compute_feature_flags(profile.tier, profile.gpu_available)
     _resolve_runtime_flags(db, flags)
+    return {"profile": profile, "flags": flags}
+
+
+def persist_detected_hardware(
+    db: Database, hardware: dict, *, commit: bool = True
+) -> None:
+    """Publish detected hardware only with the initialization transaction."""
+    profile = hardware.get("profile")
+    flags = hardware.get("flags")
+    if profile is None or flags is None:
+        return
     for key, value in [
         ("cpu_arch", profile.cpu_arch),
         ("cpu_model", profile.cpu_model),
@@ -146,9 +157,8 @@ def _prepare_hardware_automatically(db: Database) -> dict:
         ("os_version", profile.os_version),
         ("tier", profile.tier.value),
     ]:
-        db.save_hardware_profile(key, value)
-    ModuleRegistry(flags).save_to_db(db)
-    return {"profile": profile, "flags": flags}
+        db.save_hardware_profile(key, value, commit=commit)
+    ModuleRegistry(flags).save_to_db(db, commit=commit)
 
 
 def _step_hardware_detect(db: Database) -> dict:

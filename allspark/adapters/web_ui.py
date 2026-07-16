@@ -33,8 +33,11 @@ from allspark.services.immediate_danger import (
     load_action_catalog,
 )
 from allspark.services.initial_assessment import (
+    InitialAssessmentDraftValidationError,
     InitialAssessmentValidationError,
     assessment_preview,
+    initialization_draft_progress,
+    normalize_initialization_draft,
     validate_initial_assessment,
 )
 from allspark.services.reset_manager import get_reset_descriptions
@@ -532,6 +535,108 @@ def _register_init_routes(app):
     async def init_status():
         return {"initialized": app.state.initialized}
 
+    def draft_payload(draft: dict) -> dict:
+        payload = draft["payload"]
+        return {
+            "status": "unpublished",
+            "source": draft["source"],
+            "revision": draft["revision"],
+            "created_at": draft["created_at"],
+            "updated_at": draft["updated_at"],
+            "payload": payload,
+            "progress": initialization_draft_progress(payload),
+        }
+
+    @app.get("/api/init/draft")
+    async def init_draft_get():
+        draft = app.state.db.get_initialization_draft()
+        if draft is None:
+            return {"status": "empty"}
+        return draft_payload(draft)
+
+    @app.post("/api/init/draft")
+    async def init_draft_save(request: Request):
+        init_lock = app.state.init_lock
+        if not init_lock.acquire(blocking=False):
+            return JSONResponse(
+                status_code=409,
+                content={"status": "error", "error": "bootstrap_in_progress"},
+            )
+        try:
+            if app.state.initialized or app.state.db.is_initialized():
+                return JSONResponse(
+                    status_code=410,
+                    content={"status": "error", "error": "bootstrap_closed"},
+                )
+            try:
+                body = await request.json()
+            except Exception:
+                body = None
+            if not isinstance(body, dict):
+                return JSONResponse(
+                    status_code=422,
+                    content={"status": "error", "error": "invalid_draft"},
+                )
+            revision = body.get("revision")
+            if (
+                isinstance(revision, bool)
+                or not isinstance(revision, int)
+                or revision < 0
+            ):
+                return JSONResponse(
+                    status_code=422,
+                    content={
+                        "status": "error",
+                        "error": "invalid_draft_revision",
+                    },
+                )
+            try:
+                normalized = normalize_initialization_draft(body.get("payload"))
+                draft = app.state.db.save_initialization_draft(
+                    normalized, source="web", expected_revision=revision
+                )
+            except InitialAssessmentDraftValidationError as exc:
+                return JSONResponse(
+                    status_code=422,
+                    content={
+                        "status": "error",
+                        "error": "invalid_draft",
+                        "errors": [{"field": exc.field, "code": exc.code}],
+                    },
+                )
+            except ValueError:
+                current = app.state.db.get_initialization_draft()
+                return JSONResponse(
+                    status_code=409,
+                    content={
+                        "status": "error",
+                        "error": "draft_revision_conflict",
+                        "current_revision": current["revision"] if current else 0,
+                    },
+                )
+            return draft_payload(draft)
+        finally:
+            init_lock.release()
+
+    @app.delete("/api/init/draft")
+    async def init_draft_delete():
+        init_lock = app.state.init_lock
+        if not init_lock.acquire(blocking=False):
+            return JSONResponse(
+                status_code=409,
+                content={"status": "error", "error": "bootstrap_in_progress"},
+            )
+        try:
+            if app.state.initialized or app.state.db.is_initialized():
+                return JSONResponse(
+                    status_code=410,
+                    content={"status": "error", "error": "bootstrap_closed"},
+                )
+            app.state.db.delete_initialization_draft()
+            return {"status": "discarded"}
+        finally:
+            init_lock.release()
+
     @app.get("/api/init/questionnaire")
     async def init_questionnaire():
         """Structured questionnaire options (PRD §4.2.2).
@@ -844,9 +949,7 @@ def _register_init_routes(app):
             profile = detect_hardware()
             flags = compute_feature_flags(profile.tier, profile.gpu_available)
 
-            # Draft writes use fixed keys and may self-commit. A retry safely
-            # overwrites them, but they never imply a published installation.
-            for key, val in [
+            hardware_values = [
                 ("cpu_arch", profile.cpu_arch), ("cpu_model", profile.cpu_model),
                 ("cpu_cores", str(profile.cpu_cores)),
                 ("ram_total_gb", f"{profile.ram_total_gb:.1f}"),
@@ -857,32 +960,38 @@ def _register_init_routes(app):
                 ("gpu_available", str(profile.gpu_available)),
                 ("os_name", profile.os_name), ("os_version", profile.os_version),
                 ("tier", profile.tier.value),
-            ]:
-                db.save_hardware_profile(key, val)
+            ]
 
             registry = ModuleRegistry(flags)
-            registry.save_to_db(db)
 
             set_language(language, persist=False)
             prepared = _prepare_engine(app, flags=flags)
 
-            # Candidate services own the shared Web/CLI assessment contract.
-            # These fixed-key draft writes are idempotent across a failed
-            # finalize and never imply a published installation.
-            db.save_survivor_state("name", survivor_name)
-            db.save_survivor_state("language", language)
-            db.save_survivor_state("location_type", location_type)
-            db.save_survivor_state("skills", skills)
-            db.save_survivor_state("questionnaire_version", "3")
             assessment_service = prepared.container.require("initial_assessment")
-            gap_tasks = assessment_service.apply(assessment)
             prepared_plan_service = prepared.container.require("survival_plan")
-            prepared_plan_service.persist_draft(
-                plan,
-                plan_id=plan_id,
-                accepted_action_id=primary_action_id,
-            )
-            db.finalize_initialization(language, plan.id, primary_action_id)
+            with db.conn:
+                for key, val in hardware_values:
+                    db.save_hardware_profile(key, val, commit=False)
+                registry.save_to_db(db, commit=False)
+                for key, val in (
+                    ("name", survivor_name),
+                    ("language", language),
+                    ("location_type", location_type),
+                    ("skills", skills),
+                    ("questionnaire_version", "3"),
+                ):
+                    db.save_survivor_state(key, val, commit=False)
+                gap_tasks = assessment_service.apply(assessment, commit=False)
+                prepared_plan_service.persist_draft(
+                    plan,
+                    plan_id=plan_id,
+                    accepted_action_id=primary_action_id,
+                    commit=False,
+                )
+                db.finalize_initialization(
+                    language, plan.id, primary_action_id, commit=False
+                )
+                db.delete_initialization_draft(commit=False)
 
             # Publish is deliberately synchronous and contains no fallible I/O.
             _publish_engine(app, prepared)

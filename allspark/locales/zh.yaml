@@ -2371,6 +2371,22 @@ survival_plan_maintain_review_done: 已确认下一次复查时间并保持关�
 web_init_plan_select_intro: 选择一个你现在确认要优先执行的行动；完成初始化前不会发布计划。
 web_init_plan_later_actions: 后续行动
 web_init_plan_risk_label: 风险边界
+web_init_draft_title: 发现未发布草稿
+web_init_draft_unpublished: 此草稿仅保存在 AllSpark 受保护的本地数据库中；确认并发布前，不会成为当前事实或计划。
+web_init_draft_updated: '上次保存：{time}'
+web_init_draft_completed: 已填写
+web_init_draft_missing: 仍需填写
+web_init_draft_continue: 继续草稿
+web_init_draft_discard: 放弃草稿
+web_init_draft_discard_confirm: 确定永久删除这份未发布评估吗？已发布数据不会受到影响。
+web_init_draft_discard_confirm_action: 删除草稿
+web_init_draft_saved: 未发布草稿已保存到本地
+web_init_draft_resumed: 已恢复未发布草稿
+web_init_draft_discarded: 未发布草稿已删除
+web_init_draft_conflict: 草稿已在另一会话中改变，请先检查最新保存版本。
+web_init_draft_save_failed: 无法保存草稿；本地恢复存储可用前将阻止发布。
+web_init_draft_load_failed: 无法读取已保存草稿状态。
+web_init_btn_cancel: 取消
 web_primary_plan_heading: 现在做什么
 web_primary_plan_unavailable: 尚无已确认的 24 小时计划，请重新评估当前状况。
 web_primary_plan_reassess: 重新评估

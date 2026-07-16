@@ -65,6 +65,14 @@ Run §1 of `docs/MANUAL_CHECKLIST.md` and attach the keyboard, macOS VoiceOver,
 and 200% browser-zoom evidence to the release PR. Attach Windows + NVDA evidence
 only when promoting that compatibility out of Testing.
 
+Exercise Web first-run recovery in real Chrome: interrupt the process after a
+partial assessment, restart it, confirm the UI labels the recovered state as
+unpublished, continue without losing fields, then separately verify the
+two-step discard path. Confirm browser storage contains no draft, a failed
+publish leaves no partial official rows, retry creates no duplicate gap tasks,
+and a successful publish removes the draft. Exercise the CLI transaction
+failure path separately; CLI does not consume a Web partial draft.
+
 ## 4. Check package metadata
 
 ```bash
@@ -120,7 +128,8 @@ Verify no sensitive or generated files are staged:
 - `SECURITY.md` has a valid reporting path.
 - `docs/CONFIGURATION.md` reflects actual configuration behavior.
 - `docs/PRIVACY.md` reflects the current data inventory, plaintext storage,
-  deletion limits, and encryption/Windows boundaries.
+  unpublished initialization draft, deletion limits, and encryption/Windows
+  boundaries.
 - `docs/REAL_WORLD_VALIDATION.md` separates verified automation from hardware
   that was not exercised in this release.
 - `CHANGELOG.md` has release notes for the new version.

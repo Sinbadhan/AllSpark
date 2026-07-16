@@ -14,6 +14,16 @@ knowledge imports, reset audit records, and operating or hardware state.
 `backups/` and `snapshots/` can contain the same information. Snapshot metadata
 also exposes creation time, label, size, and checksum.
 
+Before Web initialization is published, the database may also contain one
+bounded recovery draft with partial language, assessment, resource, step, and
+selected-action input. The browser does not persist this material in
+`localStorage` or `sessionStorage`; it remains in the same local plaintext
+SQLite boundary as runtime data. The recovery screen labels it unpublished,
+and no draft field becomes an operational fact, resource, task, plan, or
+initialization marker until the complete publish transaction succeeds. The CLI
+does not read or continue a Web draft; a successful CLI or Web publish removes
+any remaining initialization draft.
+
 Web authentication tokens are process credentials. An operator-provided token
 is not redisplayed. An auto-generated non-loopback token is emitted once on
 stderr because the operator must receive it; systemd, containers, CI, and shell
@@ -61,6 +71,11 @@ application rows while retaining the selected language and the new reset audit
 record. Neither operation is a cryptographic erase guarantee: SQLite free
 pages, filesystem snapshots, backups, SSD wear leveling, and external copies
 may retain prior bytes.
+
+Discarding an unpublished initialization draft also performs a logical row
+deletion. Earlier SQLite pages, snapshots, backups, or storage-layer copies may
+retain the bytes. The UI promise is recovery control and prevention of partial
+publication, not forensic erasure.
 
 For device transfer or disposal, remove AllSpark backups and snapshots, then
 use the operating system or storage vendor's secure-erasure procedure. On an

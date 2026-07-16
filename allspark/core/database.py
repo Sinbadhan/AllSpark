@@ -404,6 +404,18 @@ class Database:
                 reassess_at TEXT NOT NULL,
                 PRIMARY KEY (plan_id, action_id)
             );
+
+            -- SHA-264: one isolated, unpublished first-run draft. Sensitive
+            -- assessment data stays in the secured SQLite boundary and is
+            -- promoted to runtime tables only by the final publish transaction.
+            CREATE TABLE IF NOT EXISTS initialization_draft (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                source TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                revision INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
         """)
         self.conn.commit()
         self._migrate()
@@ -1201,21 +1213,27 @@ class Database:
 
     # --- Survivor State ---
 
-    def save_survivor_state(self, key: str, value: str):
+    def save_survivor_state(
+        self, key: str, value: str, *, commit: bool = True
+    ) -> None:
         self.conn.execute(
             "INSERT OR REPLACE INTO survivor_state VALUES (?,?)", (key, value)
         )
-        self.conn.commit()
+        if commit:
+            self.conn.commit()
 
     def get_survivor_state(self) -> dict:
         rows = self.conn.execute("SELECT key, value FROM survivor_state").fetchall()
         return {r["key"]: r["value"] for r in rows}
 
-    def save_hardware_profile(self, key: str, value: str):
+    def save_hardware_profile(
+        self, key: str, value: str, *, commit: bool = True
+    ) -> None:
         self.conn.execute(
             "INSERT OR REPLACE INTO hardware_profile VALUES (?,?)", (key, value)
         )
-        self.conn.commit()
+        if commit:
+            self.conn.commit()
 
     def get_hardware_profile(self) -> dict:
         rows = self.conn.execute("SELECT key, value FROM hardware_profile").fetchall()
@@ -1226,6 +1244,61 @@ class Database:
             "SELECT value FROM operating_state WHERE key='initialized'"
         ).fetchone()
         return row is not None and row["value"] == "true"
+
+    def get_initialization_draft(self) -> dict | None:
+        row = self.conn.execute(
+            "SELECT * FROM initialization_draft WHERE id=1"
+        ).fetchone()
+        if row is None:
+            return None
+        try:
+            payload = json.loads(row["payload"])
+        except (TypeError, ValueError):
+            payload = {}
+        return {
+            "source": row["source"],
+            "payload": payload if isinstance(payload, dict) else {},
+            "revision": row["revision"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
+
+    def save_initialization_draft(
+        self,
+        payload: dict,
+        *,
+        source: str,
+        expected_revision: int | None = None,
+    ) -> dict:
+        """Persist one optimistic, unpublished draft in the secured database."""
+        encoded = json.dumps(
+            payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        )
+        now = self._now()
+        with self.conn:
+            current = self.conn.execute(
+                "SELECT revision, created_at FROM initialization_draft WHERE id=1"
+            ).fetchone()
+            current_revision = current["revision"] if current is not None else 0
+            if expected_revision is not None and expected_revision != current_revision:
+                raise ValueError("initialization draft revision conflict")
+            revision = current_revision + 1
+            created_at = current["created_at"] if current is not None else now
+            self.conn.execute(
+                """INSERT OR REPLACE INTO initialization_draft
+                   (id, source, payload, revision, created_at, updated_at)
+                   VALUES (1, ?, ?, ?, ?, ?)""",
+                (source, encoded, revision, created_at, now),
+            )
+        draft = self.get_initialization_draft()
+        if draft is None:
+            raise RuntimeError("initialization draft write did not persist")
+        return draft
+
+    def delete_initialization_draft(self, *, commit: bool = True) -> None:
+        self.conn.execute("DELETE FROM initialization_draft WHERE id=1")
+        if commit:
+            self.conn.commit()
 
     def mark_initialized(self):
         self.conn.execute(
@@ -1239,6 +1312,8 @@ class Database:
         language: str,
         plan_id: str | None = None,
         accepted_action_id: str | None = None,
+        *,
+        commit: bool = True,
     ) -> None:
         """Atomically publish a prepared installation.
 
@@ -1248,7 +1323,7 @@ class Database:
         """
         if language not in ("zh", "en"):
             raise ValueError(f"Unsupported language: {language}")
-        with self.conn:
+        with self.conn if commit else nullcontext():
             if plan_id is not None:
                 if not accepted_action_id:
                     raise ValueError("accepted_action_id is required")

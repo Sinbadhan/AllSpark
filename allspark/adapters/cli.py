@@ -5,7 +5,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 from allspark import __version__
-from allspark.adapters.init_wizard import run_init_wizard
+from allspark.adapters.init_wizard import persist_detected_hardware, run_init_wizard
 from allspark.bootstrap import (
     cleanup_application_candidate,
     prepare_application,
@@ -77,16 +77,6 @@ class SparkCLI:
                 if assessment is None:
                     raise RuntimeError("Initialization wizard returned no assessment")
                 survivor = self.init_result.get("survivor", {})
-                self.db.save_survivor_state(
-                    "name", survivor.get("name") or t("init_default_name")
-                )
-                self.db.save_survivor_state(
-                    "gps_input", survivor.get("gps_input", "")
-                )
-                self.db.save_survivor_state(
-                    "skills", ",".join(survivor.get("skills", []))
-                )
-                prepared.container.require("initial_assessment").apply(assessment)
                 plan_service = prepared.container.require("survival_plan")
                 plan = plan_service.generate(assessment)
                 plan_id = self.init_result.get("plan_id")
@@ -95,14 +85,38 @@ class SparkCLI:
                     primary_action_id, str
                 ):
                     raise RuntimeError("Initialization wizard returned no plan selection")
-                plan_service.persist_draft(
-                    plan,
-                    plan_id=plan_id,
-                    accepted_action_id=primary_action_id,
-                )
-                self.db.finalize_initialization(
-                    language, plan.id, primary_action_id
-                )
+                with self.db.conn:
+                    persist_detected_hardware(
+                        self.db,
+                        self.init_result.get("hardware", {}),
+                        commit=False,
+                    )
+                    self.db.save_survivor_state(
+                        "name",
+                        survivor.get("name") or t("init_default_name"),
+                        commit=False,
+                    )
+                    self.db.save_survivor_state(
+                        "gps_input", survivor.get("gps_input", ""), commit=False
+                    )
+                    self.db.save_survivor_state(
+                        "skills",
+                        ",".join(survivor.get("skills", [])),
+                        commit=False,
+                    )
+                    prepared.container.require("initial_assessment").apply(
+                        assessment, commit=False
+                    )
+                    plan_service.persist_draft(
+                        plan,
+                        plan_id=plan_id,
+                        accepted_action_id=primary_action_id,
+                        commit=False,
+                    )
+                    self.db.finalize_initialization(
+                        language, plan.id, primary_action_id, commit=False
+                    )
+                    self.db.delete_initialization_draft(commit=False)
 
             self._container = prepared.container
             self._engine = prepared.engine

@@ -582,12 +582,16 @@ def test_web_assessment_drafts_converge_after_finalize_failure_and_changed_retry
     original_finalize = db.finalize_initialization
     calls = 0
 
-    def fail_once(language, plan_id=None, accepted_action_id=None):
+    def fail_once(
+        language, plan_id=None, accepted_action_id=None, *, commit=True
+    ):
         nonlocal calls
         calls += 1
         if calls == 1:
             raise RuntimeError("marker failed")
-        return original_finalize(language, plan_id, accepted_action_id)
+        return original_finalize(
+            language, plan_id, accepted_action_id, commit=commit
+        )
 
     monkeypatch.setattr(db, "finalize_initialization", fail_once)
     first_payload = unknown_assessment()
@@ -652,10 +656,10 @@ def test_web_partial_plan_write_failure_retries_without_draft_leak(
     original_save = db.save_survival_plan
     calls = 0
 
-    def fail_after_write_once(plan):
+    def fail_after_write_once(plan, *, commit=True):
         nonlocal calls
         calls += 1
-        original_save(plan)
+        original_save(plan, commit=commit)
         if calls == 1:
             raise RuntimeError("plan draft failed")
 

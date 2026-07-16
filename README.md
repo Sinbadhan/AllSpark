@@ -136,7 +136,7 @@ do not expand the primary v1.0.3 product promise.
 |-----------|-------------|
 | CLI | Rich-enhanced terminal, bilingual Chinese/English commands (30+ commands) |
 | Web UI | FastAPI + responsive frontend, accessible from phone/tablet/desktop |
-| Init Wizard | CLI/Web flow: language -> immediate-danger availability -> minimum assessment -> confirmed 24h plan; hardware and model setup remain optional |
+| Init Wizard | CLI/Web flow: language -> immediate-danger availability -> minimum assessment -> confirmed 24h plan; Web interruption recovery stays explicitly unpublished until atomic publish; hardware and model setup remain optional |
 | i18n | Full Chinese/English bilingual system with runtime language switching |
 
 ---

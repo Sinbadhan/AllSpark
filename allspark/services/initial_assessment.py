@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from allspark.core.database import Database
@@ -13,6 +14,7 @@ from allspark.services.resource_manager import (
 
 CRITICAL_FACTS = ("people_count", "health", "urgency", "shelter")
 RESOURCE_TYPES = tuple(resource.value for resource in ResourceType)
+INITIALIZATION_DRAFT_MAX_BYTES = 64 * 1024
 _ALLOWED_FACT_VALUES = {
     "health": {
         "healthy",
@@ -70,6 +72,188 @@ class InitialAssessmentValidationError(ValueError):
     def __init__(self, errors: list[dict[str, str]]):
         self.errors = errors
         super().__init__("Initial assessment is incomplete or invalid")
+
+
+class InitialAssessmentDraftValidationError(ValueError):
+    def __init__(self, field: str, code: str):
+        self.field = field
+        self.code = code
+        super().__init__(f"Invalid initialization draft: {field} ({code})")
+
+
+def _draft_fact(payload: Any, field: str) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        return {}
+    status = payload.get("status")
+    if status == "unknown":
+        return {"status": "unknown"}
+    if status != "known":
+        return {}
+    value = payload.get("value")
+    if field == "people_count":
+        if value in (None, ""):
+            return {"status": "known"}
+        try:
+            value = ResourceManager.validate_people_count(value)
+        except ResourceValidationError as exc:
+            raise InitialAssessmentDraftValidationError(field, exc.reason) from exc
+    elif value in (None, ""):
+        return {}
+    elif value not in _ALLOWED_FACT_VALUES[field]:
+        raise InitialAssessmentDraftValidationError(field, "invalid_choice")
+    return {"status": "known", "value": value}
+
+
+def _draft_threats(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        return {}
+    status = payload.get("status")
+    if status in {"none", "unknown"}:
+        return {"status": status, "values": []}
+    if status != "selected":
+        return {}
+    values = payload.get("values", [])
+    if not isinstance(values, list) or len(values) > len(_ALLOWED_THREATS):
+        raise InitialAssessmentDraftValidationError("threats", "invalid_choice")
+    if any(value not in _ALLOWED_THREATS for value in values):
+        raise InitialAssessmentDraftValidationError("threats", "invalid_choice")
+    return {"status": "selected", "values": list(dict.fromkeys(values))}
+
+
+def _draft_resource(payload: Any, resource_type: ResourceType) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        return {}
+    result: dict[str, Any] = {}
+    status = payload.get("status")
+    if status in {"known", "unknown"}:
+        result["status"] = status
+    if status == "known" and payload.get("amount") not in (None, ""):
+        try:
+            result["amount"] = ResourceManager.validate_value(
+                "amount", payload.get("amount")
+            )
+        except ResourceValidationError as exc:
+            raise InitialAssessmentDraftValidationError(
+                f"resources.{resource_type.value}.amount", exc.reason
+            ) from exc
+    confirm_outlier = payload.get("confirm_outlier", False)
+    if not isinstance(confirm_outlier, bool):
+        raise InitialAssessmentDraftValidationError(
+            f"resources.{resource_type.value}.confirm_outlier", "not_boolean"
+        )
+    result["confirm_outlier"] = confirm_outlier
+
+    rates_payload = payload.get("rates")
+    rates: dict[str, Any] = {}
+    if isinstance(rates_payload, dict):
+        rate_status = rates_payload.get("status")
+        if rate_status in {"unknown", "estimate"}:
+            rates["status"] = rate_status
+        if rate_status == "estimate":
+            rates["basis"] = "group_total"
+            for key in ("daily_consumption", "daily_intake"):
+                if rates_payload.get(key) in (None, ""):
+                    continue
+                try:
+                    rates[key] = ResourceManager.validate_value(
+                        key, rates_payload.get(key)
+                    )
+                except ResourceValidationError as exc:
+                    raise InitialAssessmentDraftValidationError(
+                        f"resources.{resource_type.value}.rates.{key}", exc.reason
+                    ) from exc
+    result["rates"] = rates
+    return result
+
+
+def normalize_initialization_draft(payload: Any) -> dict[str, Any]:
+    """Whitelist a partial first-run draft before storing sensitive fields."""
+    if not isinstance(payload, dict):
+        raise InitialAssessmentDraftValidationError("draft", "object_required")
+    if len(json.dumps(payload, ensure_ascii=False).encode("utf-8")) > (
+        INITIALIZATION_DRAFT_MAX_BYTES
+    ):
+        raise InitialAssessmentDraftValidationError("draft", "too_large")
+    language = payload.get("language")
+    if language not in {"zh", "en"}:
+        raise InitialAssessmentDraftValidationError("language", "invalid_choice")
+    step = payload.get("step", 1)
+    if isinstance(step, bool) or not isinstance(step, int) or not 1 <= step <= 4:
+        raise InitialAssessmentDraftValidationError("step", "invalid_choice")
+    assessment_payload = payload.get("assessment", {})
+    if not isinstance(assessment_payload, dict):
+        raise InitialAssessmentDraftValidationError("assessment", "object_required")
+
+    assessment: dict[str, Any] = {
+        field: _draft_fact(assessment_payload.get(field), field)
+        for field in CRITICAL_FACTS
+    }
+    assessment["threats"] = _draft_threats(assessment_payload.get("threats"))
+    resources_payload = assessment_payload.get("resources", {})
+    if not isinstance(resources_payload, dict):
+        raise InitialAssessmentDraftValidationError("resources", "object_required")
+    assessment["resources"] = {
+        resource_type.value: _draft_resource(
+            resources_payload.get(resource_type.value), resource_type
+        )
+        for resource_type in ResourceType
+    }
+    as_of = assessment_payload.get("as_of")
+    if as_of not in (None, ""):
+        try:
+            assessment["as_of"] = ResourceManager.validate_as_of(as_of)
+        except ResourceValidationError as exc:
+            raise InitialAssessmentDraftValidationError("as_of", exc.reason) from exc
+    assessment["confirmed"] = False
+
+    selected = payload.get("selected_primary_action_id")
+    if selected is not None and (
+        not isinstance(selected, str) or not 1 <= len(selected) <= 160
+    ):
+        raise InitialAssessmentDraftValidationError(
+            "selected_primary_action_id", "invalid_choice"
+        )
+    return {
+        "language": language,
+        "step": step,
+        "assessment": assessment,
+        "selected_primary_action_id": selected,
+    }
+
+
+def initialization_draft_progress(payload: dict[str, Any]) -> dict[str, list[str]]:
+    assessment = payload.get("assessment", {})
+    completed: list[str] = []
+    missing: list[str] = []
+
+    for field in CRITICAL_FACTS:
+        fact = assessment.get(field, {})
+        complete = fact.get("status") == "unknown" or (
+            fact.get("status") == "known" and fact.get("value") not in (None, "")
+        )
+        (completed if complete else missing).append(field)
+    threats = assessment.get("threats", {})
+    threats_complete = threats.get("status") in {"none", "unknown"} or (
+        threats.get("status") == "selected" and bool(threats.get("values"))
+    )
+    (completed if threats_complete else missing).append("threats")
+    for resource_type in ResourceType:
+        resource = assessment.get("resources", {}).get(resource_type.value, {})
+        amount_complete = resource.get("status") == "unknown" or (
+            resource.get("status") == "known"
+            and resource.get("amount") is not None
+        )
+        amount_field = resource_type.value
+        (completed if amount_complete else missing).append(amount_field)
+        rates = resource.get("rates", {})
+        rate_complete = rates.get("status") == "unknown" or (
+            rates.get("status") == "estimate"
+            and rates.get("daily_consumption") is not None
+            and rates.get("daily_intake") is not None
+        )
+        rate_field = f"{resource_type.value}_rate"
+        (completed if rate_complete else missing).append(rate_field)
+    return {"completed": completed, "missing": missing}
 
 
 def _error(errors: list[dict[str, str]], field: str, code: str) -> None:
@@ -366,28 +550,42 @@ class InitialAssessmentService:
         self.db = db
         self.resource_manager = resource_manager
 
-    def apply(self, assessment: dict[str, Any]) -> list[Task]:
+    def apply(
+        self, assessment: dict[str, Any], *, commit: bool = True
+    ) -> list[Task]:
         """Persist a validated assessment draft using idempotent fixed keys."""
         people = assessment["people_count"]
         people_known = people["status"] == "known"
         people_count = people["value"] if people_known else 1
         self.db.save_survivor_state(
-            "people_count", str(people["value"]) if people_known else "unknown"
+            "people_count",
+            str(people["value"]) if people_known else "unknown",
+            commit=commit,
         )
         self.db.save_survivor_state(
-            "people_count_status", "known" if people_known else "unknown"
+            "people_count_status",
+            "known" if people_known else "unknown",
+            commit=commit,
         )
         for field in ("health", "urgency", "shelter"):
             fact = assessment[field]
             self.db.save_survivor_state(
-                field, fact["value"] if fact["status"] == "known" else "unknown"
+                field,
+                fact["value"] if fact["status"] == "known" else "unknown",
+                commit=commit,
             )
-            self.db.save_survivor_state(f"{field}_status", fact["status"])
+            self.db.save_survivor_state(
+                f"{field}_status", fact["status"], commit=commit
+            )
 
         threats = assessment["threats"]
-        self.db.save_survivor_state("threats_status", threats["status"])
-        self.db.save_survivor_state("threats", ",".join(threats["values"]))
-        self.db.save_survivor_state("assessment_version", "1")
+        self.db.save_survivor_state(
+            "threats_status", threats["status"], commit=commit
+        )
+        self.db.save_survivor_state(
+            "threats", ",".join(threats["values"]), commit=commit
+        )
+        self.db.save_survivor_state("assessment_version", "1", commit=commit)
 
         snapshot_time = assessment["as_of"]
         for resource_type in ResourceType:
@@ -416,6 +614,7 @@ class InitialAssessmentService:
                 intake_known=estimated_rates,
                 capacity_known=False,
                 confirm_outlier=resource["confirm_outlier"],
+                commit=commit,
             )
 
         # Information gaps belong to the persisted 24-hour plan. Legacy gap

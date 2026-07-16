@@ -39,6 +39,10 @@ class _ConnectionProxy:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None and self.fail_next_commit:
+            self.fail_next_commit = False
+            self.connection.rollback()
+            raise sqlite3.OperationalError("commit failed after write")
         return self.connection.__exit__(exc_type, exc_value, traceback)
 
     def execute(self, *args, **kwargs):
@@ -284,24 +288,28 @@ def test_web_init_failure_is_unpublished_cookie_free_and_retryable(
         original_save = db.save_survivor_state
         failed = False
 
-        def fail_draft_once(key, value):
+        def fail_draft_once(key, value, *, commit=True):
             nonlocal failed
             if key == "language" and not failed:
                 failed = True
                 raise RuntimeError("draft failed")
-            return original_save(key, value)
+            return original_save(key, value, commit=commit)
 
         monkeypatch.setattr(db, "save_survivor_state", fail_draft_once)
     elif failure_stage == "finalize":
         original_finalize = db.finalize_initialization
         failed = False
 
-        def fail_finalize_once(language, plan_id=None, accepted_action_id=None):
+        def fail_finalize_once(
+            language, plan_id=None, accepted_action_id=None, *, commit=True
+        ):
             nonlocal failed
             if not failed:
                 failed = True
                 raise sqlite3.OperationalError("finalize failed")
-            return original_finalize(language, plan_id, accepted_action_id)
+            return original_finalize(
+                language, plan_id, accepted_action_id, commit=commit
+            )
 
         monkeypatch.setattr(db, "finalize_initialization", fail_finalize_once)
 
@@ -422,7 +430,8 @@ def test_web_commit_after_write_failure_rolls_back_before_retry(
     retry = client.post("/api/init/complete", json=payload)
     assert retry.status_code == 200
     assert db.is_initialized() is True
-    assert client.app.state.container is candidates[0].container
+    assert candidates[0].bootstrap.shutdown.call_count == 1
+    assert client.app.state.container is candidates[-1].container
 
 
 def test_cli_finalize_failure_keeps_runtime_unpublished_and_retry_succeeds(
@@ -452,15 +461,29 @@ def test_cli_finalize_failure_keeps_runtime_unpublished_and_retry_succeeds(
     monkeypatch.setattr(cli, "_setup_dispatcher", lambda: None)
     monkeypatch.setattr(cli, "_print_banner", lambda: None)
     monkeypatch.setattr(cli, "_print_initial_status", lambda: None)
+    cli.db.save_initialization_draft(
+        {
+            "language": "en",
+            "step": 2,
+            "assessment": {},
+            "selected_primary_action_id": None,
+        },
+        source="web",
+        expected_revision=0,
+    )
     original_finalize = cli.db.finalize_initialization
     finalize_calls = 0
 
-    def fail_finalize_once(language, plan_id=None, accepted_action_id=None):
+    def fail_finalize_once(
+        language, plan_id=None, accepted_action_id=None, *, commit=True
+    ):
         nonlocal finalize_calls
         finalize_calls += 1
         if finalize_calls == 1:
             raise sqlite3.OperationalError("finalize failed")
-        return original_finalize(language, plan_id, accepted_action_id)
+        return original_finalize(
+            language, plan_id, accepted_action_id, commit=commit
+        )
 
     monkeypatch.setattr(cli.db, "finalize_initialization", fail_finalize_once)
 
@@ -469,12 +492,14 @@ def test_cli_finalize_failure_keeps_runtime_unpublished_and_retry_succeeds(
     assert cli.db.is_initialized() is False
     assert cli._container is None
     assert cli._engine is None
+    assert cli.db.get_initialization_draft() is not None
     candidates[0].bootstrap.shutdown.assert_called_once_with()
 
     cli.run()
     assert cli.db.is_initialized() is True
     assert cli._container is candidates[1].container
     assert cli._engine is candidates[1].engine
+    assert cli.db.get_initialization_draft() is None
     assert wizard_calls == 2
     cli.db.close()
 

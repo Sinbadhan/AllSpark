@@ -2428,6 +2428,22 @@ survival_plan_maintain_review_done: The next review time is confirmed and critic
 web_init_plan_select_intro: Choose one action you confirm you will prioritize now. The plan is not published until initialization completes.
 web_init_plan_later_actions: Later actions
 web_init_plan_risk_label: Risk boundary
+web_init_draft_title: Unpublished draft found
+web_init_draft_unpublished: This draft is stored only in AllSpark's protected local database. It is not part of your current facts or plan until you confirm and publish it.
+web_init_draft_updated: 'Last saved: {time}'
+web_init_draft_completed: Already entered
+web_init_draft_missing: Still needed
+web_init_draft_continue: Continue draft
+web_init_draft_discard: Discard draft
+web_init_draft_discard_confirm: Discard this unpublished assessment permanently? Published data is not affected.
+web_init_draft_discard_confirm_action: Delete draft
+web_init_draft_saved: Unpublished draft saved locally
+web_init_draft_resumed: Unpublished draft restored
+web_init_draft_discarded: Unpublished draft deleted
+web_init_draft_conflict: This draft changed in another session. Review the latest saved version before continuing.
+web_init_draft_save_failed: Draft could not be saved. Publishing is blocked until local recovery storage is available.
+web_init_draft_load_failed: Saved draft status could not be loaded.
+web_init_btn_cancel: Cancel
 web_primary_plan_heading: What to do now
 web_primary_plan_unavailable: No confirmed 24-hour plan is available. Reassess the current situation.
 web_primary_plan_reassess: Reassess

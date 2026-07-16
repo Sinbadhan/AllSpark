@@ -391,7 +391,7 @@ class ModuleRegistry:
             })
         return result
 
-    def save_to_db(self, db):
+    def save_to_db(self, db, *, commit: bool = True):
         import json
         flags_dict = {}
         for attr in [
@@ -410,8 +410,14 @@ class ModuleRegistry:
             if val is not None:
                 flags_dict[attr] = val
 
-        db.save_hardware_profile("feature_flags", json.dumps(flags_dict, ensure_ascii=False))
-        db.save_hardware_profile("disabled_modules", json.dumps(list(self._disabled), ensure_ascii=False))
+        db.save_hardware_profile(
+            "feature_flags", json.dumps(flags_dict, ensure_ascii=False), commit=commit
+        )
+        db.save_hardware_profile(
+            "disabled_modules",
+            json.dumps(list(self._disabled), ensure_ascii=False),
+            commit=commit,
+        )
 
     @classmethod
     def load_from_db(cls, db) -> Optional["ModuleRegistry"]:

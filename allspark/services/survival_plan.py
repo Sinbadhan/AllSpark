@@ -233,13 +233,14 @@ class SurvivalPlanService:
         *,
         plan_id: str,
         accepted_action_id: str,
+        commit: bool = True,
     ) -> SurvivalPlan:
         self.validate_selection(
             plan, plan_id=plan_id, accepted_action_id=accepted_action_id
         )
         plan.accepted_action_id = accepted_action_id
         plan.status = "draft"
-        self.db.save_survival_plan(plan)
+        self.db.save_survival_plan(plan, commit=commit)
         return plan
 
     @staticmethod
