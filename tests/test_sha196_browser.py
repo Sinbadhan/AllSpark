@@ -111,9 +111,16 @@ class _Chrome:
             stderr=subprocess.DEVNULL,
         )
         active_port = self.profile / "DevToolsActivePort"
+        port = ""
         for _ in range(600):
             if active_port.exists():
-                break
+                try:
+                    lines = active_port.read_text(encoding="utf-8").splitlines()
+                except OSError:
+                    lines = []
+                if lines and lines[0].isdigit():
+                    port = lines[0]
+                    break
             if self.process.poll() is not None:
                 raise AssertionError("Chrome exited before DevTools became available")
             time.sleep(0.05)
@@ -121,7 +128,6 @@ class _Chrome:
             self._stop_process()
             raise AssertionError("Chrome DevTools did not become available")
 
-        port = active_port.read_text(encoding="utf-8").splitlines()[0]
         targets = json.load(urllib.request.urlopen(f"http://127.0.0.1:{port}/json"))
         page = next(target for target in targets if target["type"] == "page")
         self.ws = connect(page["webSocketDebuggerUrl"], open_timeout=5, max_size=None)
