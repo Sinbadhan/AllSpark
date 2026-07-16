@@ -145,14 +145,19 @@ do not expand the primary v1.0.3 product promise.
 
 ### Installation
 
-For the non-developer offline path, use the target-specific self-contained
-bundle documented in [Offline Delivery](docs/OFFLINE_DELIVERY.md). The bundle
-includes Python, dependencies, core knowledge, integrity verification, and
-install/rollback launchers; the supported loop requires no model. The current
-repeatable target-specific build is macOS Apple Silicon. Unsigned bundles are internal RC
-proofs only; Stable artifacts require Developer ID signing and notarization.
+AllSpark is released as an open-source project. Source archives and wheels are
+the canonical release artifacts; publish them with checksums, dependency and
+license notices, and the source commit. The optional target-specific portable
+bundle documented in [Offline Delivery](docs/OFFLINE_DELIVERY.md) includes
+Python, dependencies, core knowledge, integrity verification, and
+install/rollback launchers. The supported loop requires no model.
 
-The source installation below is for developers and advanced operators:
+The current portable-bundle target is macOS Apple Silicon. Developer ID signing
+and notarization are required only when an official macOS App or DMG is offered
+as a Gatekeeper-trusted convenience download; they do not block source, wheel,
+or checksum-verified portable archive releases.
+
+Install from source for development and advanced operation:
 
 ```bash
 # Clone repository

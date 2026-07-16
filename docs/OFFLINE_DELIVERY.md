@@ -1,16 +1,17 @@
 # Offline Delivery
 
 AllSpark's supported core loop does not require a model or a network connection.
-This document defines the release artifact that lets a non-developer install and
-run that loop on a clean target Mac without Python, pip, Git, or Xcode.
+This document defines an optional portable artifact that lets an operator run
+that loop on a clean target Mac without Python, pip, Git, or Xcode. The
+canonical open-source release artifacts remain the source archive and wheel.
 
 ## Current Target
 
-The first reproducible delivery target is macOS on Apple Silicon
-(`macos-arm64`). Python-source and wheel installs remain useful for development,
-but they are not the non-developer Stable installation path. Windows packaging
-and Windows + NVDA remain Testing. Linux appliance images remain Experimental
-until a target distribution and real-device evidence are selected.
+The first reproducible portable target is macOS on Apple Silicon
+(`macos-arm64`). Source and wheel installs are supported open-source release
+paths. Windows packaging and Windows + NVDA remain Testing. Linux appliance
+images remain Experimental until a target distribution and real-device
+evidence are selected.
 
 ## Build
 
@@ -41,16 +42,18 @@ executables. Instead, the manifest records the exact source commit, dirty state,
 target, release channel, signature state, file hashes, sizes, and modes.
 PyInstaller and its hook dependencies are pinned in the `delivery` dependency
 group; a release record must retain the build-host OS/Python output and final
-artifact checksum. The Stable requirement is satisfied by the independently
-verifiable signed, notarized, stapled DMG path, not by overstating byte identity.
+artifact checksum. An open-source Stable release is satisfied by independently
+verifiable source/wheel artifacts and, when published, a checksum-verified
+portable archive. Signing status must be stated truthfully.
 
-## Signing And Notarization
+## Optional Signing And Notarization
 
-An unsigned bundle is an internal RC proof only. A Stable macOS artifact must
-use an Apple Developer ID Application identity and a configured notarytool
-keychain profile. The release command first verifies the reproducible tar, then
-creates a signed UDIF DMG, submits that Apple-supported container to the notary
-service, staples the ticket to the DMG, and runs Gatekeeper assessment:
+Developer ID signing and notarization are required only when the project offers
+an official Gatekeeper-trusted macOS App or DMG convenience download. They do
+not block publication of source, wheel, or a checksum-verified portable archive.
+For that optional channel, the release command verifies the portable archive,
+creates a signed UDIF DMG, submits it to the notary service, staples the ticket,
+and runs Gatekeeper assessment:
 
 ```bash
 .venv-delivery/bin/python scripts/build_offline_bundle.py build \
@@ -65,17 +68,19 @@ the delivery archive. Release builds also fail when the Git worktree is dirty;
 internal RC manifests explicitly record a dirty source state instead of
 pretending the commit alone identifies their contents.
 
-The `.tar.gz` is build/provenance evidence and an internal transfer format. The
-signed, notarized, stapled `.dmg` is the Stable end-user artifact. Do not submit
-the tar to `notarytool`; Apple's supported upload containers are ZIP, flat PKG,
-and UDIF DMG.
+The `.tar.gz` is a verifiable portable distribution and provenance artifact.
+When a signed DMG is offered, do not submit the tar to `notarytool`; Apple's
+supported upload containers are ZIP, flat PKG, and UDIF DMG.
 
 ## Offline Acceptance Run
 
-1. Transfer the stapled DMG and its published SHA256 to a clean Apple Silicon Mac.
+1. Transfer the portable archive and its published SHA256 to a clean Apple
+   Silicon Mac. If testing the optional signed channel, transfer the stapled DMG.
 2. Disconnect every network interface.
-3. Open the DMG and run `Verify AllSpark.command`.
-4. Open `Install AllSpark.command`, then
+3. Verify the published SHA256, extract the portable archive, and run
+   `Verify AllSpark.command`. For the optional signed channel, open the DMG
+   instead.
+4. Run `Install AllSpark.command`, then
    `~/Applications/AllSpark/Launch AllSpark Web.command`.
 5. Complete the immediate-danger check, minimum assessment, and confirmation of
    the first 24-hour plan in less than five minutes.
