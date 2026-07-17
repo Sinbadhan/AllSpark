@@ -77,7 +77,7 @@ jobs:
         run: |
           COUNT=$(pytest --collect-only -q 2>&1 | grep -oE '[0-9]+ tests? collected' | head -1 | grep -oE '[0-9]+' || echo 0)
           echo "Collected tests: $COUNT"
-          test "${COUNT:-0}" -ge 1205
+          test "${COUNT:-0}" -ge 1814
 
       - name: Module import smoke benchmark (advisory)
         # Soft budget: prints ::warning:: and stays green when import time
@@ -119,9 +119,9 @@ jobs:
           /tmp/venv/bin/allspark --help
 
   offline-macos:
-    # SHA-245: prove the non-developer artifact can be rebuilt and launched
-    # without a target-side Python installation. Signing/notarization remains a
-    # release-environment gate because CI never receives release credentials.
+    # SHA-245: prove the optional portable artifact can be rebuilt and launched
+    # without a target-side Python installation. Developer ID/notarization is
+    # required only for an optional official Gatekeeper-trusted App/DMG channel.
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v7

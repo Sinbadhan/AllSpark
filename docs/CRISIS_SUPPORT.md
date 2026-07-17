@@ -9,8 +9,9 @@ qualified professional. The capability remains Experimental.
 
 1. The deterministic check runs before rule-based answers and every user-facing
    local LLM path, including Web chat/streaming, CLI `llm chat`, and voice chat.
-2. It ignores supported negated and quoted contexts instead of escalating on a
-   repeated keyword count.
+2. It ignores supported negated and clearly attributed quotation/reporting
+   contexts instead of escalating on a repeated keyword count. A bare
+   first-person quotation is treated conservatively as a possible disclosure.
 3. It asks directly about current self-harm or suicide thoughts, immediate
    danger, and access to a means of harm.
 4. Reported immediate danger prioritizes not being alone, safely reducing

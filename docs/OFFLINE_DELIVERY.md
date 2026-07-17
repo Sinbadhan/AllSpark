@@ -31,6 +31,7 @@ The command creates a versioned directory and a normalized `.tar.gz` under
 - the AllSpark executable, templates, translations, safety fixtures, and core
   knowledge;
 - a file-level `delivery-manifest.json` and `SHA256SUMS`;
+- a CycloneDX SBOM, third-party notices, and the exact dependency license texts;
 - double-click verify, install, Web launch, CLI launch, rollback, and optional
   model side-load commands.
 
@@ -42,7 +43,10 @@ executables. Instead, the manifest records the exact source commit, dirty state,
 target, release channel, signature state, file hashes, sizes, and modes.
 PyInstaller and its hook dependencies are pinned in the `delivery` dependency
 group; a release record must retain the build-host OS/Python output and final
-artifact checksum. An open-source Stable release is satisfied by independently
+artifact checksum. Bundle assembly fails closed when a dependency license is
+unknown, and verification requires the SBOM and notices to cover the exact
+runtime dependency closure and be included in the integrity manifest. An
+open-source Stable release is satisfied by independently
 verifiable source/wheel artifacts and, when published, a checksum-verified
 portable archive. Signing status must be stated truthfully.
 
@@ -83,7 +87,9 @@ supported upload containers are ZIP, flat PKG, and UDIF DMG.
 4. Run `Install AllSpark.command`, then
    `~/Applications/AllSpark/Launch AllSpark Web.command`.
 5. Complete the immediate-danger check, minimum assessment, and confirmation of
-   the first 24-hour plan in less than five minutes.
+   the first 24-hour plan while recording elapsed time. Five minutes remains
+   an unvalidated product target; the current AI preflight estimates 7-10
+   minutes for a non-technical user and cannot replace the SHA-246 human pilot.
 6. Quit, relaunch, record one task outcome, and confirm reassessment works.
 7. Install the previous candidate, reinstall the new candidate, run
    `Roll Back AllSpark.command`, and confirm the previous executable becomes

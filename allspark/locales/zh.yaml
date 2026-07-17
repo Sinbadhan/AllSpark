@@ -896,18 +896,19 @@ psych_intervention_support: '我观察到你最近的情绪偏低落。
   如果你愿意，可以和我分享你的感受，
 
   或者做一些让自己感到放松的事。'
-psych_crisis_direct_question: 你现在是否正在考虑自杀或伤害自己？是否处于即时危险中，或能够接触到伤害自己的手段？
+psych_crisis_direct_question: 你现在是否处于即时危险中、已有计划，或能接触到伤害自己的手段？请回答“是”或“否”。
 psych_crisis_question_unclear: 我没有理解你的安全状况。你现在是否处于即时危险中，或能够接触到伤害自己的手段？请回答“是”或“否”。
 psych_crisis_no_immediate_danger: 谢谢你回答。你表示目前没有即时危险。这不是临床评估；仍请联系可信任的人或合格专业人员。
 psych_crisis_immediate_danger: 你表示目前存在即时危险。请立即行动，并使用所在地可获得的最安全援助。
 psych_crisis_action_stay_together: 不要独处。请附近可信任的人陪着你；如果你在帮助他人，请留在对方身边。
 psych_crisis_action_reduce_access: 远离武器、药物、高处、车辆或其他可能用于自伤的手段；在确保安全的前提下，请他人代为保管。
 psych_crisis_action_seek_support: 立即联系当地紧急服务、危机援助、医务人员或可信任的人。
-psych_crisis_resource_emergency_service: '已配置的当地紧急服务：{value}'
-psych_crisis_resource_crisis_line: '已配置的当地危机援助：{value}'
-psych_crisis_resource_trusted_contact: '已配置的可信任联系人：{value}'
+psych_crisis_resource_region: '用户配置的地区（火种未独立核验）：{value}'
+psych_crisis_resource_emergency_service: '用户配置的紧急服务（依赖前请自行核实）：{value}'
+psych_crisis_resource_crisis_line: '用户配置的危机援助（依赖前请自行核实）：{value}'
+psych_crisis_resource_trusted_contact: '用户配置的可信任联系人：{value}'
 psych_crisis_resources_unconfigured: 火种尚未配置当地危机联系人。请使用你所在地可用的紧急或危机服务，或立即向附近可信任的人求助。
-psych_crisis_privacy_notice: 火种没有进行诊断、没有通知任何人，也没有把本次交流写入时间线；心理支持仍为 Experimental。
+psych_crisis_privacy_notice: 火种没有进行诊断、没有通知任何人，也没有把本次交流写入时间线或保留在语音对话历史中；心理支持仍为 Experimental。
 diary_cmd: 写日记
 chat_cmd: 和火种聊天
 briefing_cmd: 查看每日简报
@@ -2233,6 +2234,7 @@ immediate_danger_dialog_title: 立即危险
 immediate_danger_dialog_close: 关闭并返回
 immediate_danger_back: 返回
 immediate_danger_source_boundary: 官方来源已固定，便于离线审计；具名领域复核仍待完成，本动作不能视为已审阅的发布结论。
+immediate_danger_applicable_abnormal_breathing: 当前现场被明确报告为安全，但呼吸已明确为停止或异常。
 immediate_danger_not_contacted: 火种绝不会声称已经联系紧急服务。
 immediate_danger_fact_threat_type: 当前最紧迫的危险是什么？
 immediate_danger_fact_scene_safe: 现场是否可以安全接近或停留？
@@ -2338,7 +2340,21 @@ voice_unknown_error: 未知错误
 survival_plan_heading: 未来 24 小时行动计划
 survival_plan_why_label: 为什么现在做
 survival_plan_prerequisite_label: 前置条件
+survival_plan_risk_label: 风险边界
 survival_plan_done_label: 完成标准
+survival_plan_reassess_label: 复核时间
+survival_plan_evidence_label: 证据与计算
+survival_plan_evidence_resource_formula: '{amount} {unit} /（{consumption} - {intake}）{unit}/日 = 剩余 {hours} 小时；排序阈值 {threshold} 小时；记录时间 {as_of}；来源 {source}。'
+survival_plan_evidence_resource_amount: '{amount} {unit}；记录时间 {as_of}；来源 {source}。'
+survival_plan_evidence_fact: '{field}：{value}'
+survival_plan_evidence_status_unknown: 未知
+survival_plan_evidence_status_stale: 已过期
+survival_plan_evidence_status_pending: 待复核
+survival_plan_evidence_status_known: 已确认
+survival_plan_evidence_status_review_gated: 待具名专业人员复核
+resource_source_unknown: 未知来源
+assessment_field_information_gap: 信息缺口
+assessment_field_reviewed_workflow: 专业复核流程
 survival_plan_select_prompt: '请选择并确认一个首要行动（1-{count}）'
 survival_plan_reassess_1h: 1 小时内重新评估
 survival_plan_reassess_4h: 4 小时内重新评估
@@ -2351,31 +2367,31 @@ survival_plan_gap_why: '当前缺少或需要刷新{domain}证据，系统不能
 survival_plan_gap_prerequisite: 只记录能够直接观察、测量或明确确认的事实。
 survival_plan_gap_risk: 不要用猜测、默认值或旧数据代替未知事实。
 survival_plan_gap_done: 该信息已记录为有效值或明确的未知状态。
-survival_plan_immediate_danger_title: 打开已审阅的立即危险分流
+survival_plan_immediate_danger_title: 打开版本化的立即危险分流
 survival_plan_immediate_danger_why: 当前评估明确标记为立即危险，普通 24 小时排序不应延迟安全分流。
 survival_plan_immediate_danger_prerequisite: 保持在当前可确认的安全位置；能够通信时自行联系当地紧急服务。
 survival_plan_immediate_danger_risk: 不要为使用本系统进入或重新进入危险现场；火种不会声称已联系救援。
-survival_plan_immediate_danger_done: 已进入立即危险流程并获得与当前情况匹配的首个已审阅动作。
-survival_plan_health_help_title: 使用已审阅流程处理严重健康风险
+survival_plan_immediate_danger_done: 已进入立即危险流程并获得与当前情况匹配的首个保守动作；具名领域复核仍待完成。
+survival_plan_health_help_title: 使用版本化流程处理严重健康风险
 survival_plan_health_help_why: 当前健康事实显示严重或危急状况，需要先于一般资源规划处理。
 survival_plan_health_help_prerequisite: 先确认现场安全；能够通信时自行寻求受训医疗帮助。
 survival_plan_health_help_risk: 不要把本计划当作诊断，也不要因寻找设备而延迟紧急求助。
-survival_plan_health_help_done: 已进入适用的已审阅医疗分流，并开始执行首个安全动作。
+survival_plan_health_help_done: 已进入保守医疗分流并开始执行首个动作；这不是诊断或已完成外部审阅的结论。
 survival_plan_threat_review_title: 核对当前威胁并选择安全分流
 survival_plan_threat_review_why: 已记录一个或多个现实威胁，必须先确认适用条件和禁忌。
 survival_plan_threat_review_prerequisite: 从当前可确认安全的位置核对，不进入危险区域调查。
 survival_plan_threat_review_risk: 未识别或未核实的威胁不能被推断为安全。
-survival_plan_threat_review_done: 已为当前威胁选择适用的已审阅动作和退出条件。
+survival_plan_threat_review_done: 已为当前威胁选择保守动作和退出条件；具名领域复核仍待完成。
 survival_plan_shelter_title: 先确认安全位置与最低庇护需求
 survival_plan_shelter_why: 当前庇护事实不足以证明能够安全停留。
 survival_plan_shelter_prerequisite: 不进入结构、火灾、洪水或污染风险未确认的区域。
 survival_plan_shelter_risk: 不要把“有遮挡”当作结构或环境安全的证明。
-survival_plan_shelter_done: 已确认当前可停留位置，或已进入适用的已审阅撤离分流。
+survival_plan_shelter_done: 已确认当前已知更安全的位置，或已进入保守撤离分流；具名领域复核仍待完成。
 survival_plan_resource_priority_title: '核对并稳定{domain}'
 survival_plan_resource_priority_why: '当前有效快照显示{domain}的可用时间低于安全排序阈值。'
 survival_plan_resource_priority_prerequisite: 先核对数量、单位、每日总消耗/补充和记录时间。
 survival_plan_resource_priority_risk: 不要依据未验证来源、错误单位或陈旧快照执行不可逆操作。
-survival_plan_resource_priority_done: 已确认新的可用量与速率，并记录下一次复查时间。
+survival_plan_resource_priority_done: 已确认新的可用量与速率；火种会重新计算计划并安排下一次复查。
 survival_plan_fire_capacity_title: 核对安全火源能力
 survival_plan_fire_capacity_why: 当前有效快照显示可用火源次数较低。
 survival_plan_fire_capacity_prerequisite: 先确认当地环境允许安全使用与存放火源。
@@ -2425,6 +2441,7 @@ web_task_outcome_save: 保存结果并重新评估
 web_task_outcome_cancel: 取消
 web_task_outcome_saved: 结果已保存，计划已重新评估
 web_task_outcome_plan_changed: 该结果改变了未来 24 小时计划。
+web_task_outcome_next_task: '新的首要任务：{title}'
 web_task_outcome_plan_unchanged: 当前事实没有改变未来 24 小时计划。
 web_executions_skipped: 已跳过
 web_executions_track_plan: 跟踪当前首要行动

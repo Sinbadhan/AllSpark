@@ -124,7 +124,7 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     assert 'patch = ["subprocess"]' in pyproject
     assert 'omit = ["allspark/templates/*", "allspark/static/*"]' in pyproject
     collection_floor = re.search(r'test "\$\{COUNT:-0\}" -ge (\d+)', workflow)
-    assert collection_floor is not None and int(collection_floor.group(1)) >= 1133
+    assert collection_floor is not None and int(collection_floor.group(1)) >= 1814
 
     critical_modules = {
         "allspark/adapters/init_wizard.py",
@@ -184,6 +184,19 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
     assert "v1.0.3 发布支持边界" in readme_cn
     assert "Stable Supported（v1.0.3 唯一公开承诺）" in prd
     assert "Testing / Experimental / Future" in prd
+
+    assert "Source archives and wheels are\nthe canonical release artifacts" in readme
+    assert "源码归档与 wheel 是规范开源发行物" in readme_cn
+    assert "required only when an official macOS App or DMG is offered" in readme
+    assert "仅在项目提供官方 Gatekeeper-trusted macOS App/DMG 时要求" in readme_cn
+    for stale_release_claim in (
+        "未签名产物仅用于内部 RC 验证",
+        "Stable 产物必须完成",
+        "SHA-245 签名交付",
+        "SHA-258 品牌清查",
+    ):
+        assert stale_release_claim not in readme_cn
+        assert stale_release_claim not in agents
     for content in (readme, readme_cn, validation):
         assert "PROCESS" in content
         assert "Experimental" in content

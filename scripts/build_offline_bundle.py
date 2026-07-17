@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import hashlib
+import importlib.util
 import json
 import os
 import platform
@@ -27,6 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_EPOCH = 1_700_000_000
 MANIFEST_NAME = "delivery-manifest.json"
 CHECKSUM_NAME = "SHA256SUMS"
+RELEASE_METADATA_DIR = "release-metadata"
 
 
 def _sha256(path: Path) -> str:
@@ -288,6 +290,26 @@ def _manifest_entries(root: Path) -> list[dict[str, Any]]:
     return entries
 
 
+def _generate_release_metadata(
+    destination: Path,
+    *,
+    groups: tuple[str, ...] = ("runtime",),
+) -> dict[str, Any]:
+    module_path = ROOT / "scripts" / "release_metadata.py"
+    spec = importlib.util.spec_from_file_location("allspark_release_metadata", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("release metadata generator could not be loaded")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    result = module.generate_release_metadata(ROOT, destination, groups=groups)
+    if result["unknown_licenses"]:
+        raise RuntimeError(
+            "release dependencies have unknown licenses: "
+            + ", ".join(result["unknown_licenses"])
+        )
+    return result
+
+
 def _write_checksums(bundle_root: Path, entries: list[dict[str, Any]], epoch: int) -> None:
     lines = [f"{entry['sha256']}  {entry['path']}" for entry in entries]
     (bundle_root / CHECKSUM_NAME).write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
@@ -348,6 +370,7 @@ def assemble_bundle(
     signed: bool,
     source_dirty: bool = False,
     epoch: int = DEFAULT_EPOCH,
+    metadata_groups: tuple[str, ...] = ("runtime",),
 ) -> tuple[Path, Path]:
     executable = payload / "AllSpark"
     if not executable.is_file() or not os.access(executable, os.X_OK):
@@ -371,6 +394,10 @@ def assemble_bundle(
     (bundle_root / "README.txt").write_text(
         _readme_text(version, target, signed, artifact_id), encoding="utf-8", newline="\n"
     )
+    release_metadata = _generate_release_metadata(
+        bundle_root / RELEASE_METADATA_DIR,
+        groups=metadata_groups,
+    )
     _normalize_tree(bundle_root, epoch)
 
     checksum_entries = _manifest_entries(bundle_root / "payload")
@@ -384,7 +411,8 @@ def assemble_bundle(
             "mode": oct(stat.S_IMODE(path.stat().st_mode)),
         }
         for path in _iter_files(bundle_root)
-        if path.parent == bundle_root and path.name not in {MANIFEST_NAME, CHECKSUM_NAME}
+        if not path.is_relative_to(bundle_root / "payload")
+        and path.name not in {MANIFEST_NAME, CHECKSUM_NAME}
     )
     checksum_entries.sort(key=lambda item: item["path"])
     _write_checksums(bundle_root, checksum_entries, epoch)
@@ -401,6 +429,9 @@ def assemble_bundle(
         "signature": "developer-id" if signed else "unsigned-internal-rc",
         "model_required": False,
         "core_knowledge_included": True,
+        "sbom": f"{RELEASE_METADATA_DIR}/allspark.cdx.json",
+        "third_party_notices": f"{RELEASE_METADATA_DIR}/THIRD_PARTY_NOTICES.md",
+        "third_party_component_count": release_metadata["component_count"],
         "files": checksum_entries,
     }
     manifest_path = bundle_root / MANIFEST_NAME
@@ -524,6 +555,7 @@ def build(args: argparse.Namespace) -> tuple[Path, Path, Path | None]:
             signed=bool(args.sign_identity),
             source_dirty=source_dirty,
             epoch=args.epoch,
+            metadata_groups=("runtime", "delivery"),
         )
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
@@ -551,6 +583,9 @@ def verify_archive(archive: Path) -> dict[str, Any]:
         root = roots[0]
         manifest = json.loads((root / MANIFEST_NAME).read_text(encoding="utf-8"))
         expected = {entry["path"]: entry for entry in manifest["files"]}
+        for metadata_key in ("sbom", "third_party_notices"):
+            if manifest.get(metadata_key) not in expected:
+                raise ValueError(f"delivery manifest does not cover {metadata_key}")
         for relative, entry in expected.items():
             path = root / relative
             if not path.is_file():

@@ -38,7 +38,6 @@ def restore_language():
         "I am not suicidal",
         "I don't want to kill myself",
         "suicide prevention training",
-        "我不想活了，但是这是歌词",
         "这是歌词：我不想活了",
         "This is a lyric: I want to kill myself",
     ],
@@ -104,6 +103,22 @@ def test_broad_context_words_do_not_hide_first_person_disclosure(text: str) -> N
     assert result["status"] == "needs_direct_confirmation"
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "我不想活了，但是这是歌词",
+        "I want to kill myself, but this is a quote",
+        '"I want to kill myself"',
+    ],
+)
+def test_trailing_quote_disclaimer_or_bare_quote_does_not_hide_disclosure(
+    text: str,
+) -> None:
+    result = SelfHarmSupport(resources={}).process(text)
+    assert result is not None
+    assert result["status"] == "needs_direct_confirmation"
+
+
 def test_repetition_does_not_escalate_or_count_keywords() -> None:
     support = SelfHarmSupport(resources={})
     first = support.process("I want to kill myself")
@@ -124,6 +139,46 @@ def test_immediate_danger_skips_delay_and_prioritizes_actions(text: str) -> None
     assert len(result["actions"]) >= 4
     assert result["notification_status"] == "not_sent"
     assert result["recording_status"] == "not_recorded"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "我马上吞药",
+        "我准备吞药",
+        "我刚刚吞了药",
+        "我已经割腕了",
+        "我想从楼上跳下去",
+        "I want to overdose",
+        "I just took all my pills",
+        "I have a suicide plan for tonight",
+    ],
+)
+def test_explicit_method_or_recent_action_is_routed_as_immediate(text: str) -> None:
+    result = SelfHarmSupport(resources={}).process(text)
+    assert result is not None
+    assert result["status"] == "immediate_danger_reported"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "I just overdosed on purpose",
+        "I took an overdose to die",
+        "I'm on a bridge and I'm going to jump",
+        "I'm going to hang myself",
+        "I have a gun in my hand and want to die",
+        "我刚吞了一整瓶安眠药",
+        "我已经吃了一瓶安眠药",
+        "我在楼顶准备跳下去",
+        "我要上吊",
+        "我拿枪对着自己",
+    ],
+)
+def test_active_or_recent_self_harm_never_falls_through(text: str) -> None:
+    result = SelfHarmSupport(resources={}).process(text)
+    assert result is not None
+    assert result["status"] == "immediate_danger_reported"
 
 
 def test_confirmation_flow_handles_yes_no_and_unclear() -> None:
@@ -153,6 +208,80 @@ def test_confirmation_flow_handles_yes_no_and_unclear() -> None:
     )
     assert unclear_result is not None
     assert unclear_result["status"] == "confirmation_unclear"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "I am safe",
+        "I am not in immediate danger",
+        "I have no plan",
+        "我没有计划",
+        "否",
+    ],
+)
+def test_confirmation_negative_phrases_are_not_false_positives(text: str) -> None:
+    support = SelfHarmSupport(resources={})
+    support.process("I want to hurt myself", conversation_id="negative-session")
+    result = support.process(text, conversation_id="negative-session")
+    assert result is not None
+    assert result["status"] == "no_immediate_danger_reported"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "No, but I have a plan",
+        "No, but I have access to a gun",
+        "No, but I can reach the pills",
+        "没有，但我有计划",
+        "没有，但刀在我手边",
+    ],
+)
+def test_negative_prefix_cannot_hide_an_immediate_danger_detail(text: str) -> None:
+    support = SelfHarmSupport(resources={})
+    support.process("I want to hurt myself", conversation_id="mixed-session")
+    result = support.process(text, conversation_id="mixed-session")
+    assert result is not None
+    assert result["status"] == "immediate_danger_reported"
+
+
+def test_user_can_correct_a_previous_negative_answer() -> None:
+    support = SelfHarmSupport(resources={})
+    support.process("I want to hurt myself", conversation_id="correction-session")
+    support.process("no", conversation_id="correction-session")
+    corrected = support.process("yes", conversation_id="correction-session")
+    assert corrected is not None
+    assert corrected["status"] == "immediate_danger_reported"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "He said something cruel. I want to kill myself",
+        "他说了很难听的话。我想自杀",
+    ],
+)
+def test_reported_context_does_not_cross_sentence_boundary(text: str) -> None:
+    result = SelfHarmSupport(resources={}).process(text)
+    assert result is not None
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "I won't kill myself",
+        "I would never kill myself",
+        "I used to want to kill myself, but not anymore",
+    ],
+)
+def test_additional_clear_negations_do_not_trigger(text: str) -> None:
+    assert SelfHarmSupport(resources={}).process(text) is None
+
+
+@pytest.mark.parametrize("value", [None, 7, True, {}, []])
+def test_non_string_input_is_ignored(value: object) -> None:
+    assert SelfHarmSupport(resources={}).process(value) is None
 
 
 def test_confirmation_state_is_isolated_by_conversation() -> None:
@@ -196,6 +325,7 @@ def test_unconfigured_resources_use_global_generic_fallback_without_988() -> Non
 
 
 def test_local_resources_load_offline_from_config(tmp_path: Path) -> None:
+    set_language("en", persist=False)
     config = tmp_path / "config.toml"
     config.write_text(
         """[crisis_support]
@@ -209,6 +339,8 @@ trusted_contact = "Alex on radio channel 3"
     result = SelfHarmSupport(config_path=config).process("I will kill myself right now")
     assert result is not None
     rendered = " ".join(result["actions"])
+    assert "Test region" in rendered
+    assert "not independently verified" in rendered
     assert "Local emergency 112" in rendered
     assert "Community crisis desk" in rendered
     assert "Alex on radio channel 3" in rendered
@@ -274,6 +406,9 @@ def test_voice_open_conversation_intercepts_before_llm() -> None:
 
     assert "immediate danger" in response.lower()
     llm.survival_chat.assert_not_called()
+    assert voice._session is not None
+    assert voice._session.messages == []
+    assert voice._session.turn_count == 0
 
 
 def _web_client(db_path: Path) -> TestClient:

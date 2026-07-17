@@ -230,7 +230,6 @@ class VoiceManager:
             return t("voice_wake_word_required")
 
         session = self._get_or_create_session()
-        session.add_turn("user", command_text)
 
         if self.crisis_support:
             safety = self.crisis_support.process(
@@ -239,8 +238,9 @@ class VoiceManager:
             )
             if safety is not None:
                 response = self.crisis_support.format_result(safety)
-                session.add_turn("assistant", response)
                 return response
+
+        session.add_turn("user", command_text)
 
         # Command dispatch: first token as command, rest as args.
         if self.dispatcher:
@@ -279,6 +279,8 @@ class VoiceManager:
 
     def _get_or_create_session(self) -> VoiceSession:
         if not self._session or not self._session.is_active():
+            if self._session:
+                self._session.messages.clear()
             self._session = VoiceSession()
         return self._session
 

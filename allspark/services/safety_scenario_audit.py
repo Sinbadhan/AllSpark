@@ -24,11 +24,7 @@ from allspark.services.immediate_danger import (
     assess_immediate_danger,
     load_action_catalog,
 )
-from allspark.services.knowledge_loader import (
-    _TIER_FILES,
-    _load_yaml,
-    load_knowledge,
-)
+from allspark.services.knowledge_loader import load_knowledge
 
 _DATA_PATH = (
     Path(__file__).resolve().parent.parent / "data" / "safety" / "scenarios.yaml"
@@ -791,33 +787,25 @@ def run_safety_scenarios(
 
 def audit_bundled_risk_metadata() -> dict:
     """Report current YAML review gaps without inferring low risk."""
-    entries: list[dict] = []
-    for files in _TIER_FILES.values():
-        for filename in files.values():
-            entries.extend(_load_yaml(_DATA_PATH.parent.parent / "knowledge" / filename))
-    metadata_present = [
-        entry for entry in entries
-        if entry.get("risk_level") in {"pending_review", "low", "medium", "high", "critical"}
-        and entry.get("review_status") in KNOWLEDGE_REVIEW_STATUSES
-        and isinstance(entry.get("hazards"), list)
-        and entry.get("hazards")
-        and not (set(entry["hazards"]) - VALID_HAZARDS)
-    ]
+    entries = load_knowledge()
+    # The loader validates reviewer qualification coverage and exact
+    # classification hashes before an entry can count as approved.
+    metadata_present = entries
     unknown_hazard_entries = [
-        entry for entry in metadata_present if "unknown" in entry["hazards"]
+        entry for entry in metadata_present if "unknown" in entry.hazards
     ]
     approved = [
-        entry for entry in metadata_present if entry["review_status"] == "approved"
+        entry for entry in metadata_present if entry.review_status == "approved"
     ]
     pending = [
         entry
         for entry in metadata_present
-        if entry["review_status"] == "pending_external_review"
+        if entry.review_status == "pending_external_review"
     ]
     fail_safe_high_risk = [
         entry for entry in metadata_present
-        if entry["review_status"] != "approved"
-        or entry["risk_level"] in {"pending_review", "high", "critical"}
+        if entry.review_status != "approved"
+        or entry.risk_level in {"pending_review", "high", "critical"}
     ]
     return {
         "total": len(entries),
@@ -825,7 +813,7 @@ def audit_bundled_risk_metadata() -> dict:
         "metadata_missing": len(entries) - len(metadata_present),
         "substantively_classified": len(metadata_present) - len(unknown_hazard_entries),
         "unknown_hazard_count": len(unknown_hazard_entries),
-        "unknown_hazard_ids": [entry.get("id", "") for entry in unknown_hazard_entries],
+        "unknown_hazard_ids": [entry.id for entry in unknown_hazard_entries],
         "pending_review_count": len(pending),
         "approved_count": len(approved),
         "fail_safe_high_risk_count": len(fail_safe_high_risk),

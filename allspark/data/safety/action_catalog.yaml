@@ -3,6 +3,7 @@ catalog_id: allspark-immediate-danger
 catalog_revision: 1
 review_status: pending_external_review
 release_eligible: false
+reviewer_signoffs: []
 sources:
   red-cross-first-aid-steps:
     organization: American Red Cross
@@ -88,11 +89,14 @@ actions:
         - threat_type: [medical]
           scene_safe: ["yes"]
           responsive: ["no", unknown]
-    applicable_label_keys: [immediate_danger_applicable_unresponsive]
+        - threat_type: [medical]
+          scene_safe: ["yes"]
+          breathing: [absent_or_abnormal]
+    applicable_label_keys: [immediate_danger_applicable_unresponsive, immediate_danger_applicable_abnormal_breathing]
     contraindication_keys: [immediate_danger_contra_no_universal_cpr]
     escalation_key: immediate_danger_escalation_dispatcher
     review_status: pending_external_review
-    content_hash: sha256:0f90f7dabb7b6e84ff4ffefd00119b31d3af1779580ea5b5b38a078bbeb83797
+    content_hash: sha256:5367549044a0772d42b83eeafc72b652406d0c64782051e3b7b81496674edb63
   - action_id: seek-medical-assessment
     revision: 1
     text_key: immediate_danger_action_medical_assessment

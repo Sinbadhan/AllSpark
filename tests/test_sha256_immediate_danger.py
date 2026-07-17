@@ -43,6 +43,64 @@ def test_catalog_hashes_are_offline_rebuildable_contracts() -> None:
         assert action["review_status"] == "pending_external_review"
 
 
+def test_catalog_approval_path_requires_hashed_reviewer_coverage(
+    monkeypatch, tmp_path: Path
+) -> None:
+    document = yaml.safe_load(
+        immediate_danger.CATALOG_PATH.read_text(encoding="utf-8")
+    )
+    document["review_status"] = "approved"
+    document["release_eligible"] = True
+    for action in document["actions"]:
+        action["review_status"] = "approved"
+        action["content_hash"] = immediate_danger._action_hash(action)
+    action_ids = [action["action_id"] for action in document["actions"]]
+    document["reviewer_signoffs"] = [
+        {
+            "signoff_version": 1,
+            "reviewer_id": "independent-panel-1",
+            "reviewer": "Independent review panel",
+            "qualification_type": "cross_domain_panel",
+            "qualification_evidence": "Verified externally for this test fixture",
+            "scope": "All catalog actions and both supported languages",
+            "covered_action_ids": action_ids,
+            "reviewed_at": "2026-07-17",
+            "decision": "approved",
+            "conclusion": "Approved test fixture",
+            "reservations": [],
+            "content_hash": "",
+        }
+    ]
+    document["reviewer_signoffs"][0]["content_hash"] = (
+        immediate_danger._catalog_hash(document)
+    )
+    path = tmp_path / "approved-catalog.yaml"
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    monkeypatch.setattr(immediate_danger, "CATALOG_PATH", path)
+    load_action_catalog.cache_clear()
+    try:
+        catalog = load_action_catalog()
+        assert catalog["release_eligible"] is True
+        result = assess_immediate_danger({"threat_type": "none"}, "en")
+        assert result["release_eligible"] is True
+
+        document["reviewer_signoffs"][0]["covered_action_ids"] = action_ids[:-1]
+        document["reviewer_signoffs"][0]["content_hash"] = (
+            immediate_danger._catalog_hash(document)
+        )
+        path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+        load_action_catalog.cache_clear()
+        import pytest
+
+        with pytest.raises(
+            immediate_danger.ImmediateDangerValidationError,
+            match="incomplete_action_coverage",
+        ):
+            load_action_catalog()
+    finally:
+        load_action_catalog.cache_clear()
+
+
 def test_yaml_predicate_values_are_strings_and_fresh_process_loads() -> None:
     import yaml
 
@@ -244,6 +302,15 @@ def test_distinct_medical_and_uncertain_routes_are_truthful() -> None:
                 "scene_safe": "yes",
                 "responsive": "no",
                 "breathing": "normal",
+            },
+            "seek-emergency-response",
+        ),
+        (
+            {
+                "threat_type": "medical",
+                "scene_safe": "yes",
+                "responsive": "yes",
+                "breathing": "absent_or_abnormal",
             },
             "seek-emergency-response",
         ),

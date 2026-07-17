@@ -335,6 +335,10 @@ class SurvivalPlanService:
             "done_when_text": SurvivalPlanService._translate(
                 action.done_when, language=language, domain=domain_label
             ),
+            "evidence_texts": [
+                SurvivalPlanService._render_evidence(item, language=language)
+                for item in action.evidence
+            ],
             "reassess_at_text": SurvivalPlanService._translate(
                 "survival_plan_reassess_1h"
                 if action.reassess_at == "PT1H"
@@ -344,6 +348,102 @@ class SurvivalPlanService:
                 language=language,
             ),
         }
+
+    @staticmethod
+    def _render_evidence(evidence: dict[str, Any], *, language: str | None) -> str:
+        kind = evidence.get("kind")
+        source = evidence.get("source", "unknown")
+        source_label = SurvivalPlanService._translate(
+            f"resource_source_{source}", language=language
+        )
+        if kind == "resource_snapshot" and "remaining_hours" in evidence:
+            return SurvivalPlanService._translate(
+                "survival_plan_evidence_resource_formula",
+                language=language,
+                amount=evidence.get("amount", "?"),
+                unit=evidence.get("unit", ""),
+                consumption=evidence.get("daily_consumption", "?"),
+                intake=evidence.get("daily_intake", "?"),
+                hours=evidence["remaining_hours"],
+                threshold=evidence.get("threshold_hours", "?"),
+                as_of=evidence.get("as_of", ""),
+                source=source_label,
+            )
+        if kind == "resource_snapshot":
+            return SurvivalPlanService._translate(
+                "survival_plan_evidence_resource_amount",
+                language=language,
+                amount=evidence.get("amount", "?"),
+                unit=evidence.get("unit", ""),
+                as_of=evidence.get("as_of", ""),
+                source=source_label,
+            )
+        if kind == "reviewed_workflow":
+            return SurvivalPlanService._translate(
+                "survival_plan_evidence_fact",
+                language=language,
+                field=SurvivalPlanService._translate(
+                    "assessment_field_reviewed_workflow", language=language
+                ),
+                value=SurvivalPlanService._translate(
+                    "survival_plan_evidence_status_review_gated", language=language
+                ),
+            )
+        if kind == "assessment_state":
+            phase = evidence.get("phase")
+            return SurvivalPlanService._translate(
+                "survival_plan_evidence_fact",
+                language=language,
+                field=SurvivalPlanService._translate(
+                    "assessment_title", language=language
+                ),
+                value=SurvivalPlanService._translate(
+                    f"phase_desc_{phase}" if phase is not None else "phase_desc_unknown",
+                    language=language,
+                ),
+            )
+        raw_field = evidence.get("field", kind or "unknown")
+        field_parts = str(raw_field).split(".", 1)
+        field_label = SurvivalPlanService._translate(
+            f"assessment_field_{field_parts[0]}", language=language
+        )
+        if len(field_parts) == 2:
+            detail_key = {
+                "amount": "web_resource_edit_amount",
+                "consumption": "web_resource_edit_consumption",
+                "intake": "web_resource_edit_intake",
+                "rate_basis": "web_init_group_total_basis",
+                "as_of": "assessment_field_as_of",
+            }.get(field_parts[1], "assessment_field_information_gap")
+            field_label = f"{field_label} / {SurvivalPlanService._translate(detail_key, language=language)}"
+        raw_value = evidence.get(
+            "value", evidence.get("status", evidence.get("phase_status", "unknown"))
+        )
+        if isinstance(raw_value, list):
+            value_label = ", ".join(
+                SurvivalPlanService._translate(
+                    f"q_threat_{value}", language=language
+                )
+                for value in raw_value
+            )
+        elif kind == "assessment_fact" and isinstance(raw_value, str):
+            value_key = {
+                ("urgency", "immediate_danger"): "q_urgency_immediate",
+                ("health", "serious_injury"): "q_health_serious",
+            }.get((field_parts[0], raw_value), f"q_{field_parts[0]}_{raw_value}")
+            value_label = SurvivalPlanService._translate(
+                value_key, language=language
+            )
+        else:
+            value_label = SurvivalPlanService._translate(
+                f"survival_plan_evidence_status_{raw_value}", language=language
+            )
+        return SurvivalPlanService._translate(
+            "survival_plan_evidence_fact",
+            language=language,
+            field=field_label,
+            value=value_label,
+        )
 
     def _assessment_resources(
         self, assessment: dict[str, Any]
@@ -519,8 +619,14 @@ class SurvivalPlanService:
                                     "kind": "resource_snapshot",
                                     "resource": domain,
                                     "remaining_status": "finite",
+                                    "amount": resource.current_amount,
+                                    "unit": resource.unit,
+                                    "daily_consumption": resource.daily_consumption,
+                                    "daily_intake": resource.daily_intake,
                                     "remaining_hours": round(hours, 3),
+                                    "threshold_hours": limits[domain],
                                     "as_of": resource.as_of,
+                                    "source": resource.source,
                                 }
                             ],
                             reassess_at="PT1H",
@@ -544,6 +650,7 @@ class SurvivalPlanService:
                                 "amount": resource.current_amount,
                                 "unit": resource.unit,
                                 "as_of": resource.as_of,
+                                "source": resource.source,
                             }
                         ],
                         reassess_at="PT4H",

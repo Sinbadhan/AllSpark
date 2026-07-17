@@ -65,7 +65,13 @@ def test_bundle_is_deterministic_and_self_describing(tmp_path: Path) -> None:
     assert manifest["signature"] == "unsigned-internal-rc"
     assert manifest["model_required"] is False
     assert manifest["core_knowledge_included"] is True
+    assert manifest["third_party_component_count"] > 0
+    assert manifest["sbom"] == "release-metadata/allspark.cdx.json"
+    assert manifest["third_party_notices"] == (
+        "release-metadata/THIRD_PARTY_NOTICES.md"
+    )
     assert any(item["path"].endswith("tier0_en.yaml") for item in manifest["files"])
+    assert any(item["path"] == manifest["sbom"] for item in manifest["files"])
 
 
 def test_verify_rejects_payload_tampering(tmp_path: Path) -> None:
@@ -89,6 +95,26 @@ def test_verify_rejects_payload_tampering(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="integrity check"):
         module.verify_archive(archive)
     assert manifest["signature"] == "developer-id"
+
+
+def test_release_metadata_covers_exact_dependency_versions_and_licenses(
+    tmp_path: Path,
+) -> None:
+    module = _module()
+    destination = tmp_path / "metadata"
+    result = module._generate_release_metadata(destination)
+    sbom = json.loads((destination / "allspark.cdx.json").read_text(encoding="utf-8"))
+
+    assert result["unknown_licenses"] == []
+    assert result["component_count"] == len(sbom["components"])
+    assert {component["name"].lower() for component in sbom["components"]} >= {
+        "fastapi",
+        "pyyaml",
+    }
+    assert all(component["version"] for component in sbom["components"])
+    assert all(component["licenses"] for component in sbom["components"])
+    notices = (destination / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+    assert "## fastapi " in notices.lower()
 
 
 def test_install_and_rollback_scripts_are_fail_closed(tmp_path: Path) -> None:

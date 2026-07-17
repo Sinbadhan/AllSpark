@@ -26,6 +26,7 @@ _REPORTED_CONTEXT = re.compile(
     re.IGNORECASE,
 )
 _CONTEXT_CONTRAST = re.compile(r"(?:但|但是|不过|可|but|however)", re.IGNORECASE)
+_SENTENCE_BOUNDARY = re.compile(r"[。！？.!?]\s*")
 _ECHOED_DISCLOSURE = re.compile(
     r"(?:(?:但|但是|不过|可).{0,20}我(?:现在)?(?:也)?(?:想|要)(?:自杀|自伤|自残|轻生|死)|"
     r"(?:but|however).{0,20}\bi\s+(?:actually\s+do|do\s+too)(?:\s*[,.!]|$))",
@@ -44,6 +45,9 @@ _NEGATED_SELF_HARM = re.compile(
     r"我没有(?:自杀|自伤|自残|轻生)(?:的)?想法|"
     r"i\s+(?:am|'m)\s+not\s+suicidal|"
     r"i\s+(?:do\s+not|don't)\s+want\s+to\s+(?:kill\s+myself|die|end\s+my\s+life|hurt\s+myself)|"
+    r"i\s+(?:will\s+not|won't|would\s+never)\s+(?:kill|hurt|cut)\s+myself|"
+    r"i\s+used\s+to\s+want\s+to\s+(?:kill\s+myself|die|hurt\s+myself).{0,20}"
+    r"(?:not\s+anymore|no\s+longer)|"
     r"i\s+have\s+no\s+(?:suicidal|self[- ]harm)\s+thoughts?|"
     r"not\s+thinking\s+about\s+(?:suicide|self[- ]harm))",
     re.IGNORECASE,
@@ -56,23 +60,47 @@ _DIRECT_SELF_HARM = re.compile(
     r"i\s+(?:want|plan|intend|am\s+going|am\s+ready|feel\s+like).{0,30}"
     r"(?:suicide|kill\s+myself|end\s+my\s+life|die|hurt\s+myself|cut\s+myself)|"
     r"(?:kill|hurt|cut)\s+myself|end\s+my\s+life|"
-    r"(?:don't|do\s+not)\s+want\s+to\s+live|better\s+off\s+dead)",
+    r"(?:don't|do\s+not)\s+want\s+to\s+live|better\s+off\s+dead|"
+    r"(?:i\s+)?(?:want|plan|intend|am\s+going|am\s+ready)\s+to\s+overdose|"
+    r"i\s+(?:just\s+)?took\s+all(?:\s+of)?\s+(?:the|my)\s+pills|"
+    r"i\s+(?:just\s+)?overdosed(?:\s+on\s+purpose)?|"
+    r"i\s+took\s+an\s+overdose.{0,20}(?:to\s+die|to\s+kill\s+myself)|"
+    r"i(?:'m|\s+am)\s+on\s+(?:a|the)\s+bridge.{0,30}(?:jump|die)|"
+    r"i(?:'m|\s+am)\s+going\s+to\s+hang\s+myself|"
+    r"i\s+have\s+(?:a|the|my)\s+gun\s+in\s+my\s+hand.{0,30}(?:die|kill\s+myself)|"
+    r"i\s+have\s+(?:a\s+)?suicide\s+plan|"
+    r"我(?:马上|正准备|准备|打算|想|要|刚刚|刚|已经).{0,8}"
+    r"(?:吞(?:了)?.{0,8}药|吃(?:了)?.{0,8}药|服药过量|割腕|跳楼|从.{0,6}跳下去|上吊|开枪)|"
+    r"我(?:在楼顶.{0,8}(?:跳|准备)|要上吊|拿枪.{0,8}(?:对着自己|想死)))",
     re.IGNORECASE,
 )
 _IMMEDIATE_DANGER = re.compile(
-    r"(?:现在就|马上|正准备|已经准备|已经拿到|手边有|有计划|能拿到|"
+    r"(?:现在就|马上|(?:正)?准备|刚刚|刚|已经(?:准备|拿到|吞|吃|服|割)|手边有|有计划|能拿到|"
+    r"(?:想|要).{0,8}(?:吞(?:了)?药|服药过量|割腕|跳楼|从.{0,6}跳下去|开枪)|"
+    r"今晚.{0,10}(?:自杀|自伤|轻生|去死)|"
     r"right\s+now|about\s+to|immediate(?:ly)?|already\s+have|"
-    r"have\s+(?:a\s+)?plan|have\s+access|can\s+reach)",
+    r"have\s+(?:a\s+)?plan|have\s+access|can\s+reach|"
+    r"just\s+took|took\s+all(?:\s+of)?\s+(?:the|my)\s+pills|"
+    r"(?:just\s+)?overdosed|took\s+an\s+overdose|"
+    r"on\s+(?:a|the)\s+bridge.{0,30}(?:jump|die)|going\s+to\s+hang\s+myself|"
+    r"gun\s+in\s+my\s+hand|"
+    r"loaded\s+(?:the|a|my)\s+gun|(?:am|'m)\s+on\s+(?:the|a)\s+roof|"
+    r"刀在我手边|拿枪.{0,8}对着自己|楼顶.{0,8}(?:跳|准备)|上吊|"
+    r"(?:want|plan|intend|am\s+going|am\s+ready)\s+to\s+overdose|"
+    r"suicide\s+plan(?:\s+for\s+tonight)?)",
     re.IGNORECASE,
 )
 _AFFIRMATIVE_DANGER = re.compile(
-    r"^(?:有|是|对|是的|有的|现在|马上|已经|我有|我会|"
-    r"yes|yeah|yep|i\s+am|i\s+do|i\s+have)(?:[\s，。,.!！].*)?$",
+    r"^(?:有|是|对|是的|有的|现在有|我有计划|我能接触到|"
+    r"yes|yeah|yep|i(?:'m|\s+am)\s+in\s+immediate\s+danger|"
+    r"i\s+have\s+(?:a\s+)?plan|i\s+have\s+access\s+to\s+(?:a\s+)?(?:way|means))"
+    r"(?:[\s，。,.!！].*)?$",
     re.IGNORECASE,
 )
 _NEGATIVE_DANGER = re.compile(
-    r"^(?:没有|不是|不|暂时没有|现在没有|我很安全|我安全了|"
+    r"^(?:没有|不是|不|否|暂时没有|现在没有|我很安全|我安全了|我没有计划|"
     r"no|nope|not\s+now|i(?:'m|\s+am)\s+safe|no\s+plan|"
+    r"i\s+have\s+no\s+plan|i(?:'m|\s+am)\s+not\s+in\s+immediate\s+danger|"
     r"not\s+in\s+immediate\s+danger)(?:[\s，。,.!！].*)?$",
     re.IGNORECASE,
 )
@@ -125,14 +153,21 @@ class SelfHarmSupport:
 
     @staticmethod
     def _contains_direct_signal(user_input: str) -> bool:
-        text = _QUOTED_SPANS.sub(" ", user_input.strip()).replace("’", "'")
+        text = user_input.strip().replace("’", "'")
         if not text:
             return False
         if _ECHOED_DISCLOSURE.search(text):
             return True
+
+        # Mask a quoted statement only when the surrounding text identifies an
+        # external speaker or source. A bare quote may still be a disclosure.
+        chars = list(text)
+        for quoted in _QUOTED_SPANS.finditer(text):
+            prefix = text[:quoted.start()]
+            if _REPORTED_CONTEXT.search(prefix) or _DECLARED_QUOTE_CONTEXT.search(prefix):
+                chars[quoted.start():quoted.end()] = " " * (quoted.end() - quoted.start())
+        text = "".join(chars)
         declared_context = _DECLARED_QUOTE_CONTEXT.search(text)
-        if declared_context is not None and declared_context.start() > 0:
-            return False
         negated = list(_NEGATED_SELF_HARM.finditer(text))
         contexts = list(_REPORTED_CONTEXT.finditer(text))
         if declared_context is not None:
@@ -145,12 +180,19 @@ class SelfHarmSupport:
             ):
                 continue
             reported_context = next(
-                (context for context in contexts if context.start() < direct.start()),
+                (
+                    context
+                    for context in reversed(contexts)
+                    if context.start() < direct.start()
+                ),
                 None,
             )
             if reported_context is not None:
                 bridge = text[reported_context.end():direct.start()]
-                if not _CONTEXT_CONTRAST.search(bridge):
+                if (
+                    not _SENTENCE_BOUNDARY.search(bridge)
+                    and not _CONTEXT_CONTRAST.search(bridge)
+                ):
                     continue
             return True
         return False
@@ -188,10 +230,12 @@ class SelfHarmSupport:
 
     def process(
         self,
-        user_input: str,
+        user_input: object,
         *,
         conversation_id: object = None,
     ) -> Optional[dict[str, Any]]:
+        if not isinstance(user_input, str):
+            return None
         text = user_input.strip()
         if not text:
             return None
@@ -204,18 +248,28 @@ class SelfHarmSupport:
             return self._result("immediate_danger_reported")
 
         if state == "awaiting_direct_confirmation":
+            if _NEGATIVE_DANGER.search(text):
+                contrast = _CONTEXT_CONTRAST.search(text)
+                if contrast and _IMMEDIATE_DANGER.search(text[contrast.end():]):
+                    self._set_state(key, "immediate_danger_reported")
+                    return self._result("immediate_danger_reported")
+                self._set_state(key, "no_immediate_danger_reported")
+                return self._result("no_immediate_danger_reported")
             if _AFFIRMATIVE_DANGER.search(text) or _IMMEDIATE_DANGER.search(text):
                 self._set_state(key, "immediate_danger_reported")
                 return self._result("immediate_danger_reported")
-            if _NEGATIVE_DANGER.search(text):
-                self._set_state(key, "no_immediate_danger_reported")
-                return self._result("no_immediate_danger_reported")
             if self._contains_direct_signal(text):
                 if _IMMEDIATE_DANGER.search(text):
                     self._set_state(key, "immediate_danger_reported")
                     return self._result("immediate_danger_reported")
                 return self._result("needs_direct_confirmation")
             return self._result("confirmation_unclear")
+
+        if state == "no_immediate_danger_reported" and (
+            _AFFIRMATIVE_DANGER.search(text) or _IMMEDIATE_DANGER.search(text)
+        ):
+            self._set_state(key, "immediate_danger_reported")
+            return self._result("immediate_danger_reported")
 
         if not self._contains_direct_signal(text):
             return None
@@ -257,6 +311,9 @@ class SelfHarmSupport:
 
     def _resource_actions(self) -> list[str]:
         actions = []
+        region = self._resources.get("region")
+        if region:
+            actions.append(t("psych_crisis_resource_region", value=region))
         for key in _RESOURCE_KEYS:
             value = self._resources.get(key)
             if value:

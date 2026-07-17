@@ -190,6 +190,7 @@ class MissionPlanner:
         priority: int = 20,
         source: str = "manual",
         source_ref: str = "",
+        evidence: list[str] | None = None,
         commit: bool = True,
     ) -> tuple[Task, bool]:
         normalized_title = title.strip()
@@ -216,6 +217,7 @@ class MissionPlanner:
             task_type=TaskType.MAIN.value,
             source=source,
             source_ref=source_ref,
+            evidence=list(evidence or []),
             created_at=now,
             updated_at=now,
         )
@@ -254,9 +256,19 @@ class MissionPlanner:
         description = "\n\n".join(
             part
             for part in (
-                action["why_now_text"],
-                action["done_when_text"],
-                action["reassess_at_text"],
+                f"{t('survival_plan_why_label')}: {action['why_now_text']}",
+                (
+                    f"{t('survival_plan_prerequisite_label')}: "
+                    + "; ".join(action["prerequisite_texts"])
+                    if action["prerequisite_texts"]
+                    else ""
+                ),
+                f"{t('survival_plan_risk_label')}: {action['risk_text']}",
+                f"{t('survival_plan_done_label')}: {action['done_when_text']}",
+                (
+                    f"{t('survival_plan_reassess_label')}: "
+                    f"{action['reassess_at_text']}"
+                ),
             )
             if part
         )
@@ -267,6 +279,7 @@ class MissionPlanner:
             priority=action["priority"],
             source="survival_plan",
             source_ref=source_ref,
+            evidence=action["evidence_texts"],
             commit=commit,
         )
 

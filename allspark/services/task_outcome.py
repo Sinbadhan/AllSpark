@@ -66,7 +66,24 @@ class TaskOutcomeService:
 
         normalized_result = self._text(result, "result", limit=2000)
         normalized_evidence = self._evidence(evidence)
+        persisted_evidence = normalized_evidence
+        if task.source == "survival_plan":
+            persisted_evidence = list(
+                dict.fromkeys([*task.evidence, *normalized_evidence])
+            )
         normalized_update = self._resource_update(resource_update)
+        if (
+            status == TaskStatus.COMPLETED.value
+            and task.source == "survival_plan"
+            and not normalized_evidence
+        ):
+            raise TaskOutcomeError("evidence", "required")
+        expected_resource = self._expected_resource_update(task.source_ref)
+        if status == TaskStatus.COMPLETED.value and expected_resource:
+            if normalized_update is None:
+                raise TaskOutcomeError("resource_update", "required")
+            if normalized_update["type"] != expected_resource:
+                raise TaskOutcomeError("resource_update.type", "task_mismatch")
         if normalized_update is not None and confirm_resource_update is not True:
             raise TaskOutcomeError(
                 "confirm_resource_update",
@@ -81,6 +98,8 @@ class TaskOutcomeService:
                     self.resource_manager.merge_resource_observation(
                         normalized_update["type"],
                         amount=normalized_update["amount"],
+                        consumption=normalized_update.get("consumption"),
+                        intake=normalized_update.get("intake"),
                         source="user_input",
                         as_of=datetime.now(timezone.utc).isoformat(),
                         commit=False,
@@ -94,7 +113,7 @@ class TaskOutcomeService:
                 task_id,
                 status=status,
                 result=normalized_result,
-                evidence=normalized_evidence,
+                evidence=persisted_evidence,
                 commit=False,
             )
             if saved is None:
@@ -175,4 +194,27 @@ class TaskOutcomeService:
             raise TaskOutcomeError(
                 "resource_update.amount", "capacity_below_remaining"
             )
-        return {"type": resource_type, "amount": amount}
+        result: dict[str, Any] = {"type": resource_type, "amount": amount}
+        for field in ("consumption", "intake"):
+            raw = value.get(field)
+            if raw not in (None, ""):
+                try:
+                    result[field] = ResourceManager.validate_value(field, raw)
+                except ResourceValidationError as exc:
+                    raise TaskOutcomeError(
+                        f"resource_update.{exc.field}", exc.reason
+                    ) from exc
+        return result
+
+    @staticmethod
+    def _expected_resource_update(source_ref: str) -> ResourceType | None:
+        for resource_type in ResourceType:
+            if any(
+                marker in source_ref
+                for marker in (
+                    f"survival-plan-{resource_type.value}-priority",
+                    f"survival-plan-{resource_type.value}-capacity",
+                )
+            ):
+                return resource_type
+        return None

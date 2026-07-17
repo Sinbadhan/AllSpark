@@ -27,6 +27,8 @@ from allspark.core.tokenizer import tokenize, tokenize_query
 
 logger = logging.getLogger(__name__)
 
+CURRENT_SCHEMA_VERSION = 1
+
 
 class Database:
     @staticmethod
@@ -101,15 +103,59 @@ class Database:
             managed_root = None
         prepare_database_path(db_path, managed_root=managed_root)
         self.db_path = db_path
+        existing_database = db_path.exists() and db_path.stat().st_size > 0
         self.conn = sqlite3.connect(str(db_path), check_same_thread=False)
         secure_database_files(db_path)
         self.conn.row_factory = sqlite3.Row
-        self._init_schema()
+        try:
+            self._init_schema(existing_database=existing_database)
+        except Exception:
+            self.conn.close()
+            raise
         secure_database_files(db_path)
 
-    def _init_schema(self):
+    def _schema_version(self) -> int:
+        return int(self.conn.execute("PRAGMA user_version").fetchone()[0])
+
+    def _backup_before_migration(self, version: int) -> Path:
+        suffix = f".pre-v{version}.bak"
+        backup_path = self.db_path.with_name(self.db_path.name + suffix)
+        if backup_path.exists():
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+            backup_path = self.db_path.with_name(
+                self.db_path.name + f".pre-v{version}-{timestamp}.bak"
+            )
+        backup = sqlite3.connect(str(backup_path))
+        try:
+            self.conn.backup(backup)
+        finally:
+            backup.close()
+        backup_path.chmod(0o600)
+        return backup_path
+
+    @staticmethod
+    def _execute_schema(cur: sqlite3.Cursor, schema: str) -> None:
+        statement = ""
+        for line in schema.splitlines(keepends=True):
+            statement += line
+            if sqlite3.complete_statement(statement):
+                cur.execute(statement)
+                statement = ""
+        if statement.strip():
+            raise sqlite3.OperationalError("incomplete schema statement")
+
+    def _init_schema(self, *, existing_database: bool):
+        initial_version = self._schema_version()
+        if initial_version > CURRENT_SCHEMA_VERSION:
+            raise RuntimeError(
+                f"database schema v{initial_version} is newer than supported "
+                f"v{CURRENT_SCHEMA_VERSION}"
+            )
+        if existing_database and initial_version < CURRENT_SCHEMA_VERSION:
+            self._backup_before_migration(initial_version)
+
         cur = self.conn.cursor()
-        cur.executescript("""
+        schema = """
             CREATE TABLE IF NOT EXISTS resources (
                 type TEXT PRIMARY KEY,
                 current_amount REAL NOT NULL,
@@ -416,9 +462,23 @@ class Database:
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
-        """)
-        self.conn.commit()
-        self._migrate()
+        """
+        try:
+            cur.execute("BEGIN IMMEDIATE")
+            locked_version = self._schema_version()
+            if locked_version > CURRENT_SCHEMA_VERSION:
+                raise RuntimeError(
+                    f"database schema v{locked_version} is newer than supported "
+                    f"v{CURRENT_SCHEMA_VERSION}"
+                )
+            if locked_version < CURRENT_SCHEMA_VERSION:
+                self._execute_schema(cur, schema)
+                self._migrate()
+                cur.execute(f"PRAGMA user_version = {CURRENT_SCHEMA_VERSION}")
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
 
     def _migrate(self):
         cur = self.conn.cursor()
@@ -440,7 +500,6 @@ class Database:
                 cur.execute(f"SELECT {col} FROM resources LIMIT 1")
             except sqlite3.OperationalError:
                 cur.execute(f"ALTER TABLE resources ADD COLUMN {col} {ctype}")
-                self.conn.commit()
         # SHA-237 established all persisted daily rates as group totals. Rows
         # whose explicit certainty flags survived that contract migration can
         # therefore receive the matching basis; pre-contract unknown rows stay
@@ -450,7 +509,6 @@ class Database:
                WHERE consumption_known=1 AND intake_known=1
                  AND rate_basis='unknown'"""
         )
-        self.conn.commit()
         for col, ctype in [
             ("task_type", "TEXT NOT NULL DEFAULT 'main'"),
             ("source", "TEXT NOT NULL DEFAULT 'manual'"),
@@ -463,12 +521,10 @@ class Database:
                 cur.execute(f"SELECT {col} FROM tasks LIMIT 1")
             except sqlite3.OperationalError:
                 cur.execute(f"ALTER TABLE tasks ADD COLUMN {col} {ctype}")
-                self.conn.commit()
         try:
             cur.execute("SELECT language FROM knowledge LIMIT 1")
         except sqlite3.OperationalError:
             cur.execute("ALTER TABLE knowledge ADD COLUMN language TEXT DEFAULT 'zh'")
-            self.conn.commit()
 
         # SHA-148: auditable expert-signoff columns on the knowledge table.
         for col, ctype in [
@@ -496,7 +552,6 @@ class Database:
                 cur.execute(f"SELECT {col} FROM knowledge LIMIT 1")
             except sqlite3.OperationalError:
                 cur.execute(f"ALTER TABLE knowledge ADD COLUMN {col} {ctype}")
-                self.conn.commit()
 
         # SHA-241: legacy rows have no reviewed risk classification. They are
         # explicitly migrated to pending/unknown, never inferred as low risk.
@@ -506,7 +561,6 @@ class Database:
                    review_status='pending_external_review'
                WHERE risk_level='' OR review_status='' OR hazards='[]'"""
         )
-        self.conn.commit()
 
         # SHA-240: provenance and legacy labels are claims, not evidence. Keep
         # the old label for audit, then recompute the persisted level from the
@@ -521,7 +575,6 @@ class Database:
                 "UPDATE knowledge SET verification=?, verification_claim=? WHERE id=?",
                 (derived, entry.verification_claim, entry.id),
             )
-        self.conn.commit()
 
         for col, ctype in [
             ("latitude", "REAL DEFAULT 0"),
@@ -532,7 +585,6 @@ class Database:
                 cur.execute(f"SELECT {col} FROM map_pois LIMIT 1")
             except sqlite3.OperationalError:
                 cur.execute(f"ALTER TABLE map_pois ADD COLUMN {col} {ctype}")
-                self.conn.commit()
 
         try:
             cur.execute("SELECT status FROM reset_log LIMIT 1")
@@ -541,7 +593,6 @@ class Database:
                 "ALTER TABLE reset_log "
                 "ADD COLUMN status TEXT NOT NULL DEFAULT 'accepted'"
             )
-            self.conn.commit()
 
     def _now(self) -> str:
         return datetime.now().isoformat()

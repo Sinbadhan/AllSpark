@@ -112,7 +112,8 @@ def test_known_safety_danger_outranks_information_gaps_and_renders_requested_lan
     assert primary_ids == ["survival-plan-immediate_danger"]
     assert not any(action_id.startswith("survival-plan-gap-") for action_id in primary_ids)
     primary = next(action for action in payload["actions"] if action["id"] in primary_ids)
-    assert primary["title"] == "Open the reviewed immediate-danger flow"
+    assert primary["title"] == "Open the versioned immediate-danger flow"
+    assert "external review is still pending" in primary["done_when_text"]
     assert primary["prerequisite_texts"]
 
 
@@ -132,10 +133,22 @@ def test_known_low_water_generates_evidence_based_primary_action(tmp_path) -> No
             "kind": "resource_snapshot",
             "resource": "water",
             "remaining_status": "finite",
+            "amount": 2,
+            "unit": "L",
+            "daily_consumption": 2.0,
+            "daily_intake": 0.0,
             "remaining_hours": 24.0,
+            "threshold_hours": 72,
             "as_of": assessment["as_of"],
+            "source": "user_input",
         }
     ]
+    payload = service.payload(plan, language="en")
+    rendered = next(
+        item for item in payload["actions"] if item["id"] == action.id
+    )
+    assert "2 L / (2.0 - 0.0) L/day = 24.0 hours" in rendered["evidence_texts"][0]
+    assert "threshold 72 hours" in rendered["evidence_texts"][0]
 
 
 def test_single_missing_and_stale_facts_remain_explicit_plan_gaps(tmp_path) -> None:

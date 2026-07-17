@@ -178,6 +178,80 @@ def test_active_plan_can_be_tracked_idempotently(tmp_path: Path) -> None:
     assert second.status_code == 200
     assert first.json()["task"]["id"] == second.json()["task"]["id"]
     assert first.json()["task"]["source"] == "survival_plan"
+    assert first.json()["task"]["evidence"]
+    assert first.json()["task"]["description"]
+
+    missing_evidence = client.post(
+        f"/api/tasks/{first.json()['task']['id']}/complete",
+        json={"result": "Unrelated observation"},
+    )
+    assert missing_evidence.status_code == 422
+    assert missing_evidence.json()["errors"] == [
+        {"field": "evidence", "code": "required"}
+    ]
+
+
+def test_resource_plan_task_requires_matching_structured_resource_update(
+    tmp_path: Path,
+) -> None:
+    client = _client(tmp_path / "plan-resource-match.db")
+    _seed_plan_and_task(client)
+    task, _ = client.app.state.container.get("mission_planner").create_task(
+        title="Recount water",
+        source="survival_plan",
+        source_ref="plan:survival-plan-water-priority",
+        evidence=["2 L / 2 L/day = 24 hours"],
+    )
+
+    missing = client.post(
+        f"/api/tasks/{task.id}/complete",
+        json={"result": "Counted", "evidence": ["Bottle marks"]},
+    )
+    assert missing.status_code == 422
+    assert missing.json()["errors"] == [
+        {"field": "resource_update", "code": "required"}
+    ]
+
+    mismatch = client.post(
+        f"/api/tasks/{task.id}/complete",
+        json={
+            "result": "Counted",
+            "evidence": ["Bottle marks"],
+            "resource_update": {"type": "food", "amount": 8},
+            "confirm_resource_update": True,
+        },
+    )
+    assert mismatch.status_code == 422
+    assert mismatch.json()["errors"] == [
+        {"field": "resource_update.type", "code": "task_mismatch"}
+    ]
+
+    completed = client.post(
+        f"/api/tasks/{task.id}/complete",
+        json={
+            "result": "Counted and recalculated",
+            "evidence": ["Bottle marks"],
+            "resource_update": {
+                "type": "water",
+                "amount": 8,
+                "consumption": 3,
+                "intake": 1,
+            },
+            "confirm_resource_update": True,
+        },
+    )
+    assert completed.status_code == 200, completed.text
+    saved = client.app.state.db.get_task(task.id)
+    assert saved is not None
+    assert saved.evidence == [
+        "2 L / 2 L/day = 24 hours",
+        "Bottle marks",
+    ]
+    water = client.app.state.db.get_resource(ResourceType.WATER)
+    assert water is not None
+    assert water.current_amount == 8
+    assert water.daily_consumption == 3
+    assert water.daily_intake == 1
 
 
 def test_status_counts_configured_resources_and_keeps_unknown_mode_truthful(
@@ -405,7 +479,7 @@ def test_real_chrome_task_outcome_is_keyboard_ready_and_mobile_contained(
             f'Boolean(document.querySelector("[data-task-id=\\"{task.id}\\"][data-task-action=\\"complete\\"]"))'
         )
         pending_icon = browser.evaluate(
-            f'document.querySelector("[data-task-id=\\"{task.id}\\"]")?.closest("[data-exec-action=\\"toggle-detail\\"]")?.querySelector(".material-symbols-outlined")?.textContent || ""'
+            f'document.querySelector("[data-task-id=\\"{task.id}\\"]")?.closest(".grid")?.querySelector(".material-symbols-outlined")?.textContent || ""'
         )
         assert pending_icon == "◷"
         browser.evaluate(

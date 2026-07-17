@@ -929,18 +929,19 @@ psych_intervention_support: 'I''ve noticed your mood has been low recently.
   If you''d like, share your feelings with me,
 
   or do something that helps you relax.'
-psych_crisis_direct_question: Are you thinking about suicide or harming yourself right now, and are you in immediate danger or able to access a way to hurt yourself?
+psych_crisis_direct_question: Are you in immediate danger right now, do you have a plan, or can you access a way to hurt yourself? Please answer yes or no.
 psych_crisis_question_unclear: I did not understand the safety answer. Are you in immediate danger right now, or able to access a way to hurt yourself? Please answer yes or no.
 psych_crisis_no_immediate_danger: Thank you for answering. You reported no immediate danger. This is not a clinical assessment; please still reach out to a trusted person or qualified professional.
 psych_crisis_immediate_danger: You reported immediate danger. Act now and use the safest available local help.
 psych_crisis_action_stay_together: Do not stay alone. Ask a nearby trusted person to stay with you, or stay with the person at risk.
 psych_crisis_action_reduce_access: Move away from weapons, medicines, heights, vehicles, or other ways of self-harm. Ask another person to secure them when that can be done safely.
 psych_crisis_action_seek_support: Contact a local emergency service, crisis service, health worker, or trusted person now.
-psych_crisis_resource_emergency_service: 'Configured local emergency service: {value}'
-psych_crisis_resource_crisis_line: 'Configured local crisis service: {value}'
-psych_crisis_resource_trusted_contact: 'Configured trusted contact: {value}'
+psych_crisis_resource_region: 'Configured region (not independently verified by AllSpark): {value}'
+psych_crisis_resource_emergency_service: 'User-configured emergency service (verify before relying on it): {value}'
+psych_crisis_resource_crisis_line: 'User-configured crisis service (verify before relying on it): {value}'
+psych_crisis_resource_trusted_contact: 'User-configured trusted contact: {value}'
 psych_crisis_resources_unconfigured: No local crisis contacts are configured in AllSpark. Use the emergency or crisis service available where you are, or ask a nearby trusted person for help now.
-psych_crisis_privacy_notice: AllSpark did not diagnose you, notify anyone, or save this exchange to the timeline. Psychology support remains Experimental.
+psych_crisis_privacy_notice: AllSpark did not diagnose you, notify anyone, save this exchange to the timeline, or retain it in voice conversation history. Psychology support remains Experimental.
 diary_cmd: Write diary
 chat_cmd: Chat with AllSpark
 briefing_cmd: View daily briefing
@@ -2290,6 +2291,7 @@ immediate_danger_dialog_title: Immediate danger
 immediate_danger_dialog_close: Close and return
 immediate_danger_back: Back
 immediate_danger_source_boundary: Official sources are pinned for offline audit. Named domain review is still pending; this is not a reviewed release action.
+immediate_danger_applicable_abnormal_breathing: Breathing is explicitly absent or abnormal at a scene currently reported safe.
 immediate_danger_not_contacted: AllSpark never claims that emergency services were contacted.
 immediate_danger_fact_threat_type: What is the immediate threat?
 immediate_danger_fact_scene_safe: Is the scene safe to approach or remain in?
@@ -2395,7 +2397,21 @@ voice_unknown_error: Unknown error
 survival_plan_heading: Next 24-hour action plan
 survival_plan_why_label: Why now
 survival_plan_prerequisite_label: Prerequisite
+survival_plan_risk_label: Risk boundary
 survival_plan_done_label: Done when
+survival_plan_reassess_label: Reassessment
+survival_plan_evidence_label: Evidence and calculation
+survival_plan_evidence_resource_formula: '{amount} {unit} / ({consumption} - {intake}) {unit}/day = {hours} hours remaining; ranking threshold {threshold} hours; observed {as_of}; source {source}.'
+survival_plan_evidence_resource_amount: '{amount} {unit}; observed {as_of}; source {source}.'
+survival_plan_evidence_fact: '{field}: {value}'
+survival_plan_evidence_status_unknown: Unknown
+survival_plan_evidence_status_stale: Stale
+survival_plan_evidence_status_pending: Pending review
+survival_plan_evidence_status_known: Confirmed
+survival_plan_evidence_status_review_gated: Awaiting named professional review
+resource_source_unknown: Unknown source
+assessment_field_information_gap: Information gap
+assessment_field_reviewed_workflow: Professional review workflow
 survival_plan_select_prompt: 'Select and confirm one primary action (1-{count})'
 survival_plan_reassess_1h: Reassess within 1 hour
 survival_plan_reassess_4h: Reassess within 4 hours
@@ -2408,31 +2424,31 @@ survival_plan_gap_why: '{domain} evidence is missing or needs refresh, so the sy
 survival_plan_gap_prerequisite: Record only facts that can be observed, measured, or explicitly confirmed.
 survival_plan_gap_risk: Do not replace an unknown fact with a guess, default, or old data.
 survival_plan_gap_done: The information is recorded as a valid value or an explicit unknown.
-survival_plan_immediate_danger_title: Open the reviewed immediate-danger flow
+survival_plan_immediate_danger_title: Open the versioned immediate-danger flow
 survival_plan_immediate_danger_why: The assessment explicitly reports immediate danger, so normal 24-hour ranking must not delay safety triage.
 survival_plan_immediate_danger_prerequisite: Stay in a location currently known to be safe; contact local emergency services yourself when communication is available.
 survival_plan_immediate_danger_risk: Do not enter or re-enter danger to use this system. AllSpark does not claim that help was contacted.
-survival_plan_immediate_danger_done: The immediate-danger flow is open and shows the first reviewed action applicable to the current facts.
-survival_plan_health_help_title: Use the reviewed flow for a serious health risk
+survival_plan_immediate_danger_done: The immediate-danger flow is open and shows the first conservative action applicable to the current facts; external review is still pending.
+survival_plan_health_help_title: Use the versioned flow for a serious health risk
 survival_plan_health_help_why: The current health fact is serious or critical and takes priority over ordinary resource planning.
 survival_plan_health_help_prerequisite: Confirm scene safety first; seek trained medical help yourself when communication is available.
 survival_plan_health_help_risk: Do not treat this plan as a diagnosis or delay urgent help while looking for equipment.
-survival_plan_health_help_done: The applicable reviewed medical triage is open and its first safe action has started.
+survival_plan_health_help_done: The conservative medical triage is open and its first action has started; it is not a diagnosis or an externally reviewed conclusion.
 survival_plan_threat_review_title: Review the current threat and choose safe triage
 survival_plan_threat_review_why: One or more real threats are recorded, so applicability and contraindications must be checked first.
 survival_plan_threat_review_prerequisite: Review from a location currently known to be safe; do not enter danger to investigate.
 survival_plan_threat_review_risk: An unidentified or unverified threat cannot be inferred to be safe.
-survival_plan_threat_review_done: An applicable reviewed action and exit condition are selected for the current threat.
+survival_plan_threat_review_done: A conservative action and exit condition are selected for the current threat; external review is still pending.
 survival_plan_shelter_title: Confirm a safe position and minimum shelter need
 survival_plan_shelter_why: The current shelter fact does not establish that remaining in place is safe.
 survival_plan_shelter_prerequisite: Do not enter an area with unverified structural, fire, flood, or contamination risk.
 survival_plan_shelter_risk: Do not treat cover alone as proof of structural or environmental safety.
-survival_plan_shelter_done: A safe place to remain is confirmed, or the applicable reviewed evacuation flow is open.
+survival_plan_shelter_done: A place currently known to be safer is confirmed, or the conservative evacuation flow is open; external review is still pending.
 survival_plan_resource_priority_title: 'Verify and stabilize {domain}'
 survival_plan_resource_priority_why: 'The current valid snapshot puts {domain} below its safety-ranking threshold.'
 survival_plan_resource_priority_prerequisite: Verify amount, unit, total daily use/intake, and observation time first.
 survival_plan_resource_priority_risk: Do not make irreversible changes from an unverified source, wrong unit, or stale snapshot.
-survival_plan_resource_priority_done: The new amount and rates are confirmed, with the next review time recorded.
+survival_plan_resource_priority_done: The new amount and rates are confirmed; AllSpark recalculates the plan and schedules the next review.
 survival_plan_fire_capacity_title: Verify safe fire-starting capacity
 survival_plan_fire_capacity_why: The current valid snapshot shows few available fire-starting uses.
 survival_plan_fire_capacity_prerequisite: Confirm that the local environment permits safe use and storage first.
@@ -2482,6 +2498,7 @@ web_task_outcome_save: Save result and reassess
 web_task_outcome_cancel: Cancel
 web_task_outcome_saved: Result saved and plan reassessed
 web_task_outcome_plan_changed: The 24-hour plan changed from this result.
+web_task_outcome_next_task: 'New primary task: {title}'
 web_task_outcome_plan_unchanged: The current facts did not change the 24-hour plan.
 web_executions_skipped: Skipped
 web_executions_track_plan: Track the current primary action

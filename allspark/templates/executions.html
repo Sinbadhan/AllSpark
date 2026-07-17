@@ -49,19 +49,20 @@
 </div>
 
 <!-- Tab bar: Tasks | Goals | Timeline -->
-<div class="subtab-bar" style="margin-bottom:12px;">
-  <button class="sub-tab active" data-exectab="tasks">{{ t('web_task_history') }}</button>
-  <button class="sub-tab" data-exectab="goals">{{ t('web_goals_tab') }}</button>
-  <button class="sub-tab" data-exectab="timeline">{{ t('web_tab_timeline') }}</button>
+<div class="subtab-bar" style="margin-bottom:12px;" role="tablist">
+  <button id="exectab-button-tasks" class="sub-tab active" role="tab" aria-selected="true" aria-controls="exectab-tasks" data-exectab="tasks">{{ t('web_task_history') }}</button>
+  <button id="exectab-button-goals" class="sub-tab" role="tab" aria-selected="false" aria-controls="exectab-goals" data-exectab="goals">{{ t('web_goals_tab') }}</button>
+  <button id="exectab-button-timeline" class="sub-tab" role="tab" aria-selected="false" aria-controls="exectab-timeline" data-exectab="timeline">{{ t('web_tab_timeline') }}</button>
 </div>
 
-<div id="exectab-tasks" class="exec-tab-content">
+<div id="exec-status" role="status" aria-live="polite" tabindex="-1" class="text-sm text-secondary" style="min-height:20px;"></div>
+<div id="exectab-tasks" class="exec-tab-content" role="tabpanel" aria-labelledby="exectab-button-tasks">
 <div id="exec-list" class="flex flex-col gap-2">
   <div class="text-secondary text-sm p-4 text-center">{{ t('web_loading') }}</div>
 </div>
 </div>
 
-<div id="exectab-goals" class="exec-tab-content" style="display:none;">
+<div id="exectab-goals" class="exec-tab-content" role="tabpanel" aria-labelledby="exectab-button-goals" style="display:none;">
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
     <input id="goal-add-desc" placeholder="{{ t('web_goals_add_desc_placeholder') }}" style="flex:1;min-width:240px;background:var(--surface-low);border:1px solid var(--surface-container-high);color:var(--on-surface);padding:6px 10px;border-radius:4px;font-size:13px;"/>
     <button class="action-btn action-primary" data-exec-action="add-goal">{{ t('web_goals_add_btn') }}</button>
@@ -70,7 +71,7 @@
   <div id="goal-list" class="text-sm text-on-surface-variant">{{ t('web_loading') }}</div>
 </div>
 
-<div id="exectab-timeline" class="exec-tab-content" style="display:none;">
+<div id="exectab-timeline" class="exec-tab-content" role="tabpanel" aria-labelledby="exectab-button-timeline" style="display:none;">
   <div id="timeline-list" class="text-sm text-on-surface-variant" role="status"
        aria-live="polite" aria-atomic="true">{{ t('web_loading') }}</div>
 </div>
@@ -101,6 +102,12 @@
         <label class="text-xs text-secondary">{{ t('web_task_outcome_resource_amount') }}
           <input id="task-outcome-resource-amount" class="modal-input" type="number" min="0" step="any" inputmode="decimal" style="margin-top:4px;">
         </label>
+        <label class="text-xs text-secondary">{{ t('init_assessment_daily_consumption') }}
+          <input id="task-outcome-resource-consumption" class="modal-input" type="number" min="0" step="any" inputmode="decimal" style="margin-top:4px;">
+        </label>
+        <label class="text-xs text-secondary">{{ t('init_assessment_daily_intake') }}
+          <input id="task-outcome-resource-intake" class="modal-input" type="number" min="0" step="any" inputmode="decimal" style="margin-top:4px;">
+        </label>
       </div>
       <label style="display:flex;align-items:flex-start;gap:8px;margin-top:8px;font-size:12px;">
         <input id="task-outcome-resource-confirm" type="checkbox" style="margin-top:3px;">
@@ -128,6 +135,7 @@ const TASK_I18N = {
   failed_action: "{{ t('web_task_action_failed') }}",
   saved: "{{ t('web_task_outcome_saved') }}",
   plan_changed: "{{ t('web_task_outcome_plan_changed') }}",
+  next_task: "{{ t('web_task_outcome_next_task') }}",
   plan_unchanged: "{{ t('web_task_outcome_plan_unchanged') }}",
   empty_reason: "{{ t('web_executions_empty_reason') }}",
   track_plan: "{{ t('web_executions_track_plan') }}",
@@ -188,11 +196,11 @@ async function refreshExecutions() {
       let actions = "";
       if (!isTerminal) {
         if (!isActive) {
-          actions += `<button class="action-btn action-outline" style="padding:3px 8px;" title="${TASK_I18N.start}" aria-label="${TASK_I18N.start}" data-exec-action="task" data-task-id="${taskId}" data-task-action="start"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">play_arrow</span></button>`;
+          actions += `<button class="action-btn action-outline" style="padding:3px 8px;" title="${TASK_I18N.start}" aria-label="${TASK_I18N.start}: ${escHtml(t.title)}" data-exec-action="task" data-task-id="${taskId}" data-task-action="start"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">play_arrow</span></button>`;
         }
-        actions += `<button class="action-btn action-primary" style="padding:3px 8px;" title="${TASK_I18N.complete}" aria-label="${TASK_I18N.complete}" data-exec-action="task-outcome" data-task-id="${taskId}" data-task-title="${escHtml(t.title)}" data-task-action="complete"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">check_circle</span></button>`;
-        actions += `<button class="action-btn action-outline" style="padding:3px 8px;color:var(--critical, #ff4444);" title="${TASK_I18N.fail}" aria-label="${TASK_I18N.fail}" data-exec-action="task-outcome" data-task-id="${taskId}" data-task-title="${escHtml(t.title)}" data-task-action="fail"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">close</span></button>`;
-        actions += `<button class="action-btn action-outline" style="padding:3px 8px;" title="${TASK_I18N.skip}" aria-label="${TASK_I18N.skip}" data-exec-action="task-outcome" data-task-id="${taskId}" data-task-title="${escHtml(t.title)}" data-task-action="skip"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">skip_next</span></button>`;
+        actions += `<button class="action-btn action-primary" style="padding:3px 8px;" title="${TASK_I18N.complete}" aria-label="${TASK_I18N.complete}: ${escHtml(t.title)}" data-exec-action="task-outcome" data-task-id="${taskId}" data-task-title="${escHtml(t.title)}" data-task-action="complete"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">check_circle</span></button>`;
+        actions += `<button class="action-btn action-outline" style="padding:3px 8px;color:var(--critical, #ff4444);" title="${TASK_I18N.fail}" aria-label="${TASK_I18N.fail}: ${escHtml(t.title)}" data-exec-action="task-outcome" data-task-id="${taskId}" data-task-title="${escHtml(t.title)}" data-task-action="fail"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">close</span></button>`;
+        actions += `<button class="action-btn action-outline" style="padding:3px 8px;" title="${TASK_I18N.skip}" aria-label="${TASK_I18N.skip}: ${escHtml(t.title)}" data-exec-action="task-outcome" data-task-id="${taskId}" data-task-title="${escHtml(t.title)}" data-task-action="skip"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">skip_next</span></button>`;
       }
 
       const phaseLabel = t.phase_status === "known"
@@ -208,19 +216,19 @@ async function refreshExecutions() {
       ].join("");
 
       return `<div class="bg-surface-container border border-surface-container-high flex flex-col border-l-[3px] ${borderColor}">
-        <div class="grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 items-center p-2 cursor-pointer hover:bg-surface-container-highest transition-colors" data-exec-action="toggle-detail">
-          <span class="material-symbols-outlined ${iconClass}">${icon}</span>
-          <div>
+        <div class="grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 items-center p-2 hover:bg-surface-container-highest transition-colors">
+          <span class="material-symbols-outlined ${iconClass}" aria-hidden="true">${icon}</span>
+          <button type="button" id="task-toggle-${taskId}" class="text-left" style="background:none;border:0;padding:0;min-width:0;cursor:pointer;" data-exec-action="toggle-detail" aria-expanded="false" aria-controls="task-detail-${taskId}">
             <div class="font-semibold text-on-surface text-sm">${escHtml(t.title)}</div>
             <div class="text-on-surface-variant text-xs mt-0.5">${phaseLabel} · ${TASK_I18N.priority} ${t.priority}</div>
-          </div>
+          </button>
           <div class="text-on-surface-variant text-right hidden md:block">
             <div class="text-sm ${isFailed ? 'text-critical' : isSuccess ? 'text-success' : isActive ? 'text-primary' : 'text-secondary'}">${I18N['web_task_status_' + t.status] || t.status}</div>
           </div>
           <div style="display:flex;gap:4px;">${actions}</div>
-          <span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+          <span class="material-symbols-outlined text-on-surface-variant" aria-hidden="true">expand_more</span>
         </div>
-        <div class="bg-surface-dim border-t border-surface-container-high p-3 hidden">
+        <div id="task-detail-${taskId}" class="bg-surface-dim border-t border-surface-container-high p-3 hidden" role="region" aria-labelledby="task-toggle-${taskId}">
           <div class="text-xs leading-relaxed text-on-surface-variant" style="white-space:pre-wrap;overflow-wrap:anywhere;">${escHtml(t.description || '')}</div>
           <div class="text-xs leading-relaxed text-on-surface-variant" style="display:grid;gap:6px;margin-top:8px;overflow-wrap:anywhere;">${resultRows}</div>
         </div>
@@ -247,10 +255,12 @@ async function refreshExecutions() {
 }
 
 function toggleExecDetail(el) {
-  const detail = el.nextElementSibling;
-  const icon = el.querySelector('span:last-child');
+  const cardHeader = el.closest('.grid');
+  const detail = cardHeader?.nextElementSibling;
+  const icon = cardHeader?.querySelector('span:last-child');
   if (detail) {
     detail.classList.toggle("hidden");
+    el.setAttribute("aria-expanded", String(!detail.classList.contains("hidden")));
     icon.textContent = detail.classList.contains("hidden") ? "expand_more" : "expand_less";
   }
 }
@@ -266,9 +276,9 @@ setInterval(refreshExecutions, 15000);
 
 /* === Tab switching === */
 function switchExecTab(tab) {
-  document.querySelectorAll('.sub-tab[data-exectab]').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.sub-tab[data-exectab]').forEach(b => {b.classList.remove('active');b.setAttribute('aria-selected','false')});
   const btn = document.querySelector('.sub-tab[data-exectab="' + tab + '"]');
-  if (btn) btn.classList.add('active');
+  if (btn) {btn.classList.add('active');btn.setAttribute('aria-selected','true')}
   document.querySelectorAll('.exec-tab-content').forEach(el => el.style.display = 'none');
   const target = document.getElementById('exectab-' + tab);
   if (target) target.style.display = '';
@@ -303,9 +313,12 @@ function openTaskOutcome(taskId, taskTitle, action, trigger) {
   document.getElementById("task-outcome-task").textContent = taskTitle;
   document.getElementById("task-outcome-result").value = "";
   document.getElementById("task-outcome-evidence").value = "";
+  document.getElementById("task-outcome-evidence").required = action === "complete";
   document.getElementById("task-outcome-resource-toggle").checked = false;
   document.getElementById("task-outcome-resource-fields").disabled = true;
   document.getElementById("task-outcome-resource-amount").value = "";
+  document.getElementById("task-outcome-resource-consumption").value = "";
+  document.getElementById("task-outcome-resource-intake").value = "";
   document.getElementById("task-outcome-resource-confirm").checked = false;
   document.getElementById("task-outcome-error").textContent = "";
   modal.style.display = "flex";
@@ -313,11 +326,11 @@ function openTaskOutcome(taskId, taskTitle, action, trigger) {
   document.getElementById("task-outcome-result").focus();
 }
 
-function closeTaskOutcome() {
+function closeTaskOutcome(restoreFocus = true) {
   const modal = document.getElementById("task-outcome-modal");
   modal.style.display = "none";
   modal.setAttribute("aria-hidden", "true");
-  if (modal._trigger && modal._trigger.isConnected) modal._trigger.focus();
+  if (restoreFocus && modal._trigger && modal._trigger.isConnected) modal._trigger.focus();
 }
 
 async function saveTaskOutcome(event) {
@@ -333,6 +346,8 @@ async function saveTaskOutcome(event) {
     payload.resource_update = {
       type: document.getElementById("task-outcome-resource-type").value,
       amount: document.getElementById("task-outcome-resource-amount").value,
+      consumption: document.getElementById("task-outcome-resource-consumption").value,
+      intake: document.getElementById("task-outcome-resource-intake").value,
     };
     payload.confirm_resource_update = document.getElementById("task-outcome-resource-confirm").checked;
   }
@@ -347,9 +362,11 @@ async function saveTaskOutcome(event) {
       document.getElementById("task-outcome-error").textContent = data.detail || data.error || TASK_I18N.failed_action;
       return;
     }
-    closeTaskOutcome();
-    toast(TASK_I18N.saved + " " + (data.plan_changed ? TASK_I18N.plan_changed : TASK_I18N.plan_unchanged), "success");
+    closeTaskOutcome(false);
+    const status = document.getElementById("exec-status");
+    status.textContent = TASK_I18N.saved + " " + (data.plan_changed ? TASK_I18N.plan_changed + (data.next_task ? " " + TASK_I18N.next_task.replace("{title}", data.next_task.title) : "") : TASK_I18N.plan_unchanged);
     await refreshExecutions();
+    status.focus();
   } catch (error) {
     document.getElementById("task-outcome-error").textContent = String(error);
   }

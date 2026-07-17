@@ -89,6 +89,7 @@ class _Chrome:
         self.process: subprocess.Popen[bytes] | None = None
         self.ws: Any = None
         self._request_id = 0
+        self._recent_events: list[dict[str, Any]] = []
 
     def __enter__(self) -> _Chrome:
         self.process = subprocess.Popen(
@@ -101,8 +102,11 @@ class _Chrome:
                 "--disable-dev-shm-usage",
                 "--disable-extensions",
                 "--disable-gpu",
+                "--disable-password-generation",
                 "--no-default-browser-check",
                 "--no-first-run",
+                "--password-store=basic",
+                "--use-mock-keychain",
                 f"--user-data-dir={self.profile}",
                 "--remote-debugging-port=0",
                 "about:blank",
@@ -133,9 +137,13 @@ class _Chrome:
         self.ws = connect(page["webSocketDebuggerUrl"], open_timeout=5, max_size=None)
         self.call("Page.enable")
         self.call("Runtime.enable")
+        self.call("Log.enable")
+        self.call("Network.enable")
         return self
 
-    def __exit__(self, *_args: object) -> None:
+    def __exit__(self, exc_type: object, *_args: object) -> None:
+        if exc_type is not None:
+            self._write_failure_artifacts()
         if self.ws is not None:
             self.ws.close()
         self._stop_process()
@@ -150,16 +158,47 @@ class _Chrome:
             self.process.kill()
             self.process.wait(timeout=5)
 
-    def call(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _remember_event(self, message: dict[str, Any]) -> None:
+        if "method" not in message:
+            return
+        self._recent_events.append(message)
+        del self._recent_events[:-50]
+
+    def _diagnostic_suffix(self) -> str:
+        if not self._recent_events:
+            return "no recent CDP events"
+        recent = [event.get("method", "unknown") for event in self._recent_events[-10:]]
+        return f"recent CDP events: {', '.join(recent)}"
+
+    def call(
+        self,
+        method: str,
+        params: dict[str, Any] | None = None,
+        *,
+        timeout: float = 20,
+    ) -> dict[str, Any]:
         self._request_id += 1
         request_id = self._request_id
         self.ws.send(json.dumps({"id": request_id, "method": method, "params": params or {}}))
-        while True:
-            message = json.loads(self.ws.recv(timeout=10))
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            remaining = max(0.1, deadline - time.monotonic())
+            try:
+                message = json.loads(self.ws.recv(timeout=remaining))
+            except TimeoutError as exc:
+                raise AssertionError(
+                    f"Chrome DevTools timed out after {timeout:.1f}s waiting for "
+                    f"{method}; {self._diagnostic_suffix()}"
+                ) from exc
+            self._remember_event(message)
             if message.get("id") == request_id:
                 if "error" in message:
                     raise AssertionError(f"Chrome DevTools error: {message['error']}")
                 return message
+        raise AssertionError(
+            f"Chrome DevTools timed out after {timeout:.1f}s waiting for {method}; "
+            f"{self._diagnostic_suffix()}"
+        )
 
     def evaluate(self, expression: str, *, await_promise: bool = False) -> Any:
         message = self.call(
@@ -178,8 +217,10 @@ class _Chrome:
         return result["result"].get("value")
 
     def navigate(self, url: str) -> None:
-        self.call("Page.navigate", {"url": url})
-        self.wait_for("document.readyState === 'complete'")
+        result = self.call("Page.navigate", {"url": url})["result"]
+        if result.get("errorText"):
+            raise AssertionError(f"Chrome navigation failed for {url}: {result['errorText']}")
+        self.wait_for("document.readyState === 'complete'", timeout=20)
 
     def wait_for(self, expression: str, timeout: float = 10) -> None:
         deadline = time.monotonic() + timeout
@@ -187,7 +228,36 @@ class _Chrome:
             if self.evaluate(expression):
                 return
             time.sleep(0.05)
-        raise AssertionError(f"Browser condition timed out: {expression}")
+        raise AssertionError(
+            f"Browser condition timed out after {timeout:.1f}s: {expression}; "
+            f"{self._diagnostic_suffix()}"
+        )
+
+    def _write_failure_artifacts(self) -> None:
+        if self.ws is None:
+            return
+        artifact_dir = Path(os.environ.get("ALLSPARK_BROWSER_ARTIFACT_DIR", str(self.profile)))
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            state = self.evaluate(
+                "({url: location.href, title: document.title, html: document.documentElement.outerHTML})"
+            )
+            (artifact_dir / "failure-page.json").write_text(
+                json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+            screenshot = self.call("Page.captureScreenshot", {"format": "png"})
+            import base64
+
+            (artifact_dir / "failure.png").write_bytes(
+                base64.b64decode(screenshot["result"]["data"])
+            )
+        except Exception as artifact_error:  # pragma: no cover - best-effort diagnostics
+            (artifact_dir / "failure-artifact-error.txt").write_text(
+                str(artifact_error), encoding="utf-8"
+            )
+        (artifact_dir / "failure-cdp-events.json").write_text(
+            json.dumps(self._recent_events, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
 
 def _post(url: str) -> dict[str, Any]:

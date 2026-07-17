@@ -142,8 +142,9 @@ Windows 读屏兼容性仍处于测试阶段；在真实 Windows + NVDA 证据�
 
 非开发者离线路径请使用 [离线交付说明](docs/OFFLINE_DELIVERY.md) 中的目标平台完整包。
 该产物内含 Python、依赖、核心知识、完整性校验以及安装/回滚入口；稳定支持闭环不需要模型。
-当前可重复构建的目标平台为 Apple Silicon macOS。未签名产物仅用于内部 RC 验证；Stable 产物必须完成
-Developer ID 签名与 Apple 公证。
+当前可重复构建的便携包目标平台为 Apple Silicon macOS。源码归档与 wheel 是规范开源发行物；
+Developer ID 签名与 Apple 公证仅在项目提供官方 Gatekeeper-trusted macOS App/DMG 时要求，
+不阻断源码、wheel 或通过校验的便携归档发布。
 
 以下源码安装仅面向开发者与高级运维者：
 

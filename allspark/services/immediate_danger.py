@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -17,7 +18,7 @@ CATALOG_PATH = (
 )
 _HASH_PREFIX = "sha256:"
 _SUPPORTED_LANGUAGES = {"zh", "en"}
-_REVIEW_STATUS = "pending_external_review"
+_REVIEW_STATUSES = {"pending_external_review", "approved", "rejected"}
 _THREAT_ORDER = (
     "fire_smoke_or_co",
     "severe_bleeding",
@@ -128,6 +129,75 @@ def _action_hash(action: dict[str, Any]) -> str:
     )
 
 
+def _catalog_hash(catalog: dict[str, Any]) -> str:
+    return _canonical_hash(
+        {key: value for key, value in catalog.items() if key != "reviewer_signoffs"}
+    )
+
+
+def _validate_catalog_signoffs(catalog: dict[str, Any]) -> None:
+    signoffs = catalog.get("reviewer_signoffs")
+    if not isinstance(signoffs, list) or len(signoffs) > 32:
+        raise ImmediateDangerCatalogError("reviewer_signoffs", "invalid_shape")
+    status = catalog["review_status"]
+    if status == "pending_external_review":
+        if signoffs:
+            raise ImmediateDangerCatalogError("reviewer_signoffs", "pending_must_be_empty")
+        return
+    if not signoffs:
+        raise ImmediateDangerCatalogError("reviewer_signoffs", "required")
+    action_ids = {action["action_id"] for action in catalog["actions"]}
+    covered: set[str] = set()
+    expected_hash = _catalog_hash(catalog)
+    fields = {
+        "signoff_version", "reviewer_id", "reviewer", "qualification_type",
+        "qualification_evidence", "scope", "covered_action_ids", "reviewed_at",
+        "decision", "conclusion", "reservations", "content_hash",
+    }
+    for index, signoff in enumerate(signoffs):
+        if not isinstance(signoff, dict) or set(signoff) != fields:
+            raise ImmediateDangerCatalogError(f"reviewer_signoffs.{index}", "invalid_fields")
+        if not isinstance(signoff["signoff_version"], int) or signoff["signoff_version"] < 1:
+            raise ImmediateDangerCatalogError(f"reviewer_signoffs.{index}", "invalid_version")
+        for field in (
+            "reviewer_id", "reviewer", "qualification_type", "qualification_evidence",
+            "scope", "conclusion",
+        ):
+            if not isinstance(signoff[field], str) or not signoff[field].strip():
+                raise ImmediateDangerCatalogError(f"reviewer_signoffs.{index}.{field}", "required")
+        if signoff["decision"] != status:
+            raise ImmediateDangerCatalogError(f"reviewer_signoffs.{index}.decision", "mismatch")
+        try:
+            date.fromisoformat(signoff["reviewed_at"])
+        except (TypeError, ValueError) as exc:
+            raise ImmediateDangerCatalogError(
+                f"reviewer_signoffs.{index}.reviewed_at", "invalid_date"
+            ) from exc
+        action_scope = signoff["covered_action_ids"]
+        if (
+            not isinstance(action_scope, list)
+            or not action_scope
+            or not set(action_scope) <= action_ids
+        ):
+            raise ImmediateDangerCatalogError(
+                f"reviewer_signoffs.{index}.covered_action_ids", "invalid_scope"
+            )
+        if not isinstance(signoff["reservations"], list) or any(
+            not isinstance(value, str) or not value.strip()
+            for value in signoff["reservations"]
+        ):
+            raise ImmediateDangerCatalogError(
+                f"reviewer_signoffs.{index}.reservations", "invalid_reservations"
+            )
+        if signoff["content_hash"] != expected_hash:
+            raise ImmediateDangerCatalogError(
+                f"reviewer_signoffs.{index}.content_hash", "hash_mismatch"
+            )
+        covered.update(action_scope)
+    if status == "approved" and covered != action_ids:
+        raise ImmediateDangerCatalogError("reviewer_signoffs", "incomplete_action_coverage")
+
+
 def _require_string(mapping: dict[str, Any], field: str) -> str:
     value = mapping.get(field)
     if not isinstance(value, str) or not value.strip():
@@ -177,10 +247,11 @@ def load_action_catalog() -> dict[str, Any]:
         raise ImmediateDangerCatalogError("catalog", "object_required")
     if document.get("schema_version") != 1 or document.get("catalog_revision") != 1:
         raise ImmediateDangerCatalogError("catalog", "unsupported_version")
-    if document.get("review_status") != _REVIEW_STATUS:
-        raise ImmediateDangerCatalogError("review_status", "not_reviewed")
-    if document.get("release_eligible") is not False:
-        raise ImmediateDangerCatalogError("release_eligible", "must_be_false")
+    review_status = document.get("review_status")
+    if review_status not in _REVIEW_STATUSES:
+        raise ImmediateDangerCatalogError("review_status", "invalid_status")
+    if document.get("release_eligible") is not (review_status == "approved"):
+        raise ImmediateDangerCatalogError("release_eligible", "status_mismatch")
     sources = document.get("sources")
     actions = document.get("actions")
     if not isinstance(sources, dict) or not isinstance(actions, list) or not actions:
@@ -207,7 +278,7 @@ def load_action_catalog() -> dict[str, Any]:
         if action_id in seen:
             raise ImmediateDangerCatalogError("actions", "duplicate_action_id")
         seen.add(action_id)
-        if action.get("revision") != 1 or action.get("review_status") != _REVIEW_STATUS:
+        if action.get("revision") != 1 or action.get("review_status") != review_status:
             raise ImmediateDangerCatalogError(action_id, "invalid_review_contract")
         text_key = _require_string(action, "text_key")
         if any(not MESSAGES.get(lang, {}).get(text_key) for lang in _SUPPORTED_LANGUAGES):
@@ -248,6 +319,7 @@ def load_action_catalog() -> dict[str, Any]:
             )
     if seen != _ROUTED_ACTION_IDS:
         raise ImmediateDangerCatalogError("actions", "routed_action_set_mismatch")
+    _validate_catalog_signoffs(document)
     return document
 
 
@@ -261,11 +333,12 @@ def _value(payload: dict[str, Any], field: str, allowed: set[str]) -> str | None
 
 
 def _question(field: str) -> dict[str, Any]:
+    catalog = load_action_catalog()
     return {
         "status": "needs_fact",
         "question": {"field": field, "options": _QUESTION_OPTIONS[field]},
-        "release_eligible": False,
-        "review_status": _REVIEW_STATUS,
+        "release_eligible": catalog["release_eligible"],
+        "review_status": catalog["review_status"],
     }
 
 
@@ -326,7 +399,7 @@ def _action(
             "revision": catalog["catalog_revision"],
             "review_status": catalog["review_status"],
         },
-        "release_eligible": False,
+        "release_eligible": catalog["release_eligible"],
     }
 
 
@@ -341,7 +414,7 @@ def assess_immediate_danger(
     threat = _value(payload, "threat_type", _THREAT_TYPES)
     scene = _value(payload, "scene_safe", _SCENE_STATES)
     responsive = _value(payload, "responsive", _RESPONSIVE_STATES)
-    _value(payload, "breathing", _BREATHING_STATES)
+    breathing = _value(payload, "breathing", _BREATHING_STATES)
     communication = _value(payload, "communication", _COMMUNICATION_STATES)
     if threat is None:
         return _question("threat_type")
@@ -359,6 +432,8 @@ def assess_immediate_danger(
         return _action("keep-distance-seek-local-help", language, communication, payload)
     if responsive is None:
         return _question("responsive")
+    if breathing == "absent_or_abnormal":
+        return _action("seek-emergency-response", language, communication, payload)
     if responsive == "yes":
         return _action("seek-medical-assessment", language, communication, payload)
     return _action("seek-emergency-response", language, communication, payload)
@@ -371,5 +446,5 @@ def action_catalog_audit() -> dict[str, Any]:
         "revision": catalog["catalog_revision"],
         "action_count": len(catalog["actions"]),
         "review_status": catalog["review_status"],
-        "release_eligible": False,
+        "release_eligible": catalog["release_eligible"],
     }

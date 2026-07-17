@@ -128,7 +128,7 @@ def test_canonical_scenarios_are_structured_but_release_blocked() -> None:
     assert observed == {
         "unresponsive-abnormal-breathing": "seek-emergency-response",
         "severe-external-bleeding": "apply-direct-pressure",
-        "choking-airway-risk": "seek-medical-assessment",
+        "choking-airway-risk": "seek-emergency-response",
         "smoke-carbon-monoxide-collapse": "leave-immediate-hazard",
         "extreme-temperature-exposure": "keep-distance-seek-local-help",
         "suspected-poisoning-contamination": "keep-distance-seek-local-help",

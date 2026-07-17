@@ -168,7 +168,7 @@
 
   <section id="primary-plan" class="primary-plan span-12" aria-labelledby="primary-plan-heading">
     <div class="primary-plan-header"><h2 id="primary-plan-heading"><span class="material-symbols-outlined" aria-hidden="true">flag</span> {{ t('web_primary_plan_heading') }}</h2><span id="primary-plan-phase" class="badge bg-surface-mid text-secondary">{{ primary_plan.phase_description if primary_plan else t('web_phase_pending') }}</span></div>
-    <div id="primary-plan-content" aria-live="polite">{% if primary_plan %}<div class="primary-plan-title">{{ primary_plan.action.title }}</div><div class="primary-plan-meta"><div><strong>{{ t('survival_plan_why_label') }}</strong>{{ primary_plan.action.why_now_text }}</div><div><strong>{{ t('survival_plan_prerequisite_label') }}</strong>{{ primary_plan.action.prerequisite_texts|join('; ') }}</div><div><strong>{{ t('survival_plan_done_label') }}</strong>{{ primary_plan.action.done_when_text }}</div><div class="primary-plan-risk"><strong>{{ t('web_primary_plan_reassess') }}</strong>{{ primary_plan.action.reassess_at_text }}</div></div><div class="primary-plan-risk text-sm" style="margin-top:10px;">{{ t('web_init_plan_risk_label') }}: {{ primary_plan.action.risk_text }}</div>{% else %}<span class="text-secondary text-sm">{{ t('web_primary_plan_unavailable') }}</span>{% endif %}</div>
+    <div id="primary-plan-content" aria-live="polite">{% if primary_plan %}<div class="primary-plan-title">{{ primary_plan.action.title }}</div><div class="primary-plan-meta"><div><strong>{{ t('survival_plan_why_label') }}</strong>{{ primary_plan.action.why_now_text }}</div><div><strong>{{ t('survival_plan_evidence_label') }}</strong>{{ primary_plan.action.evidence_texts|join('; ') }}</div><div><strong>{{ t('survival_plan_prerequisite_label') }}</strong>{{ primary_plan.action.prerequisite_texts|join('; ') }}</div><div><strong>{{ t('survival_plan_done_label') }}</strong>{{ primary_plan.action.done_when_text }}</div><div class="primary-plan-risk"><strong>{{ t('web_primary_plan_reassess') }}</strong>{{ primary_plan.action.reassess_at_text }}</div></div><div class="primary-plan-risk text-sm" style="margin-top:10px;">{{ t('web_init_plan_risk_label') }}: {{ primary_plan.action.risk_text }}</div>{% else %}<span class="text-secondary text-sm">{{ t('web_primary_plan_unavailable') }}</span>{% endif %}</div>
   </section>
 
   <!-- Today's Briefing (collapsible) -->
@@ -360,6 +360,7 @@ async function refreshSurvivalPlan() {
   meta.className = "primary-plan-meta";
   const rows = [
     [I18N.survival_plan_why_label, action.why_now_text, ""],
+    [I18N.survival_plan_evidence_label, (action.evidence_texts || []).join("; "), ""],
     [I18N.survival_plan_prerequisite_label, action.prerequisite_texts.join("; "), ""],
     [I18N.survival_plan_done_label, action.done_when_text, ""],
     [I18N.web_primary_plan_reassess, action.reassess_at_text, "primary-plan-risk"],
