@@ -69,13 +69,22 @@ def test_accepted_primary_action_is_first_viewport_truth_on_desktop_and_mobile(
                   const title=panel.querySelector('.primary-plan-title');
                   const icon=panel.querySelector('.material-symbols-outlined');
                   const rect=panel.getBoundingClientRect();
-                  return {title:title.textContent,meta:panel.querySelectorAll('.primary-plan-meta>div').length,
+                  const meta=Array.from(panel.querySelectorAll('.primary-plan-meta>div'));
+                  return {title:title.textContent,meta:meta.length,
+                    metaLabels:meta.map(item=>item.querySelector('strong')?.textContent.trim()),
                     iconHidden:icon.getAttribute('aria-hidden'),top:rect.top,bottom:rect.bottom,
                     overflow:document.documentElement.scrollWidth>window.innerWidth};
                 })()"""
             )
             assert desktop["title"]
-            assert desktop["meta"] == 4
+            assert desktop["meta"] == 5
+            assert desktop["metaLabels"] == [
+                "Why now",
+                "Evidence and calculation",
+                "Prerequisite",
+                "Done when",
+                "Reassess",
+            ]
             assert desktop["iconHidden"] == "true"
             assert 0 <= desktop["top"] < 800
             assert desktop["bottom"] <= 800
