@@ -80,6 +80,10 @@ def test_immediate_danger_flow_is_action_first_ephemeral_and_accessible(
             "options": [
                 "fire_smoke_or_co",
                 "severe_bleeding",
+                "choking",
+                "extreme_heat",
+                "extreme_cold",
+                "poisoning",
                 "medical",
                 "other",
                 "none",

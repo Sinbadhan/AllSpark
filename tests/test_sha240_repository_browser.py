@@ -253,6 +253,7 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
                     "local": True,
                     "external": False,
                     "step": "Reviewed engineering action.",
+                    "actionable": True,
                 },
             ),
             (
@@ -264,6 +265,7 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
                     "local": False,
                     "external": True,
                     "step": "Reviewed engineering action.",
+                    "actionable": False,
                 },
             ),
         ):
@@ -287,9 +289,11 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
                     local: text.includes('Local risk-classification review'),
                     external: text.includes('External risk-review claim (not locally trusted)'),
                     naturalQualifications: text.includes('Qualification: Fire safety specialist') && text.includes('Qualification: Structural engineer'),
+                    withheld: text.includes('Actionable content is withheld'),
+                    stepVisible: text.includes(step),
                     fullHashes: hashes.filter(value => /^sha256:[0-9a-f]{{64}}$/.test(value)).length,
                     visibleHashes: Array.from(dialog.querySelectorAll('details[open] code')).filter(e => e.getClientRects().length > 0 && /^sha256:[0-9a-f]{{64}}$/.test(e.textContent.trim())).length,
-                    order: [text.indexOf('Risk classification'), text.indexOf('Potential hazards'), text.indexOf({('Local risk-classification review' if expected['local'] else 'External risk-review claim (not locally trusted)')!r}), text.indexOf(step)],
+                    order: [text.indexOf('Risk classification'), text.indexOf('Potential hazards'), text.indexOf({('Local risk-classification review' if expected['local'] else 'External risk-review claim (not locally trusted)')!r})],
                     closeFocused: document.activeElement?.id === 'repo-detail-close',
                   }};
                 }})()"""
@@ -298,6 +302,8 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
             assert risk_state["local"] is expected["local"]
             assert risk_state["external"] is expected["external"]
             assert risk_state["naturalQualifications"]
+            assert risk_state["withheld"] is (not expected["actionable"])
+            assert risk_state["stepVisible"] is expected["actionable"]
             assert risk_state["fullHashes"] == 2
             assert risk_state["visibleHashes"] == 2
             assert risk_state["order"] == sorted(risk_state["order"])
@@ -324,9 +330,9 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
         assert desktop_pending["status"] and desktop_pending["hazard"]
         assert desktop_pending["withheld"] and not desktop_pending["unsafeStep"]
         assert desktop_pending["order"] == sorted(desktop_pending["order"])
-        for entry_id, expected_local, expected_external in (
-            (APPROVED_RISK_ID, True, False),
-            (EXTERNAL_RISK_ID, False, True),
+        for entry_id, expected_local, expected_external, expected_actionable in (
+            (APPROVED_RISK_ID, True, False, True),
+            (EXTERNAL_RISK_ID, False, True, False),
         ):
             browser.evaluate(f"showKnowledge('{entry_id}')", await_promise=True)
             browser.evaluate(
@@ -343,8 +349,10 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
                     external: text.includes('External risk-review claim (not locally trusted)'),
                     hazards: text.includes('Fire hazard') && text.includes('Structural failure'),
                     naturalQualifications: text.includes('Qualification: Fire safety specialist') && text.includes('Qualification: Structural engineer'),
+                    withheld: text.includes('Actionable content is withheld'),
+                    stepVisible: text.includes('Reviewed engineering action.'),
                     visibleHashes: hashes.filter(e => e.getClientRects().length > 0 && /^sha256:[0-9a-f]{64}$/.test(e.textContent.trim())).length,
-                    order: [text.indexOf('Risk classification'), text.indexOf('Potential hazards'), text.indexOf(text.includes('Local risk-classification review') ? 'Local risk-classification review' : 'External risk-review claim (not locally trusted)'), text.indexOf('Reviewed engineering action.')],
+                    order: [text.indexOf('Risk classification'), text.indexOf('Potential hazards'), text.indexOf(text.includes('Local risk-classification review') ? 'Local risk-classification review' : 'External risk-review claim (not locally trusted)')],
                   };
                 })()"""
             )
@@ -352,6 +360,8 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
             assert desktop_qa["naturalQualifications"]
             assert desktop_qa["local"] is expected_local
             assert desktop_qa["external"] is expected_external
+            assert desktop_qa["withheld"] is (not expected_actionable)
+            assert desktop_qa["stepVisible"] is expected_actionable
             assert desktop_qa["visibleHashes"] == 2
             assert desktop_qa["order"] == sorted(desktop_qa["order"])
 
@@ -466,9 +476,9 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
         assert not index_state["createTask"]
         assert index_state["order"] == sorted(index_state["order"])
 
-        for entry_id, expected_local, expected_external in (
-            (APPROVED_RISK_ID, True, False),
-            (EXTERNAL_RISK_ID, False, True),
+        for entry_id, expected_local, expected_external, expected_actionable in (
+            (APPROVED_RISK_ID, True, False, True),
+            (EXTERNAL_RISK_ID, False, True, False),
         ):
             browser.evaluate(f"showKnowledge('{entry_id}')", await_promise=True)
             browser.evaluate(
@@ -485,9 +495,11 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
                     external: text.includes('External risk-review claim (not locally trusted)'),
                     hazards: text.includes('Fire hazard') && text.includes('Structural failure'),
                     naturalQualifications: text.includes('Qualification: Fire safety specialist') && text.includes('Qualification: Structural engineer'),
+                    withheld: text.includes('Actionable content is withheld'),
+                    stepVisible: text.includes('Reviewed engineering action.'),
                     fullHashes: hashes.filter(value => /^sha256:[0-9a-f]{64}$/.test(value)).length,
                     visibleHashes: Array.from(detail.querySelectorAll('details[open] code')).filter(e => e.getClientRects().length > 0 && /^sha256:[0-9a-f]{64}$/.test(e.textContent.trim())).length,
-                    order: [text.indexOf('Risk classification'), text.indexOf('Potential hazards'), text.indexOf(text.includes('Local risk-classification review') ? 'Local risk-classification review' : 'External risk-review claim (not locally trusted)'), text.indexOf('Reviewed engineering action.')],
+                    order: [text.indexOf('Risk classification'), text.indexOf('Potential hazards'), text.indexOf(text.includes('Local risk-classification review') ? 'Local risk-classification review' : 'External risk-review claim (not locally trusted)')],
                   };
                 })()"""
             )
@@ -495,6 +507,8 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
             assert qa_risk["naturalQualifications"]
             assert qa_risk["local"] is expected_local
             assert qa_risk["external"] is expected_external
+            assert qa_risk["withheld"] is (not expected_actionable)
+            assert qa_risk["stepVisible"] is expected_actionable
             assert qa_risk["fullHashes"] == 2
             assert qa_risk["visibleHashes"] == 2
             assert qa_risk["order"] == sorted(qa_risk["order"])
