@@ -658,8 +658,42 @@ const immediateDanger = createImmediateDanger({
   ],
   fallbackTrigger: () => document.querySelector('[data-danger-entry]'),
 });
+function _safeErrorPart(value) {
+  if (!['string', 'number', 'boolean'].includes(typeof value)) return '';
+  return String(value)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 500);
+}
+function safeErrorMessage(error) {
+  const fallback = I18N.web_error_occurred || 'An error occurred';
+  const parts = [];
+  const append = value => {
+    if (Array.isArray(value)) {
+      value.slice(0, 3).forEach(item => append(item));
+      return;
+    }
+    if (value && typeof value === 'object') {
+      append(value.message);
+      append(value.msg);
+      return;
+    }
+    const text = _safeErrorPart(value);
+    if (text && !parts.includes(text)) parts.push(text);
+  };
+  if (['string', 'number', 'boolean'].includes(typeof error)) {
+    append(error);
+  } else if (error && typeof error === 'object') {
+    append(error.message);
+    append(error.detail);
+    append(error.next_action);
+    if (!parts.length) append(error.error);
+  }
+  return parts.join(' · ') || fallback;
+}
 function notify(msg) {
-  toast(typeof msg === 'string' ? msg : (I18N.web_error_occurred || 'An error occurred'), 'error');
+  toast(safeErrorMessage(msg), 'error');
 }
 function applyLocalIcons() {
   const map = {
@@ -719,13 +753,103 @@ function _trapDialogTab(container, event) {
   if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
   else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 }
+const modalBackgroundManager = (() => {
+  const stack = [];
+  const inertState = new Map();
+
+  function backgroundTargets(modal) {
+    const targets = new Set();
+    let current = modal;
+    while (current && current !== document.body) {
+      const parent = current.parentElement;
+      if (!parent) break;
+      Array.from(parent.children).forEach(sibling => {
+        if (sibling !== current) targets.add(sibling);
+      });
+      current = parent;
+    }
+    return Array.from(targets);
+  }
+
+  function restoreManagedElements() {
+    inertState.forEach((wasInert, element) => {
+      if (wasInert) element.setAttribute('inert', '');
+      else element.removeAttribute('inert');
+    });
+  }
+
+  function reconcile() {
+    restoreManagedElements();
+    if (!stack.length) {
+      inertState.clear();
+      return;
+    }
+    const top = stack[stack.length - 1];
+    top.targets = backgroundTargets(top.modal);
+    top.targets.forEach(element => {
+      if (!inertState.has(element)) {
+        inertState.set(element, element.hasAttribute('inert'));
+      }
+      element.setAttribute('inert', '');
+    });
+  }
+
+  function canRestoreFocus(candidate) {
+    return Boolean(
+      candidate
+      && document.body.contains(candidate)
+      && typeof candidate.focus === 'function'
+      && !candidate.hasAttribute?.('inert')
+      && !candidate.closest?.('[inert]')
+    );
+  }
+
+  function activate(modal, focusOrigin) {
+    if (!modal) return stack.length;
+    if (stack.some(entry => entry.modal === modal)) return stack.length;
+    stack.push({
+      modal: modal,
+      targets: [],
+      focusOrigin: focusOrigin || document.activeElement,
+    });
+    reconcile();
+    return stack.length;
+  }
+
+  function deactivate(modal, fallbackFocus) {
+    const index = stack.findIndex(entry => entry.modal === modal);
+    if (index < 0) return false;
+    const wasTop = index === stack.length - 1;
+    const [entry] = stack.splice(index, 1);
+    reconcile();
+    if (!wasTop) return true;
+    let candidate = entry.focusOrigin;
+    if (!canRestoreFocus(candidate)) {
+      candidate = typeof fallbackFocus === 'function'
+        ? fallbackFocus()
+        : fallbackFocus;
+    }
+    if (canRestoreFocus(candidate)) candidate.focus({preventScroll: true});
+    return true;
+  }
+
+  return Object.freeze({
+    activate: activate,
+    deactivate: deactivate,
+    get count() { return stack.length; },
+  });
+})();
 function _closeModal() {
   const r = _modalRoot();
   if (!r) return;
   const previous = r._previouslyFocused;
+  const overlay = r.querySelector('.modal-overlay');
   r._previouslyFocused = null;
   r.innerHTML = '';
-  if (previous && document.body.contains(previous) && typeof previous.focus === 'function') {
+  const restored = overlay
+    ? modalBackgroundManager.deactivate(overlay, previous)
+    : false;
+  if (!restored && previous && document.body.contains(previous) && typeof previous.focus === 'function') {
     setTimeout(() => previous.focus(), 0);
   }
 }
@@ -733,6 +857,8 @@ let _modalSequence = 0;
 function _modalShell(opts) {
   const r = _modalRoot();
   if (!r) return null;
+  const existing = r.querySelector('.modal-overlay');
+  if (existing) modalBackgroundManager.deactivate(existing);
   r._previouslyFocused = document.activeElement;
   r.innerHTML = '';
   const wrap = document.createElement('div');
@@ -765,6 +891,7 @@ function _modalShell(opts) {
     _trapDialogTab(card, e);
   });
   r.appendChild(wrap);
+  modalBackgroundManager.activate(wrap, r._previouslyFocused);
   return { wrap: wrap, card: card, body: body };
 }
 function confirmDialog(title, opts) {
@@ -996,6 +1123,7 @@ async function openAbout() {
   }
   modal._previouslyFocused = document.activeElement;
   modal.style.display = "flex";
+  modalBackgroundManager.activate(modal, modal._previouslyFocused);
   document.getElementById("about-close").focus();
   try {
     const data = await api("/api/system/about");
@@ -1035,7 +1163,8 @@ function closeAbout() {
   m.style.display = "none";
   const previous = m._previouslyFocused;
   m._previouslyFocused = null;
-  if (previous && document.body.contains(previous) && typeof previous.focus === "function") previous.focus();
+  const restored = modalBackgroundManager.deactivate(m, previous);
+  if (!restored && previous && document.body.contains(previous) && typeof previous.focus === "function") previous.focus();
 }
 // SHA-152: mobile nav accessibility - sync aria-expanded, isolate background
 // content via inert, trap Tab + Esc, and restore focus to the toggle on close.

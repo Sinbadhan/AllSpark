@@ -79,6 +79,7 @@
 }
 .live-panel:hover { border-color: var(--primary-container); }
 .subtab-bar { padding: 12px; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 4px; }
+.release-status-badge { display: inline-block; border: 1px solid currentColor; border-radius: 2px; padding: 1px 4px; color: var(--warning); font-size: 9px; font-weight: 700; letter-spacing: 0; }
 .subtab-content { padding: 12px; }
 .subtab-content.hidden { display: none; }
 .kb-search { display: flex; gap: 8px; margin-bottom: 12px; }
@@ -173,14 +174,14 @@
 
   <!-- Today's Briefing (collapsible) -->
   <div id="briefing-banner" class="span-12" style="background:var(--surface-low);border:1px solid var(--surface-container-high);border-radius:6px;padding:12px;margin-bottom:8px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" data-index-action="toggle-briefing">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span class="material-symbols-outlined text-primary" style="font-size:18px;">today</span>
+    <button type="button" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:0;border:0;background:none;color:inherit;text-align:left;font:inherit;cursor:pointer;" data-index-action="toggle-briefing" aria-expanded="false" aria-controls="briefing-full">
+      <span style="display:flex;align-items:center;gap:8px;">
+        <span class="material-symbols-outlined text-primary" style="font-size:18px;" aria-hidden="true">today</span>
         <strong>{{ t('web_briefing_title') }}</strong>
         <span id="briefing-short" class="text-secondary text-sm" style="margin-left:8px;"></span>
-      </div>
-      <span id="briefing-arrow" class="material-symbols-outlined text-secondary" style="font-size:18px;">expand_more</span>
-    </div>
+      </span>
+      <span id="briefing-arrow" class="material-symbols-outlined text-secondary" style="font-size:18px;" aria-hidden="true">expand_more</span>
+    </button>
     <div id="briefing-full" class="text-sm text-on-surface-variant" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--surface-container-high);white-space:pre-wrap;"></div>
   </div>
 
@@ -214,7 +215,7 @@
       <span class="material-symbols-outlined" style="font-size:16px;">search</span> {{ t('web_action_search_knowledge') }}
     </button>
     <button data-subtab="experience" class="action-btn action-outline">
-      <span class="material-symbols-outlined" style="font-size:16px;">psychology</span> {{ t('web_action_log_experience') }}
+      <span class="material-symbols-outlined" style="font-size:16px;">psychology</span> {{ t('web_action_log_experience') }} <span class="release-status-badge">{{ t('web_release_experimental') }}</span>
     </button>
   </div>
 
@@ -223,8 +224,8 @@
     <div class="subtab-bar">
       <button class="sub-tab active" data-subtab="knowledge">{{ t('web_tab_knowledge') }}</button>
       <button class="sub-tab" data-subtab="chat">{{ t('web_tab_chat') }}</button>
-      <button class="sub-tab" data-subtab="experience">{{ t('web_tab_experience') }}</button>
-      <button class="sub-tab" data-subtab="mind">{{ t('web_tab_mind') }}</button>
+      <button class="sub-tab" data-subtab="experience">{{ t('web_tab_experience') }} <span class="release-status-badge">{{ t('web_release_experimental') }}</span></button>
+      <button class="sub-tab" data-subtab="mind">{{ t('web_tab_mind') }} <span class="release-status-badge">{{ t('web_release_experimental') }}</span></button>
       <button class="sub-tab" data-subtab="diary">{{ t('web_tab_diary') }}</button>
       <button class="sub-tab" data-subtab="modules">{{ t('web_tab_modules') }}</button>
     </div>
@@ -273,7 +274,7 @@
     <div id="subtab-modules" class="subtab-content hidden">
       <div id="module-list" style="overflow-y:auto;max-height:300px;"></div>
       <div class="module-section">
-        <h3>{{ t('web_llm_engine') }}</h3>
+        <h3>{{ t('web_llm_engine') }} <span class="release-status-badge">{{ t('web_release_experimental') }}</span></h3>
         <div id="llm-status" class="text-sm text-on-surface-variant mb-2">{{ t('web_loading') }}</div>
         <button data-index-action="load-llm" class="btn-primary">{{ t('web_load_model') }}</button>
       </div>
@@ -443,7 +444,8 @@ async function refreshDashboard() {
       // SHA-59: compact empty-state. Earlier every unconfigured card repeated
       // the long "set amount + daily use to calculate remaining time" hint,
       // crowding the dashboard. Now each card is a single dense line.
-      return '<div class="resource-card offline span-4" ' + resourceAttrs + ' role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;">' +
+      const resourceAria = [label, I18N.web_unconfigured, I18N.web_set_amount_hint_short, RES_I18N.edit_label].join(' · ');
+      return '<div class="resource-card offline span-4" ' + resourceAttrs + ' role="button" tabindex="0" aria-label="' + escHtml(resourceAria) + '" style="cursor:pointer;">' +
         '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value text-secondary">' + I18N.web_unconfigured + ' ' + editBtn + '</span></div>' +
         '<div class="card-status" style="font-size:13px;color:var(--secondary);">' + I18N.web_set_amount_hint_short + '</div>' +
         '<div class="card-remaining">' + escHtml(label) + '</div></div>';
@@ -459,9 +461,12 @@ async function refreshDashboard() {
       : hasEstimate
       ? I18N.web_remaining_hours_fmt.replace('{h}', Math.round(r.remaining_hours))
       : I18N.web_remaining_unknown;
-    return '<div class="resource-card span-4" ' + resourceAttrs + ' role="button" tabindex="0" aria-label="' + RES_I18N.edit_label + ': ' + escHtml(label) + '" style="cursor:pointer;">' +
-      '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + r.amount + (r.unit_label || r.unit) + ' ' + editBtn + '</span></div>' +
-      '<div class="card-status">' + statusText + ' · ' + escHtml(String(r.source_label || '-')) + '</div>' +
+    const amountText = String(r.amount) + String(r.unit_label || r.unit || '');
+    const sourceText = String(r.source_label || '-');
+    const resourceAria = [label, amountText, statusText, sourceText, remainingText, RES_I18N.edit_label].join(' · ');
+    return '<div class="resource-card span-4" ' + resourceAttrs + ' role="button" tabindex="0" aria-label="' + escHtml(resourceAria) + '" style="cursor:pointer;">' +
+      '<div class="card-header"><span class="card-label"><span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span> ' + label + '</span><span class="card-value" style="color:' + statusColor + '">' + escHtml(amountText) + ' ' + editBtn + '</span></div>' +
+      '<div class="card-status">' + statusText + ' · ' + escHtml(sourceText) + '</div>' +
       '<div class="card-remaining">' + remainingText + ' · ' + (r.people_count_known === true && r.amount_per_person !== null ? RES_I18N.perPerson.replace('{amount}', Number(r.amount_per_person).toFixed(2)).replace('{unit}', escHtml(String(r.unit_label || r.unit || ''))) : RES_I18N.perPersonUnknown) + '</div></div>';
   }).join("");
 
@@ -708,9 +713,11 @@ async function loadBriefing() {
 async function toggleBriefing() {
   const full = document.getElementById("briefing-full");
   const arrow = document.getElementById("briefing-arrow");
+  const trigger = document.querySelector('[data-index-action="toggle-briefing"]');
   if (full.style.display === "none") {
     full.style.display = "block";
     arrow.textContent = "expand_less";
+    trigger.setAttribute("aria-expanded", "true");
     if (!briefingLoaded) {
       full.textContent = BRIEFING_I18N.loading;
       try {
@@ -722,6 +729,7 @@ async function toggleBriefing() {
   } else {
     full.style.display = "none";
     arrow.textContent = "expand_more";
+    trigger.setAttribute("aria-expanded", "false");
   }
 }
 loadBriefing();
@@ -929,6 +937,9 @@ function openResourceEdit(rtype, amount, consumption, intake, amountKnown, consu
   // <body> for mouse clicks and would lose the trigger. Fall back to
   // activeElement only if no trigger was passed.
   modal._previouslyFocused = trigger || document.activeElement;
+  if (typeof modalBackgroundManager !== "undefined") {
+    modalBackgroundManager.activate(modal, modal._previouslyFocused);
+  }
   modal.querySelector('[data-resource-input-kind][aria-pressed="true"]').focus();
   if (!modal._focusTrap) {
     modal._focusTrap = (e) => {
@@ -951,14 +962,19 @@ function closeResEdit() {
   if (m && m._previouslyFocused) {
     const prev = m._previouslyFocused;
     const resourceType = m._resourceType;
+    const fallbackCard = () => {
+      const cards = Array.from(document.querySelectorAll(".resource-card"));
+      return cards.find(item => item.getAttribute("data-resource-type") === resourceType)
+        || cards[0];
+    };
     m._previouslyFocused = null;
     m._resourceType = null;
-    if (document.body.contains(prev) && typeof prev.focus === "function") {
+    const restored = typeof modalBackgroundManager !== "undefined"
+      && modalBackgroundManager.deactivate(m, fallbackCard);
+    if (!restored && document.body.contains(prev) && typeof prev.focus === "function") {
       prev.focus();
-    } else {
-      const cards = Array.from(document.querySelectorAll(".resource-card"));
-      const card = cards.find(item => item.getAttribute("data-resource-type") === resourceType)
-        || cards[0];
+    } else if (!restored) {
+      const card = fallbackCard();
       if (card && typeof card.focus === "function") card.focus();
     }
   }
