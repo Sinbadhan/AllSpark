@@ -1,5 +1,7 @@
 """Platform-level system routes: language, mode, modules, about, task actions."""
 
+from typing import Any
+
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
@@ -30,10 +32,7 @@ def register_system_routes(app, check):
         flags = getattr(registry, "flags", None)
         capabilities = registry.format_status_dict() if registry else []
         capability_summary = {
-            status: sum(
-                1 for capability in capabilities
-                if capability.get("release_status") == status
-            )
+            status: sum(1 for capability in capabilities if capability.get("release_status") == status)
             for status in ("supported", "testing", "experimental", "future")
         }
         return {
@@ -221,19 +220,22 @@ def register_system_routes(app, check):
                     result=body.get("result"),
                     evidence=body.get("evidence"),
                     resource_update=body.get("resource_update"),
-                    confirm_resource_update=body.get(
-                        "confirm_resource_update", False
-                    ),
+                    fact_update=body.get("fact_update"),
+                    confirm_resource_update=body.get("confirm_resource_update", False),
                 )
             except TaskOutcomeError as exc:
+                content: dict[str, Any] = {
+                    "status": "error",
+                    "error": f"task_outcome_{exc.code}",
+                    "error_code": f"task_outcome.{exc.code}",
+                    "detail": t(f"error_task_outcome_{exc.code}"),
+                    "errors": [{"field": exc.field, "code": exc.code}],
+                }
+                if exc.context:
+                    content["context"] = exc.context
                 return JSONResponse(
                     status_code=exc.status_code,
-                    content={
-                        "status": "error",
-                        "error": f"task_outcome_{exc.code}",
-                        "detail": t(f"error_task_outcome_{exc.code}"),
-                        "errors": [{"field": exc.field, "code": exc.code}],
-                    },
+                    content=content,
                 )
             action_loop = container.get("action_loop")
             survival_plan = container.get("survival_plan")
@@ -243,11 +245,13 @@ def register_system_routes(app, check):
                 "new_status": terminal_status,
                 "resource_changed": outcome["resource_changed"],
                 "plan_changed": outcome["plan_changed"],
+                "plan_data_changed": outcome["plan_data_changed"],
+                "previous_primary_action_id": outcome["previous_primary_action_id"],
+                "new_primary_action_id": outcome["new_primary_action_id"],
+                "primary_action_changed": outcome["primary_action_changed"],
                 "plan": survival_plan.payload(outcome["plan"]),
                 "next_task": (
-                    action_loop.task_payload(outcome["next_task"])
-                    if outcome["next_task"] is not None
-                    else None
+                    action_loop.task_payload(outcome["next_task"]) if outcome["next_task"] is not None else None
                 ),
             }
         raise HTTPException(400, t("error_unknown_task_action", action=action))

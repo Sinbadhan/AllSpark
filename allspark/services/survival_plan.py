@@ -41,10 +41,44 @@ _GAP_ORDER = (
 )
 
 
+_RESOURCE_DECISION_RULES: dict[str, dict[str, Any]] = {
+    "water": {
+        "rule_id": "allspark.survival.resource_remaining.water",
+        "version": "1.0.0",
+        "review_status": "internal_review_pending_external",
+        "threshold_hours": 72,
+        "rationale": "prioritize_when_supply_is_below_three_days",
+        "limitation": "depends_on_current_group_total_rates",
+    },
+    "food": {
+        "rule_id": "allspark.survival.resource_remaining.food",
+        "version": "1.0.0",
+        "review_status": "internal_review_pending_external",
+        "threshold_hours": 48,
+        "rationale": "prioritize_when_supply_is_below_two_days",
+        "limitation": "does_not_model_nutrition_or_individual_medical_needs",
+    },
+    "power": {
+        "rule_id": "allspark.survival.resource_remaining.power",
+        "version": "1.0.0",
+        "review_status": "internal_review_pending_external",
+        "threshold_hours": 24,
+        "rationale": "prioritize_when_supply_is_below_one_day",
+        "limitation": "does_not_model_device_criticality_or_load_shedding",
+    },
+    "fire": {
+        "rule_id": "allspark.survival.fire_capacity.minimum",
+        "version": "1.0.0",
+        "review_status": "internal_review_pending_external",
+        "threshold_amount": 5,
+        "rationale": "review_fire_capacity_below_configured_minimum",
+        "limitation": "amount_is_not_normalized_across_fuel_or_heat_sources",
+    },
+}
+
+
 def _canonical_hash(value: Any) -> str:
-    encoded = json.dumps(
-        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
+    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return "sha256:" + hashlib.sha256(encoded).hexdigest()
 
 
@@ -55,9 +89,7 @@ class SurvivalPlanService:
         self.db = db
         self.resource_manager = resource_manager
 
-    def generate(
-        self, assessment: dict[str, Any], *, now: datetime | None = None
-    ) -> SurvivalPlan:
+    def generate(self, assessment: dict[str, Any], *, now: datetime | None = None) -> SurvivalPlan:
         snapshot_now = now or datetime.now(timezone.utc)
         resources = self._assessment_resources(assessment)
         return self._generate_from_facts(
@@ -84,21 +116,13 @@ class SurvivalPlanService:
         *,
         snapshot_now: datetime,
     ) -> SurvivalPlan:
-        phase, phase_missing, phase_stale = evaluate_phase_truth(
-            resources, self.resource_manager, now=snapshot_now
-        )
+        phase, phase_missing, phase_stale = evaluate_phase_truth(resources, self.resource_manager, now=snapshot_now)
         gaps = self._gap_domains(resources, assessment, now=snapshot_now)
         missing_fields = [
-            item["field"]
-            for domain in _GAP_ORDER
-            for item in gaps.get(domain, [])
-            if item["status"] == "unknown"
+            item["field"] for domain in _GAP_ORDER for item in gaps.get(domain, []) if item["status"] == "unknown"
         ]
         stale_fields = [
-            item["field"]
-            for domain in _GAP_ORDER
-            for item in gaps.get(domain, [])
-            if item["status"] == "stale"
+            item["field"] for domain in _GAP_ORDER for item in gaps.get(domain, []) if item["status"] == "stale"
         ]
         actions = self._actions(
             assessment,
@@ -107,9 +131,7 @@ class SurvivalPlanService:
             gaps=gaps,
             now=snapshot_now,
         )
-        assessment_contract = {
-            key: value for key, value in assessment.items() if key != "confirmed"
-        }
+        assessment_contract = {key: value for key, value in assessment.items() if key != "confirmed"}
         assessment_hash = _canonical_hash(assessment_contract)
         semantics = {
             "assessment_hash": assessment_hash,
@@ -164,22 +186,14 @@ class SurvivalPlanService:
             people_status = "known" if people_value is not None else "unknown"
 
         threat_status = survivor.get("threats_status", "unknown")
-        threat_values = [
-            value
-            for value in survivor.get("threats", "").split(",")
-            if value
-        ]
+        threat_values = [value for value in survivor.get("threats", "").split(",") if value]
         if threat_status not in {"none", "selected"}:
             threat_status = "unknown"
             threat_values = []
 
         resource_contract = {}
         for resource in resources:
-            rates_known = (
-                resource.consumption_known
-                and resource.intake_known
-                and resource.rate_basis == "group_total"
-            )
+            rates_known = resource.consumption_known and resource.intake_known and resource.rate_basis == "group_total"
             resource_contract[resource.type.value] = {
                 "status": "known" if resource.amount_known else "unknown",
                 "amount": resource.current_amount if resource.amount_known else None,
@@ -187,18 +201,14 @@ class SurvivalPlanService:
                 "rates": {
                     "status": "estimate" if rates_known else "unknown",
                     "basis": resource.rate_basis if rates_known else None,
-                    "daily_consumption": (
-                        resource.daily_consumption if rates_known else None
-                    ),
+                    "daily_consumption": (resource.daily_consumption if rates_known else None),
                     "daily_intake": resource.daily_intake if rates_known else None,
                 },
                 "source": resource.source,
                 "as_of": resource.as_of,
             }
 
-        observed_times = sorted(
-            resource.as_of for resource in resources if resource.as_of
-        )
+        observed_times = sorted(resource.as_of for resource in resources if resource.as_of)
         return {
             "people_count": {
                 "status": people_status,
@@ -210,6 +220,11 @@ class SurvivalPlanService:
             "threats": {"status": threat_status, "values": threat_values},
             "resources": resource_contract,
             "as_of": observed_times[-1] if observed_times else "",
+            "confirmed_unknown_fields": sorted(
+                key.removeprefix("confirmed_unknown:")
+                for key, value in survivor.items()
+                if key.startswith("confirmed_unknown:") and value
+            ),
             "confirmed": True,
         }
 
@@ -223,9 +238,7 @@ class SurvivalPlanService:
         if plan_id != plan.id:
             raise SurvivalPlanValidationError("plan_id", "stale_plan")
         if accepted_action_id not in self.primary_candidate_ids(plan):
-            raise SurvivalPlanValidationError(
-                "primary_action_id", "invalid_primary_action"
-            )
+            raise SurvivalPlanValidationError("primary_action_id", "invalid_primary_action")
 
     def persist_draft(
         self,
@@ -235,9 +248,7 @@ class SurvivalPlanService:
         accepted_action_id: str,
         commit: bool = True,
     ) -> SurvivalPlan:
-        self.validate_selection(
-            plan, plan_id=plan_id, accepted_action_id=accepted_action_id
-        )
+        self.validate_selection(plan, plan_id=plan_id, accepted_action_id=accepted_action_id)
         plan.accepted_action_id = accepted_action_id
         plan.status = "draft"
         self.db.save_survival_plan(plan, commit=commit)
@@ -250,9 +261,7 @@ class SurvivalPlanService:
         minimum = min(action.priority for action in plan.actions)
         return [action.id for action in plan.actions if action.priority == minimum]
 
-    def payload(
-        self, plan: SurvivalPlan, *, language: str | None = None
-    ) -> dict[str, Any]:
+    def payload(self, plan: SurvivalPlan, *, language: str | None = None) -> dict[str, Any]:
         return {
             "id": plan.id,
             "assessment_hash": plan.assessment_hash,
@@ -260,8 +269,7 @@ class SurvivalPlanService:
             "phase": plan.phase,
             "phase_status": plan.phase_status,
             "phase_description": self._translate(
-                f"phase_desc_{plan.phase}"
-                if plan.phase is not None else "phase_desc_unknown",
+                f"phase_desc_{plan.phase}" if plan.phase is not None else "phase_desc_unknown",
                 language=language,
             ),
             "missing_fields": plan.missing_fields,
@@ -270,16 +278,11 @@ class SurvivalPlanService:
             "status": plan.status,
             "horizon_hours": plan.horizon_hours,
             "primary_candidate_ids": self.primary_candidate_ids(plan),
-            "actions": [
-                self._render_action(action, language=language)
-                for action in plan.actions
-            ],
+            "actions": [self._render_action(action, language=language) for action in plan.actions],
         }
 
     @staticmethod
-    def _translate(
-        key: str, *, language: str | None = None, **kwargs: Any
-    ) -> str:
+    def _translate(key: str, *, language: str | None = None, **kwargs: Any) -> str:
         if language not in MESSAGES:
             return t(key, **kwargs)
         message = MESSAGES[language].get(key, key)
@@ -288,8 +291,8 @@ class SurvivalPlanService:
         except (KeyError, IndexError):
             return message
 
-    @staticmethod
-    def _action_contract(action: PlanAction) -> dict[str, Any]:
+    @classmethod
+    def _action_contract(cls, action: PlanAction) -> dict[str, Any]:
         return {
             "id": action.id,
             "domain": action.domain,
@@ -297,6 +300,8 @@ class SurvivalPlanService:
             "title_key": action.title_key,
             "why_now": action.why_now,
             "evidence": action.evidence,
+            "fact_provenance": [cls._fact_provenance(item) for item in action.evidence],
+            "decision_rule_provenance": cls._decision_rule_provenance(action),
             "prerequisites": action.prerequisites,
             "risk": action.risk,
             "done_when": action.done_when,
@@ -305,39 +310,37 @@ class SurvivalPlanService:
         }
 
     @staticmethod
-    def _render_action(
-        action: PlanAction, *, language: str | None = None
-    ) -> dict[str, Any]:
+    def _fact_provenance(evidence: dict[str, Any]) -> dict[str, Any]:
+        return {key: value for key, value in evidence.items() if key not in {"threshold_hours", "threshold_amount"}}
+
+    @staticmethod
+    def _decision_rule_provenance(action: PlanAction) -> list[dict[str, Any]]:
+        rule: dict[str, Any] | None = None
+        if action.id.endswith("-priority"):
+            rule = _RESOURCE_DECISION_RULES.get(action.domain)
+        elif action.id == "survival-plan-fire-capacity":
+            rule = _RESOURCE_DECISION_RULES["fire"]
+        return [dict(rule)] if rule is not None else []
+
+    @staticmethod
+    def _render_action(action: PlanAction, *, language: str | None = None) -> dict[str, Any]:
         domain_label = SurvivalPlanService._translate(
-            "assessment_title"
-            if action.domain == "assessment"
-            else f"assessment_field_{action.domain}",
+            "assessment_title" if action.domain == "assessment" else f"assessment_field_{action.domain}",
             language=language,
         )
         return {
             **SurvivalPlanService._action_contract(action),
             "status": action.status,
-            "title": SurvivalPlanService._translate(
-                action.title_key, language=language, domain=domain_label
-            ),
-            "why_now_text": SurvivalPlanService._translate(
-                action.why_now, language=language, domain=domain_label
-            ),
+            "title": SurvivalPlanService._translate(action.title_key, language=language, domain=domain_label),
+            "why_now_text": SurvivalPlanService._translate(action.why_now, language=language, domain=domain_label),
             "prerequisite_texts": [
-                SurvivalPlanService._translate(
-                    key, language=language, domain=domain_label
-                )
+                SurvivalPlanService._translate(key, language=language, domain=domain_label)
                 for key in action.prerequisites
             ],
-            "risk_text": SurvivalPlanService._translate(
-                action.risk, language=language, domain=domain_label
-            ),
-            "done_when_text": SurvivalPlanService._translate(
-                action.done_when, language=language, domain=domain_label
-            ),
+            "risk_text": SurvivalPlanService._translate(action.risk, language=language, domain=domain_label),
+            "done_when_text": SurvivalPlanService._translate(action.done_when, language=language, domain=domain_label),
             "evidence_texts": [
-                SurvivalPlanService._render_evidence(item, language=language)
-                for item in action.evidence
+                SurvivalPlanService._render_evidence(item, language=language) for item in action.evidence
             ],
             "reassess_at_text": SurvivalPlanService._translate(
                 "survival_plan_reassess_1h"
@@ -353,9 +356,7 @@ class SurvivalPlanService:
     def _render_evidence(evidence: dict[str, Any], *, language: str | None) -> str:
         kind = evidence.get("kind")
         source = evidence.get("source", "unknown")
-        source_label = SurvivalPlanService._translate(
-            f"resource_source_{source}", language=language
-        )
+        source_label = SurvivalPlanService._translate(f"resource_source_{source}", language=language)
         if kind == "resource_snapshot" and "remaining_hours" in evidence:
             return SurvivalPlanService._translate(
                 "survival_plan_evidence_resource_formula",
@@ -382,21 +383,15 @@ class SurvivalPlanService:
             return SurvivalPlanService._translate(
                 "survival_plan_evidence_fact",
                 language=language,
-                field=SurvivalPlanService._translate(
-                    "assessment_field_reviewed_workflow", language=language
-                ),
-                value=SurvivalPlanService._translate(
-                    "survival_plan_evidence_status_review_gated", language=language
-                ),
+                field=SurvivalPlanService._translate("assessment_field_reviewed_workflow", language=language),
+                value=SurvivalPlanService._translate("survival_plan_evidence_status_review_gated", language=language),
             )
         if kind == "assessment_state":
             phase = evidence.get("phase")
             return SurvivalPlanService._translate(
                 "survival_plan_evidence_fact",
                 language=language,
-                field=SurvivalPlanService._translate(
-                    "assessment_title", language=language
-                ),
+                field=SurvivalPlanService._translate("assessment_title", language=language),
                 value=SurvivalPlanService._translate(
                     f"phase_desc_{phase}" if phase is not None else "phase_desc_unknown",
                     language=language,
@@ -404,9 +399,7 @@ class SurvivalPlanService:
             )
         raw_field = evidence.get("field", kind or "unknown")
         field_parts = str(raw_field).split(".", 1)
-        field_label = SurvivalPlanService._translate(
-            f"assessment_field_{field_parts[0]}", language=language
-        )
+        field_label = SurvivalPlanService._translate(f"assessment_field_{field_parts[0]}", language=language)
         if len(field_parts) == 2:
             detail_key = {
                 "amount": "web_resource_edit_amount",
@@ -416,24 +409,17 @@ class SurvivalPlanService:
                 "as_of": "assessment_field_as_of",
             }.get(field_parts[1], "assessment_field_information_gap")
             field_label = f"{field_label} / {SurvivalPlanService._translate(detail_key, language=language)}"
-        raw_value = evidence.get(
-            "value", evidence.get("status", evidence.get("phase_status", "unknown"))
-        )
+        raw_value = evidence.get("value", evidence.get("status", evidence.get("phase_status", "unknown")))
         if isinstance(raw_value, list):
             value_label = ", ".join(
-                SurvivalPlanService._translate(
-                    f"q_threat_{value}", language=language
-                )
-                for value in raw_value
+                SurvivalPlanService._translate(f"q_threat_{value}", language=language) for value in raw_value
             )
         elif kind == "assessment_fact" and isinstance(raw_value, str):
             value_key = {
                 ("urgency", "immediate_danger"): "q_urgency_immediate",
                 ("health", "serious_injury"): "q_health_serious",
             }.get((field_parts[0], raw_value), f"q_{field_parts[0]}_{raw_value}")
-            value_label = SurvivalPlanService._translate(
-                value_key, language=language
-            )
+            value_label = SurvivalPlanService._translate(value_key, language=language)
         else:
             value_label = SurvivalPlanService._translate(
                 f"survival_plan_evidence_status_{raw_value}", language=language
@@ -445,9 +431,7 @@ class SurvivalPlanService:
             value=value_label,
         )
 
-    def _assessment_resources(
-        self, assessment: dict[str, Any]
-    ) -> list[Resource]:
+    def _assessment_resources(self, assessment: dict[str, Any]) -> list[Resource]:
         people = assessment["people_count"]
         people_known = people["status"] == "known"
         result = []
@@ -459,9 +443,7 @@ class SurvivalPlanService:
                 type=resource_type,
                 current_amount=item["amount"] if item["status"] == "known" else 0,
                 unit=RESOURCE_UNITS[resource_type],
-                daily_consumption=(
-                    rates["daily_consumption"] if rate_known else 0
-                ),
+                daily_consumption=(rates["daily_consumption"] if rate_known else 0),
                 daily_intake=rates["daily_intake"] if rate_known else 0,
                 rate_basis=rates.get("basis", "unknown") if rate_known else "unknown",
                 amount_known=item["status"] == "known",
@@ -472,9 +454,7 @@ class SurvivalPlanService:
                 people_count_known=people_known,
                 as_of=assessment["as_of"],
             )
-            resource.estimated_remaining_hours = (
-                self.resource_manager.estimate_remaining(resource)
-            )
+            resource.estimated_remaining_hours = self.resource_manager.estimate_remaining(resource)
             result.append(resource)
         return result
 
@@ -486,27 +466,27 @@ class SurvivalPlanService:
         now: datetime,
     ) -> dict[str, list[dict[str, str]]]:
         gaps: dict[str, list[dict[str, str]]] = {}
+        confirmed_unknown = set(assessment.get("confirmed_unknown_fields", []))
         for domain in ("people_count", "health", "urgency", "shelter"):
-            if assessment[domain]["status"] == "unknown":
+            if assessment[domain]["status"] == "unknown" and domain not in confirmed_unknown:
                 gaps[domain] = [{"field": domain, "status": "unknown"}]
-        if assessment["threats"]["status"] == "unknown":
+        if assessment["threats"]["status"] == "unknown" and "threats" not in confirmed_unknown:
             gaps["threats"] = [{"field": "threats", "status": "unknown"}]
         for resource in resources:
             domain = resource.type.value
             fields: list[dict[str, str]] = []
-            if not resource.amount_known:
+            if not resource.amount_known and f"{domain}.amount" not in confirmed_unknown:
                 fields.append({"field": f"{domain}.amount", "status": "unknown"})
-            if not resource.consumption_known:
-                fields.append(
-                    {"field": f"{domain}.consumption", "status": "unknown"}
-                )
-            if not resource.intake_known:
+            if not resource.consumption_known and f"{domain}.consumption" not in confirmed_unknown:
+                fields.append({"field": f"{domain}.consumption", "status": "unknown"})
+            if not resource.intake_known and f"{domain}.intake" not in confirmed_unknown:
                 fields.append({"field": f"{domain}.intake", "status": "unknown"})
-            if resource.rate_basis != "group_total":
-                fields.append(
-                    {"field": f"{domain}.rate_basis", "status": "unknown"}
-                )
-            if not self.resource_manager.is_snapshot_current(resource, now=now):
+            if resource.rate_basis != "group_total" and f"{domain}.rate_basis" not in confirmed_unknown:
+                fields.append({"field": f"{domain}.rate_basis", "status": "unknown"})
+            if (
+                not self.resource_manager.is_snapshot_current(resource, now=now)
+                and f"{domain}.as_of" not in confirmed_unknown
+            ):
                 fields.append({"field": f"{domain}.as_of", "status": "stale"})
             if fields:
                 gaps[domain] = fields
@@ -529,37 +509,18 @@ class SurvivalPlanService:
                     self._make_action(
                         f"survival-plan-gap-{domain}",
                         domain,
-                        1
-                        if domain
-                        in {"urgency", "health", "threats", "shelter", "water", "food"}
-                        else 3,
+                        1 if domain in {"urgency", "health", "threats", "shelter", "water", "food"} else 3,
                         "survival_plan_gap",
-                        evidence=[
-                            {"kind": "information_gap", **item} for item in evidence
-                        ],
+                        evidence=[{"kind": "information_gap", **item} for item in evidence],
                         reassess_at="PT1H",
                     )
                 )
 
         facts = assessment
-        if (
-            facts["urgency"]["status"] == "known"
-            and facts["urgency"]["value"] == "immediate_danger"
-        ):
-            actions.append(
-                self._fact_action(
-                    "immediate_danger", "urgency", 0, "immediate_danger", "PT1H"
-                )
-            )
-        if (
-            facts["health"]["status"] == "known"
-            and facts["health"]["value"] in {"serious_injury", "critical"}
-        ):
-            actions.append(
-                self._fact_action(
-                    "health_help", "health", 0, facts["health"]["value"], "PT1H"
-                )
-            )
+        if facts["urgency"]["status"] == "known" and facts["urgency"]["value"] == "immediate_danger":
+            actions.append(self._fact_action("immediate_danger", "urgency", 0, "immediate_danger", "PT1H"))
+        if facts["health"]["status"] == "known" and facts["health"]["value"] in {"serious_injury", "critical"}:
+            actions.append(self._fact_action("health_help", "health", 0, facts["health"]["value"], "PT1H"))
         if facts["threats"]["status"] == "selected":
             actions.append(
                 self._make_action(
@@ -583,31 +544,21 @@ class SurvivalPlanService:
                     reassess_at="PT1H",
                 )
             )
-        if (
-            facts["shelter"]["status"] == "known"
-            and facts["shelter"]["value"] in {"none", "open_air"}
-        ):
-            actions.append(
-                self._fact_action(
-                    "shelter", "shelter", 0, facts["shelter"]["value"], "PT1H"
-                )
-            )
+        if facts["shelter"]["status"] == "known" and facts["shelter"]["value"] in {"none", "open_air"}:
+            actions.append(self._fact_action("shelter", "shelter", 0, facts["shelter"]["value"], "PT1H"))
 
         for resource in resources:
             if not self.resource_manager.is_snapshot_current(resource, now=now):
                 continue
             domain = resource.type.value
-            limits = {"water": 72, "food": 48, "power": 24}
             status = "unknown"
             if self.resource_manager.has_complete_rate_data(resource):
-                status = (
-                    "sustained"
-                    if resource.daily_consumption <= resource.daily_intake
-                    else "finite"
-                )
-            if domain in limits and status == "finite":
+                status = "sustained" if resource.daily_consumption <= resource.daily_intake else "finite"
+            decision_rule = _RESOURCE_DECISION_RULES.get(domain)
+            if decision_rule is not None and "threshold_hours" in decision_rule and status == "finite":
                 hours = resource.estimated_remaining_hours
-                if hours < limits[domain]:
+                threshold_hours = decision_rule["threshold_hours"]
+                if hours < threshold_hours:
                     actions.append(
                         self._make_action(
                             f"survival-plan-{domain}-priority",
@@ -624,7 +575,7 @@ class SurvivalPlanService:
                                     "daily_consumption": resource.daily_consumption,
                                     "daily_intake": resource.daily_intake,
                                     "remaining_hours": round(hours, 3),
-                                    "threshold_hours": limits[domain],
+                                    "threshold_hours": threshold_hours,
                                     "as_of": resource.as_of,
                                     "source": resource.source,
                                 }
@@ -635,7 +586,7 @@ class SurvivalPlanService:
             if (
                 domain == "fire"
                 and resource.amount_known
-                and resource.current_amount < 5
+                and resource.current_amount < _RESOURCE_DECISION_RULES["fire"]["threshold_amount"]
             ):
                 actions.append(
                     self._make_action(
@@ -678,9 +629,7 @@ class SurvivalPlanService:
         actions.sort(
             key=lambda action: (
                 action.priority,
-                _GAP_ORDER.index(action.domain)
-                if action.domain in _GAP_ORDER
-                else len(_GAP_ORDER),
+                _GAP_ORDER.index(action.domain) if action.domain in _GAP_ORDER else len(_GAP_ORDER),
                 action.id,
             )
         )
