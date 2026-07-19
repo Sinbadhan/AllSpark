@@ -11,8 +11,8 @@ from fastapi.testclient import TestClient
 from allspark.adapters.web_ui import create_app
 from allspark.commands.knowledge import TaskCommand
 from allspark.core.database import Database
-from allspark.core.i18n import get_language, set_language
-from allspark.core.models import ResourceType
+from allspark.core.i18n import get_language, set_language, t
+from allspark.core.models import ResourceType, compute_risk_classification_hash
 from allspark.services.resource_manager import ResourceManager
 
 
@@ -30,6 +30,40 @@ def _client(path: Path) -> TestClient:
     finally:
         db.close()
     return TestClient(create_app(str(path)))
+
+
+def _approve_knowledge_for_action(client: TestClient, knowledge_id: str) -> None:
+    entry = client.app.state.db.get_knowledge(knowledge_id)
+    assert entry is not None
+    entry.references = [
+        {
+            "source_id": f"reviewed-source-{index}",
+            "title": f"Reviewed source {index}",
+            "locator": f"Section {index}",
+            "local_status": "verified",
+            "verified_by": "test-reviewer",
+            "verified_at": "2026-07-16",
+        }
+        for index in (1, 2)
+    ]
+    entry.risk_level = "low"
+    entry.hazards = ["environmental"]
+    entry.review_status = "approved"
+    entry.risk_reviews = [
+        {
+            "signoff_version": 1,
+            "reviewer_id": "environmental-reviewer",
+            "reviewer": "Named environmental reviewer",
+            "qualification_type": "environmental_health",
+            "qualification_evidence": "registry:test:environmental",
+            "covered_hazards": ["environmental"],
+            "reviewed_at": "2026-07-16",
+            "conclusion": "approved",
+            "reservations": [],
+            "classification_hash": compute_risk_classification_hash(entry),
+        }
+    ]
+    client.app.state.db.save_knowledge(entry)
 
 
 def _chat(client: TestClient, message: str, conversation_id: str = "resource-flow"):
@@ -131,6 +165,7 @@ def test_knowledge_advice_can_create_one_idempotent_traceable_task(
 ) -> None:
     client = _client(tmp_path / "knowledge-task.db")
     knowledge_id = "survival/water/purification/boiling"
+    _approve_knowledge_for_action(client, knowledge_id)
 
     created = client.post(
         "/api/tasks/from-knowledge",
@@ -154,6 +189,19 @@ def test_knowledge_advice_can_create_one_idempotent_traceable_task(
     tasks = client.get("/api/tasks").json()
     matching = [task for task in tasks if task["source_ref"] == knowledge_id]
     assert len(matching) == 1
+
+
+def test_pending_knowledge_cannot_create_actionable_task(tmp_path: Path) -> None:
+    client = _client(tmp_path / "pending-knowledge-task.db")
+
+    blocked = client.post(
+        "/api/tasks/from-knowledge",
+        json={"knowledge_id": "survival/water/purification/boiling"},
+    )
+
+    assert blocked.status_code == 409
+    assert blocked.json()["error"] == t("error_knowledge_actionable_content_withheld")
+    assert client.get("/api/tasks").json() == []
 
 
 def test_invalid_knowledge_task_request_is_read_only(tmp_path: Path) -> None:
@@ -244,6 +292,9 @@ def test_storage_amount_update_preserves_confirmed_capacity(tmp_path: Path) -> N
 
 def test_active_task_contract_excludes_terminal_rows_by_default(tmp_path: Path) -> None:
     client = _client(tmp_path / "task-scope.db")
+    _approve_knowledge_for_action(
+        client, "survival/water/purification/boiling"
+    )
     task = client.post(
         "/api/tasks/from-knowledge",
         json={"knowledge_id": "survival/water/purification/boiling"},

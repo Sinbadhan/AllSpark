@@ -5,6 +5,7 @@ from allspark.core.i18n import get_language, t
 from allspark.core.models import (
     ResourceType,
     derive_verification_level,
+    is_actionable_knowledge,
     is_high_risk_knowledge,
     verified_field_records,
     verified_references,
@@ -84,13 +85,7 @@ class KnowledgeEngine:
             "self_learned_llm": "knowledge_source_ai_generated",
         }
         high_risk = is_high_risk_knowledge(entry)
-        actionable_content = (
-            entry.review_status == "approved"
-            and entry.risk_level not in {"", "pending_review"}
-            and bool(entry.hazards)
-            and "unknown" not in entry.hazards
-            and level != "unverified"
-        )
+        actionable_content = is_actionable_knowledge(entry)
         local_references = verified_references(entry)
         local_field_records = verified_field_records(entry)
         verified_reference_ids = {id(value) for value in local_references}

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import date
+from datetime import date, datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -93,6 +93,11 @@ class ImmediateDangerCatalogError(ImmediateDangerValidationError):
 
 class ImmediateDangerInputError(ImmediateDangerValidationError):
     """A caller supplied a malformed triage fact."""
+
+
+def _utc_today() -> date:
+    """Use one timezone-independent date boundary for catalog metadata."""
+    return datetime.now(timezone.utc).date()
 
 
 def _canonical_hash(value: dict[str, Any]) -> str:
@@ -203,7 +208,7 @@ def _validate_catalog_signoffs(catalog: dict[str, Any]) -> None:
             raise ImmediateDangerCatalogError(
                 f"reviewer_signoffs.{index}.reviewed_at", "invalid_date"
             ) from exc
-        if reviewed_at > date.today():
+        if reviewed_at > _utc_today():
             raise ImmediateDangerCatalogError(
                 f"reviewer_signoffs.{index}.reviewed_at", "future_date"
             )
@@ -321,7 +326,7 @@ def load_action_catalog() -> dict[str, Any]:
             raise ImmediateDangerCatalogError(
                 f"sources.{source_id}.retrieved_at", "invalid_date"
             ) from exc
-        if retrieved_at > date.today():
+        if retrieved_at > _utc_today():
             raise ImmediateDangerCatalogError(
                 f"sources.{source_id}.retrieved_at", "future_date"
             )

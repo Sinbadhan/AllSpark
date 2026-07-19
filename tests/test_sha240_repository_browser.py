@@ -152,8 +152,12 @@ def test_repository_api_summary_and_detail_contract(tmp_path: Path) -> None:
     assert detail["field_records"][0]["trust_status"] == "external_claim"
     assert detail["external_review_claim"]["reviewer"] == "External Reviewer"
     assert detail["external_review_claim"]["trust_status"] == "external_claim"
-    assert detail["applicable_when"]
-    assert detail["contraindications"]
+    assert detail["actionable_content"] is False
+    assert detail["content_access"] == "withheld_pending_review"
+    assert "操作性内容不会展示" in detail["summary"]
+    assert detail["applicable_when"] == []
+    assert detail["contraindications"] == []
+    assert detail["steps"] == []
     assert detail["risk_notice"]
     assert detail["risk_review_status"] == "pending_external_review"
     assert detail["hazards"] == ["unknown"]
@@ -211,25 +215,26 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
                 unknownHazard: text.includes('Hazards not yet classified'),
                 applicable: text.includes('Applicable when'),
                 contraindications: text.includes('Contraindications'),
+                withheld: text.includes('Actionable content is withheld'),
+                unsafeStep: text.includes('Act only after checking the warnings.'),
                 reference: text.includes('Chapter 3, section 2'),
                 externalClaim: text.includes('External, unverified claim'),
                 externalReview: text.includes('External expert-review claim'),
                 fullHash: text.includes('sha256:' + 'a'.repeat(64)),
                 order: [
+                  text.indexOf('Actionable content is withheld'),
                   text.indexOf('Risk classification pending external review'),
                   text.indexOf('Hazards not yet classified'),
                   text.indexOf('High-risk guidance'),
-                  text.indexOf('Applicable when'),
-                  text.indexOf('Contraindications'),
                   text.indexOf('Chapter 3, section 2'),
-                  text.indexOf('Act only after checking the warnings.'),
                 ],
                 closeFocused: document.activeElement?.id === 'repo-detail-close',
               };
             })()"""
         )
         assert state["risk"] and state["riskStatus"] and state["unknownHazard"]
-        assert state["applicable"] and state["contraindications"]
+        assert not state["applicable"] and not state["contraindications"]
+        assert state["withheld"] and not state["unsafeStep"]
         assert state["reference"] and state["externalClaim"] and state["externalReview"]
         assert state["fullHash"] and state["closeFocused"]
         assert state["order"] == sorted(state["order"])
@@ -310,11 +315,14 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
               return {
                 status: text.includes('Risk classification pending external review'),
                 hazard: text.includes('Hazards not yet classified'),
-                order: [text.indexOf('Risk classification pending external review'), text.indexOf('Hazards not yet classified'), text.indexOf('Act only after checking the warnings.')],
+                withheld: text.includes('Actionable content is withheld'),
+                unsafeStep: text.includes('Act only after checking the warnings.'),
+                order: [text.indexOf('Actionable content is withheld'), text.indexOf('Risk classification pending external review'), text.indexOf('Hazards not yet classified')],
               };
             })()"""
         )
         assert desktop_pending["status"] and desktop_pending["hazard"]
+        assert desktop_pending["withheld"] and not desktop_pending["unsafeStep"]
         assert desktop_pending["order"] == sorted(desktop_pending["order"])
         for entry_id, expected_local, expected_external in (
             (APPROVED_RISK_ID, True, False),
@@ -373,12 +381,15 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
                 closeVisible: !!document.getElementById('repo-detail-close'),
                 riskStatus: dialog.textContent.includes('Risk classification pending external review'),
                 unknownHazard: dialog.textContent.includes('Hazards not yet classified'),
-                order: [dialog.textContent.indexOf('Risk classification pending external review'), dialog.textContent.indexOf('Hazards not yet classified'), dialog.textContent.indexOf('Act only after checking the warnings.')],
+                withheld: dialog.textContent.includes('Actionable content is withheld'),
+                unsafeStep: dialog.textContent.includes('Act only after checking the warnings.'),
+                order: [dialog.textContent.indexOf('Actionable content is withheld'), dialog.textContent.indexOf('Risk classification pending external review'), dialog.textContent.indexOf('Hazards not yet classified')],
               };
             })()"""
         )
         assert fit["page"] and fit["dialog"] and fit["scrollable"] and fit["closeVisible"]
         assert fit["riskStatus"] and fit["unknownHazard"]
+        assert fit["withheld"] and not fit["unsafeStep"]
         assert fit["order"] == sorted(fit["order"])
         browser.evaluate("document.getElementById('repo-detail-close').click()")
         assert browser.evaluate(
@@ -435,14 +446,15 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
                 externalReview: text.includes('External expert-review claim'),
                 riskStatus: text.includes('Risk classification pending external review'),
                 unknownHazard: text.includes('Hazards not yet classified'),
+                withheld: text.includes('Actionable content is withheld'),
+                unsafeStep: text.includes('Act only after checking the warnings.'),
+                createTask: Boolean(detail.querySelector('[data-index-action="knowledge-task"]')),
                 order: [
+                  text.indexOf('Actionable content is withheld'),
                   text.indexOf('Risk classification pending external review'),
                   text.indexOf('Hazards not yet classified'),
                   text.indexOf('High-risk guidance'),
-                  text.indexOf('Applicable when'),
-                  text.indexOf('Contraindications'),
                   text.indexOf('Chapter 3, section 2'),
-                  text.indexOf('Act only after checking the warnings.'),
                 ],
               };
             })()"""
@@ -450,6 +462,8 @@ def test_repository_chrome_truth_order_filter_and_mobile_fit(tmp_path: Path, req
         assert index_state["fits"] and index_state["externalClaim"]
         assert index_state["externalReview"]
         assert index_state["riskStatus"] and index_state["unknownHazard"]
+        assert index_state["withheld"] and not index_state["unsafeStep"]
+        assert not index_state["createTask"]
         assert index_state["order"] == sorted(index_state["order"])
 
         for entry_id, expected_local, expected_external in (

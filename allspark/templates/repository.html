@@ -604,6 +604,7 @@ function _repoGo(p) { _repoPage = p; _repoRender(); }
 
 async function openRepoDetail(id) {
   let modal = document.getElementById("repo-detail-modal");
+  const opening = !modal || modal.style.display !== "flex";
   if (!modal) {
     modal = document.createElement("div");
     modal.id = "repo-detail-modal";
@@ -616,13 +617,11 @@ async function openRepoDetail(id) {
       if (dialog) _trapDialogTab(dialog, e);
     });
   }
-  if (modal.style.display !== "flex") modal._previouslyFocused = document.activeElement;
+  if (opening) modal._previouslyFocused = document.activeElement;
   modal._detailId = id;
   modal.innerHTML = `<div role="status" aria-live="polite" style="color:var(--secondary);">${escHtml(REPO_I18N.detail_title)}…</div>`;
   modal.style.display = "flex";
-  if (typeof window.setModalBackgroundInert === "function") {
-    window.setModalBackgroundInert(true);
-  }
+  if (opening) modalBackgroundManager.activate(modal, modal._previouslyFocused);
   try {
     const e = await api("/api/knowledge/" + encodeURIComponent(id));
     if (e?._http_error || !e || typeof e !== "object" || !e.id) {
@@ -630,6 +629,7 @@ async function openRepoDetail(id) {
     }
     const steps = (e.steps || []).map(s => `<li>${escHtml(s)}</li>`).join("");
     const warns = (e.warnings || []).map(w => `<div class="text-warn text-sm">· ${escHtml(w)}</div>`).join("");
+    const actionable = e.actionable_content === true;
     const applicable = (e.applicable_when || []).join("; ") || REPO_I18N.not_provided;
     const contraindications = (e.contraindications || []).join("; ") || REPO_I18N.not_provided;
     const referenceLine = r => `<li>${escHtml((r.title || r.organization || r.source_id || "") + " — " + (r.locator || ""))}</li>`;
@@ -653,8 +653,8 @@ async function openRepoDetail(id) {
       <div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.risk_classification)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml(e.risk_review_status_label || "")} · ${escHtml(e.risk_level_label || "")}</div>
       <div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.hazards)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml((e.hazard_labels || []).join("; ") || REPO_I18N.not_provided)}</div>
       ${e.risk_notice ? `<div role="note" class="alert-card alert-critical text-sm" style="margin-bottom:8px;"><strong>${escHtml(REPO_I18N.risk)}</strong><span>${escHtml(e.risk_notice)}</span></div>` : ""}
-      <div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.applicable)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml(applicable)}</div>
-      <div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.contraindications)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml(contraindications)}</div>
+      ${actionable ? `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.applicable)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml(applicable)}</div>
+      <div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.contraindications)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml(contraindications)}</div>` : ""}
       ${e.escalation_help ? `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.escalation)}</div><div class="text-sm" style="margin-bottom:8px;">${escHtml(e.escalation_help)}</div>` : ""}
       ${localEvidence ? `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.local_verified)}</div><ul class="text-sm">${localEvidence}</ul>` : ""}
       ${externalClaims ? `<div class="text-xs text-secondary uppercase tracking-wider">${escHtml(REPO_I18N.external_claim)}</div><ul class="text-sm">${externalClaims}</ul>` : ""}
@@ -680,13 +680,13 @@ async function openRepoDetail(id) {
 function closeRepoDetail() {
   const m = document.getElementById("repo-detail-modal");
   if (!m) return;
-  m.style.display = "none";
-  if (typeof window.setModalBackgroundInert === "function") {
-    window.setModalBackgroundInert(false);
-  }
   const previous = m._previouslyFocused;
   m._previouslyFocused = null;
-  if (previous && document.body.contains(previous) && typeof previous.focus === "function") previous.focus();
+  m.style.display = "none";
+  const restored = modalBackgroundManager.deactivate(m, previous);
+  if (!restored && previous && document.body.contains(previous) && typeof previous.focus === "function") {
+    previous.focus({preventScroll: true});
+  }
 }
 
 async function loadExperienceTable(el) {

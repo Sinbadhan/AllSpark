@@ -55,33 +55,33 @@ sources:
     locator: "Heat stroke and heat exhaustion: rapid cooling, symptom boundaries, and emergency escalation"
     locator_key: immediate_danger_source_cdc_heat_locator
     url: https://www.cdc.gov/niosh/heat-stress/about/illnesses.html
-    revision: accessed-2026-07-20
-    retrieved_at: '2026-07-20'
+    revision: accessed-2026-07-19
+    retrieved_at: '2026-07-19'
     assertion: Move an affected person to a cooler place and begin cooling; altered mental status, seizure, or unconsciousness requires emergency response.
     captured_assertion: The captured source record distinguishes heat exhaustion from heat stroke and prioritizes rapid cooling with emergency escalation for neurological symptoms.
-    content_hash: sha256:4c6cbd8932b5924fd419a8dd83843ac51bcec6d61284d1b672b7350997e72bb7
+    content_hash: sha256:7e40b2cd63ad3169a498017a574ded0438076229678b437012d771310cd1f596
   cdc-hypothermia:
     organization: CDC
     title: Preventing hypothermia
     locator: "Hypothermia warning signs and gradual core warming without direct high heat"
     locator_key: immediate_danger_source_cdc_cold_locator
     url: https://www.cdc.gov/winter-weather/prevention/index.html
-    revision: accessed-2026-07-20
-    retrieved_at: '2026-07-20'
+    revision: accessed-2026-07-19
+    retrieved_at: '2026-07-19'
     assertion: Move the person to shelter, remove wet clothing, and warm the center of the body gradually while seeking medical help for concerning symptoms.
     captured_assertion: The captured source record prioritizes dry shelter and gradual core warming while avoiding direct high heat on a person with suspected hypothermia.
-    content_hash: sha256:c094929c2c1d9bcb9f0205e62b712d2bbb60f5d2092cdf46ff4796348c88261b
+    content_hash: sha256:adad423285c807de9817a516dd8a2a2d45bb241ad73cab1af90226fe34ea363c
   hrsa-poison-help:
     organization: U.S. Health Resources and Services Administration
     title: Poison Help
     locator: "Poison exposure first response: stop exposure safely, do not induce vomiting, preserve product information, and contact poison help"
     locator_key: immediate_danger_source_poison_help_locator
     url: https://poisonhelp.hrsa.gov/what-you-can-do
-    revision: accessed-2026-07-20
-    retrieved_at: '2026-07-20'
+    revision: accessed-2026-07-19
+    retrieved_at: '2026-07-19'
     assertion: Do not induce vomiting; stop exposure without creating another casualty, keep identifying information, and contact poison or emergency help.
     captured_assertion: The captured source record rejects induced vomiting and directs callers to preserve substance information and obtain poison-specific professional guidance.
-    content_hash: sha256:a36a3abc876d23b22aceb6cbdf1326d3521625ffb6b330becee0a688c55cd55e
+    content_hash: sha256:ed4d96a56955ac5ca97c171d0ec2dbc3987c5742cd15c484d33bf76ba86211e8
 actions:
   - action_id: leave-immediate-hazard
     revision: 1

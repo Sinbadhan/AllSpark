@@ -82,8 +82,8 @@ def test_repository_detail_failure_is_retryable_and_modal_uses_inert_manager() -
     assert 'e?._http_error || !e || typeof e !== "object" || !e.id' in detail
     assert 'data-repo-action="retry-detail"' in detail
     assert 'action === "retry-detail"' in source
-    assert "window.setModalBackgroundInert(true)" in detail
-    assert "window.setModalBackgroundInert(false)" in detail
+    assert "modalBackgroundManager.activate(modal, modal._previouslyFocused)" in detail
+    assert "modalBackgroundManager.deactivate(m, previous)" in detail
 
 
 def test_repository_experimental_entries_are_explicit() -> None:

@@ -122,7 +122,8 @@ implemented in v1.0.3; channel detection must not be presented as transport.
 ## 2026-07-20 Internal Re-audit Delta
 
 - Pending knowledge now fails closed at the shared API/CLI/Web output contract;
-  review metadata remains visible while actionable content is withheld.
+  review metadata remains visible while actionable content and task creation
+  are withheld.
 - Immediate-danger routing has dedicated conservative heat, cold, poisoning,
   and choking fact contracts. Source retrieval records and exact hashes are
   bundled; twenty adversarial variants are executed by the audit gate.

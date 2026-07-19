@@ -23,6 +23,10 @@ RESOURCE_UNITS = {
 }
 
 
+class KnowledgeActionUnavailableError(ValueError):
+    """The entry exists, but its actionable content is review-gated."""
+
+
 class OperatingMode(Enum):
     PROACTIVE = "proactive"
     STANDARD = "standard"
@@ -830,6 +834,17 @@ def derive_verification_level(entry: "KnowledgeEntry") -> str:
     if len(verified_references(entry)) >= 2:
         return "cross_ref"
     return "unverified"
+
+
+def is_actionable_knowledge(entry: "KnowledgeEntry") -> bool:
+    """Require both locally auditable content evidence and risk approval."""
+    return (
+        entry.review_status == "approved"
+        and entry.risk_level not in {"", "pending_review"}
+        and bool(entry.hazards)
+        and "unknown" not in entry.hazards
+        and derive_verification_level(entry) != "unverified"
+    )
 
 
 def is_high_risk_knowledge(entry: "KnowledgeEntry") -> bool:

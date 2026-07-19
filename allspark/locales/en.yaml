@@ -2165,6 +2165,7 @@ action_loop_cancelled: 'Cancelled the pending {resource} update. Nothing was sav
 action_loop_applied: 'Saved {resource} as {amount}{unit} and recalculated the 24-hour plan. Current first action: {action}'
 action_loop_timeline_resource_update: 'Confirmed {resource} update: {amount}{unit}'
 error_knowledge_not_found: 'Knowledge entry not found'
+error_knowledge_actionable_content_withheld: Actionable content is unavailable until its evidence and risk classification pass local review.
 web_knowledge_create_task: 'Add to tasks'
 web_knowledge_task_created: 'Task added'
 task_added_msg: 'Task added: {id}'

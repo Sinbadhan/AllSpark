@@ -64,7 +64,9 @@ test suite and collection gate independently on Python 3.11 and 3.12.
 Confirm the knowledge output contract with a pending bundled item and an
 externally imported item: both must expose review/evidence metadata while
 withholding actionable summaries, steps, prerequisites, warnings,
-applicability, and contraindications until both local gates pass.
+applicability, and contraindications until both local gates pass. Their
+knowledge-to-task requests must return a read-only conflict without creating a
+task.
 Run `python3 scripts/audit_safety_scenarios.py` and confirm all canonical and
 adversarial variants execute deterministically with zero declared forbidden
 matches. Source records, retrieval dates, action hashes, and reviewer scopes

@@ -153,7 +153,7 @@ def test_catalog_signoffs_reject_wrong_scope_future_date_and_duplicate_reviewer(
         "qualification_evidence": "registry:test",
         "scope": "test scope",
         "covered_action_ids": ["apply-direct-pressure"],
-        "reviewed_at": "2026-07-20",
+        "reviewed_at": "2026-07-16",
         "decision": "approved",
         "conclusion": "test",
         "reservations": [],

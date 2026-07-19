@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from allspark.adapters.routes.helpers import _get_service, error_response
 from allspark.core.i18n import set_language, t
-from allspark.core.models import ResourceType
+from allspark.core.models import KnowledgeActionUnavailableError, ResourceType
 
 
 class ChatRequest:
@@ -461,9 +461,14 @@ def register_core_routes(app, check):
         knowledge_id = data.get("knowledge_id") if isinstance(data, dict) else None
         if not isinstance(knowledge_id, str) or not knowledge_id.strip():
             raise HTTPException(400, t("error_missing_required_fields", fields="knowledge_id"))
-        result = container.get("action_loop").create_task_from_knowledge(
-            knowledge_id.strip()
-        )
+        try:
+            result = container.get("action_loop").create_task_from_knowledge(
+                knowledge_id.strip()
+            )
+        except KnowledgeActionUnavailableError as exc:
+            raise HTTPException(
+                409, t("error_knowledge_actionable_content_withheld")
+            ) from exc
         if result is None:
             raise HTTPException(404, t("error_knowledge_not_found"))
         task, created = result

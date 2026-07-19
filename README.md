@@ -42,8 +42,9 @@ Bundled or imported knowledge whose content evidence and risk classification
 have not both passed local review remains searchable as an inventory item, but
 its summary, steps, prerequisites, warnings, applicability, and
 contraindications are withheld from API, CLI, and Web action surfaces. The
-bundled catalog is currently pending external review; metadata visibility is
-not permission to act on unreviewed content.
+knowledge-to-task endpoint also rejects these entries. The bundled catalog is
+currently pending external review; metadata visibility is not permission to
+act on unreviewed content.
 
 ---
 

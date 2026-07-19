@@ -2108,6 +2108,7 @@ action_loop_cancelled: '已取消待确认的{resource}更新，没有保存任�
 action_loop_applied: '已保存{resource} {amount}{unit}并重算 24 小时计划。当前首要行动：{action}'
 action_loop_timeline_resource_update: '已确认更新 {resource}：{amount}{unit}'
 error_knowledge_not_found: '未找到知识条目'
+error_knowledge_actionable_content_withheld: 操作性内容需在证据与风险分类通过本地复核后才能使用。
 web_knowledge_create_task: '加入任务'
 web_knowledge_task_created: '任务已加入'
 task_added_msg: '已添加任务：{id}'

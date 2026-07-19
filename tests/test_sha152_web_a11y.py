@@ -208,7 +208,8 @@ class TestRepositoryA11y:
         assert "_trapDialogTab(dialog, e)" in t
         assert "modal._previouslyFocused = document.activeElement" in t
         assert "document.body.contains(previous)" in t
-        assert "previous.focus()" in t
+        assert "modalBackgroundManager.deactivate(m, previous)" in t
+        assert "previous.focus({preventScroll: true})" in t
 
 
 class TestBaseA11y:

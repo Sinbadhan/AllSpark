@@ -10,7 +10,12 @@ from datetime import datetime, timezone
 from typing import Any
 
 from allspark.core.i18n import mark, render, t
-from allspark.core.models import RESOURCE_UNITS, ResourceType
+from allspark.core.models import (
+    RESOURCE_UNITS,
+    KnowledgeActionUnavailableError,
+    ResourceType,
+    is_actionable_knowledge,
+)
 
 _CONVERSATION_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 _NUMBER = (
@@ -118,6 +123,8 @@ class ActionLoopService:
         entry = self.db.get_knowledge(knowledge_id)
         if entry is None:
             return None
+        if not is_actionable_knowledge(entry):
+            raise KnowledgeActionUnavailableError(knowledge_id)
         assessment = self.survival_plan.generate_current()
         phase = assessment.phase
         description_parts = [entry.summary]

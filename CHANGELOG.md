@@ -47,7 +47,9 @@ workflow and supported hardware scope are approved.
 
 **Quality (P1):**
 - 2026-07-20 re-audit: pending bundled/imported knowledge now withholds all
-  actionable content until both evidence and risk-classification gates pass;
+  actionable content and rejects knowledge-to-task creation until both
+  evidence and risk-classification gates pass; safety metadata dates use one
+  UTC boundary so fail-closed validation is independent of runner timezone;
   immediate-danger routing adds conservative heat, cold, poisoning, and
   choking fact contracts, hashed source-capture records, qualified reviewer
   scopes, and 20 executable adversarial variants. External professional review

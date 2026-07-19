@@ -537,8 +537,10 @@ async function showKnowledge(id) {
   html += '<div class="section-label">' + escHtml(I18N.knowledge_risk_classification_label) + '</div><div class="text-sm mb-2">' + escHtml(entry.risk_review_status_label || '') + ' · ' + escHtml(entry.risk_level_label || '') + '</div>';
   html += '<div class="section-label warn">' + escHtml(I18N.knowledge_hazards_label) + '</div><div class="text-sm mb-2">' + escHtml((entry.hazard_labels || []).join('; ') || I18N.knowledge_not_provided) + '</div>';
   if (entry.risk_notice) html += '<div role="note" class="alert-card alert-critical text-sm" style="margin:8px 0;"><strong>' + escHtml(I18N.knowledge_risk_label) + '</strong><span>' + escHtml(entry.risk_notice) + '</span></div>';
-  html += '<div class="section-label">' + escHtml(I18N.knowledge_applicable_when) + '</div><div class="text-sm mb-2">' + escHtml((entry.applicable_when || []).join('; ') || I18N.knowledge_not_provided) + '</div>';
-  html += '<div class="section-label warn">' + escHtml(I18N.knowledge_contraindications) + '</div><div class="text-sm mb-2">' + escHtml((entry.contraindications || []).join('; ') || I18N.knowledge_not_provided) + '</div>';
+  if (entry.actionable_content === true) {
+    html += '<div class="section-label">' + escHtml(I18N.knowledge_applicable_when) + '</div><div class="text-sm mb-2">' + escHtml((entry.applicable_when || []).join('; ') || I18N.knowledge_not_provided) + '</div>';
+    html += '<div class="section-label warn">' + escHtml(I18N.knowledge_contraindications) + '</div><div class="text-sm mb-2">' + escHtml((entry.contraindications || []).join('; ') || I18N.knowledge_not_provided) + '</div>';
+  }
   if (entry.escalation_help) html += '<div class="section-label warn">' + escHtml(I18N.knowledge_escalation_label) + '</div><div class="text-sm mb-2">' + escHtml(entry.escalation_help) + '</div>';
   const localRefs = (entry.references || []).filter(r => r.trust_status === 'local_verified');
   const externalRefs = (entry.references || []).filter(r => r.trust_status !== 'local_verified');
@@ -562,7 +564,9 @@ async function showKnowledge(id) {
   if (entry.steps && entry.steps.length) {
     html += '<div class="section-label">' + I18N.web_steps + '</div><ol style="list-style:decimal inside;font-size:13px;">' + entry.steps.map(s => '<li>' + escHtml(s) + '</li>').join("") + '</ol>';
   }
-  html += '<button class="action-btn action-primary" style="margin-top:12px;" data-index-action="knowledge-task" data-knowledge-id="' + escHtml(entry.id) + '"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">note_add</span>' + I18N.web_knowledge_create_task + '</button>';
+  if (entry.actionable_content === true) {
+    html += '<button class="action-btn action-primary" style="margin-top:12px;" data-index-action="knowledge-task" data-knowledge-id="' + escHtml(entry.id) + '"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:16px;">note_add</span>' + I18N.web_knowledge_create_task + '</button>';
+  }
   html += '</div>';
   container.innerHTML = html;
 }
