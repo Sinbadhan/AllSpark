@@ -9,9 +9,10 @@ qualified professional. The capability remains Experimental.
 
 1. The deterministic check runs before rule-based answers and every user-facing
    local LLM path, including Web chat/streaming, CLI `llm chat`, and voice chat.
-2. It ignores supported negated and clearly attributed quotation/reporting
-   contexts instead of escalating on a repeated keyword count. A bare
-   first-person quotation is treated conservatively as a possible disclosure.
+2. It scopes negation and attributed quotation/reporting to the clause they
+   modify, so a later first-person disclosure or means statement is not hidden
+   by an earlier denial or quote. A bare first-person quotation is treated
+   conservatively as a possible disclosure.
 3. It asks directly about current self-harm or suicide thoughts, immediate
    danger, and access to a means of harm.
 4. Reported immediate danger prioritizes not being alone, safely reducing
@@ -27,7 +28,9 @@ qualified professional. The capability remains Experimental.
 Local contacts are optional and loaded offline from the `[crisis_support]`
 section documented in [the configuration guide](CONFIGURATION.md). When none
 are configured, the product states that limitation and uses a location-neutral
-fallback. It does not hardcode the United States 988 service as a global answer.
+fallback. A region label alone does not count as a contact, and configured
+values are normalized to one bounded display line. It does not hardcode the
+United States 988 service as a global answer.
 
 ## Evidence and remaining gate
 

@@ -186,9 +186,12 @@ class TestAnswerFormat:
         entries = ke.search_by_language("水 净水 水源 饮水", limit=3)
         assert len(entries) >= 2
         formatted = ke.format_answer(entries)
-        # Main entry: id + summary (full detail).
+        # Main entry is identified, but pending actionable content is withheld.
         assert f"[{entries[0].id}]" in formatted
-        assert entries[0].summary in formatted
+        payload = ke.entry_payload(entries[0])
+        assert payload["actionable_content"] is False
+        assert payload["summary"] in formatted
+        assert entries[0].summary not in formatted
         # Related entries: title link present, full summary absent.
         assert entries[1].title in formatted
         assert entries[1].summary not in formatted

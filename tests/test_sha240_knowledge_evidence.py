@@ -654,7 +654,7 @@ def test_bundled_high_risk_audit_is_explicit_and_fail_closed() -> None:
 
 
 @pytest.mark.parametrize("language", ["zh", "en"])
-def test_qa_and_dom_put_high_risk_boundaries_before_steps(language: str) -> None:
+def test_qa_and_dom_withhold_unreviewed_high_risk_actions(language: str) -> None:
     previous = get_language()
     try:
         set_language(language, persist=False)
@@ -676,12 +676,15 @@ def test_qa_and_dom_put_high_risk_boundaries_before_steps(language: str) -> None
         )
         rendered = KnowledgeEngine.entry_payload(entry)
         assert rendered["risk_notice"]
+        assert rendered["actionable_content"] is False
+        assert rendered["steps"] == []
         db = type("DB", (), {})()
         text = KnowledgeEngine(db).format_entry(entry)
-        assert text.index(rendered["risk_notice"]) < text.index("1. action")
-        assert text.index("Chapter 2, section 4") < text.index("1. action")
-        assert text.index("Succeeded without injury") < text.index("1. action")
-        assert text.index("External Reviewer") < text.index("1. action")
+        assert rendered["risk_notice"] in text
+        assert "1. action" not in text
+        assert "Chapter 2, section 4" in text
+        assert "Succeeded without injury" in text
+        assert "External Reviewer" in text
         index_html = Path("allspark/templates/index.html").read_text(encoding="utf-8")
         repo_html = Path("allspark/templates/repository.html").read_text(encoding="utf-8")
         assert index_html.index("entry.risk_notice") < index_html.index("entry.steps")

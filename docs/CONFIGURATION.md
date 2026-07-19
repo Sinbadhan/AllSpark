@@ -169,10 +169,12 @@ crisis_line = "Local crisis service"
 trusted_contact = "Trusted person and offline contact method"
 ```
 
-Every field is optional. Values are displayed exactly as local operator data;
-AllSpark does not verify, dial, message, or transmit them. If no contact is
-configured, the product says so and gives a location-neutral fallback instead
-of assuming a country or hardcoding a regional hotline. See
+Every field is optional. Values are normalized to one bounded display line and
+labeled as local operator data; AllSpark does not verify, dial, message, or
+transmit them. A region alone is not a contact. If no emergency service, crisis
+line, or trusted contact is configured, the product says so and gives a
+location-neutral fallback instead of assuming a country or hardcoding a
+regional hotline. See
 [the crisis-support boundary](CRISIS_SUPPORT.md).
 
 ## Environment variables

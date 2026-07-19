@@ -12,8 +12,10 @@ sources:
     locator_key: immediate_danger_source_red_cross_steps_locator
     url: https://www.redcross.org/take-a-class/first-aid/performing-first-aid/first-aid-steps
     revision: accessed-2026-07-16
+    retrieved_at: '2026-07-16'
     assertion: Check scene safety before care and assess responsiveness, breathing, and life-threatening bleeding before choosing the next response.
-    content_hash: sha256:089c69084b8e68b06e7adadb271bab3ff51130b8a68bb24b823357f8d8b10381
+    captured_assertion: The captured source record requires scene safety, responsiveness, breathing, life-threatening bleeding assessment, and emergency help when indicated.
+    content_hash: sha256:ac8b0439051d08fb0a72cfd9f9153f66c3ce08407d15d4f886420a02ce1d662d
   red-cross-life-threatening-bleeding:
     organization: American Red Cross
     title: Life-Threatening External Bleeding
@@ -21,8 +23,10 @@ sources:
     locator_key: immediate_danger_source_red_cross_bleeding_locator
     url: https://www.redcross.org/take-a-class/resources/learn-first-aid/bleeding-life-threatening-external
     revision: accessed-2026-07-16
+    retrieved_at: '2026-07-16'
     assertion: After confirming scene safety, direct pressure is the initial response for life-threatening external bleeding; packing and tourniquets have applicability and training boundaries.
-    content_hash: sha256:63d78a85067fa86f702a84aec6bb509699fcfb9de80f8c5d56eadc6c626090af
+    captured_assertion: The captured source record places direct pressure after scene safety and keeps packing and tourniquets within explicit applicability and training boundaries.
+    content_hash: sha256:90bbc24e6d5602b9c28090fe4b382bd6adcf0e4e8965529268e3c889237a9719
   cdc-niosh-carbon-monoxide:
     organization: CDC/NIOSH
     title: Carbon Monoxide
@@ -30,8 +34,10 @@ sources:
     locator_key: immediate_danger_source_cdc_co_locator
     url: https://www.cdc.gov/niosh/carbon-monoxide/about/index.html
     revision: accessed-2026-07-16
+    retrieved_at: '2026-07-16'
     assertion: Suspected carbon monoxide exposure requires moving to fresh air immediately and seeking medical attention without implying that re-entry is safe.
-    content_hash: sha256:0989fce2e7b6834f2dcb5757a59dc8275b06de9bf689ee3d3ea647a06da69756
+    captured_assertion: The captured source record directs exposed people to fresh air and medical attention without declaring the contaminated area safe for re-entry.
+    content_hash: sha256:210bcf422f7005c06ac058490c4db139e2453c472ee1faa1947b11f90e7bf397
   nhs-first-aid:
     organization: NHS
     title: First aid
@@ -39,8 +45,43 @@ sources:
     locator_key: immediate_danger_source_nhs_first_aid_locator
     url: https://www.nhs.uk/tests-and-treatments/first-aid/
     revision: accessed-2026-07-16
+    retrieved_at: '2026-07-16'
     assertion: Breathing, responsiveness, age, and cause affect emergency first-aid branches and must not be collapsed into one universal instruction.
-    content_hash: sha256:1eb9e62cadc22d8a46e667ecbf8c1d04e5b867391a039ac8c964a9664b386fb8
+    captured_assertion: The captured source record distinguishes emergency branches by breathing, responsiveness, age, and cause instead of prescribing one universal action.
+    content_hash: sha256:49539bc79b7faeb4207742dda58382093ebaba1ad89533f790256c2112fb627b
+  cdc-heat-illness:
+    organization: CDC/NIOSH
+    title: Heat-related illnesses
+    locator: "Heat stroke and heat exhaustion: rapid cooling, symptom boundaries, and emergency escalation"
+    locator_key: immediate_danger_source_cdc_heat_locator
+    url: https://www.cdc.gov/niosh/heat-stress/about/illnesses.html
+    revision: accessed-2026-07-20
+    retrieved_at: '2026-07-20'
+    assertion: Move an affected person to a cooler place and begin cooling; altered mental status, seizure, or unconsciousness requires emergency response.
+    captured_assertion: The captured source record distinguishes heat exhaustion from heat stroke and prioritizes rapid cooling with emergency escalation for neurological symptoms.
+    content_hash: sha256:4c6cbd8932b5924fd419a8dd83843ac51bcec6d61284d1b672b7350997e72bb7
+  cdc-hypothermia:
+    organization: CDC
+    title: Preventing hypothermia
+    locator: "Hypothermia warning signs and gradual core warming without direct high heat"
+    locator_key: immediate_danger_source_cdc_cold_locator
+    url: https://www.cdc.gov/winter-weather/prevention/index.html
+    revision: accessed-2026-07-20
+    retrieved_at: '2026-07-20'
+    assertion: Move the person to shelter, remove wet clothing, and warm the center of the body gradually while seeking medical help for concerning symptoms.
+    captured_assertion: The captured source record prioritizes dry shelter and gradual core warming while avoiding direct high heat on a person with suspected hypothermia.
+    content_hash: sha256:c094929c2c1d9bcb9f0205e62b712d2bbb60f5d2092cdf46ff4796348c88261b
+  hrsa-poison-help:
+    organization: U.S. Health Resources and Services Administration
+    title: Poison Help
+    locator: "Poison exposure first response: stop exposure safely, do not induce vomiting, preserve product information, and contact poison help"
+    locator_key: immediate_danger_source_poison_help_locator
+    url: https://poisonhelp.hrsa.gov/what-you-can-do
+    revision: accessed-2026-07-20
+    retrieved_at: '2026-07-20'
+    assertion: Do not induce vomiting; stop exposure without creating another casualty, keep identifying information, and contact poison or emergency help.
+    captured_assertion: The captured source record rejects induced vomiting and directs callers to preserve substance information and obtain poison-specific professional guidance.
+    content_hash: sha256:a36a3abc876d23b22aceb6cbdf1326d3521625ffb6b330becee0a688c55cd55e
 actions:
   - action_id: leave-immediate-hazard
     revision: 1
@@ -92,11 +133,20 @@ actions:
         - threat_type: [medical]
           scene_safe: ["yes"]
           breathing: [absent_or_abnormal]
-    applicable_label_keys: [immediate_danger_applicable_unresponsive, immediate_danger_applicable_abnormal_breathing]
+        - threat_type: [choking]
+          scene_safe: ["yes"]
+          responsive: ["no", unknown]
+        - threat_type: [choking]
+          scene_safe: ["yes"]
+          breathing: [absent_or_abnormal, unknown]
+        - threat_type: [choking]
+          scene_safe: ["yes"]
+          effective_cough: [ineffective, unknown]
+    applicable_label_keys: [immediate_danger_applicable_unresponsive, immediate_danger_applicable_abnormal_breathing, immediate_danger_applicable_choking_unresponsive, immediate_danger_applicable_choking_breathing, immediate_danger_applicable_choking_ineffective_cough]
     contraindication_keys: [immediate_danger_contra_no_universal_cpr]
     escalation_key: immediate_danger_escalation_dispatcher
     review_status: pending_external_review
-    content_hash: sha256:5367549044a0772d42b83eeafc72b652406d0c64782051e3b7b81496674edb63
+    content_hash: sha256:0f7b34dc34135f822fbca9dfe5c7acd6e3336a88da44593e00453887c42422b6
   - action_id: seek-medical-assessment
     revision: 1
     text_key: immediate_danger_action_medical_assessment
@@ -106,11 +156,16 @@ actions:
         - threat_type: [medical]
           scene_safe: ["yes"]
           responsive: ["yes"]
-    applicable_label_keys: [immediate_danger_applicable_medical_responsive]
+        - threat_type: [choking]
+          scene_safe: ["yes"]
+          responsive: ["yes"]
+          breathing: [normal]
+          effective_cough: [effective]
+    applicable_label_keys: [immediate_danger_applicable_medical_responsive, immediate_danger_applicable_choking_effective_cough]
     contraindication_keys: [immediate_danger_contra_normal_not_safe, immediate_danger_contra_do_not_stop_monitoring]
     escalation_key: immediate_danger_escalation_medical_assessment
     review_status: pending_external_review
-    content_hash: sha256:a87059fb0c4f8a1e92b6e96c4fb003f04909cbee8c10708010f3a7519cd22a73
+    content_hash: sha256:7e85dd1a8b507fcf3c322a1f70417e66c9644c16f5458e404ad8d80a5c11adcb
   - action_id: keep-distance-seek-local-help
     revision: 1
     text_key: immediate_danger_action_uncertain_threat
@@ -136,3 +191,42 @@ actions:
     escalation_key: immediate_danger_escalation_none
     review_status: pending_external_review
     content_hash: sha256:2b9ff4c6cae6b31b60ef1dc2183f5dd0aa23c7fa1ebef18f1da16327dea1b2de
+  - action_id: begin-heat-cooling
+    revision: 1
+    text_key: immediate_danger_action_heat_cooling
+    source_ids: [cdc-heat-illness]
+    applicable_when:
+      any:
+        - threat_type: [extreme_heat]
+          scene_safe: ["yes"]
+    applicable_label_keys: [immediate_danger_applicable_extreme_heat]
+    contraindication_keys: [immediate_danger_contra_heat_no_delay, immediate_danger_contra_heat_no_forced_drink]
+    escalation_key: immediate_danger_escalation_heat
+    review_status: pending_external_review
+    content_hash: sha256:da23b7add600487e120a40e4ff729e6e694137f53e4e4f78d70b43e798da89d1
+  - action_id: prevent-further-cooling
+    revision: 1
+    text_key: immediate_danger_action_cold_warming
+    source_ids: [cdc-hypothermia]
+    applicable_when:
+      any:
+        - threat_type: [extreme_cold]
+          scene_safe: ["yes"]
+    applicable_label_keys: [immediate_danger_applicable_extreme_cold]
+    contraindication_keys: [immediate_danger_contra_cold_no_direct_heat, immediate_danger_contra_cold_no_alcohol]
+    escalation_key: immediate_danger_escalation_cold
+    review_status: pending_external_review
+    content_hash: sha256:5390379bea046666b94fcab5625bd75bd67f88807471e9bddaf5e3134f006cf7
+  - action_id: stop-poison-exposure
+    revision: 1
+    text_key: immediate_danger_action_poison_exposure
+    source_ids: [hrsa-poison-help]
+    applicable_when:
+      any:
+        - threat_type: [poisoning]
+          scene_safe: ["yes"]
+    applicable_label_keys: [immediate_danger_applicable_poisoning]
+    contraindication_keys: [immediate_danger_contra_poison_no_vomiting, immediate_danger_contra_poison_no_home_antidote]
+    escalation_key: immediate_danger_escalation_poison
+    review_status: pending_external_review
+    content_hash: sha256:afedbb3863b9661adadba341ed5383b544282f715da78be0ff4e35da45860c08

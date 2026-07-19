@@ -61,6 +61,14 @@ Do not lower coverage or collection floors to make a release pass. Record the
 exact pytest, coverage, regression, and benchmark output in the release PR.
 Python 3.10 is the canonical coverage environment; CI still runs the complete
 test suite and collection gate independently on Python 3.11 and 3.12.
+Confirm the knowledge output contract with a pending bundled item and an
+externally imported item: both must expose review/evidence metadata while
+withholding actionable summaries, steps, prerequisites, warnings,
+applicability, and contraindications until both local gates pass.
+Run `python3 scripts/audit_safety_scenarios.py` and confirm all canonical and
+adversarial variants execute deterministically with zero declared forbidden
+matches. Source records, retrieval dates, action hashes, and reviewer scopes
+must fail closed on drift; automation is not external expert approval.
 Run §1 of `docs/MANUAL_CHECKLIST.md` and attach the keyboard, macOS VoiceOver,
 and 200% browser-zoom evidence to the release PR. Attach Windows + NVDA evidence
 only when promoting that compatibility out of Testing.
@@ -72,6 +80,10 @@ two-step discard path. Confirm browser storage contains no draft, a failed
 publish leaves no partial official rows, retry creates no duplicate gap tasks,
 and a successful publish removes the draft. Exercise the CLI transaction
 failure path separately; CLI does not consume a Web partial draft.
+Confirm the first-run UI describes its storage as the local SQLite application
+database and does not imply application-level encryption. Verify the bounded
+"fill in later" command changes only power, fire, and storage to explicit
+unknown; it must not defer water, food, or immediate-danger facts.
 
 ## 4. Check package metadata
 

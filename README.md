@@ -38,6 +38,13 @@ Windows screen-reader compatibility remains a testing-stage capability until a
 real Windows + NVDA run is attached; it is not part of the v1.0.3 Stable
 accessibility claim.
 
+Bundled or imported knowledge whose content evidence and risk classification
+have not both passed local review remains searchable as an inventory item, but
+its summary, steps, prerequisites, warnings, applicability, and
+contraindications are withheld from API, CLI, and Web action surfaces. The
+bundled catalog is currently pending external review; metadata visibility is
+not permission to act on unreviewed content.
+
 ---
 
 ## Feature Overview

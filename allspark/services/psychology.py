@@ -27,6 +27,7 @@ _REPORTED_CONTEXT = re.compile(
 )
 _CONTEXT_CONTRAST = re.compile(r"(?:但|但是|不过|可|but|however)", re.IGNORECASE)
 _SENTENCE_BOUNDARY = re.compile(r"[。！？.!?]\s*")
+_REPORTED_CLAUSE_BREAK = re.compile(r"(?:[,，;；]|\band)\s*$", re.IGNORECASE)
 _ECHOED_DISCLOSURE = re.compile(
     r"(?:(?:但|但是|不过|可).{0,20}我(?:现在)?(?:也)?(?:想|要)(?:自杀|自伤|自残|轻生|死)|"
     r"(?:but|however).{0,20}\bi\s+(?:actually\s+do|do\s+too)(?:\s*[,.!]|$))",
@@ -46,6 +47,10 @@ _NEGATED_SELF_HARM = re.compile(
     r"i\s+(?:am|'m)\s+not\s+suicidal|"
     r"i\s+(?:do\s+not|don't)\s+want\s+to\s+(?:kill\s+myself|die|end\s+my\s+life|hurt\s+myself)|"
     r"i\s+(?:will\s+not|won't|would\s+never)\s+(?:kill|hurt|cut)\s+myself|"
+    r"i\s+(?:am|'m)\s+not\s+(?:going|planning)\s+to\s+"
+    r"(?:kill\s+myself|die|end\s+my\s+life|take\s+my\s+own\s+life|hurt\s+myself)|"
+    r"i\s+(?:do\s+not|don't)\s+plan\s+to\s+"
+    r"(?:kill\s+myself|die|end\s+my\s+life|take\s+my\s+own\s+life|hurt\s+myself)|"
     r"i\s+used\s+to\s+want\s+to\s+(?:kill\s+myself|die|hurt\s+myself).{0,20}"
     r"(?:not\s+anymore|no\s+longer)|"
     r"i\s+have\s+no\s+(?:suicidal|self[- ]harm)\s+thoughts?|"
@@ -53,13 +58,15 @@ _NEGATED_SELF_HARM = re.compile(
     re.IGNORECASE,
 )
 _DIRECT_SELF_HARM = re.compile(
-    r"(?:我(?:(?:现在)?(?:也|就)?)?(?:想|要|准备|打算|计划).{0,12}(?:自杀|自伤|自残|轻生|去死|结束生命|跳楼|割腕|伤害自己)|"
-    r"我(?:不想活了?|活不下去了?|有(?:自杀|自伤|自残|轻生)(?:的)?想法|(?:(?:现在)?也?)?想死(?:了|$|[，。,.!！]))|不想活了|活不下去了|"
+    r"(?:我(?:(?:现在)?(?:也|就)?)?(?:想|要|准备|打算|计划).{0,12}(?:自杀|自伤|自残|轻生|去死|结束(?:自己(?:的)?)?生命|跳楼|割腕|伤害自己)|"
+    r"我(?:不想活了?|活不下去了?|有(?:自杀|自伤|自残|轻生)(?:的)?(?:想法|念头)|(?:(?:现在)?也?)?想死(?:了|$|[，。,.!！]))|不想活了|活不下去了|"
     r"i\s+(?:am|'m)\s+suicidal|"
     r"i(?:\s+have|\s+am\s+having|'m\s+having)\s+(?:suicidal|self[- ]harm|suicide)\s+thoughts?|"
     r"i\s+(?:want|plan|intend|am\s+going|am\s+ready|feel\s+like).{0,30}"
-    r"(?:suicide|kill\s+myself|end\s+my\s+life|die|hurt\s+myself|cut\s+myself)|"
-    r"(?:kill|hurt|cut)\s+myself|end\s+my\s+life|"
+    r"(?:suicide|kill\s+myself|end\s+my\s+life|take\s+my\s+own\s+life|die|hurt\s+myself|cut\s+myself)|"
+    r"i\s+(?:am|'m)\s+thinking\s+about\s+(?:suicide|self[- ]harm)|"
+    r"i\s+have\s+suicidal\s+ideation|"
+    r"(?:kill|hurt|cut)\s+myself|end\s+my\s+life|take\s+my\s+own\s+life|"
     r"(?:don't|do\s+not)\s+want\s+to\s+live|better\s+off\s+dead|"
     r"(?:i\s+)?(?:want|plan|intend|am\s+going|am\s+ready)\s+to\s+overdose|"
     r"i\s+(?:just\s+)?took\s+all(?:\s+of)?\s+(?:the|my)\s+pills|"
@@ -70,8 +77,14 @@ _DIRECT_SELF_HARM = re.compile(
     r"i\s+have\s+(?:a|the|my)\s+gun\s+in\s+my\s+hand.{0,30}(?:die|kill\s+myself)|"
     r"i\s+have\s+(?:a\s+)?suicide\s+plan|"
     r"我(?:马上|正准备|准备|打算|想|要|刚刚|刚|已经).{0,8}"
-    r"(?:吞(?:了)?.{0,8}药|吃(?:了)?.{0,8}药|服药过量|割腕|跳楼|从.{0,6}跳下去|上吊|开枪)|"
+    r"(?:吞(?:了)?.{0,8}药|吃(?:了)?(?:一整?瓶|整瓶|大量|全部|过量).{0,6}药|服药过量|割腕|跳楼|从.{0,6}跳下去|上吊|开枪)|"
     r"我(?:在楼顶.{0,8}(?:跳|准备)|要上吊|拿枪.{0,8}(?:对着自己|想死)))",
+    re.IGNORECASE,
+)
+_ACCIDENTAL_SELF_INJURY = re.compile(
+    r"(?:i\s+(?:accidentally\s+)?(?:cut|hurt)\s+myself\s+"
+    r"(?:by\s+accident|while\s+shaving|shaving|while\s+lifting|lifting\s+(?:a|the)\s+box)|"
+    r"我(?:不小心|意外)(?:割伤|弄伤|伤到)了?自己)",
     re.IGNORECASE,
 )
 _IMMEDIATE_DANGER = re.compile(
@@ -104,6 +117,13 @@ _NEGATIVE_DANGER = re.compile(
     r"not\s+in\s+immediate\s+danger)(?:[\s，。,.!！].*)?$",
     re.IGNORECASE,
 )
+_CONFIRMATION_DANGER_DETAIL = re.compile(
+    r"(?:我有计划|我能(?:接触|拿|取)到|刀在我手边|枪在我手边|"
+    r"i\s+have\s+(?:a\s+)?plan\b|i\s+have\s+access\s+to\b|"
+    r"i\s+can\s+reach\b|i\s+(?:am|'m)\s+going\s+to\s+"
+    r"(?:kill\s+myself|take\s+my\s+own\s+life|end\s+my\s+life|overdose))",
+    re.IGNORECASE,
+)
 _STANDALONE_IMMEDIATE_DANGER = re.compile(
     r"^(?:我(?:现在)?处于即时危险|我现在有危险|"
     r"i(?:'m|\s+am)\s+in\s+immediate\s+danger)(?:[\s，。,.!！].*)?$",
@@ -111,6 +131,11 @@ _STANDALONE_IMMEDIATE_DANGER = re.compile(
 )
 _CONVERSATION_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 _CONFIRMATION_TTL_SECONDS = 600
+
+
+def _normalize_resource_value(value: object) -> str:
+    """Keep operator-provided labels on one bounded, non-spoofable line."""
+    return " ".join(str(value).split())[:500]
 
 
 def _load_crisis_resources(path: Path = _CRISIS_CONFIG_PATH) -> dict[str, str]:
@@ -130,7 +155,9 @@ def _load_crisis_resources(path: Path = _CRISIS_CONFIG_PATH) -> dict[str, str]:
     for key in ("region", *_RESOURCE_KEYS):
         value = section.get(key)
         if isinstance(value, str) and value.strip():
-            resources[key] = value.strip()[:500]
+            normalized = _normalize_resource_value(value)
+            if normalized:
+                resources[key] = normalized
     return resources
 
 
@@ -145,9 +172,9 @@ class SelfHarmSupport:
     ):
         raw_resources = resources if resources is not None else _load_crisis_resources(config_path)
         self._resources = {
-            key: str(value).strip()[:500]
+            key: _normalize_resource_value(value)
             for key, value in raw_resources.items()
-            if key in {"region", *_RESOURCE_KEYS} and str(value).strip()
+            if key in {"region", *_RESOURCE_KEYS} and _normalize_resource_value(value)
         }
         self._states: OrderedDict[str, tuple[str, float]] = OrderedDict()
 
@@ -164,7 +191,13 @@ class SelfHarmSupport:
         chars = list(text)
         for quoted in _QUOTED_SPANS.finditer(text):
             prefix = text[:quoted.start()]
-            if _REPORTED_CONTEXT.search(prefix) or _DECLARED_QUOTE_CONTEXT.search(prefix):
+            reported = list(_REPORTED_CONTEXT.finditer(prefix))
+            reported_context = reported[-1] if reported else None
+            reported_quote = (
+                reported_context is not None
+                and not _SENTENCE_BOUNDARY.search(prefix[reported_context.end():])
+            )
+            if reported_quote or _DECLARED_QUOTE_CONTEXT.search(prefix):
                 chars[quoted.start():quoted.end()] = " " * (quoted.end() - quoted.start())
         text = "".join(chars)
         declared_context = _DECLARED_QUOTE_CONTEXT.search(text)
@@ -173,10 +206,16 @@ class SelfHarmSupport:
         if declared_context is not None:
             contexts.append(declared_context)
         contexts.sort(key=lambda match: match.start())
+        accidental = list(_ACCIDENTAL_SELF_INJURY.finditer(text))
         for direct in _DIRECT_SELF_HARM.finditer(text):
             if any(
                 negation.start() <= direct.start() < negation.end()
                 for negation in negated
+            ):
+                continue
+            if any(
+                context.start() <= direct.start() < context.end()
+                for context in accidental
             ):
                 continue
             reported_context = next(
@@ -192,6 +231,7 @@ class SelfHarmSupport:
                 if (
                     not _SENTENCE_BOUNDARY.search(bridge)
                     and not _CONTEXT_CONTRAST.search(bridge)
+                    and not _REPORTED_CLAUSE_BREAK.search(bridge)
                 ):
                     continue
             return True
@@ -249,10 +289,14 @@ class SelfHarmSupport:
 
         if state == "awaiting_direct_confirmation":
             if _NEGATIVE_DANGER.search(text):
-                contrast = _CONTEXT_CONTRAST.search(text)
-                if contrast and _IMMEDIATE_DANGER.search(text[contrast.end():]):
+                direct_signal = self._contains_direct_signal(text)
+                if _CONFIRMATION_DANGER_DETAIL.search(text) or (
+                    direct_signal and _IMMEDIATE_DANGER.search(text)
+                ):
                     self._set_state(key, "immediate_danger_reported")
                     return self._result("immediate_danger_reported")
+                if direct_signal:
+                    return self._result("needs_direct_confirmation")
                 self._set_state(key, "no_immediate_danger_reported")
                 return self._result("no_immediate_danger_reported")
             if _AFFIRMATIVE_DANGER.search(text) or _IMMEDIATE_DANGER.search(text):
@@ -314,11 +358,13 @@ class SelfHarmSupport:
         region = self._resources.get("region")
         if region:
             actions.append(t("psych_crisis_resource_region", value=region))
+        contact_configured = False
         for key in _RESOURCE_KEYS:
             value = self._resources.get(key)
             if value:
+                contact_configured = True
                 actions.append(t(f"psych_crisis_resource_{key}", value=value))
-        if not actions:
+        if not contact_configured:
             actions.append(t("psych_crisis_resources_unconfigured"))
         return actions
 

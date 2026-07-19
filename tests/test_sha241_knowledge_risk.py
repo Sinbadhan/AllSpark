@@ -74,6 +74,17 @@ def _approved_entry() -> KnowledgeEntry:
     return entry
 
 
+def _fully_reviewed_entry() -> KnowledgeEntry:
+    entry = _approved_entry()
+    entry.reviewer = "Named content reviewer"
+    entry.qualification = "Emergency physician"
+    entry.review_date = "2026-07-16"
+    entry.citation = "Local safety manual, section 4"
+    entry.signoff_version = 1
+    entry.content_hash = compute_content_hash(entry)
+    return entry
+
+
 def test_all_bundled_entries_have_explicit_fail_closed_risk_metadata() -> None:
     entries = load_knowledge()
     assert len(entries) == 152
@@ -235,6 +246,50 @@ def test_api_payload_exposes_fail_closed_classification_and_review_counts() -> N
     assert payload["risk_review_counts"] == {"local": 2, "external_claims": 0}
     assert len(payload["risk_reviews"]) == 2
     assert payload["risk_review_claims"] == []
+    assert payload["actionable_content"] is False
+    assert payload["content_access"] == "withheld_pending_review"
+    assert payload["steps"] == []
+
+
+def test_actionable_content_requires_both_content_and_risk_review() -> None:
+    content_only = _entry(
+        reviewer="Named content reviewer",
+        qualification="Emergency physician",
+        review_date="2026-07-16",
+        citation="Local safety manual, section 4",
+        signoff_version=1,
+    )
+    content_only.content_hash = compute_content_hash(content_only)
+    assert KnowledgeEngine.entry_payload(content_only)["actionable_content"] is False
+
+    fully_reviewed = _fully_reviewed_entry()
+    payload = KnowledgeEngine.entry_payload(fully_reviewed)
+    assert payload["actionable_content"] is True
+    assert payload["content_access"] == "available"
+    assert payload["summary"] == fully_reviewed.summary
+    assert payload["steps"] == ["Do the reviewed action"]
+
+
+@pytest.mark.parametrize(
+    "entry_id, forbidden",
+    [
+        ("survival/fire/methods/battery/en", "Touch both battery terminals"),
+        ("survival/food/plants/universal_test/en", "induce vomiting"),
+        ("medicine/surgery/basic", "脓肿切开"),
+    ],
+)
+def test_bundled_pending_review_actions_never_leave_output_contract(
+    entry_id: str, forbidden: str,
+) -> None:
+    entry = next(value for value in load_knowledge() if value.id == entry_id)
+    payload = KnowledgeEngine.entry_payload(entry)
+    output = KnowledgeEngine(type("DB", (), {})()).format_entry(entry)
+    assert payload["actionable_content"] is False
+    assert payload["steps"] == []
+    assert payload["prerequisites"] == []
+    assert payload["warnings"] == []
+    assert forbidden not in payload["summary"]
+    assert forbidden not in output
 
 
 def test_normalize_all_empty_is_idempotent() -> None:
@@ -289,7 +344,7 @@ def test_api_cli_and_dom_show_risk_context_before_actions(
     previous = get_language()
     try:
         set_language(language, persist=False)
-        entry = _approved_entry()
+        entry = _fully_reviewed_entry()
         payload = KnowledgeEngine.entry_payload(entry)
         assert payload["risk_review_status_label"] == status_text
         assert hazard_text in payload["hazard_labels"]

@@ -1850,6 +1850,7 @@ knowledge_source_local_generated: Locally generated experience summary
 knowledge_source_ai_generated: AI-generated experience summary
 knowledge_source_other: Other source claim
 knowledge_high_risk_unverified_notice: High-risk guidance without locally verified evidence. Treat it as unconfirmed and do not rely on it as the sole basis for action.
+knowledge_actionable_content_withheld: Actionable content is withheld until both its evidence and risk classification pass local review.
 knowledge_high_risk_short: High risk
 knowledge_risk_label: Evidence risk
 knowledge_risk_classification_label: Risk classification
@@ -2298,9 +2299,15 @@ immediate_danger_fact_scene_safe: Is the scene safe to approach or remain in?
 immediate_danger_fact_responsive: Is the person responsive?
 immediate_danger_fact_breathing: Is breathing normal?
 immediate_danger_fact_communication: Is communication available?
+immediate_danger_fact_age_group: What is the person's age group?
+immediate_danger_fact_effective_cough: Can the person cough forcefully or speak?
 immediate_danger_option_fire_smoke_or_co: Fire, smoke, or possible carbon monoxide
 immediate_danger_option_medical: Medical emergency
 immediate_danger_option_severe_bleeding: Life-threatening bleeding
+immediate_danger_option_choking: Choking or airway obstruction
+immediate_danger_option_extreme_heat: Severe heat illness
+immediate_danger_option_extreme_cold: Severe cold exposure
+immediate_danger_option_poisoning: Poisoning or chemical exposure
 immediate_danger_option_other: Another immediate threat
 immediate_danger_option_none: No immediate danger
 immediate_danger_option_unknown: Not sure
@@ -2310,6 +2317,33 @@ immediate_danger_option_normal: Normal
 immediate_danger_option_absent_or_abnormal: Absent, abnormal, or only gasping
 immediate_danger_option_available: Available
 immediate_danger_option_unavailable: Unavailable
+immediate_danger_option_infant: Infant (under 1 year)
+immediate_danger_option_child: Child
+immediate_danger_option_adult: Adult
+immediate_danger_option_effective: Forceful cough or able to speak
+immediate_danger_option_ineffective: Cannot cough forcefully or speak
+immediate_danger_source_cdc_heat_locator: Heat stroke and heat exhaustion guidance; rapid cooling and emergency escalation boundaries.
+immediate_danger_source_cdc_cold_locator: Hypothermia warning signs and gradual core-warming guidance.
+immediate_danger_source_poison_help_locator: Poison exposure first response and Poison Help escalation guidance.
+immediate_danger_applicable_choking_unresponsive: Suspected airway obstruction and the person is unresponsive or responsiveness is unknown.
+immediate_danger_applicable_choking_breathing: Suspected airway obstruction with absent, abnormal, or unknown breathing.
+immediate_danger_applicable_choking_ineffective_cough: Suspected airway obstruction and the person cannot cough forcefully or speak.
+immediate_danger_applicable_choking_effective_cough: Suspected airway obstruction while the person remains responsive, breathes normally, and can cough forcefully.
+immediate_danger_action_heat_cooling: Move the person to a cooler place and begin active cooling with cool water or wet cloths. Remove excess outer clothing.
+immediate_danger_applicable_extreme_heat: Severe heat exposure after the current location is confirmed safe enough to provide aid.
+immediate_danger_contra_heat_no_delay: Do not delay emergency help for confusion, seizure, collapse, or loss of consciousness.
+immediate_danger_contra_heat_no_forced_drink: Do not force fluids if the person is confused, vomiting, or unable to swallow safely.
+immediate_danger_escalation_heat: Seek emergency medical help immediately for altered behavior, seizure, collapse, unconsciousness, or worsening symptoms.
+immediate_danger_action_cold_warming: Move the person to a dry sheltered place, remove wet clothing, and warm the center of the body gradually with dry layers.
+immediate_danger_applicable_extreme_cold: Severe cold exposure after the shelter or aid location is confirmed safe.
+immediate_danger_contra_cold_no_direct_heat: Do not use direct high heat, hot water, or vigorous rubbing on a person with suspected hypothermia.
+immediate_danger_contra_cold_no_alcohol: Do not give alcohol.
+immediate_danger_escalation_cold: Seek medical help for confusion, unusual drowsiness, slurred speech, loss of coordination, or worsening condition.
+immediate_danger_action_poison_exposure: Stop the exposure without putting yourself at risk. Keep the container or substance information and obtain poison-specific help.
+immediate_danger_applicable_poisoning: Suspected poisoning or chemical exposure after the scene is confirmed safe enough to remain.
+immediate_danger_contra_poison_no_vomiting: Do not induce vomiting.
+immediate_danger_contra_poison_no_home_antidote: Do not use a home antidote or give food or drink unless poison professionals direct it.
+immediate_danger_escalation_poison: Contact local poison control or emergency medical help; use emergency services now for collapse, seizure, breathing trouble, or severe symptoms.
 immediate_danger_action_leave_hazard: Move away from the immediate hazard if you can do so without entering or re-entering danger.
 immediate_danger_action_fresh_air: Move to fresh air immediately without re-entering the contaminated or burning area.
 immediate_danger_action_direct_pressure: Apply firm, continuous direct pressure to the life-threatening external bleeding now.
@@ -2462,8 +2496,14 @@ survival_plan_maintain_review_done: The next review time is confirmed and critic
 web_init_plan_select_intro: Choose one action you confirm you will prioritize now. The plan is not published until initialization completes.
 web_init_plan_later_actions: Later actions
 web_init_plan_risk_label: Risk boundary
+web_init_step_status: 'Step {step} of {total}'
+web_init_data_boundary_heading: Local data boundary
+web_init_data_boundary_body: Assessment drafts are stored in the local SQLite application database. AllSpark does not claim database-level encryption; device and disk protection depend on operating-system configuration.
+web_init_defer_noncritical: Fill in later
+web_init_defer_noncritical_hint: Mark power, fire, and storage explicitly unknown so you can finish water, food, and immediate-danger assessment first.
+web_init_noncritical_deferred: Power, fire, and storage are marked unknown and can be completed after initialization.
 web_init_draft_title: Unpublished draft found
-web_init_draft_unpublished: This draft is stored only in AllSpark's protected local database. It is not part of your current facts or plan until you confirm and publish it.
+web_init_draft_unpublished: This draft is stored only in the local AllSpark SQLite application database. It is not part of your current facts or plan until you confirm and publish it.
 web_init_draft_updated: 'Last saved: {time}'
 web_init_draft_completed: Already entered
 web_init_draft_missing: Still needed
@@ -2477,6 +2517,8 @@ web_init_draft_discarded: Unpublished draft deleted
 web_init_draft_conflict: This draft changed in another session. Review the latest saved version before continuing.
 web_init_draft_save_failed: Draft could not be saved. Publishing is blocked until local recovery storage is available.
 web_init_draft_load_failed: Saved draft status could not be loaded.
+web_init_draft_preview_failed: Draft preview failed. Review the saved content and retry.
+web_init_draft_delete_failed: Draft deletion failed. The local draft was kept; retry when ready.
 web_init_btn_cancel: Cancel
 web_primary_plan_heading: What to do now
 web_primary_plan_unavailable: No confirmed 24-hour plan is available. Reassess the current situation.
@@ -2507,6 +2549,11 @@ web_executions_result_label: Result
 web_executions_evidence_label: Evidence
 web_executions_completed_at_label: Recorded
 web_executions_source_label: Source
+web_repository_load_failed: Knowledge categories or entries could not be loaded. Retry.
+web_executions_load_failed: Action records could not be loaded. Retry.
+web_executions_auxiliary_load_failed: Some plan or experience data could not be loaded; action records remain available.
+web_executions_search_results: 'Showing {shown} of {total}'
+web_goals_write_failed: Goal changes could not be saved. Retry.
 web_task_history: Task History
 web_progress_label: Progress
 web_goal_status_active: Active

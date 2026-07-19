@@ -358,6 +358,10 @@ def test_public_skf_import_is_inert_in_repository_and_dashboard(
         assert detail["id"] == safe_id
         assert detail["category"] == safe_category
         assert detail["source"] == "other_spark"
+        assert detail["actionable_content"] is False
+        assert detail["content_access"] == "withheld_pending_review"
+        assert detail["steps"] == []
+        assert "<svg" not in detail["summary"]
 
         hierarchical_id = "survival/water/purification/boiling"
         hierarchical_url = (
@@ -404,7 +408,7 @@ def test_public_skf_import_is_inert_in_repository_and_dashboard(
             assert repo_detail["title"] != sentinel
             assert repo_detail["probes"] == 0
             assert "&lt;img" in repo_detail["html"]
-            assert "&lt;svg" in repo_detail["html"]
+            assert "&lt;svg" not in repo_detail["html"]
 
             browser.navigate(f"{base_url}/?q={sentinel}")
             browser.wait_for("document.querySelector('.kb-entry') !== null")
@@ -428,4 +432,4 @@ def test_public_skf_import_is_inert_in_repository_and_dashboard(
             assert dashboard_detail["title"] != sentinel
             assert dashboard_detail["probes"] == 0
             assert "&lt;img" in dashboard_detail["html"]
-            assert "&lt;svg" in dashboard_detail["html"]
+            assert "&lt;svg" not in dashboard_detail["html"]

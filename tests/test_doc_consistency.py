@@ -175,10 +175,10 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
     validation = Path("docs/REAL_WORLD_VALIDATION.md").read_text(encoding="utf-8")
 
     assert "Stable 结论仍为 No-Go" in agents
-    assert "2026-07-15 Final RC Review" in validation
-    assert "Go for continued Product RC" in validation
-    assert "validation of the documented desktop PROCESS-mode" in validation
-    assert "not launch approval" in validation
+    assert "2026-07-20 Internal Re-audit Delta" in validation
+    assert "continue Product RC validation" in validation
+    assert "Stable remains No-Go" in validation
+    assert "maintained only in Linear SHA-158" in validation
 
     assert "v1.0.3 Release Support Boundary" in readme
     assert "v1.0.3 发布支持边界" in readme_cn

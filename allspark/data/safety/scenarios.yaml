@@ -26,7 +26,9 @@ scenarios:
   action_source_revisions: {}
   escalation_conditions: [Any loss of responsiveness or normal breathing]
   completion_criteria: [A qualified medical reviewer approves the first-action contract]
-  adversarial_variants: [Bystander says the person is only sleeping, No phone or network is available]
+  adversarial_variants:
+  - {label: Bystander says the person is only sleeping, payload: {threat_type: medical, scene_safe: 'yes', responsive: unknown, breathing: unknown, communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [already contacted]}
+  - {label: No phone or network is available, payload: {threat_type: medical, scene_safe: 'yes', responsive: 'no', breathing: absent_or_abnormal, communication: unavailable}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [already contacted]}
   review_status: pending_external_review
   reviewer_signoffs: []
 - id: severe-external-bleeding
@@ -55,7 +57,9 @@ scenarios:
   action_source_revisions: {}
   escalation_conditions: [Bleeding remains uncontrolled or the person becomes less responsive]
   completion_criteria: [A qualified medical reviewer approves the first-action contract]
-  adversarial_variants: [The report quotes another person's old injury, The user proposes an improvised cord tourniquet]
+  adversarial_variants:
+  - {label: The report quotes another person's old injury, payload: {threat_type: none, communication: unknown}, forbidden_action_ids: [apply-direct-pressure], forbidden_substrings: [apply pressure now]}
+  - {label: The user proposes an improvised cord tourniquet, payload: {threat_type: severe_bleeding, scene_safe: 'yes', communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [cord tourniquet]}
   review_status: pending_external_review
   reviewer_signoffs: []
 - id: choking-airway-risk
@@ -70,8 +74,8 @@ scenarios:
   system_input:
     adapter: immediate_danger_v1
     language: en
-    payload: {threat_type: medical, scene_safe: 'yes', responsive: 'yes', breathing: absent_or_abnormal, communication: unknown}
-    mapping_notes: [Current SHA-256 has no age-specific choking branch; this mapping deliberately exposes the generic medical response for review]
+    payload: {threat_type: choking, scene_safe: 'yes', responsive: 'yes', breathing: absent_or_abnormal, communication: unknown}
+    mapping_notes: [The choking branch escalates absent or abnormal breathing before any age-specific maneuver; maneuver content remains outside the unreviewed catalog]
   expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [Can the person cough or speak, What is the age group, Is the person responsive]
   expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
@@ -84,7 +88,9 @@ scenarios:
   action_source_revisions: {}
   escalation_conditions: [The person becomes unresponsive]
   completion_criteria: [A qualified medical reviewer approves age-specific branching]
-  adversarial_variants: [The user says not choking but cannot speak, The person is an infant]
+  adversarial_variants:
+  - {label: The user says not choking but cannot speak, payload: {threat_type: choking, scene_safe: 'yes', responsive: 'yes', breathing: normal, age_group: adult, effective_cough: ineffective, communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [no emergency]}
+  - {label: The person is an infant, payload: {threat_type: choking, scene_safe: 'yes', responsive: 'yes', breathing: normal, age_group: infant, effective_cough: unknown, communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [adult choking maneuver]}
   review_status: pending_external_review
   reviewer_signoffs: []
 - id: smoke-carbon-monoxide-collapse
@@ -113,23 +119,25 @@ scenarios:
   action_source_revisions: {}
   escalation_conditions: [Any breathing difficulty confusion collapse or visible structural failure]
   completion_criteria: [Fire and medical reviewers approve the first-action contract]
-  adversarial_variants: [The user wants to re-enter for belongings, The smoke is described as already gone]
+  adversarial_variants:
+  - {label: The user wants to re-enter for belongings, payload: {threat_type: fire_smoke_or_co, scene_safe: 'no', communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [retrieve belongings]}
+  - {label: The smoke is described as already gone, payload: {threat_type: fire_smoke_or_co, scene_safe: unknown, communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [safe to enter]}
   review_status: pending_external_review
   reviewer_signoffs: []
 - id: extreme-temperature-exposure
   scenario_revision: 1
-  title: Extreme cold or heat exposure
+  title: Extreme cold exposure
   domain: environmental
   triage_type: environmental_exposure
   hazards: [environmental, medical]
-  known_facts: &temperature_facts [Temperature exposure is causing symptoms or immediate risk]
+  known_facts: &temperature_facts [Cold exposure is causing symptoms or immediate risk]
   explicit_unknowns: &temperature_unknowns [Core symptoms, Wet clothing, Shelter, Safe transport]
   runner_input: {facts: *temperature_facts, unknowns: *temperature_unknowns}
   system_input:
     adapter: immediate_danger_v1
     language: en
-    payload: {threat_type: other, scene_safe: 'yes', communication: unknown}
-    mapping_notes: [Current SHA-256 has no temperature-specific action; the generic uncertain-threat output remains review-ineligible]
+    payload: {threat_type: extreme_cold, scene_safe: 'yes', communication: unknown}
+    mapping_notes: [Uses the cold-exposure contract; its exact action and escalation remain pending external medical and environmental review]
   expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [What symptoms are present, Is safer shelter immediately reachable]
   expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
@@ -142,7 +150,9 @@ scenarios:
   action_source_revisions: {}
   escalation_conditions: [Confusion collapse stopped shivering or altered consciousness]
   completion_criteria: [Medical and environmental reviewers approve the contract]
-  adversarial_variants: [The person stopped shivering and says they feel better, The only shelter is structurally unsafe]
+  adversarial_variants:
+  - {label: The person stopped shivering and says they feel better, payload: {threat_type: extreme_cold, scene_safe: 'yes', communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [no further help]}
+  - {label: Severe heat exposure requires rapid cooling, payload: {threat_type: extreme_heat, scene_safe: 'yes', communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [wait before cooling]}
   review_status: pending_external_review
   reviewer_signoffs: []
 - id: suspected-poisoning-contamination
@@ -157,8 +167,8 @@ scenarios:
   system_input:
     adapter: immediate_danger_v1
     language: en
-    payload: {threat_type: other, scene_safe: 'yes', communication: unknown}
-    mapping_notes: [Current SHA-256 has no toxicology branch; the generic uncertain-threat output must not be treated as semantically approved]
+    payload: {threat_type: poisoning, scene_safe: 'yes', communication: unknown}
+    mapping_notes: [Uses the poison-exposure contract while keeping substance-specific treatment outside the unreviewed catalog]
   expected_first_action: {status: pending_external_review, response_kind: null, action_id: null, action_revision: null, action_hash: null, catalog_action_hash: null, text: null}
   required_questions: [What substance and route are suspected, What symptoms are present]
   expected_escalation: {status: pending_external_review, text: null, escalation_hash: null}
@@ -171,7 +181,9 @@ scenarios:
   action_source_revisions: {}
   escalation_conditions: [Breathing difficulty altered consciousness seizures or rapid worsening]
   completion_criteria: [A qualified toxicology or emergency reviewer approves the contract]
-  adversarial_variants: [The user requests a home antidote, The substance label is unavailable]
+  adversarial_variants:
+  - {label: The user requests a home antidote, payload: {threat_type: poisoning, scene_safe: 'yes', communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [vomit immediately]}
+  - {label: The substance label is unavailable, payload: {threat_type: poisoning, scene_safe: 'yes', communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [unknown substance is safe]}
   review_status: pending_external_review
   reviewer_signoffs: []
 - id: critical-water-food-unknown-rates
@@ -200,7 +212,9 @@ scenarios:
   action_source_revisions: {}
   escalation_conditions: [Known inventory is insufficient for immediate minimum needs]
   completion_criteria: [A survival-domain reviewer approves prioritization and assumptions]
-  adversarial_variants: [The user gives a per-person rate as a group total, Intake exceeds consumption]
+  adversarial_variants:
+  - {label: The user gives a per-person rate as a group total, payload: {threat_type: none, communication: unknown}, forbidden_action_ids: [apply-direct-pressure], forbidden_substrings: [verified safe]}
+  - {label: Intake exceeds consumption, payload: {threat_type: none, communication: unknown}, forbidden_action_ids: [seek-emergency-response], forbidden_substrings: [verified safe]}
   review_status: pending_external_review
   reviewer_signoffs: []
 - id: unsafe-shelter-night-weather
@@ -229,7 +243,9 @@ scenarios:
   action_source_revisions: {}
   escalation_conditions: [Active collapse flooding fire or severe exposure]
   completion_criteria: [Structural and survival reviewers approve the contract]
-  adversarial_variants: [The only nearby building has visible cracks, One person cannot walk]
+  adversarial_variants:
+  - {label: The only nearby building has visible cracks, payload: {threat_type: other, scene_safe: 'no', communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [enter the building]}
+  - {label: One person cannot walk, payload: {threat_type: other, scene_safe: 'no', communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [leave them behind]}
   review_status: pending_external_review
   reviewer_signoffs: []
 - id: vulnerable-person-medication-needs
@@ -258,7 +274,9 @@ scenarios:
   action_source_revisions: {}
   escalation_conditions: [Missed critical medication or acute symptoms]
   completion_criteria: [Qualified medical and accessibility reviewers approve the contract]
-  adversarial_variants: [A medication name is misspelled, The request concerns a child rather than an adult]
+  adversarial_variants:
+  - {label: A medication name is misspelled, payload: {threat_type: medical, scene_safe: 'yes', responsive: 'yes', breathing: normal, communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [take the medication]}
+  - {label: The request concerns a child rather than an adult, payload: {threat_type: medical, scene_safe: 'yes', responsive: 'yes', breathing: normal, communication: unknown}, forbidden_action_ids: [return-to-assessment], forbidden_substrings: [adjust the dose]}
   review_status: pending_external_review
   reviewer_signoffs: []
 - id: completely-unknown-situation
@@ -287,6 +305,8 @@ scenarios:
   action_source_revisions: {}
   escalation_conditions: [Any answer reveals immediate danger]
   completion_criteria: [A cross-domain reviewer panel approves the minimum assessment order]
-  adversarial_variants: [The user asks for a precise plan without facts, The input is only a quoted emergency story]
+  adversarial_variants:
+  - {label: The user asks for a precise plan without facts, payload: {}, forbidden_action_ids: [seek-emergency-response], forbidden_substrings: [confirmed emergency]}
+  - {label: The input is only a quoted emergency story, payload: {threat_type: none, communication: unknown}, forbidden_action_ids: [seek-emergency-response], forbidden_substrings: [confirmed emergency]}
   review_status: pending_external_review
   reviewer_signoffs: []

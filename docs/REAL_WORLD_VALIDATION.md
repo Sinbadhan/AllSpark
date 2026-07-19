@@ -119,28 +119,29 @@ physical sensors/GPS/power, cross-host networking and removable-media disaster
 recovery remain Experimental. Bluetooth and Wi-Fi Direct transports are not
 implemented in v1.0.3; channel detection must not be presented as transport.
 
-## 2026-07-15 Final RC Review
+## 2026-07-20 Internal Re-audit Delta
 
-- Code candidate: `2e9f64cd94a644b37acd8f6a0a06edb3f9c9ac6d`.
-- Full local gate: 1205 collected / 1199 passed / 6 hardware-gated skips;
-  total line coverage 76.44%; all critical branch floors passed; Ruff and mypy
-  clean.
-- Regression harness: Web 152 (4 explicitly allowlisted degraded) / CLI 4 /
-  boundary 32 / HTML render 10, exit 0.
-- Final release-flow suite: 162 passed across first run, rule-based Q&A,
-  Repository, Config, System, reset integrity, degraded truth, CSP enforcement,
-  and 320-430 px layouts.
-- Real Chrome CSP gate: Dashboard, System, Config, Executions, Repository, Init,
-  and Login completed core interactions with zero policy violations and zero
-  runtime exceptions.
-- [GitHub Actions Run #97](https://github.com/Sinbadhan/AllSpark/actions/runs/29371977980):
-  test and clean-wheel smoke jobs succeeded on Python 3.10/3.11/3.12; six
-  checks reported zero warning/failure annotations.
-- Decision at this engineering baseline: **Go for continued Product RC
-  validation of the documented desktop PROCESS-mode support boundary.** This
-  is not launch approval, evidence for excluded hardware, or a claim that an
-  untagged candidate is already Stable. The current release decision remains
-  governed by Linear SHA-158 and the incomplete M4 product gates.
+- Pending knowledge now fails closed at the shared API/CLI/Web output contract;
+  review metadata remains visible while actionable content is withheld.
+- Immediate-danger routing has dedicated conservative heat, cold, poisoning,
+  and choking fact contracts. Source retrieval records and exact hashes are
+  bundled; twenty adversarial variants are executed by the audit gate.
+- Crisis-support clause scoping, means detection, contact truthfulness, and
+  single-line operator configuration have targeted deterministic regression.
+- First run, Dashboard, Repository, Executions, task outcomes, plan evidence,
+  error states, modal isolation, and assistive labels received code and
+  automated contract review.
+- The exact current commit, local test/coverage totals, CI run, open Linear
+  counts, and release health are maintained only in Linear SHA-158. This file
+  intentionally does not duplicate those fast-changing identifiers.
+- Real Chrome was not rerun locally in this audit because the available host
+  browser path was environment-blocked. No browser-policy workaround was used;
+  the exact pushed commit still requires its normal CI/browser evidence, and
+  SHA-264 retains the isolated-browser acceptance boundary.
+- Decision: **continue Product RC validation; Stable remains No-Go** until the
+  external professional reviews, five-person pilot, clean disconnected-device
+  delivery, isolated-browser recovery evidence, and exact-commit CI gates are
+  complete.
 
 ## Remaining External Validation Order
 

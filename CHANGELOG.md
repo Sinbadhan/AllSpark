@@ -46,6 +46,17 @@ workflow and supported hardware scope are approved.
   3.10/3.11/3.12 and validates clean-wheel installation on the same matrix.
 
 **Quality (P1):**
+- 2026-07-20 re-audit: pending bundled/imported knowledge now withholds all
+  actionable content until both evidence and risk-classification gates pass;
+  immediate-danger routing adds conservative heat, cold, poisoning, and
+  choking fact contracts, hashed source-capture records, qualified reviewer
+  scopes, and 20 executable adversarial variants. External professional review
+  remains a release blocker.
+- First run now states the plaintext local SQLite boundary, supports a bounded
+  defer command for noncritical power/fire/storage facts, announces step
+  progress, and preserves retryable draft errors. Dashboard, Repository,
+  Executions, goals, task outcomes, and plan evidence now expose truthful
+  partial-failure states and stronger keyboard/screen-reader contracts.
 - SHA-260: Experimental psychology support no longer turns repeated keywords
   into clinical-looking levels or claims an authority was notified. Explicit
   first-person self-harm language now enters a private deterministic safety

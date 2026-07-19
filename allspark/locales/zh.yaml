@@ -1793,6 +1793,7 @@ knowledge_source_local_generated: 本地生成的经验摘要
 knowledge_source_ai_generated: AI 生成的经验摘要
 knowledge_source_other: 其他来源声明
 knowledge_high_risk_unverified_notice: 这是尚无本地核验证据的高风险指引。请视为未确认信息，不要把它作为采取行动的唯一依据。
+knowledge_actionable_content_withheld: 在内容证据与风险分类均通过本地复核前，操作性内容不会展示。
 knowledge_high_risk_short: 高风险
 knowledge_risk_label: 证据风险
 knowledge_risk_classification_label: 风险分类
@@ -2241,9 +2242,15 @@ immediate_danger_fact_scene_safe: 现场是否可以安全接近或停留？
 immediate_danger_fact_responsive: 当事人是否有反应？
 immediate_danger_fact_breathing: 呼吸是否正常？
 immediate_danger_fact_communication: 当前是否能通信？
+immediate_danger_fact_age_group: 当事人属于哪个年龄组？
+immediate_danger_fact_effective_cough: 当事人能否有力咳嗽或说话？
 immediate_danger_option_fire_smoke_or_co: 火灾、烟雾或疑似一氧化碳
 immediate_danger_option_medical: 医疗紧急情况
 immediate_danger_option_severe_bleeding: 危及生命的大出血
+immediate_danger_option_choking: 窒息或气道梗阻
+immediate_danger_option_extreme_heat: 严重高温伤害
+immediate_danger_option_extreme_cold: 严重低温暴露
+immediate_danger_option_poisoning: 中毒或化学品暴露
 immediate_danger_option_other: 其他立即危险
 immediate_danger_option_none: 没有立即危险
 immediate_danger_option_unknown: 不确定
@@ -2253,6 +2260,33 @@ immediate_danger_option_normal: 正常
 immediate_danger_option_absent_or_abnormal: 无呼吸、呼吸异常或仅喘息
 immediate_danger_option_available: 可以通信
 immediate_danger_option_unavailable: 无法通信
+immediate_danger_option_infant: 婴儿（未满 1 岁）
+immediate_danger_option_child: 儿童
+immediate_danger_option_adult: 成人
+immediate_danger_option_effective: 能有力咳嗽或说话
+immediate_danger_option_ineffective: 无法有力咳嗽或说话
+immediate_danger_source_cdc_heat_locator: 中暑与热衰竭指引；快速降温及紧急升级边界。
+immediate_danger_source_cdc_cold_locator: 失温警示体征与逐步复温指引。
+immediate_danger_source_poison_help_locator: 中毒暴露初始响应与 Poison Help 升级指引。
+immediate_danger_applicable_choking_unresponsive: 疑似气道梗阻，且当事人无反应或反应状态不明。
+immediate_danger_applicable_choking_breathing: 疑似气道梗阻，且无呼吸、呼吸异常或呼吸状态不明。
+immediate_danger_applicable_choking_ineffective_cough: 疑似气道梗阻，且当事人无法有力咳嗽或说话。
+immediate_danger_applicable_choking_effective_cough: 疑似气道梗阻，但当事人仍有反应、呼吸正常且能有力咳嗽。
+immediate_danger_action_heat_cooling: 将当事人移到更凉爽的位置，用凉水或湿布主动降温，并移除多余外层衣物。
+immediate_danger_applicable_extreme_heat: 严重高温暴露，且当前地点已确认可安全施助。
+immediate_danger_contra_heat_no_delay: 出现意识混乱、抽搐、倒地或失去意识时，不要延误紧急求助。
+immediate_danger_contra_heat_no_forced_drink: 当事人意识混乱、呕吐或无法安全吞咽时，不要强行喂水。
+immediate_danger_escalation_heat: 如出现行为异常、抽搐、倒地、失去意识或症状恶化，立即寻求紧急医疗帮助。
+immediate_danger_action_cold_warming: 将当事人移到干燥、有遮蔽的位置，脱去湿衣，并用干燥衣物逐步温暖身体核心。
+immediate_danger_applicable_extreme_cold: 严重低温暴露，且避难或施助地点已确认安全。
+immediate_danger_contra_cold_no_direct_heat: 疑似失温时，不要使用高温直热、热水或用力揉搓身体。
+immediate_danger_contra_cold_no_alcohol: 不要给予酒精。
+immediate_danger_escalation_cold: 如出现意识混乱、异常嗜睡、言语含糊、协调障碍或状况恶化，寻求医疗帮助。
+immediate_danger_action_poison_exposure: 在不让自己陷入危险的前提下停止暴露，保留容器或物质信息，并获取针对该毒物的专业帮助。
+immediate_danger_applicable_poisoning: 疑似中毒或化学品暴露，且现场已确认可安全停留。
+immediate_danger_contra_poison_no_vomiting: 不要催吐。
+immediate_danger_contra_poison_no_home_antidote: 除非中毒专业人员明确指示，不要使用家庭解毒法，也不要给食物或饮料。
+immediate_danger_escalation_poison: 联系当地中毒控制或紧急医疗帮助；如倒地、抽搐、呼吸困难或症状严重，立即呼叫急救。
 immediate_danger_action_leave_hazard: 如果不需要进入或重新进入危险区域，请立即远离当前危险。
 immediate_danger_action_fresh_air: 立即前往新鲜空气处，不要重新进入受污染或燃烧区域。
 immediate_danger_action_direct_pressure: 立即对危及生命的外部出血处持续、用力直接加压。
@@ -2405,8 +2439,14 @@ survival_plan_maintain_review_done: 已确认下一次复查时间并保持关�
 web_init_plan_select_intro: 选择一个你现在确认要优先执行的行动；完成初始化前不会发布计划。
 web_init_plan_later_actions: 后续行动
 web_init_plan_risk_label: 风险边界
+web_init_step_status: '第 {step} 步，共 {total} 步'
+web_init_data_boundary_heading: 本地数据边界
+web_init_data_boundary_body: 评估草稿保存在本机 SQLite 应用数据库中；AllSpark 不声称提供数据库级加密，设备与磁盘保护由操作系统配置决定。
+web_init_defer_noncritical: 稍后填写
+web_init_defer_noncritical_hint: 可将电力、火源和存储明确标为未知，先完成水、食物与当前危险评估。
+web_init_noncritical_deferred: 电力、火源和存储已标为未知，可在初始化后补充。
 web_init_draft_title: 发现未发布草稿
-web_init_draft_unpublished: 此草稿仅保存在 AllSpark 受保护的本地数据库中；确认并发布前，不会成为当前事实或计划。
+web_init_draft_unpublished: 此草稿仅保存在本机 AllSpark SQLite 应用数据库中；确认并发布前，不会成为当前事实或计划。
 web_init_draft_updated: '上次保存：{time}'
 web_init_draft_completed: 已填写
 web_init_draft_missing: 仍需填写
@@ -2420,6 +2460,8 @@ web_init_draft_discarded: 未发布草稿已删除
 web_init_draft_conflict: 草稿已在另一会话中改变，请先检查最新保存版本。
 web_init_draft_save_failed: 无法保存草稿；本地恢复存储可用前将阻止发布。
 web_init_draft_load_failed: 无法读取已保存草稿状态。
+web_init_draft_preview_failed: 无法预览草稿；请检查已保存内容后重试。
+web_init_draft_delete_failed: 无法删除草稿；草稿仍保留在本机，请重试。
 web_init_btn_cancel: 取消
 web_primary_plan_heading: 现在做什么
 web_primary_plan_unavailable: 尚无已确认的 24 小时计划，请重新评估当前状况。
@@ -2450,6 +2492,11 @@ web_executions_result_label: 结果
 web_executions_evidence_label: 证据
 web_executions_completed_at_label: 记录时间
 web_executions_source_label: 来源
+web_repository_load_failed: 无法加载知识分类或条目，请重试。
+web_executions_load_failed: 无法加载行动记录，请重试。
+web_executions_auxiliary_load_failed: 部分计划或经验数据无法加载；行动记录仍可使用。
+web_executions_search_results: '显示 {shown} 条，共 {total} 条'
+web_goals_write_failed: 无法保存目标变更，请重试。
 web_task_history: 任务记录
 web_progress_label: 进度
 web_goal_status_active: 进行中

@@ -84,6 +84,13 @@ class KnowledgeEngine:
             "self_learned_llm": "knowledge_source_ai_generated",
         }
         high_risk = is_high_risk_knowledge(entry)
+        actionable_content = (
+            entry.review_status == "approved"
+            and entry.risk_level not in {"", "pending_review"}
+            and bool(entry.hazards)
+            and "unknown" not in entry.hazards
+            and level != "unverified"
+        )
         local_references = verified_references(entry)
         local_field_records = verified_field_records(entry)
         verified_reference_ids = {id(value) for value in local_references}
@@ -94,7 +101,14 @@ class KnowledgeEngine:
             "subcategory": entry.subcategory,
             "priority": entry.priority,
             "title": entry.title,
-            "summary": entry.summary,
+            "summary": (
+                entry.summary
+                if actionable_content else t("knowledge_actionable_content_withheld")
+            ),
+            "actionable_content": actionable_content,
+            "content_access": (
+                "available" if actionable_content else "withheld_pending_review"
+            ),
             "verification": level,
             "verification_label": t(f"knowledge_verification_{level}_label"),
             "verification_explanation": t(
@@ -170,9 +184,9 @@ class KnowledgeEngine:
                 for value in entry.field_records
             ]
             payload.update({
-                "steps": entry.steps,
-                "prerequisites": entry.prerequisites,
-                "warnings": entry.warnings,
+                "steps": entry.steps if actionable_content else [],
+                "prerequisites": entry.prerequisites if actionable_content else [],
+                "warnings": entry.warnings if actionable_content else [],
                 "verification_claim": entry.verification_claim,
                 "source_claim": entry.source_claim,
                 "risk_reviews": [
@@ -199,8 +213,10 @@ class KnowledgeEngine:
                 ],
                 "references": references,
                 "field_records": field_records,
-                "applicable_when": entry.applicable_when,
-                "contraindications": entry.contraindications,
+                "applicable_when": entry.applicable_when if actionable_content else [],
+                "contraindications": (
+                    entry.contraindications if actionable_content else []
+                ),
                 "local_review": (
                     {
                         "reviewer": entry.reviewer,
@@ -229,7 +245,7 @@ class KnowledgeEngine:
         payload = self.entry_payload(entry)
         lines = [f"[{entry.id}] {entry.title}"]
         lines.append(f"  {t('category')}: {entry.category}/{entry.subcategory} | {t('priority')}: {t('tier')} {entry.priority}")
-        lines.append(f"  {entry.summary}")
+        lines.append(f"  {payload['summary']}")
         lines.append(
             f"  {t('verification')}: {payload['verification_label']} — "
             f"{payload['verification_explanation']}"
@@ -247,11 +263,11 @@ class KnowledgeEngine:
             lines.append(f"  {t('knowledge_risk_label')}: {payload['risk_notice']}")
         lines.append(
             f"  {t('knowledge_applicable_when')}: "
-            f"{'; '.join(entry.applicable_when) if entry.applicable_when else t('knowledge_not_provided')}"
+            f"{'; '.join(payload['applicable_when']) if payload['applicable_when'] else t('knowledge_not_provided')}"
         )
         lines.append(
             f"  {t('knowledge_contraindications')}: "
-            f"{'; '.join(entry.contraindications) if entry.contraindications else t('knowledge_not_provided')}"
+            f"{'; '.join(payload['contraindications']) if payload['contraindications'] else t('knowledge_not_provided')}"
         )
         if payload["escalation_help"]:
             lines.append(f"  {t('knowledge_escalation_label')}: {payload['escalation_help']}")
@@ -308,15 +324,17 @@ class KnowledgeEngine:
                 f"{t('knowledge_review_fingerprint')}="
                 f"{review.get('classification_hash', '')}"
             )
-        if entry.prerequisites:
-            lines.append(f"  {t('prerequisites')}: {', '.join(entry.prerequisites)}")
-        if entry.warnings:
+        if payload["prerequisites"]:
+            lines.append(
+                f"  {t('prerequisites')}: {', '.join(payload['prerequisites'])}"
+            )
+        if payload["warnings"]:
             lines.append(f"  {t('warnings_label')}:")
-            for w in entry.warnings:
+            for w in payload["warnings"]:
                 lines.append(f"    - {w}")
-        if entry.steps:
+        if payload["steps"]:
             lines.append(f"  {t('steps')}:")
-            for i, step in enumerate(entry.steps, 1):
+            for i, step in enumerate(payload["steps"], 1):
                 lines.append(f"    {i}. {step}")
         return "\n".join(lines)
 

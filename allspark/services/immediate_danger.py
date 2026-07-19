@@ -22,6 +22,10 @@ _REVIEW_STATUSES = {"pending_external_review", "approved", "rejected"}
 _THREAT_ORDER = (
     "fire_smoke_or_co",
     "severe_bleeding",
+    "choking",
+    "extreme_heat",
+    "extreme_cold",
+    "poisoning",
     "medical",
     "other",
     "none",
@@ -32,12 +36,16 @@ _SCENE_STATES = {"yes", "no", "unknown"}
 _RESPONSIVE_STATES = {"yes", "no", "unknown"}
 _BREATHING_STATES = {"normal", "absent_or_abnormal", "unknown"}
 _COMMUNICATION_STATES = {"available", "unavailable", "unknown"}
+_AGE_GROUPS = {"infant", "child", "adult", "unknown"}
+_COUGH_STATES = {"effective", "ineffective", "unknown"}
 _QUESTION_OPTIONS = {
     "threat_type": list(_THREAT_ORDER),
     "scene_safe": ["yes", "no", "unknown"],
     "responsive": ["yes", "no", "unknown"],
     "breathing": ["normal", "absent_or_abnormal", "unknown"],
     "communication": ["available", "unavailable", "unknown"],
+    "age_group": ["infant", "child", "adult", "unknown"],
+    "effective_cough": ["effective", "ineffective", "unknown"],
 }
 _ROUTED_ACTION_IDS = {
     "leave-immediate-hazard",
@@ -47,6 +55,26 @@ _ROUTED_ACTION_IDS = {
     "seek-medical-assessment",
     "keep-distance-seek-local-help",
     "return-to-assessment",
+    "begin-heat-cooling",
+    "prevent-further-cooling",
+    "stop-poison-exposure",
+}
+_QUALIFICATIONS_BY_ACTION = {
+    "leave-immediate-hazard": {
+        "environmental_health", "fire_safety", "structural_engineering", "toxicology",
+    },
+    "move-to-fresh-air": {"emergency_medicine", "environmental_health", "toxicology"},
+    "apply-direct-pressure": {"emergency_medicine"},
+    "seek-emergency-response": {"emergency_medicine"},
+    "seek-medical-assessment": {"emergency_medicine"},
+    "keep-distance-seek-local-help": {
+        "cross_domain_panel", "environmental_health", "fire_safety",
+        "structural_engineering", "toxicology", "violence_prevention",
+    },
+    "return-to-assessment": {"cross_domain_panel"},
+    "begin-heat-cooling": {"emergency_medicine", "environmental_health"},
+    "prevent-further-cooling": {"emergency_medicine", "environmental_health"},
+    "stop-poison-exposure": {"environmental_health", "toxicology"},
 }
 
 
@@ -80,7 +108,8 @@ def _source_hash(source_id: str, source: dict[str, Any]) -> str:
         {
             "source_id": source_id,
             **{key: source[key] for key in (
-                "organization", "title", "locator", "locator_key", "url", "revision", "assertion"
+                "organization", "title", "locator", "locator_key", "url",
+                "revision", "retrieved_at", "assertion", "captured_assertion",
             )},
             "localized_locator": {
                 language: MESSAGES.get(language, {}).get(locator_key, "")
@@ -148,6 +177,7 @@ def _validate_catalog_signoffs(catalog: dict[str, Any]) -> None:
         raise ImmediateDangerCatalogError("reviewer_signoffs", "required")
     action_ids = {action["action_id"] for action in catalog["actions"]}
     covered: set[str] = set()
+    reviewer_ids: set[str] = set()
     expected_hash = _catalog_hash(catalog)
     fields = {
         "signoff_version", "reviewer_id", "reviewer", "qualification_type",
@@ -168,11 +198,21 @@ def _validate_catalog_signoffs(catalog: dict[str, Any]) -> None:
         if signoff["decision"] != status:
             raise ImmediateDangerCatalogError(f"reviewer_signoffs.{index}.decision", "mismatch")
         try:
-            date.fromisoformat(signoff["reviewed_at"])
+            reviewed_at = date.fromisoformat(signoff["reviewed_at"])
         except (TypeError, ValueError) as exc:
             raise ImmediateDangerCatalogError(
                 f"reviewer_signoffs.{index}.reviewed_at", "invalid_date"
             ) from exc
+        if reviewed_at > date.today():
+            raise ImmediateDangerCatalogError(
+                f"reviewer_signoffs.{index}.reviewed_at", "future_date"
+            )
+        reviewer_id = signoff["reviewer_id"].strip()
+        if reviewer_id in reviewer_ids:
+            raise ImmediateDangerCatalogError(
+                f"reviewer_signoffs.{index}.reviewer_id", "duplicate_reviewer"
+            )
+        reviewer_ids.add(reviewer_id)
         action_scope = signoff["covered_action_ids"]
         if (
             not isinstance(action_scope, list)
@@ -181,6 +221,15 @@ def _validate_catalog_signoffs(catalog: dict[str, Any]) -> None:
         ):
             raise ImmediateDangerCatalogError(
                 f"reviewer_signoffs.{index}.covered_action_ids", "invalid_scope"
+            )
+        qualification = signoff["qualification_type"].strip()
+        if any(
+            qualification not in _QUALIFICATIONS_BY_ACTION[action_id]
+            for action_id in action_scope
+        ):
+            raise ImmediateDangerCatalogError(
+                f"reviewer_signoffs.{index}.qualification_type",
+                "action_scope_mismatch",
             )
         if not isinstance(signoff["reservations"], list) or any(
             not isinstance(value, str) or not value.strip()
@@ -217,6 +266,8 @@ def _validate_applicability(value: Any, action_id: str) -> None:
         "responsive": _RESPONSIVE_STATES,
         "breathing": _BREATHING_STATES,
         "communication": _COMMUNICATION_STATES,
+        "age_group": _AGE_GROUPS,
+        "effective_cough": _COUGH_STATES,
     }
     for branch in branches:
         if not isinstance(branch, dict) or not branch:
@@ -260,9 +311,20 @@ def load_action_catalog() -> dict[str, Any]:
         if not isinstance(source_id, str) or not isinstance(source, dict):
             raise ImmediateDangerCatalogError("sources", "invalid_shape")
         for field in (
-            "organization", "title", "locator", "locator_key", "url", "revision", "assertion"
+            "organization", "title", "locator", "locator_key", "url", "revision",
+            "retrieved_at", "assertion", "captured_assertion",
         ):
             _require_string(source, field)
+        try:
+            retrieved_at = date.fromisoformat(source["retrieved_at"])
+        except ValueError as exc:
+            raise ImmediateDangerCatalogError(
+                f"sources.{source_id}.retrieved_at", "invalid_date"
+            ) from exc
+        if retrieved_at > date.today():
+            raise ImmediateDangerCatalogError(
+                f"sources.{source_id}.retrieved_at", "future_date"
+            )
         locator_key = source["locator_key"]
         if any(not MESSAGES.get(lang, {}).get(locator_key) for lang in _SUPPORTED_LANGUAGES):
             raise ImmediateDangerCatalogError(locator_key, "missing_translation")
@@ -416,9 +478,13 @@ def assess_immediate_danger(
     responsive = _value(payload, "responsive", _RESPONSIVE_STATES)
     breathing = _value(payload, "breathing", _BREATHING_STATES)
     communication = _value(payload, "communication", _COMMUNICATION_STATES)
+    age_group = _value(payload, "age_group", _AGE_GROUPS)
+    effective_cough = _value(payload, "effective_cough", _COUGH_STATES)
     if threat is None:
         return _question("threat_type")
     if threat == "none":
+        if scene in {"no", "unknown"}:
+            return _action("leave-immediate-hazard", language, communication, payload)
         return _action("return-to-assessment", language, communication, payload)
     if scene is None:
         return _question("scene_safe")
@@ -428,12 +494,32 @@ def assess_immediate_danger(
         return _action("move-to-fresh-air", language, communication, payload)
     if threat == "severe_bleeding":
         return _action("apply-direct-pressure", language, communication, payload)
+    if threat == "extreme_heat":
+        return _action("begin-heat-cooling", language, communication, payload)
+    if threat == "extreme_cold":
+        return _action("prevent-further-cooling", language, communication, payload)
+    if threat == "poisoning":
+        return _action("stop-poison-exposure", language, communication, payload)
     if threat in {"other", "unknown"}:
         return _action("keep-distance-seek-local-help", language, communication, payload)
     if responsive is None:
         return _question("responsive")
+    if breathing is None:
+        return _question("breathing")
     if breathing == "absent_or_abnormal":
         return _action("seek-emergency-response", language, communication, payload)
+    if threat == "choking":
+        if breathing != "normal":
+            return _action("seek-emergency-response", language, communication, payload)
+        if responsive != "yes":
+            return _action("seek-emergency-response", language, communication, payload)
+        if age_group is None:
+            return _question("age_group")
+        if effective_cough is None:
+            return _question("effective_cough")
+        if effective_cough != "effective":
+            return _action("seek-emergency-response", language, communication, payload)
+        return _action("seek-medical-assessment", language, communication, payload)
     if responsive == "yes":
         return _action("seek-medical-assessment", language, communication, payload)
     return _action("seek-emergency-response", language, communication, payload)

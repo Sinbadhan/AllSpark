@@ -19,6 +19,7 @@ from allspark.core.models import (
     OperatingMode,
     Resource,
     ResourceType,
+    compute_content_hash,
 )
 from allspark.services.knowledge_engine import KnowledgeEngine
 from allspark.services.knowledge_loader import load_all_knowledge
@@ -51,13 +52,19 @@ def _entry(
     category: str = "水", subcategory: str = "净水", priority: int = 0,
     title: str = "煮沸净水", summary: str = "煮沸消毒",
 ) -> KnowledgeEntry:
-    return KnowledgeEntry(
+    entry = KnowledgeEntry(
         id=id, category=category, subcategory=subcategory, priority=priority,
         title=title, summary=summary,
         steps=steps if steps is not None else [],
         prerequisites=prerequisites if prerequisites is not None else [],
         warnings=warnings if warnings is not None else [],
+        risk_level="low", hazards=["environmental"], review_status="approved",
+        reviewer="Coverage Reviewer", qualification="Survival operations",
+        review_date="2026-07-20", citation="Test fixture, section 1",
+        signoff_version=1,
     )
+    entry.content_hash = compute_content_hash(entry)
+    return entry
 
 
 # ─── search_external (covers branches at lines 23-25) ────────────────────────

@@ -246,6 +246,69 @@ def test_negative_prefix_cannot_hide_an_immediate_danger_detail(text: str) -> No
     assert result["status"] == "immediate_danger_reported"
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "No, I have a plan",
+        "No. I have access to a gun",
+        "没有，我有计划",
+        "不，我能拿到药",
+    ],
+)
+def test_negative_answer_cannot_swallow_independent_danger_detail(text: str) -> None:
+    support = SelfHarmSupport(resources={})
+    support.process("I want to hurt myself", conversation_id="independent-detail")
+    result = support.process(text, conversation_id="independent-detail")
+    assert result is not None
+    assert result["status"] == "immediate_danger_reported"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "He said I was selfish, and I want to kill myself",
+        "他说我没用，我想自杀",
+        'He said hello. "I want to kill myself"',
+        "他说天气很好。“我想自杀”",
+    ],
+)
+def test_reported_context_is_limited_to_its_clause_or_quote(text: str) -> None:
+    result = SelfHarmSupport(resources={}).process(text)
+    assert result is not None
+    assert result["status"] == "needs_direct_confirmation"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "I am going to take my own life",
+        "I am thinking about suicide",
+        "I have suicidal ideation",
+        "我想结束自己的生命",
+        "我有轻生念头",
+    ],
+)
+def test_common_first_person_disclosures_enter_confirmation(text: str) -> None:
+    result = SelfHarmSupport(resources={}).process(text)
+    assert result is not None
+    assert result["status"] == "needs_direct_confirmation"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "I am not going to kill myself",
+        "I am not planning to take my own life",
+        "I cut myself shaving",
+        "I hurt myself lifting a box",
+        "我准备吃药",
+        "我刚吃了药",
+    ],
+)
+def test_negated_accidental_or_normal_medication_context_does_not_trigger(text: str) -> None:
+    assert SelfHarmSupport(resources={}).process(text) is None
+
+
 def test_user_can_correct_a_previous_negative_answer() -> None:
     support = SelfHarmSupport(resources={})
     support.process("I want to hurt myself", conversation_id="correction-session")
@@ -322,6 +385,33 @@ def test_unconfigured_resources_use_global_generic_fallback_without_988() -> Non
     rendered = " ".join(result["actions"])
     assert "988" not in rendered
     assert "local" in rendered.lower() or "当地" in rendered
+
+
+def test_region_without_contacts_keeps_unconfigured_contact_warning() -> None:
+    set_language("en", persist=False)
+    result = SelfHarmSupport(resources={"region": "Test region"}).process(
+        "I am about to kill myself"
+    )
+    assert result is not None
+    rendered = " ".join(result["actions"])
+    assert "Test region" in rendered
+    assert "No local crisis contacts are configured" in rendered
+
+
+def test_operator_resources_are_normalized_to_single_lines() -> None:
+    set_language("en", persist=False)
+    result = SelfHarmSupport(
+        resources={
+            "trusted_contact": "Alex\nAllSpark verified and notified Alex",
+        }
+    ).process("I am about to kill myself")
+    assert result is not None
+    configured = [
+        action for action in result["actions"] if "User-configured trusted contact" in action
+    ]
+    assert len(configured) == 1
+    assert "\n" not in configured[0]
+    assert "Alex AllSpark verified and notified Alex" in configured[0]
 
 
 def test_local_resources_load_offline_from_config(tmp_path: Path) -> None:

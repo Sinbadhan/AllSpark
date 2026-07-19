@@ -37,7 +37,9 @@ def test_catalog_hashes_are_offline_rebuildable_contracts() -> None:
         assert source["content_hash"] == _source_hash(source_id, source)
         assert source["locator"]
         assert source["revision"]
+        assert source["retrieved_at"]
         assert source["assertion"]
+        assert source["captured_assertion"]
     for action in catalog["actions"]:
         assert action["content_hash"] == _action_hash(action)
         assert action["review_status"] == "pending_external_review"
@@ -54,26 +56,55 @@ def test_catalog_approval_path_requires_hashed_reviewer_coverage(
     for action in document["actions"]:
         action["review_status"] = "approved"
         action["content_hash"] = immediate_danger._action_hash(action)
-    action_ids = [action["action_id"] for action in document["actions"]]
+    signoff_scopes = [
+        (
+            "medical-reviewer-1",
+            "emergency_medicine",
+            [
+                "move-to-fresh-air",
+                "apply-direct-pressure",
+                "seek-emergency-response",
+                "seek-medical-assessment",
+            ],
+        ),
+        (
+            "incident-reviewer-1",
+            "environmental_health",
+            [
+                "leave-immediate-hazard",
+                "move-to-fresh-air",
+                "keep-distance-seek-local-help",
+                "begin-heat-cooling",
+                "prevent-further-cooling",
+                "stop-poison-exposure",
+            ],
+        ),
+        (
+            "assessment-reviewer-1",
+            "cross_domain_panel",
+            ["return-to-assessment"],
+        ),
+    ]
     document["reviewer_signoffs"] = [
         {
             "signoff_version": 1,
-            "reviewer_id": "independent-panel-1",
-            "reviewer": "Independent review panel",
-            "qualification_type": "cross_domain_panel",
+            "reviewer_id": reviewer_id,
+            "reviewer": f"Named reviewer {reviewer_id}",
+            "qualification_type": qualification,
             "qualification_evidence": "Verified externally for this test fixture",
-            "scope": "All catalog actions and both supported languages",
-            "covered_action_ids": action_ids,
+            "scope": "Listed catalog actions in both supported languages",
+            "covered_action_ids": scope,
             "reviewed_at": "2026-07-17",
             "decision": "approved",
             "conclusion": "Approved test fixture",
             "reservations": [],
             "content_hash": "",
         }
+        for reviewer_id, qualification, scope in signoff_scopes
     ]
-    document["reviewer_signoffs"][0]["content_hash"] = (
-        immediate_danger._catalog_hash(document)
-    )
+    expected_hash = immediate_danger._catalog_hash(document)
+    for signoff in document["reviewer_signoffs"]:
+        signoff["content_hash"] = expected_hash
     path = tmp_path / "approved-catalog.yaml"
     path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
     monkeypatch.setattr(immediate_danger, "CATALOG_PATH", path)
@@ -84,10 +115,12 @@ def test_catalog_approval_path_requires_hashed_reviewer_coverage(
         result = assess_immediate_danger({"threat_type": "none"}, "en")
         assert result["release_eligible"] is True
 
-        document["reviewer_signoffs"][0]["covered_action_ids"] = action_ids[:-1]
-        document["reviewer_signoffs"][0]["content_hash"] = (
-            immediate_danger._catalog_hash(document)
-        )
+        document["reviewer_signoffs"][2]["covered_action_ids"] = [
+            "keep-distance-seek-local-help"
+        ]
+        expected_hash = immediate_danger._catalog_hash(document)
+        for signoff in document["reviewer_signoffs"]:
+            signoff["content_hash"] = expected_hash
         path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
         load_action_catalog.cache_clear()
         import pytest
@@ -97,6 +130,55 @@ def test_catalog_approval_path_requires_hashed_reviewer_coverage(
             match="incomplete_action_coverage",
         ):
             load_action_catalog()
+    finally:
+        load_action_catalog.cache_clear()
+
+
+def test_catalog_signoffs_reject_wrong_scope_future_date_and_duplicate_reviewer(
+    monkeypatch, tmp_path: Path,
+) -> None:
+    import pytest
+
+    document = yaml.safe_load(immediate_danger.CATALOG_PATH.read_text(encoding="utf-8"))
+    document["review_status"] = "approved"
+    document["release_eligible"] = True
+    for action in document["actions"]:
+        action["review_status"] = "approved"
+        action["content_hash"] = immediate_danger._action_hash(action)
+    base = {
+        "signoff_version": 1,
+        "reviewer_id": "reviewer-1",
+        "reviewer": "Named reviewer",
+        "qualification_type": "cross_domain_panel",
+        "qualification_evidence": "registry:test",
+        "scope": "test scope",
+        "covered_action_ids": ["apply-direct-pressure"],
+        "reviewed_at": "2026-07-20",
+        "decision": "approved",
+        "conclusion": "test",
+        "reservations": [],
+        "content_hash": "",
+    }
+    path = tmp_path / "catalog.yaml"
+    monkeypatch.setattr(immediate_danger, "CATALOG_PATH", path)
+
+    def assert_rejected(signoffs, code: str) -> None:
+        document["reviewer_signoffs"] = signoffs
+        expected_hash = immediate_danger._catalog_hash(document)
+        for signoff in signoffs:
+            signoff["content_hash"] = expected_hash
+        path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+        load_action_catalog.cache_clear()
+        with pytest.raises(immediate_danger.ImmediateDangerValidationError, match=code):
+            load_action_catalog()
+
+    try:
+        assert_rejected([dict(base)], "action_scope_mismatch")
+        future = dict(base, qualification_type="emergency_medicine", reviewed_at="2999-01-01")
+        assert_rejected([future], "future_date")
+        first = dict(base, qualification_type="emergency_medicine")
+        second = dict(first)
+        assert_rejected([first, second], "duplicate_reviewer")
     finally:
         load_action_catalog.cache_clear()
 
@@ -119,7 +201,7 @@ def test_yaml_predicate_values_are_strings_and_fresh_process_loads() -> None:
             sys.executable,
             "-c",
             "from allspark.services.immediate_danger import action_catalog_audit; "
-            "assert action_catalog_audit()['action_count'] == 7",
+            "assert action_catalog_audit()['action_count'] == 10",
         ],
         check=False,
         capture_output=True,
@@ -260,6 +342,8 @@ def test_every_reachable_action_matches_machine_applicability() -> None:
         "responsive": immediate_danger._RESPONSIVE_STATES,
         "breathing": immediate_danger._BREATHING_STATES,
         "communication": immediate_danger._COMMUNICATION_STATES,
+        "age_group": immediate_danger._AGE_GROUPS,
+        "effective_cough": immediate_danger._COUGH_STATES,
     }
     for values in itertools.product(*(sorted(options) for options in fields.values())):
         facts = dict(zip(fields, values))
@@ -275,6 +359,10 @@ def test_question_options_have_fixed_risk_first_order() -> None:
         "options": [
             "fire_smoke_or_co",
             "severe_bleeding",
+            "choking",
+            "extreme_heat",
+            "extreme_cold",
+            "poisoning",
             "medical",
             "other",
             "none",
@@ -293,7 +381,24 @@ def test_distinct_medical_and_uncertain_routes_are_truthful() -> None:
             "keep-distance-seek-local-help",
         ),
         (
-            {"threat_type": "medical", "scene_safe": "yes", "responsive": "yes"},
+            {"threat_type": "extreme_heat", "scene_safe": "yes"},
+            "begin-heat-cooling",
+        ),
+        (
+            {"threat_type": "extreme_cold", "scene_safe": "yes"},
+            "prevent-further-cooling",
+        ),
+        (
+            {"threat_type": "poisoning", "scene_safe": "yes"},
+            "stop-poison-exposure",
+        ),
+        (
+            {
+                "threat_type": "medical",
+                "scene_safe": "yes",
+                "responsive": "yes",
+                "breathing": "normal",
+            },
             "seek-medical-assessment",
         ),
         (
@@ -329,6 +434,43 @@ def test_distinct_medical_and_uncertain_routes_are_truthful() -> None:
         assert result["action"]["action_id"] == action_id
         assert result["release_eligible"] is False
         assert result["action"]["review_status"] == "pending_external_review"
+
+
+def test_medical_route_requires_breathing_and_unsafe_scene_overrides_none() -> None:
+    question = assess_immediate_danger(
+        {"threat_type": "medical", "scene_safe": "yes", "responsive": "yes"},
+        "en",
+    )
+    assert question["status"] == "needs_fact"
+    assert question["question"]["field"] == "breathing"
+    unsafe = assess_immediate_danger(
+        {"threat_type": "none", "scene_safe": "no"}, "en"
+    )
+    assert unsafe["action"]["action_id"] == "leave-immediate-hazard"
+
+
+def test_choking_route_collects_age_and_cough_before_bounded_response() -> None:
+    facts = {
+        "threat_type": "choking",
+        "scene_safe": "yes",
+        "responsive": "yes",
+        "breathing": "normal",
+    }
+    assert assess_immediate_danger(facts, "en")["question"]["field"] == "age_group"
+    facts["age_group"] = "infant"
+    assert (
+        assess_immediate_danger(facts, "en")["question"]["field"]
+        == "effective_cough"
+    )
+    facts["effective_cough"] = "unknown"
+    result = assess_immediate_danger(facts, "en")
+    assert result["action"]["action_id"] == "seek-emergency-response"
+    assert "maneuver" not in result["action"]["text"].casefold()
+    facts.update(responsive="unknown", effective_cough="effective")
+    assert (
+        assess_immediate_danger(facts, "en")["action"]["action_id"]
+        == "seek-emergency-response"
+    )
 
 
 def test_zh_action_display_contract_contains_no_raw_i18n_or_machine_keys() -> None:

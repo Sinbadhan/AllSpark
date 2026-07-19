@@ -112,6 +112,7 @@ allspark/
 - Web 脚本使用逐请求 nonce，`script-src-attr 'none'` 禁止内联事件处理器；七页面真实 Chrome CSP violation 门禁为 0
 - M4 信息架构、支持状态语义与 Stable 声明已闭环；Apple Silicon macOS 离线 RC 构建、完整性校验、安装/回滚和无模型启动已在本机通过，SHA-245 仍需干净断网设备验收；Developer ID/公证仅适用于可选官方 App/DMG 渠道
 - SHA-262 已闭环；SHA-264 的未发布首启草稿、原子发布、CLI/Web 失败恢复、并发与覆盖率门禁已在本机通过，真实 Chrome 恢复/放弃验收因当前配置缺少 ChatGPT Chrome Extension 保持 `not_run`
+- 2026-07-20 内部复审已补齐知识操作内容双门禁、危机支持子句作用域与联系方式真实性、即时危险热/冷/中毒/窒息分支及 20 个可执行对抗变体，并收敛首启、Dashboard、Repository、Executions、任务结果与计划证据的错误/无障碍契约；外部专业签核、五人试点、干净断网设备与隔离浏览器证据仍不得由自动化替代
 - Stable 仍受 SHA-241/260 外部专业复核、SHA-246 五人试点、SHA-245 干净断网交付及 SHA-264 隔离浏览器证据阻断；真实硬件、Docker daemon、独立介质与 v2+ 能力按 Linear 保持 Testing/Experimental 或未来版本边界
 - 当前开放轨道与实时计数以 Linear SHA-158 正文为准
 - 当前基线的精确 commit、测试计数和 GitHub Actions 证据维护在 Linear SHA-158，仓库文档不复制易漂移的 run 编号

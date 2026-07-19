@@ -106,7 +106,7 @@ def test_canonical_scenarios_are_structured_but_release_blocked() -> None:
     assert report["action_catalog"] == {
         "catalog_id": "allspark-immediate-danger",
         "revision": 1,
-        "action_count": 7,
+        "action_count": 10,
         "review_status": "pending_external_review",
         "release_eligible": False,
     }
@@ -120,7 +120,14 @@ def test_canonical_scenarios_are_structured_but_release_blocked() -> None:
         "stable": 10,
         "unstable": 0,
         "declared_forbidden_matches": 0,
+        "adversarial_executed": 20,
+        "adversarial_stable": 20,
+        "adversarial_forbidden_matches": 0,
+        "adversarial_results": report["deterministic_execution"][
+            "adversarial_results"
+        ],
     }
+    assert len(report["deterministic_execution"]["adversarial_results"]) == 20
     observed = {
         value["scenario_id"]: value["observed_action_id"]
         for value in report["deterministic_execution"]["results"]
@@ -130,8 +137,8 @@ def test_canonical_scenarios_are_structured_but_release_blocked() -> None:
         "severe-external-bleeding": "apply-direct-pressure",
         "choking-airway-risk": "seek-emergency-response",
         "smoke-carbon-monoxide-collapse": "leave-immediate-hazard",
-        "extreme-temperature-exposure": "keep-distance-seek-local-help",
-        "suspected-poisoning-contamination": "keep-distance-seek-local-help",
+        "extreme-temperature-exposure": "prevent-further-cooling",
+        "suspected-poisoning-contamination": "stop-poison-exposure",
         "critical-water-food-unknown-rates": "return-to-assessment",
         "unsafe-shelter-night-weather": "leave-immediate-hazard",
         "vulnerable-person-medication-needs": "seek-medical-assessment",
@@ -143,7 +150,7 @@ def test_canonical_scenarios_are_structured_but_release_blocked() -> None:
         if value["scenario_id"] == "choking-airway-risk"
     )
     assert choking["system_adapter"] == "immediate_danger_v1"
-    assert "no age-specific choking branch" in choking["mapping_notes"][0]
+    assert "choking branch" in choking["mapping_notes"][0]
     assert choking["review_eligible"] is False
     assert choking["semantic_gate"] == "not_eligible"
     assert report["review_eligibility"] == {
@@ -367,6 +374,22 @@ def test_signoff_hash_and_qualification_must_match_fixture_scope() -> None:
     )
     with pytest.raises(SafetyScenarioValidationError, match="domain|triage"):
         validate_safety_scenario(wrong_qualification)
+
+    future = copy.deepcopy(scenario)
+    future["reviewer_signoffs"][0]["reviewed_at"] = "2999-01-01"
+    future["reviewer_signoffs"][0]["content_hash"] = scenario_content_hash(future)
+    with pytest.raises(SafetyScenarioValidationError, match="future"):
+        validate_safety_scenario(future)
+
+    duplicate = copy.deepcopy(scenario)
+    duplicate["reviewer_signoffs"].append(
+        copy.deepcopy(duplicate["reviewer_signoffs"][0])
+    )
+    duplicate_hash = scenario_content_hash(duplicate)
+    for signoff in duplicate["reviewer_signoffs"]:
+        signoff["content_hash"] = duplicate_hash
+    with pytest.raises(SafetyScenarioValidationError, match="duplicates"):
+        validate_safety_scenario(duplicate)
 
 
 def test_approved_evaluator_checks_action_questions_escalation_and_evidence() -> None:
