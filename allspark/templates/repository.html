@@ -30,6 +30,14 @@
   .trade-item-id { color: var(--outline); font-size: 11px; }
   .trade-item-target { color: var(--on-surface); font-weight: 600; }
   .trade-item-summary { color: var(--on-surface-variant); }
+  .repo-release-status {
+    margin-left: auto; color: var(--warning); font-size: 10px; font-weight: 700;
+    text-transform: uppercase;
+  }
+  .repo-load-state {
+    display: grid; justify-items: center; gap: 10px; padding: 24px 16px;
+    color: var(--on-surface-variant); text-align: center;
+  }
   @media (max-width: 767px) {
     #repo-content { overflow-x: hidden; }
     .repo-desktop-table { display: none; }
@@ -86,15 +94,19 @@
       </button></li>
       <li><button type="button" class="file-tree-item" data-section="experience">
         <span class="material-symbols-outlined text-sm" aria-hidden="true">folder</span> /experience
+        <span class="repo-release-status">{{ t('web_release_experimental') }}</span>
       </button></li>
       <li><button type="button" class="file-tree-item file-tree-child" data-section="experience">
         <span class="material-symbols-outlined text-sm" aria-hidden="true">description</span> log.json
+        <span class="repo-release-status">{{ t('web_release_experimental') }}</span>
       </button></li>
       <li><button type="button" class="file-tree-item" data-section="models">
         <span class="material-symbols-outlined text-sm" aria-hidden="true">folder</span> /models
+        <span class="repo-release-status">{{ t('web_release_experimental') }}</span>
       </button></li>
       <li><button type="button" class="file-tree-item file-tree-child" data-section="models">
         <span class="material-symbols-outlined text-sm" aria-hidden="true">description</span> gguf_models.json
+        <span class="repo-release-status">{{ t('web_release_experimental') }}</span>
       </button></li>
       <li><button type="button" class="file-tree-item" data-section="skf">
         <span class="material-symbols-outlined text-sm" aria-hidden="true">folder</span> /skf_packages
@@ -176,6 +188,9 @@ const REPO_I18N = {
   high_risk_short: "{{ t('knowledge_high_risk_short') }}",
   local_verified: "{{ t('knowledge_local_verified_evidence') }}",
   external_claim: "{{ t('knowledge_external_unverified_claim') }}",
+  load_failed: "{{ t('web_repository_load_failed') }}",
+  retry: "{{ t('web_btn_refresh') }}",
+  experimental: "{{ t('web_release_experimental') }}",
 };
 const SKF_I18N = {
   path_hint: "{{ t('web_skf_path_placeholder') }}",
@@ -201,6 +216,20 @@ const SKF_I18N = {
 
 let currentSection = "knowledge";
 
+function _repoExperimentalBadge() {
+  return ` <span class="repo-release-status">${escHtml(REPO_I18N.experimental)}</span>`;
+}
+
+function _repoLoadFailure(action, section = "") {
+  const sectionAttr = section ? ` data-section="${escHtml(section)}"` : "";
+  return `<div class="repo-load-state" role="alert">
+    <span>${escHtml(REPO_I18N.load_failed)}</span>
+    <button type="button" class="action-btn action-outline" data-repo-action="${action}"${sectionAttr}>
+      <span class="material-symbols-outlined text-sm" aria-hidden="true">refresh</span> ${escHtml(REPO_I18N.retry)}
+    </button>
+  </div>`;
+}
+
 function setFileTreeCurrent(section, trigger) {
   const items = Array.from(document.querySelectorAll('.file-tree-item'));
   items.forEach(item => item.removeAttribute('aria-current'));
@@ -220,11 +249,11 @@ async function showSection(section, trigger) {
       await loadKnowledgeTable(contentEl);
       break;
     case "experience":
-      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">psychology</span> ' + I18N.web_tab_experience;
+      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">psychology</span> ' + I18N.web_tab_experience + _repoExperimentalBadge();
       await loadExperienceTable(contentEl);
       break;
     case "models":
-      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">smart_toy</span> ' + I18N.web_tab_llm;
+      titleEl.innerHTML = '<span class="material-symbols-outlined text-primary-container">smart_toy</span> ' + I18N.web_tab_llm + _repoExperimentalBadge();
       await loadModelsTable(contentEl);
       break;
     case "skf":
@@ -431,14 +460,34 @@ function _repoVerificationSelect(entries, current) {
 
 async function loadKnowledgeTable(el) {
   _repoEl = el;
-  const cats = await api("/api/knowledge/categories");
+  let cats;
+  try {
+    cats = await api("/api/knowledge/categories");
+  } catch (error) {
+    el.innerHTML = _repoLoadFailure("retry-knowledge");
+    return;
+  }
+  if (cats?._http_error || !Array.isArray(cats)) {
+    el.innerHTML = _repoLoadFailure("retry-knowledge");
+    return;
+  }
   if (!cats.length) {
     el.innerHTML = '<div class="text-secondary text-sm p-4 text-center">' + REPO_I18N.no_knowledge + '</div>';
     return;
   }
   _repoEntries = [];
   for (const cat of cats) {
-    const entries = await api(`/api/knowledge/category/${cat.category}`);
+    let entries;
+    try {
+      entries = await api(`/api/knowledge/category/${encodeURIComponent(cat.category)}`);
+    } catch (error) {
+      el.innerHTML = _repoLoadFailure("retry-knowledge");
+      return;
+    }
+    if (entries?._http_error || !Array.isArray(entries)) {
+      el.innerHTML = _repoLoadFailure("retry-knowledge");
+      return;
+    }
     _repoEntries = _repoEntries.concat(entries);
   }
   // SHA-153: default to current language; user can switch to bilingual.
@@ -567,11 +616,18 @@ async function openRepoDetail(id) {
       if (dialog) _trapDialogTab(dialog, e);
     });
   }
-  modal._previouslyFocused = document.activeElement;
+  if (modal.style.display !== "flex") modal._previouslyFocused = document.activeElement;
+  modal._detailId = id;
   modal.innerHTML = `<div role="status" aria-live="polite" style="color:var(--secondary);">${escHtml(REPO_I18N.detail_title)}…</div>`;
   modal.style.display = "flex";
+  if (typeof window.setModalBackgroundInert === "function") {
+    window.setModalBackgroundInert(true);
+  }
   try {
     const e = await api("/api/knowledge/" + encodeURIComponent(id));
+    if (e?._http_error || !e || typeof e !== "object" || !e.id) {
+      throw new Error("Invalid knowledge detail contract");
+    }
     const steps = (e.steps || []).map(s => `<li>${escHtml(s)}</li>`).join("");
     const warns = (e.warnings || []).map(w => `<div class="text-warn text-sm">· ${escHtml(w)}</div>`).join("");
     const applicable = (e.applicable_when || []).join("; ") || REPO_I18N.not_provided;
@@ -611,27 +667,46 @@ async function openRepoDetail(id) {
     </div>`;
     document.getElementById("repo-detail-close").focus();
   } catch (ex) {
-    modal.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-label="${escHtml(REPO_I18N.detail_title)}" style="max-width:380px;width:90%;padding:20px;"><p class="text-sm">${escHtml(String(ex))}</p><button id="repo-detail-close" class="action-btn action-outline" style="margin-top:10px;" data-repo-action="close-detail">${escHtml(REPO_I18N.close)}</button></div>`;
-    document.getElementById("repo-detail-close").focus();
+    modal.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-label="${escHtml(REPO_I18N.detail_title)}" style="max-width:380px;width:90%;padding:20px;">
+      <p class="text-sm" role="alert">${escHtml(REPO_I18N.load_failed)}</p>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button id="repo-detail-retry" class="action-btn action-primary" data-repo-action="retry-detail">${escHtml(REPO_I18N.retry)}</button>
+        <button id="repo-detail-close" class="action-btn action-outline" data-repo-action="close-detail">${escHtml(REPO_I18N.close)}</button>
+      </div>
+    </div>`;
+    document.getElementById("repo-detail-retry").focus();
   }
 }
 function closeRepoDetail() {
   const m = document.getElementById("repo-detail-modal");
   if (!m) return;
   m.style.display = "none";
+  if (typeof window.setModalBackgroundInert === "function") {
+    window.setModalBackgroundInert(false);
+  }
   const previous = m._previouslyFocused;
   m._previouslyFocused = null;
   if (previous && document.body.contains(previous) && typeof previous.focus === "function") previous.focus();
 }
 
 async function loadExperienceTable(el) {
-  const data = await api("/api/experience?limit=50");
+  let data;
+  try {
+    data = await api("/api/experience?limit=50");
+  } catch (error) {
+    el.innerHTML = _repoLoadFailure("retry-section", "experience");
+    return;
+  }
+  if (data?._http_error || !Array.isArray(data)) {
+    el.innerHTML = _repoLoadFailure("retry-section", "experience");
+    return;
+  }
   if (!data.length) {
-    el.innerHTML = '<div class="text-secondary text-sm p-4 text-center">' + REPO_I18N.no_experience + '</div>';
+    el.innerHTML = `<div class="repo-load-state"><span class="repo-release-status">${escHtml(REPO_I18N.experimental)}</span><span>${escHtml(REPO_I18N.no_experience)}</span></div>`;
     return;
   }
 
-  el.innerHTML = `<table class="w-full text-left border-collapse min-w-[600px]">
+  el.innerHTML = `<div role="note" class="text-xs text-secondary" style="padding:8px 12px;border-bottom:1px solid var(--surface-container-high);">${escHtml(REPO_I18N.experimental)}</div><table class="w-full text-left border-collapse min-w-[600px]">
     <thead class="sticky top-0 bg-surface-container-high border-b border-surface-container-high z-10">
       <tr>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_when}</th>
@@ -651,11 +726,21 @@ async function loadExperienceTable(el) {
 }
 
 async function loadModelsTable(el) {
-  const data = await api("/api/init/models");
+  let data;
+  try {
+    data = await api("/api/init/models");
+  } catch (error) {
+    el.innerHTML = _repoLoadFailure("retry-section", "models");
+    return;
+  }
+  if (data?._http_error || !data || typeof data !== "object" || !Array.isArray(data.existing) || !Array.isArray(data.downloadable)) {
+    el.innerHTML = _repoLoadFailure("retry-section", "models");
+    return;
+  }
   const existing = data.existing || [];
   const downloadable = data.downloadable || [];
 
-  el.innerHTML = `<table class="w-full text-left border-collapse min-w-[600px]">
+  el.innerHTML = `<div role="note" class="text-xs text-secondary" style="padding:8px 12px;border-bottom:1px solid var(--surface-container-high);">${escHtml(REPO_I18N.experimental)}</div><table class="w-full text-left border-collapse min-w-[600px]">
     <thead class="sticky top-0 bg-surface-container-high border-b border-surface-container-high z-10">
       <tr>
         <th class="p-3 text-[11px] font-semibold tracking-wider text-secondary">${I18N.web_th_module}</th>
@@ -712,6 +797,9 @@ document.addEventListener("click", event => {
   else if (action === "skf-info") doSkfInfo(target.dataset.mode);
   else if (action === "go-page") _repoGo(Number(target.dataset.page));
   else if (action === "close-detail") closeRepoDetail();
+  else if (action === "retry-detail") openRepoDetail(document.getElementById("repo-detail-modal")?._detailId);
+  else if (action === "retry-knowledge") loadKnowledgeTable(document.getElementById("repo-content"));
+  else if (action === "retry-section") showSection(target.dataset.section);
   else if (action === "download-model") downloadModel(target.dataset.model);
 });
 </script>

@@ -56,6 +56,8 @@
 </div>
 
 <div id="exec-status" role="status" aria-live="polite" tabindex="-1" class="text-sm text-secondary" style="min-height:20px;"></div>
+<div id="exec-search-status" role="status" aria-live="polite" class="text-xs text-secondary" style="min-height:18px;"></div>
+<div id="exec-search-empty" class="text-secondary text-sm p-4 text-center" hidden>{{ t('web_no_results') }}</div>
 <div id="exectab-tasks" class="exec-tab-content" role="tabpanel" aria-labelledby="exectab-button-tasks">
 <div id="exec-list" class="flex flex-col gap-2">
   <div class="text-secondary text-sm p-4 text-center">{{ t('web_loading') }}</div>
@@ -153,33 +155,49 @@ const GOAL_I18N = {
   milestones: "{{ t('web_goals_milestones') }}",
   ms_complete: "{{ t('web_goals_milestone_complete') }}",
   progress: "{{ t('web_progress_label') }}",
+  write_failed: "{{ t('web_goals_write_failed') }}",
 };
 const TIMELINE_I18N = {
   empty: "{{ t('web_timeline_empty') }}",
   load_failed: "{{ t('web_timeline_load_failed') }}",
 };
+const EXEC_I18N = {
+  load_failed: "{{ t('web_executions_load_failed') }}",
+  auxiliary_load_failed: "{{ t('web_executions_auxiliary_load_failed') }}",
+  retry: "{{ t('web_btn_refresh') }}",
+  experimental: "{{ t('web_release_experimental') }}",
+  search_results: "{{ t('web_executions_search_results') }}",
+  no_results: "{{ t('web_no_results') }}",
+};
 
 async function refreshExecutions() {
+  const container = document.getElementById("exec-list");
+  let tasks;
   try {
-    const tasks = await api("/api/tasks?include_terminal=true");
-    const experiences = await api("/api/experience?limit=20");
-    const container = document.getElementById("exec-list");
+    tasks = await api("/api/tasks?include_terminal=true");
+    if (tasks?._http_error || !Array.isArray(tasks)) throw new Error("Invalid tasks contract");
+  } catch (error) {
+    container.innerHTML = `<div class="text-secondary text-sm p-4 text-center" role="alert">
+      <p>${escHtml(EXEC_I18N.load_failed)}</p>
+      <button class="action-btn action-outline" style="margin-top:10px;" data-exec-action="refresh">${escHtml(EXEC_I18N.retry)}</button>
+    </div>`;
+    applyExecutionSearch();
+    return;
+  }
 
-    const completed = tasks.filter(t => t.status === "completed").length;
-    const failed = tasks.filter(t => t.status === "failed").length;
-    const skipped = tasks.filter(t => t.status === "skipped").length;
-    const pending = tasks.filter(t => t.status === "pending" || t.status === "in_progress").length;
-    document.getElementById("stat-total").textContent = tasks.length;
-    document.getElementById("stat-pending").textContent = pending;
-    document.getElementById("stat-success").textContent = completed;
-    document.getElementById("stat-failed").textContent = failed;
-    document.getElementById("stat-skipped").textContent = skipped;
+  const completed = tasks.filter(t => t.status === "completed").length;
+  const failed = tasks.filter(t => t.status === "failed").length;
+  const skipped = tasks.filter(t => t.status === "skipped").length;
+  const pending = tasks.filter(t => t.status === "pending" || t.status === "in_progress").length;
+  document.getElementById("stat-total").textContent = tasks.length;
+  document.getElementById("stat-pending").textContent = pending;
+  document.getElementById("stat-success").textContent = completed;
+  document.getElementById("stat-failed").textContent = failed;
+  document.getElementById("stat-skipped").textContent = skipped;
 
-    if (!tasks.length && !experiences.length) {
-      container.innerHTML = '<div class="text-secondary text-sm p-4 text-center"><p>' + TASK_I18N.empty_reason + '</p><button class="action-btn action-primary" style="margin-top:10px;" data-exec-action="track-plan"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">note_add</span> ' + TASK_I18N.track_plan + '</button></div>';
-      return;
-    }
-
+  if (!tasks.length) {
+    container.innerHTML = '<div class="text-secondary text-sm p-4 text-center"><p>' + TASK_I18N.empty_reason + '</p><button class="action-btn action-primary" style="margin-top:10px;" data-exec-action="track-plan"><span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;">note_add</span> ' + TASK_I18N.track_plan + '</button></div>';
+  } else {
     container.innerHTML = tasks.map(t => {
       const isActive = t.status === "in_progress";
       const isFailed = t.status === "failed";
@@ -208,6 +226,8 @@ async function refreshExecutions() {
         : I18N.web_phase_pending;
       const sourceLabel = I18N["web_task_source_" + (t.source || "unknown")]
         || I18N.web_task_source_unknown;
+      const searchText = [t.id, t.title, t.description, t.status, t.result, ...(t.evidence || [])]
+        .filter(Boolean).join(" ").toLocaleLowerCase();
       const resultRows = [
         t.result ? `<div><strong>${TASK_I18N.result}:</strong> ${escHtml(t.result)}</div>` : "",
         t.evidence && t.evidence.length ? `<div><strong>${TASK_I18N.evidence}:</strong><ul style="margin:4px 0 0 18px;list-style:disc;">${t.evidence.map(item => `<li>${escHtml(item)}</li>`).join("")}</ul></div>` : "",
@@ -215,7 +235,7 @@ async function refreshExecutions() {
         `<div><strong>${TASK_I18N.source}:</strong> ${sourceLabel}</div>`,
       ].join("");
 
-      return `<div class="bg-surface-container border border-surface-container-high flex flex-col border-l-[3px] ${borderColor}">
+      return `<div class="bg-surface-container border border-surface-container-high flex flex-col border-l-[3px] ${borderColor}" data-exec-search-item="task" data-exec-search-text="${escHtml(searchText)}">
         <div class="grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 items-center p-2 hover:bg-surface-container-highest transition-colors">
           <span class="material-symbols-outlined ${iconClass}" aria-hidden="true">${icon}</span>
           <button type="button" id="task-toggle-${taskId}" class="text-left" style="background:none;border:0;padding:0;min-width:0;cursor:pointer;" data-exec-action="toggle-detail" aria-expanded="false" aria-controls="task-detail-${taskId}">
@@ -234,9 +254,23 @@ async function refreshExecutions() {
         </div>
       </div>`;
     }).join("");
+  }
 
+  applyExecutionSearch();
+  await refreshExecutionExperiences();
+}
+
+async function refreshExecutionExperiences() {
+  const container = document.getElementById("exec-list");
+  document.getElementById("exec-experience-feed")?.remove();
+  document.getElementById("exec-experience-error")?.remove();
+  try {
+    const experiences = await api("/api/experience?limit=20");
+    if (experiences?._http_error || !Array.isArray(experiences)) {
+      throw new Error("Invalid experience contract");
+    }
     if (experiences.length) {
-      container.innerHTML += experiences.slice(0, 5).map(e => {
+      const rows = experiences.slice(0, 5).map(e => {
         return `<div class="bg-surface-container border border-surface-container-high flex flex-col border-l-[3px] border-l-tertiary opacity-70 hover:opacity-100 transition-opacity">
           <div class="grid grid-cols-[auto_1fr_auto] gap-3 items-center p-2">
             <span class="material-symbols-outlined text-tertiary">psychology</span>
@@ -244,14 +278,19 @@ async function refreshExecutions() {
               <div class="font-semibold text-on-surface text-sm">${escHtml(e.event)}</div>
               <div class="text-on-surface-variant text-xs mt-0.5">${escHtml(e.outcome)}</div>
             </div>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${e.promoted ? 'bg-success-dim text-success' : 'bg-surface-container text-secondary'}">${e.promoted ? I18N.web_executions_promoted : I18N.web_executions_raw}</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${e.promoted ? 'bg-success-dim text-success' : 'bg-surface-container text-secondary'}">${escHtml(EXEC_I18N.experimental)} · ${e.promoted ? I18N.web_executions_promoted : I18N.web_executions_raw}</span>
           </div>
         </div>`;
       }).join("");
+      container.insertAdjacentHTML("beforeend", `<div id="exec-experience-feed" style="display:contents;">${rows}</div>`);
     }
-  } catch(e) {
-    console.error("Executions refresh error:", e);
+  } catch (error) {
+    container.insertAdjacentHTML("beforeend", `<div id="exec-experience-error" class="text-secondary text-sm p-3" role="alert" style="border:1px solid var(--surface-container-high);">
+      <span>${escHtml(EXEC_I18N.experimental)} · ${escHtml(EXEC_I18N.auxiliary_load_failed)}</span>
+      <button class="action-btn action-outline" style="margin-left:8px;" data-exec-action="retry-experience">${escHtml(EXEC_I18N.retry)}</button>
+    </div>`);
   }
+  applyExecutionSearch();
 }
 
 function toggleExecDetail(el) {
@@ -271,6 +310,35 @@ function escHtml(s) {
   return d.innerHTML;
 }
 
+function applyExecutionSearch() {
+  const input = document.getElementById("exec-search");
+  const status = document.getElementById("exec-search-status");
+  const empty = document.getElementById("exec-search-empty");
+  const selectedTab = document.querySelector('.sub-tab[data-exectab][aria-selected="true"]')?.dataset.exectab;
+  const scope = selectedTab === "goals" ? "goal" : selectedTab === "tasks" ? "task" : "";
+  const query = input.value.trim().toLocaleLowerCase();
+  if (!scope) {
+    status.textContent = "";
+    empty.hidden = true;
+    return;
+  }
+
+  const items = Array.from(document.querySelectorAll(`[data-exec-search-item="${scope}"]`));
+  let visible = 0;
+  items.forEach(item => {
+    const matches = !query || (item.dataset.execSearchText || "").includes(query);
+    item.hidden = !matches;
+    if (matches) visible += 1;
+  });
+  const auxiliary = document.getElementById("exec-experience-feed");
+  const auxiliaryError = document.getElementById("exec-experience-error");
+  if (auxiliary) auxiliary.hidden = scope !== "task" || Boolean(query);
+  if (auxiliaryError) auxiliaryError.hidden = scope !== "task" || Boolean(query);
+  status.textContent = query ? EXEC_I18N.search_results.replace("{n}", String(visible)) : "";
+  empty.textContent = EXEC_I18N.no_results;
+  empty.hidden = !query || visible > 0;
+}
+
 refreshExecutions();
 setInterval(refreshExecutions, 15000);
 
@@ -284,6 +352,7 @@ function switchExecTab(tab) {
   if (target) target.style.display = '';
   if (tab === 'goals') refreshGoals();
   if (tab === 'timeline') refreshTimeline();
+  applyExecutionSearch();
 }
 
 /* === Task actions === */
@@ -323,6 +392,9 @@ function openTaskOutcome(taskId, taskTitle, action, trigger) {
   document.getElementById("task-outcome-error").textContent = "";
   modal.style.display = "flex";
   modal.setAttribute("aria-hidden", "false");
+  if (typeof window.setModalBackgroundInert === "function") {
+    window.setModalBackgroundInert(true);
+  }
   document.getElementById("task-outcome-result").focus();
 }
 
@@ -330,6 +402,9 @@ function closeTaskOutcome(restoreFocus = true) {
   const modal = document.getElementById("task-outcome-modal");
   modal.style.display = "none";
   modal.setAttribute("aria-hidden", "true");
+  if (typeof window.setModalBackgroundInert === "function") {
+    window.setModalBackgroundInert(false);
+  }
   if (restoreFocus && modal._trigger && modal._trigger.isConnected) modal._trigger.focus();
 }
 
@@ -381,12 +456,14 @@ async function refreshGoals() {
       throw new Error("Invalid goals contract");
     }
     const goals = response.goals;
-    if (!goals.length) { el.textContent = GOAL_I18N.empty; return; }
+    if (!goals.length) { el.textContent = GOAL_I18N.empty; applyExecutionSearch(); return; }
     el.innerHTML = goals.map(g => {
       const statusLabel = I18N["web_goal_status_" + g.status] || I18N.web_status_unknown;
       const progress = Math.round(Number(g.progress) * 100);
+      const searchText = [g.id, g.description, g.title, statusLabel]
+        .filter(Boolean).join(" ").toLocaleLowerCase();
       return `
-      <div style="border:1px solid var(--surface-container-high);border-radius:4px;padding:10px;margin-bottom:8px;min-width:0;overflow-wrap:anywhere;">
+      <div data-exec-search-item="goal" data-exec-search-text="${escHtml(searchText)}" style="border:1px solid var(--surface-container-high);border-radius:4px;padding:10px;margin-bottom:8px;min-width:0;overflow-wrap:anywhere;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
           <div style="min-width:0;flex:1;">
             <div style="font-weight:600;color:var(--on-surface);">${escHtml(g.description || g.title || g.id)}</div>
@@ -398,26 +475,38 @@ async function refreshGoals() {
         </div>
       </div>`;
     }).join("");
-  } catch(e) { el.textContent = GOAL_I18N.load_failed; }
+    applyExecutionSearch();
+  } catch(e) { el.textContent = GOAL_I18N.load_failed; applyExecutionSearch(); }
 }
 async function addGoal() {
-  const desc = document.getElementById("goal-add-desc").value.trim();
+  const input = document.getElementById("goal-add-desc");
+  const desc = input.value.trim();
   if (!desc) return;
   try {
-    await fetch("/api/goals/add", {
+    const response = await fetch("/api/goals/add", {
       method: "POST",
       headers: {"content-type": "application/json"},
       body: JSON.stringify({description: desc, title: desc}),
     });
-    document.getElementById("goal-add-desc").value = "";
-    refreshGoals();
-  } catch(e) { notify(e); }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      toast(data.detail || data.error || GOAL_I18N.write_failed, "error");
+      return;
+    }
+    input.value = "";
+    await refreshGoals();
+  } catch(e) { toast(e instanceof Error ? e.message : GOAL_I18N.write_failed, "error"); }
 }
 async function completeGoal(id) {
   try {
-    await fetch("/api/goals/" + encodeURIComponent(id) + "/complete", {method: "POST"});
-    refreshGoals();
-  } catch(e) { notify(e); }
+    const response = await fetch("/api/goals/" + encodeURIComponent(id) + "/complete", {method: "POST"});
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      toast(data.detail || data.error || GOAL_I18N.write_failed, "error");
+      return;
+    }
+    await refreshGoals();
+  } catch(e) { toast(e instanceof Error ? e.message : GOAL_I18N.write_failed, "error"); }
 }
 
 /* === Timeline === */
@@ -452,6 +541,7 @@ document.addEventListener("click", event => {
   }
   const action = target.dataset.execAction;
   if (action === "refresh") refreshExecutions();
+  else if (action === "retry-experience") refreshExecutionExperiences();
   else if (action === "add-goal") addGoal();
   else if (action === "refresh-goals") refreshGoals();
   else if (action === "toggle-detail") toggleExecDetail(target);
@@ -468,6 +558,13 @@ document.addEventListener("click", event => {
   }
 });
 document.getElementById("task-outcome-form").addEventListener("submit", saveTaskOutcome);
+document.getElementById("exec-search").addEventListener("input", applyExecutionSearch);
+document.getElementById("exec-search").addEventListener("keydown", event => {
+  if (event.key !== "Escape") return;
+  event.preventDefault();
+  event.currentTarget.value = "";
+  applyExecutionSearch();
+});
 document.getElementById("task-outcome-resource-toggle").addEventListener("change", event => {
   document.getElementById("task-outcome-resource-fields").disabled = !event.target.checked;
 });
