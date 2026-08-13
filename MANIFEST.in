@@ -7,8 +7,8 @@
 #
 # Policy for v1.0:
 #   - Include the public-facing project documents.
-#   - Exclude the test suite (kept internal per README) and any local
-#     .bak / .orig artefacts.
+#   - Exclude the tracked public test suite from end-user sdists and exclude
+#     any local .bak / .orig artefacts. Tests remain available in the repo/CI.
 #   - Exclude maintainer-only status documents that are git-ignored.
 
 include LICENSE

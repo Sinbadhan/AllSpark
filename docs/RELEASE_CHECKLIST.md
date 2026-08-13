@@ -137,6 +137,12 @@ Verify no sensitive or generated files are staged:
 - keys, certificates, or credentials
 - `dist/`, `build/`, and `*.egg-info/`
 
+Confirm every external GitHub Action is pinned to an immutable 40-character
+commit SHA with its release tag documented on the same line. Confirm
+Dependabot alerts and security updates, secret scanning, and push protection
+are enabled in repository settings. The presence of a workflow or a local
+search is not evidence that GitHub scanning executed.
+
 ## 6. Review documentation
 
 - `README.md` and `README_CN.md` have current version and links.
@@ -161,7 +167,8 @@ Verify no sensitive or generated files are staged:
   media portion of SHA-181 may stay open only when their capabilities are
   explicitly Experimental and excluded from Stable support.
 - The RC pull request is green on all Python versions, including the clean-wheel
-  smoke matrix and real-Chrome SKF XSS gate.
+  import/CLI/first-run-Web render matrix, sdist PRD check, CodeQL analysis and
+  real-Chrome SKF XSS gate.
 - Record the successful workflow run for the exact release-candidate commit.
   Historical failed runs do not describe the current HEAD; the selected run
   must complete every required job without Node runtime deprecation annotations.

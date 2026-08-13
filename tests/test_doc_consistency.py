@@ -22,6 +22,9 @@ STALE_TOKENS = [
     "内部文档、测试、运行时数据",
     "发布事务（SHA-230）",
     "GitHub Actions main run #92",
+    "eight SHA-151",
+    "all eight critical-path modules",
+    "actions/setup-python@v6",
 ]
 
 # Historical changelog sections may retain the numbers that were true then.
@@ -124,6 +127,9 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     assert "sdist is missing PRD.md" in workflow
     assert "working-directory: /tmp" in workflow
     assert '"$GITHUB_WORKSPACE/scripts/smoke_installed_web.py"' in workflow
+    assert "CodeQL analysis" in Path("docs/RELEASE_CHECKLIST.md").read_text(
+        encoding="utf-8"
+    )
     assert 'pip install -e ".[delivery]"' in workflow
     assert '"pytest-cov>=7.1,<8"' in pyproject
     assert '"httpx>=0.28,<1"' in pyproject
