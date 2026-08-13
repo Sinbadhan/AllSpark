@@ -106,8 +106,10 @@ def test_ignored_working_notes_are_explicitly_non_authoritative() -> None:
 def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert workflow.count("actions/checkout@v7") == 3
-    assert workflow.count("actions/setup-python@v6") == 3
+    checkout = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1"
+    setup_python = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0"
+    assert workflow.count(checkout) == 3
+    assert workflow.count(setup_python) == 3
     assert "FORCE_JAVASCRIPT_ACTIONS_TO_NODE" not in workflow
     assert "permissions:\n  contents: read" in workflow
     assert "pytest -q --tb=short --cov=allspark --cov-branch" in workflow
@@ -314,3 +316,28 @@ def test_release_artifact_docs_and_sdist_manifest_are_consistent() -> None:
     assert "Last updated: 2026-08-13" in validation
     assert "ten critical modules" in validation
     assert "eight critical modules" not in validation
+
+
+def test_supply_chain_workflows_pin_actions_and_enable_automated_review() -> None:
+    workflow_paths = sorted(Path(".github/workflows").glob("*.yml"))
+    assert workflow_paths
+    for path in workflow_paths:
+        workflow = path.read_text(encoding="utf-8")
+        for action, ref in re.findall(
+            r"^\s*-?\s*uses:\s*([^@\s]+)@([^\s#]+)", workflow, re.MULTILINE
+        ):
+            assert re.fullmatch(r"[0-9a-f]{40}", ref), (
+                f"{path}: {action}@{ref} must use an immutable commit SHA"
+            )
+
+    codeql = Path(".github/workflows/codeql.yml").read_text(encoding="utf-8")
+    codeql_pin = "5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6"
+    assert "security-events: write" in codeql
+    assert f"github/codeql-action/init@{codeql_pin}" in codeql
+    assert f"github/codeql-action/analyze@{codeql_pin}" in codeql
+    assert 'languages: "python"' in codeql
+
+    dependabot = Path(".github/dependabot.yml").read_text(encoding="utf-8")
+    assert dependabot.startswith("version: 2\n")
+    for ecosystem in ("pip", "github-actions", "docker"):
+        assert f'package-ecosystem: "{ecosystem}"' in dependabot
