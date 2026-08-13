@@ -120,13 +120,17 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     assert "python scripts/check_coverage.py --coverage-json coverage.json" in workflow
     assert "offline-macos:" in workflow
     assert "python scripts/build_offline_bundle.py verify" in workflow
+    assert "python -m build --sdist" in workflow
+    assert "sdist is missing PRD.md" in workflow
+    assert "working-directory: /tmp" in workflow
+    assert '"$GITHUB_WORKSPACE/scripts/smoke_installed_web.py"' in workflow
     assert 'pip install -e ".[delivery]"' in workflow
     assert '"pytest-cov>=7.1,<8"' in pyproject
     assert '"httpx>=0.28,<1"' in pyproject
     assert 'patch = ["subprocess"]' in pyproject
     assert 'omit = ["allspark/templates/*", "allspark/static/*"]' in pyproject
     collection_floor = re.search(r'test "\$\{COUNT:-0\}" -ge (\d+)', workflow)
-    assert collection_floor is not None and int(collection_floor.group(1)) >= 1814
+    assert collection_floor is not None and int(collection_floor.group(1)) >= 1875
 
     critical_modules = {
         "allspark/adapters/init_wizard.py",

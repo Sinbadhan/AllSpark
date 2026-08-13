@@ -77,7 +77,7 @@ jobs:
         run: |
           COUNT=$(pytest --collect-only -q 2>&1 | grep -oE '[0-9]+ tests? collected' | head -1 | grep -oE '[0-9]+' || echo 0)
           echo "Collected tests: $COUNT"
-          test "${COUNT:-0}" -ge 1814
+          test "${COUNT:-0}" -ge 1875
 
       - name: Module import smoke benchmark (advisory)
         # Soft budget: prints ::warning:: and stays green when import time
@@ -108,15 +108,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
           python -m build --wheel
+      - name: Verify source distribution contents
+        if: matrix.python-version == '3.10'
+        run: |
+          python -m build --sdist
+          python -c "import glob, tarfile; archive=glob.glob('dist/*.tar.gz'); assert len(archive) == 1; names=tarfile.open(archive[0]).getnames(); assert any(name.endswith('/PRD.md') for name in names), 'sdist is missing PRD.md'"
       - name: Install in clean venv
         run: |
           python -m venv /tmp/venv
           /tmp/venv/bin/pip install --upgrade pip
           /tmp/venv/bin/pip install dist/*.whl
-      - name: Smoke (import + CLI help)
+      - name: Smoke (import + CLI help + Web render)
+        working-directory: /tmp
         run: |
           /tmp/venv/bin/python -c "import allspark; print('allspark', allspark.__version__)"
           /tmp/venv/bin/allspark --help
+          /tmp/venv/bin/python "$GITHUB_WORKSPACE/scripts/smoke_installed_web.py"
 
   offline-macos:
     # SHA-245: prove the optional portable artifact can be rebuilt and launched
