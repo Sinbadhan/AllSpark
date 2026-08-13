@@ -1,6 +1,6 @@
 # P2 Real-World Validation Log
 
-> Last updated: 2026-07-14
+> Last updated: 2026-08-13
 > Status: scoped desktop evidence in progress; hardware integrations remain Experimental
 
 ## Scope
@@ -17,7 +17,7 @@ removable storage.
 | `python3 -m mypy allspark/ --ignore-missing-imports` | ready | `check_untyped_defs = true` is enabled in `pyproject.toml`. |
 | `python3 -m ruff check allspark/ tests/` | ready | Static style gate. |
 | `python3 scripts/bench_import.py --check` | ready (advisory) | Checks both the 600 ms sum-of-means budget and 2000 ms cold wall-clock budget; CI warns on drift. Use `--hard-fail` for a blocking release-environment check. |
-| `python3 -m pytest tests/ -q` | ready on local/CI | Full tracked suite on Python 3.10/3.11/3.12; JSON gate enforces ≥75% total line and ≥90% branch on eight critical modules. Exact count: see CI output. |
+| `python3 -m pytest tests/ -q` | ready on local/CI | Full tracked suite on Python 3.10/3.11/3.12; JSON gate enforces ≥75% total line and ≥90% branch on ten critical modules. Exact count: see CI output. |
 | `python3 tests/regression/run_all.py` | ready (loopback) | Completes exit 0 on an unrestricted local shell; no `environment_blocked` rows (loopback TCP/uvicorn is no longer blocked). |
 
 ## Real-World Matrix

@@ -165,6 +165,12 @@ and notarization are required only when an official macOS App or DMG is offered
 as a Gatekeeper-trusted convenience download; they do not block source, wheel,
 or checksum-verified portable archive releases.
 
+Install a verified release wheel when Python 3.10-3.12 is already available:
+
+```bash
+python3 -m pip install ./allspark-1.0.3-py3-none-any.whl
+```
+
 Install from source for development and advanced operation:
 
 ```bash

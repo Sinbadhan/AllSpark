@@ -1,8 +1,8 @@
 # 火种 AllSpark — 产品需求文档
 
 > **版本：** v1.0.3
-> **日期：** 2026-07-16
-> **状态：** Release Candidate；工程与本地核心闭环门禁已收敛，Stable 仍受外部专业复核、开源离线发行物实机验收、目标用户试点与真实浏览器验收约束
+> **日期：** 2026-08-13
+> **状态：** Release Candidate；M1/M3 与 M2 本地实现已收敛，Stable 仍受 SHA-241/260 外部专业复核、SHA-246 目标用户试点、SHA-245 干净断网设备、SHA-264 真实 Chrome，以及“立即危险”流程 VoiceOver 验收约束；保持 No-Go
 > **产品决策：** [PDR-001：v1 从功能集合收敛为 24 小时生存行动闭环](docs/product-decisions/001-v1-core-action-loop.md)
 > **事实边界：** 本文定义产品需求与验收；实时 commit、CI、计数和 Go/No-Go 以 Linear `SHA-158` 为准
 
@@ -705,7 +705,7 @@ IF Phase >= 3 → 🟢 "建立通信网络" / "知识传承"
 | **M1 Assess** | 最小状况评估、统一资源单位、未知状态与人数上下文 | 已完成 |
 | **M2 Decide** | 可解释的 24h 计划、规范场景安全评测、知识证据链 | 本地实现完成；具名领域复核待完成 |
 | **M3 Act** | 建议转任务、执行反馈、重新评估与仪表盘真值 | 已完成 |
-| **M4 Product RC** | 聚焦信息架构、能力状态语义、RC 边界、可用性与安装交付 | 信息架构、声明与本地开源发行物已完成；仍需干净断网设备验收、SHA-260 专业安全内容复核、目标用户试点和 SHA-264 真实 Chrome 验收。Developer ID 签名/公证仅在官方分发 macOS App/DMG 时要求，不阻断源码、wheel 或可校验便携包发布 |
+| **M4 Product RC** | 聚焦信息架构、能力状态语义、RC 边界、可用性与安装交付 | 信息架构、声明与本地开源发行物已完成；仍需 SHA-245 干净断网设备、SHA-246 目标用户试点、SHA-264 真实 Chrome，以及“立即危险”流程 macOS VoiceOver 验收。Developer ID 签名/公证仅在官方分发 macOS App/DMG 时要求，不阻断源码、wheel 或可校验便携包发布 |
 | **M5 Stable** | 完成产品门禁、发布事务、tag、GitHub Release 与 Linear 收敛 | 被 M2 外部专业复核与 M4 外部/产品证据阻塞；保持 No-Go |
 
 ### 远期规划
@@ -720,8 +720,4 @@ IF Phase >= 3 → 🟢 "建立通信网络" / "知识传承"
 
 ## 十四、待决策事项 & 技术选型
 
-详见 **[TECH-DECISIONS.md](TECH-DECISIONS.md)**，包含：
-- Project N.O.M.A.D. 参考分析
-- 编程语言 / LLM 模型 / RAG 技术选型
-- Docker vs 进程模式论证
-- 火种间通信加密标准等待决策项
+跨版本且需要长期追踪的技术决策维护在 **[Architecture Decision Records](docs/adr/README.md)**。当前通信加密、Tier 3 知识审阅和 SKF 签名均明确推迟到 v2.0+；v1.0.3 的语言、PROCESS 模式、可选 LLM/RAG 与 Docker/INTEGRATION 边界以本文和运行时能力注册表为准，不由不存在的汇总文档代替。

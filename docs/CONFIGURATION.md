@@ -4,10 +4,17 @@ This guide summarizes the local runtime layout, optional features, and operation
 
 ## Installation
 
-The non-developer offline installation path is the self-contained Apple Silicon
-macOS bundle described in [Offline Delivery](OFFLINE_DELIVERY.md). It does not
-require Python, pip, Git, Xcode, a model, or a network connection on the target
-Mac. The commands below are source/developer installation paths.
+Source archives and wheels are the canonical open-source release artifacts.
+When Python 3.10-3.12 is already available, install a checksum-verified wheel:
+
+```bash
+python3 -m pip install ./allspark-1.0.3-py3-none-any.whl
+```
+
+The optional self-contained Apple Silicon macOS bundle described in
+[Offline Delivery](OFFLINE_DELIVERY.md) does not require Python, pip, Git,
+Xcode, a model, or a network connection on the target Mac. The commands below
+are source/developer installation paths.
 
 ```bash
 pip install -e .

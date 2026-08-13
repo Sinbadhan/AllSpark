@@ -278,3 +278,39 @@ def test_manual_release_gate_covers_accessibility_and_transport_boundary() -> No
     assert "Windows + NVDA" in release
     assert "Windows + NVDA remains Testing" in release
     assert "Automated DOM tests and screenshots do not substitute" in release
+
+
+def test_prd_status_links_and_roadmap_match_current_release_boundary() -> None:
+    prd_path = Path("PRD.md")
+    prd = prd_path.read_text(encoding="utf-8")
+
+    for target in re.findall(r"\[[^]]+\]\(([^)]+)\)", prd):
+        if target.startswith(("https://", "http://", "mailto:", "#")):
+            continue
+        local_target = target.split("#", 1)[0]
+        assert (prd_path.parent / local_target).exists(), f"broken PRD link: {target}"
+
+    assert "**日期：** 2026-08-13" in prd
+    assert "M1/M3 与 M2 本地实现已收敛" in prd
+    for blocker in ("SHA-241/260", "SHA-246", "SHA-245", "SHA-264", "VoiceOver"):
+        assert blocker in prd
+    assert "保持 No-Go" in prd
+    assert "TECH-DECISIONS.md" not in prd
+
+
+def test_release_artifact_docs_and_sdist_manifest_are_consistent() -> None:
+    manifest = Path("MANIFEST.in").read_text(encoding="utf-8")
+    readme = Path("README.md").read_text(encoding="utf-8")
+    readme_cn = Path("README_CN.md").read_text(encoding="utf-8")
+    configuration = Path("docs/CONFIGURATION.md").read_text(encoding="utf-8")
+    validation = Path("docs/REAL_WORLD_VALIDATION.md").read_text(encoding="utf-8")
+
+    assert "include PRD.md" in manifest
+    assert "Source archives and wheels are\nthe canonical release artifacts" in readme
+    assert "源码归档与 wheel 是规范开源发行物" in readme_cn
+    assert "Source archives and wheels are the canonical open-source release artifacts" in configuration
+    for content in (readme, readme_cn, configuration):
+        assert "allspark-1.0.3-py3-none-any.whl" in content
+    assert "Last updated: 2026-08-13" in validation
+    assert "ten critical modules" in validation
+    assert "eight critical modules" not in validation

@@ -12,6 +12,7 @@
 #   - Exclude maintainer-only status documents that are git-ignored.
 
 include LICENSE
+include PRD.md
 include README.md
 include README_CN.md
 include CHANGELOG.md
