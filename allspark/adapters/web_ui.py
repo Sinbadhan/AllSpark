@@ -61,11 +61,10 @@ _jinja_env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)), autoescape
 
 
 # Auth token gating HTML pages + /api/* when the Web UI binds non-loopback
-# (audit H3 / SHA-142). Set by create_app(). The token is NEVER injected into
+# (audit H3 / SHA-142). Stored per application by create_app(). Never injected into
 # HTML/DOM; the browser authenticates via an httpOnly cookie issued by
 # /api/auth/login (or the init/complete bootstrap step). API clients may still
 # use an Authorization: Bearer header.
-_WEB_TOKEN: Optional[str] = None
 _AUTH_COOKIE = "allspark_session"
 
 # SHA-213: scripts use a per-request nonce and inline event handlers are
@@ -92,10 +91,10 @@ def build_csp_policy(nonce: str) -> str:
 def _is_authed(request: Request) -> bool:
     """True if the request carries the auth cookie or a valid Bearer header.
 
-    Only called when ``_WEB_TOKEN`` is set (non-loopback); the middleware
+    Only called when the application's token is set; the middleware
     short-circuits loopback/no-token mode before reaching here.
     """
-    token = _WEB_TOKEN
+    token = request.app.state.web_token
     if not token:
         return False
     cookie = request.cookies.get(_AUTH_COOKIE)
@@ -170,8 +169,6 @@ MIRROR_DOWNLOAD_URLS = {
 
 
 def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> FastAPI:
-    global _WEB_TOKEN
-    _WEB_TOKEN = token
     app = FastAPI(title="ALLSPARK", version=__version__)
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.state.web_token = token
@@ -197,7 +194,7 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
                 },
             )
         # Loopback / no-token mode: local trust.
-        if not _WEB_TOKEN:
+        if not request.app.state.web_token:
             return await call_next(request)
         # Public endpoints: login page + auth endpoints.
         if path in ("/login", "/api/auth/login", "/api/auth/logout"):
@@ -309,7 +306,7 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
 
     @app.post("/api/auth/login")
     async def auth_login(request: Request):
-        token = _WEB_TOKEN
+        token = request.app.state.web_token
         body: dict = {}
         try:
             parsed = await request.json()
@@ -1010,8 +1007,8 @@ def _register_init_routes(app):
                     ),
                 }
             )
-            if _WEB_TOKEN:
-                _set_auth_cookie(resp, _WEB_TOKEN)
+            if app.state.web_token:
+                _set_auth_cookie(resp, app.state.web_token)
             return resp
         except Exception:
             detail = t("web_init_retryable")

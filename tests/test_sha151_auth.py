@@ -23,24 +23,27 @@ def _client(db_path: str, token: str | None = None) -> TestClient:
 # ─── _is_authed direct branches ──────────────────────────────────────────────
 
 
-def test_is_authed_no_token_returns_false(monkeypatch) -> None:
-    monkeypatch.setattr(wui, "_WEB_TOKEN", None)
-    assert wui._is_authed(MagicMock()) is False
+def test_is_authed_no_token_returns_false() -> None:
+    req = MagicMock()
+    req.app.state.web_token = None
+    assert wui._is_authed(req) is False
 
 
-def test_is_authed_cookie_bearer_neither(monkeypatch) -> None:
-    monkeypatch.setattr(wui, "_WEB_TOKEN", "secret")
+def test_is_authed_cookie_bearer_neither() -> None:
     # valid cookie
     req = MagicMock()
+    req.app.state.web_token = "secret"
     req.cookies.get.return_value = "secret"
     assert wui._is_authed(req) is True
     # valid bearer
     req = MagicMock()
+    req.app.state.web_token = "secret"
     req.cookies.get.return_value = None
     req.headers.get.return_value = "Bearer secret"
     assert wui._is_authed(req) is True
     # neither
     req = MagicMock()
+    req.app.state.web_token = "secret"
     req.cookies.get.return_value = None
     req.headers.get.return_value = ""
     assert wui._is_authed(req) is False
