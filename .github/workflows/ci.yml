@@ -75,16 +75,14 @@ jobs:
         # summary line (pytest 9.x --collect-only -q prints a tree view, not
         # path::test IDs, so grep on "::" would undercount).
         run: |
-          COUNT=$(pytest --collect-only -q 2>&1 | grep -oE '[0-9]+ tests? collected' | head -1 | grep -oE '[0-9]+' || echo 0)
+          pytest --collect-only -q > /tmp/allspark-collection.txt 2>&1
+          COUNT=$(grep -oE '[0-9]+ tests? collected' /tmp/allspark-collection.txt | head -1 | grep -oE '[0-9]+' || echo 0)
           echo "Collected tests: $COUNT"
           test "${COUNT:-0}" -ge 1875
 
-      - name: Module import smoke benchmark (advisory)
-        # Soft budget: prints ::warning:: and stays green when import time
-        # drifts above IMPORT_BUDGET_MS (default 600 ms). Track regressions
-        # over time without breaking unrelated PRs. Promote to --hard-fail
-        # when v1.2 lands and the floor has been stable.
-        run: python scripts/bench_import.py --check
+      - name: Module import performance gate
+        # Both declared budgets are mandatory; missing imports also fail.
+        run: python scripts/bench_import.py --check --hard-fail
 
   smoke:
     # SHA-157: validate the wheel installs and runs in a clean environment.
