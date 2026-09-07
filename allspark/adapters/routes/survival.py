@@ -1,8 +1,8 @@
 """Survival API routes: goals, briefing, timeline, diary, gps, reset, psych."""
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 
-from allspark.adapters.routes.helpers import _get_service, error_response, service_unavailable
+from allspark.adapters.routes.helpers import _get_service, error_response, json_object, service_unavailable, text_field
 from allspark.core.i18n import render, t
 
 
@@ -53,12 +53,15 @@ def register_survival_routes(app, check):
         goal_engine_svc = _get_service(app, 'goal_engine')
         if goal_engine_svc is None:
             return service_unavailable("goal_engine", app=app)
-        data = await request.json()
+        data = await json_object(request)
+        priority = text_field(data, "priority", default="medium")
+        if priority not in {"critical", "high", "medium", "low"}:
+            raise HTTPException(422, t("error_api_invalid_field", field="priority"))
         goal = goal_engine_svc.add_manual_goal(
-            title=data.get("title", ""),
-            description=data.get("description", ""),
-            priority=data.get("priority", "medium"),
-            category=data.get("category", "survival"),
+            title=text_field(data, "title", required=True),
+            description=text_field(data, "description"),
+            priority=priority,
+            category=text_field(data, "category", default="survival"),
         )
         return {"goal": {"id": goal.id, "title": render(goal.title)}}
 
@@ -143,11 +146,11 @@ def register_survival_routes(app, check):
         diary_svc = _get_service(app, 'diary')
         if diary_svc is None:
             return service_unavailable("diary", app=app)
-        data = await request.json()
+        data = await json_object(request)
         entry = diary_svc.add_entry(
-            content=data.get("content", ""),
-            emotion=data.get("emotion", "neutral"),
-            related_goal_id=data.get("related_goal_id", ""),
+            content=text_field(data, "content", required=True),
+            emotion=text_field(data, "emotion", default="neutral"),
+            related_goal_id=text_field(data, "related_goal_id"),
         )
         return {"entry": {"id": entry["id"], "date": entry["date"]}}
 

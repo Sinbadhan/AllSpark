@@ -6,6 +6,28 @@ from fastapi.responses import JSONResponse
 from allspark.core.i18n import t as _t
 
 
+async def json_object(request: Request) -> dict:
+    """Parse the JSON-object API contract before calling stateful services."""
+    media_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+    if media_type and media_type != "application/json":
+        raise HTTPException(415, _t("error_api_json_media_type"))
+    try:
+        data = await request.json()
+    except (ValueError, UnicodeDecodeError) as exc:
+        raise HTTPException(400, _t("error_api_invalid_json")) from exc
+    if not isinstance(data, dict):
+        raise HTTPException(422, _t("error_api_json_object"))
+    return data
+
+
+def text_field(data: dict, name: str, *, default: str = "", required: bool = False) -> str:
+    """Validate text before services bind values or commit transactions."""
+    value = data.get(name, default)
+    if not isinstance(value, str) or (required and not value.strip()):
+        raise HTTPException(422, _t("error_api_invalid_field", field=name))
+    return value
+
+
 def error_response(
     error: str,
     *,

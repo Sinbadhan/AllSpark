@@ -99,7 +99,7 @@ def _is_authed(request: Request) -> bool:
     if not token:
         return False
     cookie = request.cookies.get(_AUTH_COOKIE)
-    if cookie and hmac.compare_digest(cookie, token):
+    if cookie and hmac.compare_digest(cookie.encode(), token.encode()):
         return True
     auth = request.headers.get("authorization", "")
     return auth == f"Bearer {token}"
@@ -328,7 +328,7 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
                 status_code=401,
                 content={"status": "error", "error": "unauthorized", "detail": "token required"},
             )
-        if not token or not hmac.compare_digest(submitted, token):
+        if not token or not hmac.compare_digest(submitted.encode(), token.encode()):
             return JSONResponse(
                 status_code=401,
                 content={"status": "error", "error": "unauthorized", "detail": "invalid token"},

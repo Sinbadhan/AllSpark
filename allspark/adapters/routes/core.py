@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from allspark.adapters.routes.helpers import _get_service, error_response
+from allspark.adapters.routes.helpers import _get_service, error_response, json_object
 from allspark.core.i18n import set_language, t
 from allspark.core.models import KnowledgeActionUnavailableError, ResourceType
 
@@ -28,6 +28,15 @@ class ResourceUpdateRequest:
     def __init__(self, type: str, amount: float):
         self.type = type
         self.amount = amount
+
+
+def _validate_chat_fields(message, language) -> None:
+    for name, valid in (
+        ("message", isinstance(message, str) and bool(message.strip())),
+        ("language", language is None or (isinstance(language, str) and language in {"zh", "en"})),
+    ):
+        if not valid:
+            raise HTTPException(422, t("error_api_invalid_field", field=name))
 
 
 def _resource_payload(resource_mgr, r):
@@ -153,7 +162,7 @@ def register_core_routes(app, check):
         data: dict[str, Any] = {}
         input_kind = "observed"
         if type is None or amount is None:
-            data = await request.json()
+            data = await json_object(request)
             type = data.get("type", type)
             amount = data.get("amount", amount)
             consumption = data.get("daily_consumption", None)
@@ -280,10 +289,14 @@ def register_core_routes(app, check):
     ):
         container, db = check()
         if message is None:
-            data = await request.json()
+            data = await json_object(request)
             message = data.get("message", "")
             language = data.get("language", language)
             conversation_id = data.get("conversation_id", conversation_id)
+        _validate_chat_fields(message, language)
+        # Preserve the crisis-support contract: invalid optional IDs are
+        # anonymous, never a reason to suppress an otherwise valid disclosure.
+        conversation_id = conversation_id if isinstance(conversation_id, str) else None
         if language:
             set_language(language)
         result = container.get("rule_engine").process_input_result(
@@ -308,10 +321,12 @@ def register_core_routes(app, check):
     ):
         container, db = check()
         if message is None:
-            data = await request.json()
+            data = await json_object(request)
             message = data.get("message", "")
             language = data.get("language", language)
             conversation_id = data.get("conversation_id", conversation_id)
+        _validate_chat_fields(message, language)
+        conversation_id = conversation_id if isinstance(conversation_id, str) else None
         if language:
             set_language(language)
 
