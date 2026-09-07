@@ -2365,7 +2365,7 @@ immediate_danger_catalog_unavailable: The offline action catalog failed its inte
 immediate_danger_source_red_cross_steps_locator: First Aid Steps — scene safety; responsiveness, breathing, and life-threatening bleeding checks; emergency help boundary
 immediate_danger_source_red_cross_bleeding_locator: Life-threatening external bleeding — scene safety and direct pressure; packing and tourniquet applicability and training boundaries
 immediate_danger_source_cdc_co_locator: Carbon monoxide exposure response — fresh air and medical help; no safe re-entry inference
-immediate_danger_source_nhs_first_aid_locator: First aid — breathing, responsiveness, age, and cause branches
+immediate_danger_source_nhs_first_aid_locator: St John Ambulance first-aid index — separate condition and age-specific topics
 immediate_danger_applicable_scene_unsafe: The scene is unsafe or its safety is unknown.
 immediate_danger_applicable_fire_safe: Fire, smoke, or carbon monoxide is suspected and the current scene was reported safe enough to act.
 immediate_danger_applicable_bleeding_safe: Life-threatening external bleeding is present and the scene can be approached safely.

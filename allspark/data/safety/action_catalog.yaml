@@ -39,16 +39,17 @@ sources:
     captured_assertion: The captured source record directs exposed people to fresh air and medical attention without declaring the contaminated area safe for re-entry.
     content_hash: sha256:210bcf422f7005c06ac058490c4db139e2453c472ee1faa1947b11f90e7bf397
   nhs-first-aid:
-    organization: NHS
-    title: First aid
-    locator: "CPR and emergency branches: normal breathing, ineffective cough/choking, age, awareness, and cause affect the response"
+    # Keep the source key stable; the former NHS URL now redirects to SJA.
+    organization: St John Ambulance
+    title: First aid advice
+    locator: "Condition-specific first aid index: separate CPR, choking, and child or baby guidance; this index is not one universal procedure"
     locator_key: immediate_danger_source_nhs_first_aid_locator
-    url: https://www.nhs.uk/tests-and-treatments/first-aid/
-    revision: accessed-2026-07-16
-    retrieved_at: '2026-07-16'
-    assertion: Breathing, responsiveness, age, and cause affect emergency first-aid branches and must not be collapsed into one universal instruction.
-    captured_assertion: The captured source record distinguishes emergency branches by breathing, responsiveness, age, and cause instead of prescribing one universal action.
-    content_hash: sha256:49539bc79b7faeb4207742dda58382093ebaba1ad89533f790256c2112fb627b
+    url: https://www.sja.org.uk/first-aid-advice/
+    revision: accessed-2026-09-07
+    retrieved_at: '2026-09-07'
+    assertion: The first-aid index separates condition-specific advice and links to CPR, choking, and child or baby topics rather than one universal procedure.
+    captured_assertion: This retrieval records the condition-specific index and its new publisher, not an endorsement of every linked procedure or an AllSpark clinical approval.
+    content_hash: sha256:0592bc09c51cd887897679c72592418814df3f9774e941c93fe0a8f195c606af
   cdc-heat-illness:
     organization: CDC/NIOSH
     title: Heat-related illnesses
@@ -74,14 +75,25 @@ sources:
   hrsa-poison-help:
     organization: U.S. Health Resources and Services Administration
     title: Poison Help
-    locator: "Poison exposure first response: stop exposure safely, do not induce vomiting, preserve product information, and contact poison help"
+    locator: "First steps and Calling Poison Help: inhalation fresh air, skin or eye exposure, product-container information, and expert contact"
     locator_key: immediate_danger_source_poison_help_locator
     url: https://poisonhelp.hrsa.gov/what-you-can-do
-    revision: accessed-2026-07-19
-    retrieved_at: '2026-07-19'
-    assertion: Do not induce vomiting; stop exposure without creating another casualty, keep identifying information, and contact poison or emergency help.
-    captured_assertion: The captured source record rejects induced vomiting and directs callers to preserve substance information and obtain poison-specific professional guidance.
-    content_hash: sha256:ed4d96a56955ac5ca97c171d0ec2dbc3987c5742cd15c484d33bf76ba86211e8
+    revision: accessed-2026-09-07
+    retrieved_at: '2026-09-07'
+    assertion: Initial response depends on the exposure route; preserve product information and contact poison or emergency help.
+    captured_assertion: This page supports exposure-specific first steps, product information, and expert contact. The no-induced-vomiting statement is sourced separately to the National Capital Poison Center.
+    content_hash: sha256:8f3c81293644161efc8900a98f3979a9f4ceb8b7fab9965b36020b217791023a
+  ncpc-poison-first-aid:
+    organization: National Capital Poison Center
+    title: First aid guidelines
+    locator: "SWALLOWED Poisons: do not induce vomiting; Get expert help: obtain substance-specific advice"
+    locator_key: immediate_danger_source_poison_help_locator
+    url: https://www.poison.org/first-aid-for-poisonings
+    revision: accessed-2026-09-07
+    retrieved_at: '2026-09-07'
+    assertion: Do not induce vomiting after a suspected poisoning; obtain expert advice tailored to the exposure.
+    captured_assertion: The swallowed-poisons section explicitly rejects induced vomiting and recommends poison-center guidance. This does not approve other interventions for unknown substances or populations.
+    content_hash: sha256:49b867ab313362efecbdf36430a506ed4a43027f28eb268201042a1af7c1e949
 actions:
   - action_id: leave-immediate-hazard
     revision: 1
@@ -220,7 +232,7 @@ actions:
   - action_id: stop-poison-exposure
     revision: 1
     text_key: immediate_danger_action_poison_exposure
-    source_ids: [hrsa-poison-help]
+    source_ids: [hrsa-poison-help, ncpc-poison-first-aid]
     applicable_when:
       any:
         - threat_type: [poisoning]
@@ -229,4 +241,4 @@ actions:
     contraindication_keys: [immediate_danger_contra_poison_no_vomiting, immediate_danger_contra_poison_no_home_antidote]
     escalation_key: immediate_danger_escalation_poison
     review_status: pending_external_review
-    content_hash: sha256:afedbb3863b9661adadba341ed5383b544282f715da78be0ff4e35da45860c08
+    content_hash: sha256:7cacab98c3e8567a11f26c2261047bb5c4aec15eee0bd239c36990f86d2f3b66
