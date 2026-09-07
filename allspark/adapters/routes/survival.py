@@ -1,5 +1,7 @@
 """Survival API routes: goals, briefing, timeline, diary, gps, reset, psych."""
 
+import math
+
 from fastapi import HTTPException, Request
 
 from allspark.adapters.routes.helpers import _get_service, error_response, json_object, service_unavailable, text_field
@@ -179,16 +181,22 @@ def register_survival_routes(app, check):
         gps_manager_svc = _get_service(app, 'gps_manager')
         if gps_manager_svc is None:
             return service_unavailable("gps_manager", app=app)
-        data = await request.json()
+        data = await json_object(request)
         # Accept both canonical ("latitude"/"longitude") and shorthand ("lat"/"lng").
-        lat = data.get("latitude", data.get("lat", 0))
-        lon = data.get("longitude", data.get("lng", 0))
+        lat = data.get("latitude", data.get("lat"))
+        lon = data.get("longitude", data.get("lng"))
         alt = data.get("altitude", data.get("alt", 0))
         # Type validation — reject non-numeric values early.
         try:
+            if lat is None or lon is None:
+                raise ValueError("missing coordinate")
+            if any(isinstance(value, bool) for value in (lat, lon, alt)):
+                raise ValueError("boolean coordinate")
             lat = float(lat)
             lon = float(lon)
             alt = float(alt)
+            if not all(math.isfinite(value) for value in (lat, lon, alt)):
+                raise ValueError("non-finite coordinate")
         except (TypeError, ValueError):
             return error_response(
                 t("error_gps_invalid"),

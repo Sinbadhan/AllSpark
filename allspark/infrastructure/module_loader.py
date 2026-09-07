@@ -51,7 +51,9 @@ MODULE_DEFINITIONS = [
     ModuleDef("diary", "火种日记 — 文字/情绪记录", "Diary — text/emotion recording", "self_learning", is_core=True),
     ModuleDef("weather", "离线天气预测 — 气压/云图", "Weather Prediction — barometer/cloud guide", "sensor_hub"),
     ModuleDef("psychology", "心理状态追踪 — 孤独/压力/干预", "Psychology Tracker — loneliness/stress/intervention", "self_learning"),
-    ModuleDef("gps_manager", "GPS 管理器 — 定位/轨迹", "GPS Manager — positioning/tracking", "sensor_hub"),
+    # Manual coordinates need no GPS hardware. Physical readings still require
+    # the separately gated SensorHub; the combined module remains Experimental.
+    ModuleDef("gps_manager", "手动定位 — 硬件 GPS 仍为实验性", "Manual location — hardware GPS remains Experimental", "text_interaction"),
     ModuleDef("environment", "环境评估 — 气候/威胁/机会", "Environment Assessor — climate/threats/opportunity", "sensor_hub"),
     ModuleDef("voice", "语音交互 — Whisper STT + TTS", "Voice Interaction — Whisper STT + TTS", "voice_input"),
 ]
@@ -123,7 +125,6 @@ DEPENDENCY_IMPORTS = {
     "power_monitor": ("RPi.GPIO", "spidev"),
     "sensor_hub": ("RPi.GPIO", "smbus2"),
     "weather": ("smbus2",),
-    "gps_manager": ("serial",),
     "voice": ("whisper", "pyttsx3"),
 }
 
@@ -149,7 +150,6 @@ CONFIGURATION_REQUIRED = frozenset({
     "boot_manager",
     "docker_manager",
     "weather",
-    "gps_manager",
     "environment",
     "voice",
 })

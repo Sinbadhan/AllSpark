@@ -24,6 +24,7 @@ from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Iterator
+from unittest.mock import patch
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -37,6 +38,25 @@ REPORTS_DIR.mkdir(exist_ok=True)
 # ---------------------------------------------------------------------------
 # Server boot helpers
 # ---------------------------------------------------------------------------
+
+@contextmanager
+def optional_service_profile(*, enabled: bool):
+    """Synthetic software contract profile, never evidence of real hardware.
+
+    Each computation returns fresh flags; only this test context changes the
+    bootstrap inputs. No device is registered, polled, or written to.
+    """
+    from allspark.infrastructure.hardware import FeatureFlags
+
+    def flags(*args, **kwargs):
+        return FeatureFlags(
+            web_ui=True, self_learning=True, data_preservation=True,
+            power_monitor=True, sensor_hub=enabled, trade_engine=enabled,
+        )
+
+    with patch("allspark.adapters.web_ui.compute_feature_flags", flags), \
+            patch("allspark.bootstrap.compute_feature_flags", flags):
+        yield
 
 class EnvironmentBlocked(RuntimeError):
     """Raised when the current host forbids resources required by a suite."""
@@ -208,7 +228,7 @@ class Recorder:
 # ---------------------------------------------------------------------------
 BLOCKING_FLAGS = frozenset({
     "transport_error", "5xx", "4xx_unexpected", "ok_unexpected",
-    "i18n_leak", "json_error",
+    "i18n_leak", "json_error", "contract_mismatch",
 })
 
 
@@ -230,6 +250,7 @@ def http_probe(
     expect_ok: bool = True,
     expect_degraded: bool = False,
     allowlist_reason: str | None = None,
+    expected_response: tuple[int, dict] | None = None,
     label: str | None = None,
     **kwargs,
 ) -> CallRecord:
@@ -267,18 +288,25 @@ def http_probe(
         return recorder.add(rec)
 
     rec.response["status"] = r.status_code
-    if r.status_code >= 500:
+    if r.status_code >= 500 and expected_response is None:
         if expect_degraded and allowlist_reason:
             rec.flags.append("degraded_allowlisted")
         else:
             rec.flags.append("5xx")
-    if expect_ok and 400 <= r.status_code < 500:
+    if expected_response is None and expect_ok and 400 <= r.status_code < 500:
         rec.flags.append("4xx_unexpected")
-    if not expect_ok and 200 <= r.status_code < 300:
+    if expected_response is None and not expect_ok and 200 <= r.status_code < 300:
         rec.flags.append("ok_unexpected")
 
     try:
         body = r.json()
+        if expected_response is not None:
+            expected_status, expected_body = expected_response
+            rec.response["expected_status"] = expected_status
+            if r.status_code != expected_status or body != expected_body:
+                rec.flags.append("contract_mismatch")
+            else:
+                rec.flags.append("exact_contract_pass")
         rec.response["body_kind"] = type(body).__name__
         if isinstance(body, dict):
             rec.response["body_keys"] = list(body.keys())[:30]

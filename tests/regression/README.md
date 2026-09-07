@@ -4,7 +4,7 @@
 > **创建于：** 2026-06-14（v1.0.0 公开发布后第一轮全量回归）
 > **首轮报告：** [`/BUGS_REGRESSION_2026-06-14.md`](../../BUGS_REGRESSION_2026-06-14.md)
 
-这套脚手架是**面向人的探索性回归**，不是 CI 阻断器。它跑完后产出 JSONL + Markdown 给人 triage，而不是返回 0/1 的 pass/fail。一旦某个 bug 修完，把对应的具体检查从这里**毕业**到 `tests/test_*.py` 的真实 pytest 用例 —— 这是分层的：
+这套脚手架产出 JSONL + Markdown 供人工复核，同时对明确的阻断标记返回非零退出码；成功退出不能替代浏览器、硬件或外部验收。修复后的具体契约也应由 `tests/test_*.py` 覆盖：
 
 - **pytest（CI 复现完整 tracked tests，SHA-28；以 `pytest tests/ -q` 实际输出为准）** = 单元/集成回归，每次提交都跑、必须绿
 - **regression suites（本目录）** = e2e/UX 回归，发版前手动跑、给人看
@@ -41,6 +41,8 @@ python -m tests.regression.suite_html_render
 **跑前提：**
 - `pip install -e ".[dev]"` 起码到位（httpx/uvicorn/fastapi 已是运行依赖）
 - 不需要 LLM 模型 / 不需要硬件 / 不需要 Docker
+
+Web API 套件使用确定性的纯软件 profile，先验证已加载的天气/环境/交易及无注册设备的 SensorHub，再以独立数据库验证关闭状态的 16 个 zh/en 精确 503 正文契约。错误状态码、错误服务正文和任意 500 均阻断；不通过扩大 `degraded_allowlisted` 白名单消除失败。手动坐标沿真实无传感器路径，物理 GPS 与上述可选能力的 Experimental 标签不变。
 
 ## 覆盖矩阵（按 PRD §三 模块）
 
