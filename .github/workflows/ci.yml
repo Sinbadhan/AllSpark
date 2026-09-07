@@ -80,7 +80,7 @@ jobs:
           pytest --collect-only -q > /tmp/allspark-collection.txt 2>&1
           COUNT=$(grep -oE '[0-9]+ tests? collected' /tmp/allspark-collection.txt | head -1 | grep -oE '[0-9]+' || echo 0)
           echo "Collected tests: $COUNT"
-          test "${COUNT:-0}" -ge 2049
+          test "${COUNT:-0}" -ge 2073
 
       - name: Module import performance gate
         # Both declared budgets are mandatory; missing imports also fail.
