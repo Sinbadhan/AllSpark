@@ -7,17 +7,20 @@ from types import ModuleType
 def _get_jieba() -> ModuleType | None:
     """Load the optional dictionary only when non-empty text needs indexing.
 
-    Configuration, help and metadata imports do not need segmentation. In
-    particular, importing Jieba's large Python dictionaries under a 3.12
-    coverage tracer can take tens of seconds. Actual indexing still loads and
-    traces the same dependency; a missing dependency retains the simple fallback.
+    Configuration, help and metadata imports do not need segmentation. Actual
+    indexing uses the same upstream model data; a missing dependency retains
+    the simple fallback. No tracing or coverage configuration is changed.
     """
+    from allspark.core._jieba_data import discard_model, prime_model
+
+    model = prime_model()
     try:
         # A normal import also keeps the optional dependency discoverable by
         # PyInstaller; dynamic import strings would require a separate hook.
         import jieba
         return jieba
     except ImportError:
+        discard_model(model)
         return None
 
 
