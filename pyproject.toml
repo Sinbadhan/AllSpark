@@ -67,7 +67,7 @@ rag = [
     "sqlite-vss>=0.1.2",
 ]
 vision = [
-    "onnxruntime>=1.17",
+    "onnxruntime>=1.24.3",
     "Pillow>=10.0",
 ]
 voice = [
