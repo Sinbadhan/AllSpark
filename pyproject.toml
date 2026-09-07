@@ -55,6 +55,8 @@ dev = [
     # floors. pytest-cov 7 delegates subprocess measurement to coverage.py's
     # explicit patch mechanism configured below.
     "pytest-cov>=7.1,<8",
+    # AS-08: validated branch/subprocess tracing on supported 3.10 and 3.12.
+    "coverage>=7.16,<8",
     # SHA-196 browser gate drives an already-installed Chrome over the local
     # DevTools protocol; it does not download browsers or contact the internet.
     "websockets>=12,<17",

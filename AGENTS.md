@@ -109,7 +109,7 @@ allspark/
 - v1.0.3 尚未 tag 或发布；飞书 AS-15 是实时发布决策权威入口，M4 产品门禁与外部复核未完成，因此 Stable 结论仍为 No-Go；以下 SHA-* 为历史证据标识
 - 2026-07-15 发现的 8 个 High/P1、本轮 CLI/Repository/CI P2、执行中心入口、CSP enforcing、发布事务一致性与最终 RC 跨流程复验均已闭环
 - 完整 tracked tests 已收集（以 `pytest tests/ -q` / CI 实际输出为准；CI 在 Python 3.10/3.11/3.12 复现，SHA-28）
-- SHA-151 质量门禁：Python 3.10 为权威覆盖环境，总行覆盖率 ≥75%，10 个关键路径模块分支覆盖率均 ≥90%；3.10/3.11/3.12 均运行完整测试与收集数防回退门禁
+- AS-08 / SHA-151 质量门禁：Python 3.12 为主覆盖环境，3.10 覆盖仍作为兼容基线强制保留；两者均要求总行覆盖率 ≥75%、10 个关键路径模块分支覆盖率 ≥90%；3.10/3.11/3.12 均运行完整测试与收集数防回退门禁，不扩大至 3.13/3.14
 - Ruff lint 0 errors
 - mypy 0 errors，`check_untyped_defs = true` 已启用
 - `scripts/bench_import.py --check --hard-fail` 强制执行 600ms sum-of-means 与 2000ms cold-wall 门禁；导入失败、空测量和非法预算也必须失败。是否通过以当前候选输出为准
