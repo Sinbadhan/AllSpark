@@ -6,6 +6,13 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 AllSpark（火种）— 离线人工智能生存系统，面向极客/生存主义者。极端环境下提供生存决策、资源管理、知识检索、多人治理。Python 3.10+，当前版本 v1.0.3。
 
+## 优化计划权威入口（2026-09-07 切换）
+
+- 本轮高 ROI 优化的目标、范围、验收和决策统一维护在[飞书知识库正式计划](https://my.feishu.cn/docx/Ps4mdBreKojEIMx3W15cJVBOnc0)。
+- AS-01 至 AS-15 的 TODO、负责人、下一步、状态和完成证据统一维护在[AllSpark 飞书任务清单](https://applink.feishu.cn/client/todo/task_list?guid=4c10dae7-8a5b-4808-a1ae-09a78b13458c)；本地计划只保留切换前快照，不再维护第二套进度。
+- 原始计划、审计报告和机器证据保存在 [AS-01 任务附件](https://applink.feishu.cn/client/todo/detail?guid=ced39300-24df-4635-be36-e882789e0672)及本地证据目录；后续代码、机器契约和必要执行证据继续在本地持久保留。
+- 此次切换只覆盖该优化计划及其工作包。SHA-158 既有发布结论与历史签核仍须实际核对，不能由计划迁移推导为已同步或 Stable；以下历史基线记录不是本轮重新验证结果。锚定不授权启动修复、push/merge/tag/release，也不替代专家、真人、指定浏览器和干净设备证据。
+
 ## 常用命令
 
 ```bash
