@@ -261,7 +261,7 @@ class _Chrome:
 
 
 def _post(url: str) -> dict[str, Any]:
-    request = urllib.request.Request(url, method="POST")
+    request = urllib.request.Request(url, method="POST", headers={"X-AllSpark-Request": "1"})
     with urllib.request.urlopen(request, timeout=10) as response:
         return json.load(response)
 

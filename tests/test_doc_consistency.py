@@ -302,7 +302,7 @@ def test_prd_status_links_and_roadmap_match_current_release_boundary() -> None:
         local_target = target.split("#", 1)[0]
         assert (prd_path.parent / local_target).exists(), f"broken PRD link: {target}"
 
-    assert "**日期：** 2026-08-13" in prd
+    assert "**日期：** 2026-09-07" in prd
     assert "M1/M3 与 M2 本地实现已收敛" in prd
     for blocker in ("SHA-241/260", "SHA-246", "SHA-245", "SHA-264", "VoiceOver"):
         assert blocker in prd
@@ -323,7 +323,7 @@ def test_release_artifact_docs_and_sdist_manifest_are_consistent() -> None:
     assert "Source archives and wheels are the canonical open-source release artifacts" in configuration
     for content in (readme, readme_cn, configuration):
         assert "allspark-1.0.3-py3-none-any.whl" in content
-    assert "Last updated: 2026-08-13" in validation
+    assert "Last updated: 2026-09-07" in validation
     assert "ten critical modules" in validation
     assert "eight critical modules" not in validation
 
