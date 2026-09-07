@@ -13,6 +13,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      # Keep independent runtime evidence when another matrix job fails.
+      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
 
@@ -37,25 +39,25 @@ jobs:
       - name: Type check with mypy
         run: mypy allspark/ --ignore-missing-imports
 
-      - name: Run tests with coverage (Python 3.10)
-        if: matrix.python-version == '3.10'
+      - name: Run tests with coverage (Python 3.12 primary, 3.10 compatibility)
+        if: matrix.python-version == '3.10' || matrix.python-version == '3.12'
         # SHA-28: full suite is tracked in version control and gates merges
         # across all supported Python versions. Hardware/live-model smoke
         # tests auto-skip (gated behind ALLSPARK_LIVE_* env vars / importorskip).
-        # SHA-151: Python 3.10 is the canonical coverage environment. Coverage
-        # 7.x does not consistently trace Starlette TestClient portal threads
-        # on Python 3.11/3.12, even though those requests and assertions pass.
-        # Keep one authoritative coverage result instead of comparing tracer
-        # artifacts across runtimes; the next step still enforces total LINE
-        # coverage plus per-module BRANCH floors without lowering either gate.
+        # AS-08: 3.12 is the successor coverage environment, independently
+        # verified with real TestClient threads and subprocess coverage.
+        # Retain the 3.10 compatibility gate during the transition. Evaluate
+        # each report against the same floors, not against another runtime's
+        # branch denominator. Optional Jieba loading avoids unrelated command
+        # startup costs under tracing without disabling dependency execution.
         run: pytest -q --tb=short --cov=allspark --cov-branch --cov-report=term-missing --cov-report=json:coverage.json
 
-      - name: Run full tests (Python 3.11 and 3.12)
-        if: matrix.python-version != '3.10'
+      - name: Run full tests (Python 3.11)
+        if: matrix.python-version == '3.11'
         run: pytest -q --tb=short
 
       - name: Per-module branch coverage gate
-        if: matrix.python-version == '3.10'
+        if: matrix.python-version == '3.10' || matrix.python-version == '3.12'
         # SHA-151: enforce ratcheted per-module BRANCH floors on the critical
         # path (auth/init/SKF/import/reset/backup/search/resource) and other
         # high-risk low-coverage modules, and enforce >=75% total line coverage.
@@ -78,7 +80,7 @@ jobs:
           pytest --collect-only -q > /tmp/allspark-collection.txt 2>&1
           COUNT=$(grep -oE '[0-9]+ tests? collected' /tmp/allspark-collection.txt | head -1 | grep -oE '[0-9]+' || echo 0)
           echo "Collected tests: $COUNT"
-          test "${COUNT:-0}" -ge 2042
+          test "${COUNT:-0}" -ge 2073
 
       - name: Module import performance gate
         # Both declared budgets are mandatory; missing imports also fail.

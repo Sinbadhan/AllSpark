@@ -2308,7 +2308,7 @@ immediate_danger_catalog_unavailable: 离线动作目录未通过完整性检查
 immediate_danger_source_red_cross_steps_locator: 急救步骤——现场安全；反应、呼吸和危及生命出血检查；紧急求援边界
 immediate_danger_source_red_cross_bleeding_locator: 危及生命的外部出血——现场安全和直接加压；填塞与止血带的适用及训练边界
 immediate_danger_source_cdc_co_locator: 一氧化碳暴露处置——前往新鲜空气处并寻求医疗帮助；不能据此推断可安全重返
-immediate_danger_source_nhs_first_aid_locator: 急救——呼吸、反应、年龄和原因的分支
+immediate_danger_source_nhs_first_aid_locator: St John Ambulance 急救索引——按情况和年龄区分的主题
 immediate_danger_applicable_scene_unsafe: 现场不安全，或无法确认现场安全。
 immediate_danger_applicable_fire_safe: 疑似火灾、烟雾或一氧化碳，且用户报告当前现场可以安全采取动作。
 immediate_danger_applicable_bleeding_safe: 存在危及生命的外部出血，且可以安全接近现场。

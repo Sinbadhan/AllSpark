@@ -53,9 +53,9 @@ the changelog section, and promoting the classifier are one release operation.
 ```bash
 ruff check allspark/ tests/
 mypy allspark/ --ignore-missing-imports
-python3.10 -m pytest -q --tb=short --cov=allspark --cov-branch \
+python3.12 -m pytest -q --tb=short --cov=allspark --cov-branch \
   --cov-report=term-missing --cov-report=json:coverage.json
-python3.10 scripts/check_coverage.py --coverage-json coverage.json
+python3.12 scripts/check_coverage.py --coverage-json coverage.json
 python3 tests/regression/run_all.py
 python3 scripts/bench_import.py --check --hard-fail
 ```
@@ -67,8 +67,11 @@ until a real Windows run is attached; see `docs/PRIVACY.md`.
 
 Do not lower coverage or collection floors to make a release pass. Record the
 exact pytest, coverage, regression, and benchmark output in the release PR.
-Python 3.10 is the canonical coverage environment; CI still runs the complete
-test suite and collection gate independently on Python 3.11 and 3.12.
+Python 3.12 is the primary coverage environment. The Python 3.10 coverage job
+remains required during transition, with the same total-line and per-module
+branch floors; Python 3.11 independently runs the complete suite and collection
+gate. AS-08 does not remove 3.10 support or add 3.13/3.14 support. Use current
+security patches in isolated environments, not the macOS system Python.
 Confirm the knowledge output contract with a pending bundled item and an
 externally imported item: both must expose review/evidence metadata while
 withholding actionable summaries, steps, prerequisites, warnings,
@@ -79,6 +82,9 @@ Run `python3 scripts/audit_safety_scenarios.py` and confirm all canonical and
 adversarial variants execute deterministically with zero declared forbidden
 matches. Source records, retrieval dates, action hashes, and reviewer scopes
 must fail closed on drift; automation is not external expert approval.
+Run `python3 scripts/knowledge_review_inventory.py --require-reviewed` to
+retain every bundled language/hash and its evidence gaps. Inventory integrity
+alone is not review approval; an empty, duplicated or unpaired inventory fails.
 Run §1 of `docs/MANUAL_CHECKLIST.md` and attach the keyboard, macOS VoiceOver,
 and 200% browser-zoom evidence to the release PR. Attach Windows + NVDA evidence
 only when promoting that compatibility out of Testing.

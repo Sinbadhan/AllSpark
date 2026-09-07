@@ -78,10 +78,16 @@ do not expand the primary v1.0.3 product promise.
 | Tier | Content | Entries |
 |------|---------|---------|
 | Tier 0 | Immediate survival (water/fire/food/shelter/medical) | 23 |
-| Tier 1 | Short-term survival (agriculture/chemistry/mechanics/weather/energy) | 10 |
-| Tier 2 | Mid-term self-sufficiency (composting/paper-making/hydropower/biogas/herbal) | 10 |
-| Tier 3 | Long-term community (governance/forging/power generation/law/civilization archives) | 17 |
+| Tier 1 | Short-term survival (agriculture/chemistry/mechanics/weather/energy) | 12 |
+| Tier 2 | Mid-term self-sufficiency (agriculture/medicine/engineering/community) | 28 |
+| Tier 3 | Long-term community (communication/law/education/civilization archives) | 13 |
 | SKF Pack | ZIP format standardized knowledge import/export with SHA256 checksum |
+
+These are topic counts per language, not reviewed-content counts. All bundled
+entries remain pending external review; actionable content and knowledge-to-task
+conversion require both local content evidence and named risk approval.
+`python scripts/knowledge_review_inventory.py --require-reviewed` reports the
+complete bilingual/hash inventory and fails until those gates pass.
 
 ### 📡 Connectivity & Communication
 | Feature | Description |

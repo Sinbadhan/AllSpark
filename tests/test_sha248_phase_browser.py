@@ -46,6 +46,20 @@ def test_dashboard_phase_unknown_and_known_visual_truth(
             {
                 "source": "Object.defineProperty(navigator, 'language', "
                 f"{{get: () => '{locale}'}});"
+                """
+                // Make the CI race deterministic: the dashboard can finish
+                // before the footer's independent system-health request.
+                const nativeFetch = window.fetch.bind(window);
+                const footerGate = new Promise(resolve => {
+                  window.releaseFooterHealth = resolve;
+                });
+                window.fetch = async (...args) => {
+                  if (new URL(args[0], location.href).pathname === '/api/system/health') {
+                    await footerGate;
+                  }
+                  return nativeFetch(...args);
+                };
+                """
             },
         )
         browser.call(
@@ -55,6 +69,14 @@ def test_dashboard_phase_unknown_and_known_visual_truth(
         browser.navigate(base_url)
         browser.wait_for(
             f"document.getElementById('phase-badge').textContent.includes({pending!r})"
+        )
+        assert browser.evaluate(
+            "document.getElementById('footer-resources').textContent"
+        ) == "SYS_RESOURCE: --"
+        browser.evaluate("window.releaseFooterHealth()")
+        browser.wait_for(
+            "document.getElementById('footer-resources').textContent.includes("
+            f"{footer_pending!r})"
         )
         unknown = browser.evaluate(
             """(() => {

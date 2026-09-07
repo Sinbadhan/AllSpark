@@ -51,6 +51,7 @@ from tests.regression._harness import (
     blocking_records,
     http_probe,
     initialization_payload,
+    optional_service_profile,
     render_summary,
     web_server,
 )
@@ -219,6 +220,36 @@ def _run_negative_paths(c: httpx.Client, recorder: Recorder) -> None:
     H("POST", f"/api/skf/import?path={quote('../../../etc/passwd')}", expect_ok=False, label="skf-import-traversal")
 
 
+def _run_disabled_contracts(c: httpx.Client, recorder: Recorder) -> None:
+    """Verify unavailable services exactly; arbitrary 5xx must still fail."""
+    from allspark.core.i18n import MESSAGES
+
+    response_style = {
+        "weather": [("GET", "/api/weather", {}), ("POST", "/api/weather/pressure", {"json": {"hpa": 1012}})],
+        "environment": [("GET", "/api/environment", {})],
+        "sensor_hub": [("GET", "/api/sensor/status", {}), ("GET", "/api/sensor/snapshot", {})],
+        "trade_engine": [("GET", "/api/trade/status", {}), ("GET", "/api/trade/list", {}),
+                         ("POST", "/api/trade/propose", {"json": {}})],
+    }
+    for lang in ("zh", "en"):
+        c.post("/api/system/language", json={"language": lang}).raise_for_status()
+        translate = lambda key, **args: MESSAGES[lang][key].format(**args)  # noqa: E731
+        for name, probes in response_style.items():
+            if name in {"weather", "environment"}:
+                body = {
+                    "status": "error",
+                    "error": translate("error_module_not_available_short", name=name),
+                    "detail": translate("error_module_unsupported", name=name),
+                    "next_action": translate("error_module_requires_higher_hw"),
+                }
+            else:
+                body = {"status": "error", "error": translate("error_service_not_available", name=name),
+                        "detail": "", "next_action": ""}
+            for method, path, kwargs in probes:
+                http_probe(c, method, path, recorder=recorder, lang=lang,
+                           label=f"disabled:{method} {path}", expected_response=(503, body), **kwargs)
+
+
 def main() -> int:
     db = REPORTS_DIR / "_web_api_session.db"
     jsonl = REPORTS_DIR / "web_api.jsonl"
@@ -228,11 +259,18 @@ def main() -> int:
 
     recorder = Recorder(jsonl)
     try:
-        with web_server(db) as base:
+        with optional_service_profile(enabled=True), web_server(db) as base:
             with httpx.Client(base_url=base, headers={"X-AllSpark-Request": "1"}) as c:
                 _run_lang(c, recorder, "zh", fresh_init=True)
                 _run_lang(c, recorder, "en", fresh_init=False)
                 _run_negative_paths(c, recorder)
+        disabled_db = REPORTS_DIR / "_web_api_disabled.db"
+        if disabled_db.exists():
+            disabled_db.unlink()
+        with optional_service_profile(enabled=False), web_server(disabled_db) as base:
+            with httpx.Client(base_url=base, headers={"X-AllSpark-Request": "1"}) as c:
+                c.post("/api/init/complete", json=initialization_payload(c)).raise_for_status()
+                _run_disabled_contracts(c, recorder)
     finally:
         recorder.close()
 

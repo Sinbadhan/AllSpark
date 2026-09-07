@@ -720,4 +720,4 @@ IF Phase >= 3 → 🟢 "建立通信网络" / "知识传承"
 
 ## 十四、待决策事项 & 技术选型
 
-跨版本且需要长期追踪的技术决策维护在 **[Architecture Decision Records](docs/adr/README.md)**。当前通信加密、Tier 3 知识审阅和 SKF 签名均明确推迟到 v2.0+；v1.0.3 的语言、PROCESS 模式、可选 LLM/RAG 与 Docker/INTEGRATION 边界以本文和运行时能力注册表为准，不由不存在的汇总文档代替。
+跨版本且需要长期追踪的技术决策维护在 **[Architecture Decision Records](docs/adr/README.md)**。通信加密、SKF 签名及扩大审阅面板的组织流程仍属于 v2.0+；内置全部层级知识的内容证据与具名风险审阅双门禁已经适用于当前候选，不得推迟到 v2。v1.0.3 的语言、PROCESS 模式、可选 LLM/RAG 与 Docker/INTEGRATION 边界以本文和运行时能力注册表为准。当前收录不等于已审阅；完整双语/hash 与来源缺口由 `scripts/knowledge_review_inventory.py` 只读生成，外部签核缺失继续阻断 Stable。
