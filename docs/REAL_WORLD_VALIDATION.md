@@ -1,7 +1,16 @@
 # P2 Real-World Validation Log
 
-> Last updated: 2026-07-14
+> Last updated: 2026-09-07
 > Status: scoped desktop evidence in progress; hardware integrations remain Experimental
+
+The dated results below are historical evidence, not acceptance of the current
+candidate. In particular, selected-Chrome draft recovery, lifecycle immediate
+danger, VoiceOver and actual 200% zoom require their current-candidate runs.
+Current optimization evidence is linked from the [Feishu plan](https://my.feishu.cn/docx/Ps4mdBreKojEIMx3W15cJVBOnc0)
+and task list. Linear is retired by the maintainer's 2026-09-07 decision;
+SHA-* IDs are historical provenance, and missing approvals remain unverified.
+AS-15 owns current release decisions. Stable remains No-Go; merge authorization
+does not authorize publication.
 
 ## Scope
 
@@ -16,8 +25,8 @@ removable storage.
 | --- | --- | --- |
 | `python3 -m mypy allspark/ --ignore-missing-imports` | ready | `check_untyped_defs = true` is enabled in `pyproject.toml`. |
 | `python3 -m ruff check allspark/ tests/` | ready | Static style gate. |
-| `python3 scripts/bench_import.py --check` | ready (advisory) | Checks both the 600 ms sum-of-means budget and 2000 ms cold wall-clock budget; CI warns on drift. Use `--hard-fail` for a blocking release-environment check. |
-| `python3 -m pytest tests/ -q` | ready on local/CI | Full tracked suite on Python 3.10/3.11/3.12; JSON gate enforces ≥75% total line and ≥90% branch on eight critical modules. Exact count: see CI output. |
+| `python3 scripts/bench_import.py --check --hard-fail` | mandatory local/CI definition | Blocks either the 600 ms sum-of-means or 2000 ms cold wall-clock overrun, incomplete imports, and invalid measurements. Remote activation requires exact-candidate CI. |
+| `python3 -m pytest tests/ -q` | ready on local/CI | Full tracked suite on Python 3.10/3.11/3.12; JSON gate enforces ≥75% total line and ≥90% branch on ten critical modules. Exact count: see CI output. |
 | `python3 tests/regression/run_all.py` | ready (loopback) | Completes exit 0 on an unrestricted local shell; no `environment_blocked` rows (loopback TCP/uvicorn is no longer blocked). |
 
 ## Real-World Matrix
@@ -132,8 +141,8 @@ implemented in v1.0.3; channel detection must not be presented as transport.
 - First run, Dashboard, Repository, Executions, task outcomes, plan evidence,
   error states, modal isolation, and assistive labels received code and
   automated contract review.
-- The exact current commit, local test/coverage totals, CI run, open Linear
-  counts, and release health are maintained only in Linear SHA-158. This file
+- The exact current commit, local test/coverage totals, CI run, open task
+  counts, and release health are maintained only in the Feishu plan and task list. This file
   intentionally does not duplicate those fast-changing identifiers.
 - Real Chrome was not rerun locally in this audit because the available host
   browser path was environment-blocked. No browser-policy workaround was used;

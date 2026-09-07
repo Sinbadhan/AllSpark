@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68.0"]
+requires = ["setuptools>=77.0.3,<85"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -80,6 +80,8 @@ delivery = [
     # Pin the freezer and hook set so artifact inputs cannot drift silently.
     "pyinstaller==6.21.0",
     "pyinstaller-hooks-contrib==2026.6",
+    # PEP 639 metadata support plus the reviewed build dependency baseline.
+    "setuptools==84.0.0",
 ]
 
 [project.urls]

@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from jinja2 import Environment, FileSystemLoader
 
 from allspark import __version__
+from allspark.adapters.request_security import request_boundary_error
 from allspark.adapters.routes.helpers import http_exception_handler
 from allspark.bootstrap import (
     PreparedApplication,
@@ -22,7 +23,7 @@ from allspark.bootstrap import (
 )
 from allspark.core.config import DEFAULT_DB_DIR
 from allspark.core.database import Database
-from allspark.core.i18n import MESSAGES, get_language, init_language, set_language, t
+from allspark.core.i18n import MESSAGES, get_language, language_context, set_language, t
 from allspark.infrastructure.hardware import compute_feature_flags, detect_hardware
 from allspark.infrastructure.module_loader import ModuleRegistry
 from allspark.services.immediate_danger import (
@@ -61,11 +62,10 @@ _jinja_env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)), autoescape
 
 
 # Auth token gating HTML pages + /api/* when the Web UI binds non-loopback
-# (audit H3 / SHA-142). Set by create_app(). The token is NEVER injected into
+# (audit H3 / SHA-142). Stored per application by create_app(). Never injected into
 # HTML/DOM; the browser authenticates via an httpOnly cookie issued by
 # /api/auth/login (or the init/complete bootstrap step). API clients may still
 # use an Authorization: Bearer header.
-_WEB_TOKEN: Optional[str] = None
 _AUTH_COOKIE = "allspark_session"
 
 # SHA-213: scripts use a per-request nonce and inline event handlers are
@@ -92,14 +92,14 @@ def build_csp_policy(nonce: str) -> str:
 def _is_authed(request: Request) -> bool:
     """True if the request carries the auth cookie or a valid Bearer header.
 
-    Only called when ``_WEB_TOKEN`` is set (non-loopback); the middleware
+    Only called when the application's token is set; the middleware
     short-circuits loopback/no-token mode before reaching here.
     """
-    token = _WEB_TOKEN
+    token = request.app.state.web_token
     if not token:
         return False
     cookie = request.cookies.get(_AUTH_COOKIE)
-    if cookie and hmac.compare_digest(cookie, token):
+    if cookie and hmac.compare_digest(cookie.encode(), token.encode()):
         return True
     auth = request.headers.get("authorization", "")
     return auth == f"Bearer {token}"
@@ -170,8 +170,6 @@ MIRROR_DOWNLOAD_URLS = {
 
 
 def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> FastAPI:
-    global _WEB_TOKEN
-    _WEB_TOKEN = token
     app = FastAPI(title="ALLSPARK", version=__version__)
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.state.web_token = token
@@ -184,6 +182,13 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
     # initialized) so an attacker cannot re-init/overwrite the system.
     @app.middleware("http")
     async def enforce_auth(request: Request, call_next):
+        boundary_error = request_boundary_error(request)
+        if boundary_error:
+            return JSONResponse(
+                status_code=400 if boundary_error == "untrusted_host" else 403,
+                content={"status": "error", "error": boundary_error,
+                         "detail": t(f"error_{boundary_error}"), "next_action": ""},
+            )
         path = request.url.path
         # One-time bootstrap: re-init forbidden once initialized.
         if path == "/api/init/complete" and app.state.initialized:
@@ -197,7 +202,7 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
                 },
             )
         # Loopback / no-token mode: local trust.
-        if not _WEB_TOKEN:
+        if not request.app.state.web_token:
             return await call_next(request)
         # Public endpoints: login page + auth endpoints.
         if path in ("/login", "/api/auth/login", "/api/auth/logout"):
@@ -225,14 +230,14 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
         nonce = secrets.token_urlsafe(18)
         token = _CSP_NONCE.set(nonce)
         try:
-            response = await call_next(request)
+            with language_context(app.state.db):
+                response = await call_next(request)
             response.headers["Content-Security-Policy"] = build_csp_policy(nonce)
             return response
         finally:
             _CSP_NONCE.reset(token)
 
     db = Database(Path(db_path) if db_path else None)
-    init_language(db)
     app.state.db = db
     app.state.engine = None
     app.state.container = None
@@ -309,7 +314,7 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
 
     @app.post("/api/auth/login")
     async def auth_login(request: Request):
-        token = _WEB_TOKEN
+        token = request.app.state.web_token
         body: dict = {}
         try:
             parsed = await request.json()
@@ -323,7 +328,7 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
                 status_code=401,
                 content={"status": "error", "error": "unauthorized", "detail": "token required"},
             )
-        if not token or not hmac.compare_digest(submitted, token):
+        if not token or not hmac.compare_digest(submitted.encode(), token.encode()):
             return JSONResponse(
                 status_code=401,
                 content={"status": "error", "error": "unauthorized", "detail": "invalid token"},
@@ -1010,8 +1015,8 @@ def _register_init_routes(app):
                     ),
                 }
             )
-            if _WEB_TOKEN:
-                _set_auth_cookie(resp, _WEB_TOKEN)
+            if app.state.web_token:
+                _set_auth_cookie(resp, app.state.web_token)
             return resp
         except Exception:
             detail = t("web_init_retryable")

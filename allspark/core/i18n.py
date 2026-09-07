@@ -1,6 +1,9 @@
 import json
 import logging
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -10,8 +13,13 @@ SUPPORTED_LANGUAGES = ["zh", "en"]
 DEFAULT_LANGUAGE = "zh"
 _current_lang = DEFAULT_LANGUAGE
 _db_ref = None
+_request_lang: ContextVar[str | None] = ContextVar("allspark_language", default=None)
+_request_db: ContextVar[Any] = ContextVar("allspark_language_db", default=None)
 
 _LOCALES_DIR = Path(__file__).resolve().parent.parent / "locales"
+# Keep safe YAML semantics while avoiding pure-Python parsing on every cold
+# import. Source-only PyYAML installations retain the existing safe fallback.
+_LOCALE_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
 # Loaded messages cache
 MESSAGES: dict[str, dict[str, str]] = {}
@@ -25,7 +33,7 @@ def _load_locale(lang: str) -> dict[str, str]:
         return {}
     try:
         with open(path, "r", encoding="utf-8") as f:
-            data = yaml.safe_load(f)
+            data = yaml.load(f, Loader=_LOCALE_LOADER)
         return data if isinstance(data, dict) else {}
     except Exception as e:
         logger.error("Failed to load locale %s: %s", lang, e)
@@ -46,20 +54,40 @@ _ensure_loaded()
 def set_language(lang: str, persist: bool = True):
     global _current_lang
     if lang in SUPPORTED_LANGUAGES:
-        _current_lang = lang
-        if persist and _db_ref is not None:
+        in_request = _request_lang.get() is not None
+        if in_request:
+            _request_lang.set(lang)
+        else:
+            _current_lang = lang
+        db = _request_db.get() if in_request else _db_ref
+        if persist and db is not None:
             try:
-                _db_ref.conn.execute(
+                db.conn.execute(
                     "INSERT OR REPLACE INTO operating_state VALUES (?,?)",
                     ("language", lang)
                 )
-                _db_ref.conn.commit()
+                db.conn.commit()
             except Exception:
-                pass
+                if in_request:
+                    raise  # Never report a failed Web preference write as saved.
 
 
 def get_language() -> str:
-    return _current_lang
+    return _request_lang.get() or _current_lang
+
+
+@contextmanager
+def language_context(db):
+    """Bind Web translation/persistence without changing the CLI's defaults."""
+    row = db.conn.execute("SELECT value FROM operating_state WHERE key='language'").fetchone()
+    lang = row["value"] if row and row["value"] in SUPPORTED_LANGUAGES else get_language()
+    language_token = _request_lang.set(lang)
+    db_token = _request_db.set(db)
+    try:
+        yield
+    finally:
+        _request_db.reset(db_token)
+        _request_lang.reset(language_token)
 
 
 def init_language(db=None):
@@ -83,7 +111,7 @@ def detect_language(text: str) -> str:
         return "zh"
     elif en_chars > zh_chars:
         return "en"
-    return _current_lang
+    return get_language()
 
 
 def t(key: str, **kwargs) -> str:

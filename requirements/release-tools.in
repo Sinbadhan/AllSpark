@@ -1,0 +1,6 @@
+# Build/audit tools only; not additional application runtime dependencies.
+# Reviewed 2026-09-07. Consumer remains pip with --require-hashes.
+setuptools==84.0.0
+build==1.5.0
+pip-audit==2.10.1
+jsonschema==4.26.0

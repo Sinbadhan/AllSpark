@@ -348,7 +348,7 @@ def seed_initialized_db(db_path: Path, *, language: str = "zh", survivor_name: s
     if db_path.exists():
         db_path.unlink()
     with web_server(db_path) as base:
-        with httpx.Client(base_url=base) as c:
+        with httpx.Client(base_url=base, headers={"X-AllSpark-Request": "1"}) as c:
             # Hardware detection populates the model registry.
             c.get("/api/init/hardware", timeout=10)
             r = c.post(

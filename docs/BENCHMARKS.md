@@ -1,8 +1,8 @@
 # Performance Benchmarks
 
-> **Status:** soft budget enforced in CI as of 2026-06-17 (SHA-30) —
-> overrun emits a `::warning::` on the run; promote to `--hard-fail`
-> once the floor is stable.
+> **Status:** local CI definition updated on 2026-09-07 (AS-06) to enforce
+> both budgets with `--check --hard-fail`. Remote enforcement requires the
+> authorized exact-candidate CI run; historical measurements below are not a rerun.
 > **Purpose:** track import time so structural regressions surface in
 > review rather than after release.
 
@@ -59,12 +59,12 @@ or anything they pull in transitively):
    description with the new numbers.
 3. Update §1 of this file when the change is intentional and lands.
 
-CI runs `python scripts/bench_import.py --check` on every PR. The
-default budget is **600 ms** total mean import time
-(`IMPORT_BUDGET_MS=600`); overrun emits `::warning::` on the run but
-keeps the build green so flaky-runner noise doesn't block unrelated
-work. Lower `IMPORT_BUDGET_MS` (or pass `--hard-fail`) when ready to
-enforce hard.
+CI runs `python scripts/bench_import.py --check --hard-fail` on every PR.
+The budgets are **600 ms** sum-of-means and **2000 ms** cold wall-clock.
+Either overrun exits nonzero. Missing imports, zero valid measurements,
+non-finite/nonpositive budgets and invalid run counts always fail, even in
+advisory mode. `--check` without `--hard-fail` is only an explicitly advisory
+local diagnostic and cannot serve as release acceptance.
 
 ## 3. Out of scope
 

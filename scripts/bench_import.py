@@ -16,18 +16,14 @@ Two metrics are reported (SHA-144):
 
 `--check` enforces BOTH budgets. `--check` alone is *advisory*: it prints a
 GitHub Actions `::warning::` line per exceeded budget and exits 0 so CI stays
-green. `--hard-fail` flips any overrun into exit 1; reserved for v1.2+ when
-the team is ready to enforce the budget hard.
-
-Why soft budgets? Bench numbers depend on hardware (a slow CI runner can blow
-a tight threshold without anything regressing in code). Generous defaults +
-warn-only mode let us track drift without breaking unrelated PRs. Tighten by
-lowering the env vars, or graduate to --hard-fail once the floor is stable.
+green. CI and release checks use `--check --hard-fail`. Import failures,
+empty measurements and invalid budgets always fail, including advisory mode.
 
 This script must stay free of allspark.* imports until *inside* the
 benchmark loop — otherwise the first measurement is contaminated.
 """
 import argparse
+import math
 import os
 import statistics
 import sys
@@ -108,7 +104,19 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    budget_ms = float(os.environ.get("IMPORT_BUDGET_MS", DEFAULT_BUDGET_MS))
+    if RUNS < 1 or WARMUP < 0:
+        parser.error("invalid measurement configuration: RUNS >= 1 and WARMUP >= 0 required")
+    budgets = []
+    for key, default in (("IMPORT_BUDGET_MS", DEFAULT_BUDGET_MS),
+                         ("IMPORT_WALL_BUDGET_MS", DEFAULT_WALL_BUDGET_MS)):
+        try:
+            value = float(os.environ.get(key, default))
+        except ValueError:
+            parser.error(f"invalid budget: {key} must be a finite positive number")
+        if not math.isfinite(value) or value <= 0:
+            parser.error(f"invalid budget: {key} must be a finite positive number")
+        budgets.append(value)
+    budget_ms, wall_budget_ms = budgets
 
     import allspark  # noqa: F401  pre-load package once
     to_remove = [k for k in list(sys.modules) if k.startswith("allspark.")]
@@ -119,11 +127,13 @@ def main() -> int:
     print("━" * 80)
 
     results = []
+    failed = []
     total_start = time.perf_counter()
 
     for mod in MODULES:
         r = benchmark_import(mod)
         if "error" in r:
+            failed.append(mod)
             print(f"{mod:<45} ERROR: {r['error']}")
         else:
             results.append(r)
@@ -132,9 +142,9 @@ def main() -> int:
     total_elapsed = time.perf_counter() - total_start
 
     print("━" * 80)
-    if not results:
-        print("No successful imports — nothing to check.")
-        return 1 if args.check and args.hard_fail else 0
+    if failed or not results:
+        print(f"Incomplete benchmark: {len(results)} succeeded, {len(failed)} failed; cannot pass.")
+        return 1
 
     total_mean = sum(r["mean_ms"] for r in results)
     slowest = max(results, key=lambda r: r["mean_ms"])
@@ -150,7 +160,6 @@ def main() -> int:
     if not args.check:
         return 0
 
-    wall_budget_ms = float(os.environ.get("IMPORT_WALL_BUDGET_MS", DEFAULT_WALL_BUDGET_MS))
     print(f"Budgets: sum-of-means {budget_ms:.0f}ms (IMPORT_BUDGET_MS), "
           f"wall-clock {wall_budget_ms:.0f}ms (IMPORT_WALL_BUDGET_MS)")
     exceeded = []

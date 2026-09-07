@@ -6,11 +6,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, cast
 
-from fastapi.testclient import TestClient
-
 from allspark.adapters.web_ui import create_app
 from allspark.core.database import Database
 from allspark.core.models import ResourceType
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 def _client(path: Path) -> TestClient:

@@ -22,6 +22,9 @@ STALE_TOKENS = [
     "内部文档、测试、运行时数据",
     "发布事务（SHA-230）",
     "GitHub Actions main run #92",
+    "eight SHA-151",
+    "all eight critical-path modules",
+    "actions/setup-python@v6",
 ]
 
 # Historical changelog sections may retain the numbers that were true then.
@@ -106,8 +109,16 @@ def test_ignored_working_notes_are_explicitly_non_authoritative() -> None:
 def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert workflow.count("actions/checkout@v7") == 3
-    assert workflow.count("actions/setup-python@v6") == 3
+    checkout = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1"
+    setup_python = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0"
+    assert workflow.count(checkout) == 3
+    assert workflow.count(setup_python) == 2
+    assert "astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0" in workflow
+    assert 'version: "0.12.10"' in workflow
+    assert 'python-version: "3.12.14"' in workflow
+    assert "sys.version_info[:3] == (3, 12, 14)" in workflow
+    assert "activate-environment: true" in workflow
+    assert "python -m ensurepip" in workflow
     assert "FORCE_JAVASCRIPT_ACTIONS_TO_NODE" not in workflow
     assert "permissions:\n  contents: read" in workflow
     assert "pytest -q --tb=short --cov=allspark --cov-branch" in workflow
@@ -118,13 +129,24 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     assert "python scripts/check_coverage.py --coverage-json coverage.json" in workflow
     assert "offline-macos:" in workflow
     assert "python scripts/build_offline_bundle.py verify" in workflow
-    assert 'pip install -e ".[delivery]"' in workflow
+    assert "python -m build --sdist" in workflow
+    assert "sdist is missing PRD.md" in workflow
+    assert "working-directory: /tmp" in workflow
+    assert '"$GITHUB_WORKSPACE/scripts/smoke_installed_web.py"' in workflow
+    assert "CodeQL analysis" in Path("docs/RELEASE_CHECKLIST.md").read_text(
+        encoding="utf-8"
+    )
+    assert 'pip install -e ".[delivery]"' not in workflow
+    assert "--require-hashes -r requirements/bootstrap-macos-arm64-py312.lock" in workflow
+    assert "--require-hashes --no-build-isolation -r requirements/release-macos-arm64-py312.lock" in workflow
+    assert "python scripts/verify_release_dependencies.py" in workflow
+    assert "python -m pip install --no-deps dist/*.whl" in workflow
     assert '"pytest-cov>=7.1,<8"' in pyproject
     assert '"httpx>=0.28,<1"' in pyproject
     assert 'patch = ["subprocess"]' in pyproject
     assert 'omit = ["allspark/templates/*", "allspark/static/*"]' in pyproject
     collection_floor = re.search(r'test "\$\{COUNT:-0\}" -ge (\d+)', workflow)
-    assert collection_floor is not None and int(collection_floor.group(1)) >= 1814
+    assert collection_floor is not None and int(collection_floor.group(1)) >= 1875
 
     critical_modules = {
         "allspark/adapters/init_wizard.py",
@@ -178,7 +200,10 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
     assert "2026-07-20 Internal Re-audit Delta" in validation
     assert "continue Product RC validation" in validation
     assert "Stable remains No-Go" in validation
-    assert "maintained only in Linear SHA-158" in validation
+    assert "maintained only in the Feishu plan and task list" in validation
+    assert "AS-15 owns current release decisions" in validation
+    assert "Linear is retired" in validation
+    assert "发布必须另有用户明确要求" in agents
 
     assert "v1.0.3 Release Support Boundary" in readme
     assert "v1.0.3 发布支持边界" in readme_cn
@@ -278,3 +303,64 @@ def test_manual_release_gate_covers_accessibility_and_transport_boundary() -> No
     assert "Windows + NVDA" in release
     assert "Windows + NVDA remains Testing" in release
     assert "Automated DOM tests and screenshots do not substitute" in release
+
+
+def test_prd_status_links_and_roadmap_match_current_release_boundary() -> None:
+    prd_path = Path("PRD.md")
+    prd = prd_path.read_text(encoding="utf-8")
+
+    for target in re.findall(r"\[[^]]+\]\(([^)]+)\)", prd):
+        if target.startswith(("https://", "http://", "mailto:", "#")):
+            continue
+        local_target = target.split("#", 1)[0]
+        assert (prd_path.parent / local_target).exists(), f"broken PRD link: {target}"
+
+    assert "**日期：** 2026-09-07" in prd
+    assert "M1/M3 与 M2 本地实现已收敛" in prd
+    for blocker in ("SHA-241/260", "SHA-246", "SHA-245", "SHA-264", "VoiceOver"):
+        assert blocker in prd
+    assert "保持 No-Go" in prd
+    assert "TECH-DECISIONS.md" not in prd
+
+
+def test_release_artifact_docs_and_sdist_manifest_are_consistent() -> None:
+    manifest = Path("MANIFEST.in").read_text(encoding="utf-8")
+    readme = Path("README.md").read_text(encoding="utf-8")
+    readme_cn = Path("README_CN.md").read_text(encoding="utf-8")
+    configuration = Path("docs/CONFIGURATION.md").read_text(encoding="utf-8")
+    validation = Path("docs/REAL_WORLD_VALIDATION.md").read_text(encoding="utf-8")
+
+    assert "include PRD.md" in manifest
+    assert "Source archives and wheels are\nthe canonical release artifacts" in readme
+    assert "源码归档与 wheel 是规范开源发行物" in readme_cn
+    assert "Source archives and wheels are the canonical open-source release artifacts" in configuration
+    for content in (readme, readme_cn, configuration):
+        assert "allspark-1.0.3-py3-none-any.whl" in content
+    assert "Last updated: 2026-09-07" in validation
+    assert "ten critical modules" in validation
+    assert "eight critical modules" not in validation
+
+
+def test_supply_chain_workflows_pin_actions_and_enable_automated_review() -> None:
+    workflow_paths = sorted(Path(".github/workflows").glob("*.yml"))
+    assert workflow_paths
+    for path in workflow_paths:
+        workflow = path.read_text(encoding="utf-8")
+        for action, ref in re.findall(
+            r"^\s*-?\s*uses:\s*([^@\s]+)@([^\s#]+)", workflow, re.MULTILINE
+        ):
+            assert re.fullmatch(r"[0-9a-f]{40}", ref), (
+                f"{path}: {action}@{ref} must use an immutable commit SHA"
+            )
+
+    codeql = Path(".github/workflows/codeql.yml").read_text(encoding="utf-8")
+    codeql_pin = "5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6"
+    assert "security-events: write" in codeql
+    assert f"github/codeql-action/init@{codeql_pin}" in codeql
+    assert f"github/codeql-action/analyze@{codeql_pin}" in codeql
+    assert 'languages: "python"' in codeql
+
+    dependabot = Path(".github/dependabot.yml").read_text(encoding="utf-8")
+    assert dependabot.startswith("version: 2\n")
+    for ecosystem in ("pip", "github-actions", "docker"):
+        assert f'package-ecosystem: "{ecosystem}"' in dependabot

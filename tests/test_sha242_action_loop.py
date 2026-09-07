@@ -6,7 +6,6 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi.testclient import TestClient
 
 from allspark.adapters.web_ui import create_app
 from allspark.commands.knowledge import TaskCommand
@@ -14,6 +13,7 @@ from allspark.core.database import Database
 from allspark.core.i18n import get_language, set_language, t
 from allspark.core.models import ResourceType, compute_risk_classification_hash
 from allspark.services.resource_manager import ResourceManager
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 @pytest.fixture(autouse=True)

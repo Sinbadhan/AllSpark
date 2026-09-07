@@ -145,11 +145,19 @@ Windows 读屏兼容性仍处于测试阶段；在真实 Windows + NVDA 证据�
 
 ### 安装
 
-非开发者离线路径请使用 [离线交付说明](docs/OFFLINE_DELIVERY.md) 中的目标平台完整包。
-该产物内含 Python、依赖、核心知识、完整性校验以及安装/回滚入口；稳定支持闭环不需要模型。
-当前可重复构建的便携包目标平台为 Apple Silicon macOS。源码归档与 wheel 是规范开源发行物；
+源码归档与 wheel 是规范开源发行物；发布时须同时提供校验和、依赖/许可证声明与源码 commit。
+已安装 Python 3.10-3.12 的用户可直接安装经校验的 wheel；无需 Python 的 Apple Silicon macOS
+用户可选择 [离线交付说明](docs/OFFLINE_DELIVERY.md) 中的完整便携包。便携包内含 Python、依赖、
+核心知识、完整性校验以及安装/回滚入口；稳定支持闭环不需要模型。
+当前可重复构建的便携包目标平台为 Apple Silicon macOS；
 Developer ID 签名与 Apple 公证仅在项目提供官方 Gatekeeper-trusted macOS App/DMG 时要求，
 不阻断源码、wheel 或通过校验的便携归档发布。
+
+安装经校验的 release wheel：
+
+```bash
+python3 -m pip install ./allspark-1.0.3-py3-none-any.whl
+```
 
 以下源码安装仅面向开发者与高级运维者：
 

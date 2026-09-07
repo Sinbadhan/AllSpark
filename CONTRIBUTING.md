@@ -39,12 +39,14 @@ python3 -m pytest tests/ -v --tb=short
 
 CI runs `ruff check`, `mypy`, and the complete tracked `pytest` suite on Python
 3.10/3.11/3.12. The canonical Python 3.10 coverage job requires at least 75%
-total line coverage, at least 90% branch coverage on the eight SHA-151
+total line coverage, at least 90% branch coverage on the ten SHA-151
 critical-path modules, and a ratcheted collection-count floor. Python 3.11 and
 3.12 still run the complete suite and collection gate; coverage is collected
 once because coverage.py does not consistently trace Starlette TestClient
 portal threads across runtimes. CI also builds and installs a clean wheel on
-all supported Python versions and runs the import benchmark in advisory mode.
+all supported Python versions, imports it outside the checkout, renders its
+first-run Web page, verifies the public sdist contents, and runs CodeQL. The
+import benchmark remains advisory in CI and hard-fail in release verification.
 The workflow and `scripts/check_coverage.py` are the source of truth for exact
 thresholds; do not copy a transient test count into documentation.
 

@@ -12,7 +12,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from fastapi.testclient import TestClient
 
 from allspark.adapters import web_ui as wui
 from allspark.core.database import Database
@@ -24,6 +23,7 @@ from allspark.services.initial_assessment import (
 )
 from allspark.services.resource_manager import ResourceManager
 from tests.assessment_helpers import valid_initial_assessment
+from tests.http_helpers import LocalAPIClient as TestClient
 from tests.test_sha238_initial_assessment import _assessment_candidate
 
 

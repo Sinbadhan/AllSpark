@@ -44,6 +44,12 @@ workflow and supported hardware scope are approved.
   142 entries downgraded to field_tested; loader + verifier gating.
 - SHA-28: Full test suite tracked in VCS; CI runs it across Python
   3.10/3.11/3.12 and validates clean-wheel installation on the same matrix.
+- 2026-08-13 supply-chain hardening: GitHub Actions references are pinned to
+  audited full commit SHAs with Dependabot-maintained version comments;
+  Dependabot version updates cover Python, Actions and Docker; CodeQL runs the
+  Python `security-extended` suite. Repository Dependabot alerts/security
+  updates, secret scanning and push protection are enabled, while a successful
+  CodeQL run on the exact candidate remains required release evidence.
 
 **Quality (P1):**
 - 2026-07-20 re-audit: pending bundled/imported knowledge now withholds all
@@ -124,7 +130,7 @@ workflow and supported hardware scope are approved.
 - SHA-149: System health score factors in core capabilities (LLM/modules);
   weather structured rendering (no raw JSON/null).
 - SHA-151: JSON-backed gate requires >=75% total line coverage and >=90%
-  branch coverage on all eight critical-path modules, plus a ratcheted test
+  branch coverage on all ten critical-path modules, plus a ratcheted test
   collection floor. Python 3.10 is the canonical coverage environment while
   Python 3.11/3.12 continue to run the complete functional and collection gates.
 - SHA-152: Web a11y - native control semantics, dialog roles, focus traps,
@@ -138,9 +144,10 @@ workflow and supported hardware scope are approved.
   `Execute Task` command that only reloads the task center. Desktop and mobile
   now share one semantic `Executions / 执行中心` navigation label, with
   `aria-current` on the active page and real-Chrome cross-page coverage.
-- SHA-229: GitHub Actions now uses the Node 24-native `actions/checkout@v7`
-  and `actions/setup-python@v6`, removes the temporary runtime-forcing
-  environment variable, and declares read-only repository contents permission.
+- SHA-229: GitHub Actions uses the Node 24-native checkout/setup-python major
+  lines pinned to audited full commit SHAs, removes the temporary
+  runtime-forcing environment variable, and declares read-only repository
+  contents permission. Dependabot tracks the version comments beside each pin.
   Executable drift guards and the release checklist require a clean run for the
   exact candidate commit rather than treating historical failures as current.
 - SHA-227: Repository uses an information-first mobile list at 320/390px so
@@ -192,7 +199,10 @@ workflow and supported hardware scope are approved.
   settings icon, and added mobile global-search parity).
 - SHA-157: Package metadata - PEP 639 license; removed deprecated classifier;
   removed unused prompt-toolkit; MANIFEST `*.j2` fix; Python 3.10 `tomli`
-  conditional dep; CI clean-wheel smoke matrix (3.10/3.11/3.12).
+  conditional dep; CI clean-wheel smoke matrix (3.10/3.11/3.12). The matrix
+  now imports outside the checkout, renders the first-run Web page with its CSP
+  and shared immediate-danger partials, and verifies that the sdist includes
+  the public PRD.
 - SHA-145: Starlette/httpx2 deprecation warning cleared (httpx2 declared).
 
 The macOS VoiceOver announcement gate for SHA-152 is evidenced at `d3c9a6c`.

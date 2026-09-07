@@ -5,12 +5,11 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from fastapi.testclient import TestClient
-
 from allspark.adapters.web_ui import TEMPLATES_DIR, build_csp_policy, create_app
 from allspark.core.database import Database
 from allspark.infrastructure.hardware import FeatureFlags
 from allspark.infrastructure.module_loader import ModuleRegistry
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 def _initialized_db(db_path: Path) -> None:

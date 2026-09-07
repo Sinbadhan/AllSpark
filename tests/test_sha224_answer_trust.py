@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from allspark.core.i18n import set_language
 from allspark.core.models import ResourceType
 from allspark.services.system_health import assess_system_health
 from tests.test_sha196_browser import _Chrome, _chrome_binary, _serve
@@ -19,6 +20,9 @@ def test_rule_answer_separates_health_resources_and_match() -> None:
             "/api/chat",
             json={"message": "How to start a fire with a battery?"},
         ).json()["response"]
+        # Direct/CLI callers select their own locale; a Web preference must
+        # not mutate another caller's process-global language (AS-16).
+        set_language("en", persist=False)
         direct = client.app.state.container.get("rule_engine").process_input(
             "How to start a fire with a battery?"
         )
@@ -62,6 +66,7 @@ def test_bilingual_resource_trust_tracks_real_configuration() -> None:
         engine = container.get("rule_engine")
 
         client.post("/api/system/language", json={"language": "zh"})
+        set_language("zh", persist=False)
         unknown = engine.process_input("用电池取火")
         assert "系统健康：健康" in unknown
         assert "资源数据：未知" in unknown

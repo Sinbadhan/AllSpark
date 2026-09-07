@@ -18,11 +18,35 @@ evidence are selected.
 Build on the same target architecture. PyInstaller is not a cross-compiler.
 
 ```bash
-python3 -m venv .venv-delivery
-.venv-delivery/bin/pip install --upgrade pip
-.venv-delivery/bin/pip install -e ".[delivery]"
+python3.12 -m venv .venv-delivery
+.venv-delivery/bin/python -m pip install --require-hashes -r requirements/bootstrap-macos-arm64-py312.lock
+.venv-delivery/bin/python -m pip install --require-hashes --no-build-isolation -r requirements/release-macos-arm64-py312.lock
+.venv-delivery/bin/python -m build --no-isolation
+.venv-delivery/bin/python -m pip install --no-deps dist/*.whl
+.venv-delivery/bin/python scripts/verify_release_dependencies.py --lock requirements/release-macos-arm64-py312.lock --output /tmp/allspark-release-evidence
 .venv-delivery/bin/python scripts/build_offline_bundle.py build
 ```
+
+The official portable input lock targets **macOS arm64 / CPython 3.12.14**.
+It is not a lock for Intel, Linux, Windows or another Python minor. Generic
+source/wheel version ranges remain in `pyproject.toml`; this does not broaden
+the validated hardware matrix. Setuptools is explicitly locked to 84.0.0;
+the backend lower bound is 77.0.3 for the declared PEP 639 metadata.
+
+To refresh inputs, use a clean target environment and pip's resolver:
+
+```bash
+python -m pip install --dry-run --ignore-installed --report /tmp/release-resolution.json ".[delivery]" -r requirements/release-tools.in
+python scripts/lock_release_inputs.py /tmp/release-resolution.json
+```
+
+Review the resulting version/hash diff, then repeat clean runtime and delivery
+installs, the vulnerability/license/schema gates, and bundle verification.
+The runtime lock excludes audit/freezer tooling; its separate clean venv must
+install the built wheel (not editable source) and pass CLI/Web smoke from
+outside the repository. Source artifacts such as jieba use the locked backend
+with build isolation disabled. A lock and a zero-known-vulnerability scan are
+dated engineering evidence, not a claim that dependencies are vulnerability-free.
 
 The command creates a versioned directory and a normalized `.tar.gz` under
 `dist/offline/`. It prints the archive SHA256. The archive contains:

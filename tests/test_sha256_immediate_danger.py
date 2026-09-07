@@ -10,7 +10,6 @@ from pathlib import Path
 
 import httpx
 import yaml
-from fastapi.testclient import TestClient
 
 from allspark.adapters import web_ui
 from allspark.adapters.web_ui import create_app
@@ -22,6 +21,7 @@ from allspark.services.immediate_danger import (
     assess_immediate_danger,
     load_action_catalog,
 )
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 def _database_snapshot(app) -> tuple[str, ...]:
@@ -558,7 +558,7 @@ def test_blocked_hardware_detection_does_not_block_emergency_api(
     async def exercise_same_event_loop() -> tuple[httpx.Response, httpx.Response, float]:
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(
-            transport=transport, base_url="http://testserver"
+            transport=transport, base_url="http://localhost:8000"
         ) as client:
             fallback_release = threading.Timer(1.0, release.set)
             fallback_release.start()
@@ -566,13 +566,19 @@ def test_blocked_hardware_detection_does_not_block_emergency_api(
             hardware_task = asyncio.create_task(client.get("/api/init/hardware"))
             # A synchronous detector in the async route blocks here until the
             # fallback timer, making the total exceed the latency boundary.
-            await asyncio.sleep(0)
+            # Allow middleware and the worker thread to actually enter the
+            # detector before probing its concurrent emergency path. A single
+            # scheduling yield is not a guarantee of thread entry.
+            for _ in range(100):
+                if entered.is_set():
+                    break
+                await asyncio.sleep(0.001)
             emergency = await client.post(
                 "/api/immediate-danger/assess",
                 json={"language": "en", "facts": {"threat_type": "none"}},
             )
             elapsed = time.monotonic() - started
-            assert entered.is_set()
+            assert entered.is_set(), hardware_task.result().text if hardware_task.done() else "detector not entered"
             release.set()
             hardware = await hardware_task
             fallback_release.cancel()

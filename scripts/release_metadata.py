@@ -82,14 +82,17 @@ def _dependency_closure(requirements: Iterable[str]) -> tuple[dict[str, Any], di
 
 def _license_name(distribution: Any) -> str:
     metadata = distribution.metadata
-    expression = metadata.get("License-Expression")
-    if expression:
-        return expression.strip()
-    license_value = metadata.get("License")
-    if license_value and len(license_value.strip()) <= 160:
-        return license_value.strip()
+    expression = (metadata.get("License-Expression") or "").strip()
+    if expression and expression.upper() != "UNKNOWN":
+        return expression
+    license_value = (metadata.get("License") or "").strip()
+    if license_value and license_value.upper() != "UNKNOWN" and len(license_value) <= 160:
+        return license_value
     classifiers = metadata.get_all("Classifier") or []
-    licenses = [item.rsplit(" :: ", 1)[-1] for item in classifiers if item.startswith("License ::")]
+    # The parent classifier "OSI Approved" is not a license identity.
+    licenses = [item.rsplit(" :: ", 1)[-1].strip() for item in classifiers
+                if item.startswith("License ::") and item.strip() != "License :: OSI Approved"]
+    licenses = [value for value in licenses if value and value.upper() != "UNKNOWN"]
     return ", ".join(sorted(set(licenses))) or "UNKNOWN"
 
 
