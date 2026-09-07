@@ -112,7 +112,13 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     checkout = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1"
     setup_python = "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0"
     assert workflow.count(checkout) == 3
-    assert workflow.count(setup_python) == 3
+    assert workflow.count(setup_python) == 2
+    assert "astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0" in workflow
+    assert 'version: "0.12.10"' in workflow
+    assert 'python-version: "3.12.14"' in workflow
+    assert "sys.version_info[:3] == (3, 12, 14)" in workflow
+    assert "activate-environment: true" in workflow
+    assert "python -m ensurepip" in workflow
     assert "FORCE_JAVASCRIPT_ACTIONS_TO_NODE" not in workflow
     assert "permissions:\n  contents: read" in workflow
     assert "pytest -q --tb=short --cov=allspark --cov-branch" in workflow

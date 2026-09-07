@@ -132,11 +132,21 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-tags: true
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      # actions/python-versions has no macOS build for security-only 3.12.14.
+      # Bootstrap that exact interpreter via pinned uv/Python Build Standalone;
+      # application dependencies still use the existing pip hash-locked inputs.
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
+          version: "0.12.10"
           python-version: "3.12.14"
+          activate-environment: true
+          venv-path: ${{ runner.temp }}/allspark-delivery
+          no-project: true
+          enable-cache: false
       - name: Install delivery build inputs
         run: |
+          python -c "import platform, sys; assert sys.version_info[:3] == (3, 12, 14); assert platform.machine() == 'arm64'"
+          python -m ensurepip
           python -m pip install --require-hashes -r requirements/bootstrap-macos-arm64-py312.lock
           python -m pip install --require-hashes --no-build-isolation -r requirements/release-macos-arm64-py312.lock
           python -m build --no-isolation
