@@ -2,6 +2,14 @@
 
 Use this checklist before tagging or publishing an AllSpark release.
 
+Since 2026-09-07, the maintainer has retired Linear. Current decisions and
+versioned evidence live in the [Feishu plan](https://my.feishu.cn/docx/Ps4mdBreKojEIMx3W15cJVBOnc0),
+with action status in the [Feishu task list](https://applink.feishu.cn/client/todo/task_list?guid=4c10dae7-8a5b-4808-a1ae-09a78b13458c).
+AS-15 owns the release decision; SHA-* references below are historical evidence
+keys, not instructions to use Linear. Missing historical approvals remain
+unverified. Push/merge authorization does not authorize a release: tagging,
+GitHub Release and PyPI publication require an explicit user request.
+
 ## 1. Confirm scope
 
 - Confirm the release goal and version number.
@@ -33,7 +41,7 @@ Check and update these together:
 
 Version bumps follow semantic versioning. The project is on the 1.0.x line;
 do not bump to a new minor/major unless the maintainer explicitly approves the
-release scope and the audit gate (SHA-158) is green.
+release scope and the audit gate (Feishu AS-15) is green.
 
 Until the matching tag exists, the package version is a release candidate:
 keep its changes under `Unreleased`, mark public docs as Release Candidate, and
@@ -158,9 +166,13 @@ search is not evidence that GitHub scanning executed.
 
 ## 7. Confirm release scope and external evidence
 
-- SHA-158 contains the final audit comment and no unresolved P0/P1 blocker.
-- SHA-158 Current baseline and the latest Linear project status update name the
+- Feishu AS-15 contains the final audit decision and no unresolved P0/P1 blocker.
+- The Feishu versioned result and AS-09/AS-15 evidence name the
   same exact main commit, test counts, open-item counts and release health.
+- AS-10/11 own professional and knowledge review, AS-12 owns selected-browser
+  and accessibility acceptance, AS-13 owns clean disconnected delivery, and
+  AS-14 owns the five-person pilot. Retain old SHA-* evidence IDs as provenance;
+  do not replace absent expert or real-environment evidence with automation.
 - Hardware-dependent SHA-33 rows are either evidenced for this release or
   explicitly excluded from the supported release scope.
 - SHA-180 single-host multiprocess evidence passes. SHA-179 and the external
@@ -186,7 +198,7 @@ search is not evidence that GitHub scanning executed.
 
 ## 8. Tag and publish
 
-Only after checks pass:
+Only after checks pass AND the user explicitly requests a release:
 
 ```bash
 git tag vX.Y.Z

@@ -87,8 +87,10 @@ cross-node hardware, Docker deployment, and long-running schedulers.
 ## How to use
 
 1. Copy this file into the release PR description, tick boxes as you go.
-2. Anything that fails: open a Linear issue with label `claude` + `Bug`,
-   reference this checklist row.
+2. Anything that fails: record a task in the
+   [AllSpark Feishu task list](https://applink.feishu.cn/client/todo/task_list?guid=4c10dae7-8a5b-4808-a1ae-09a78b13458c),
+   reuse the existing action GUID when applicable, and reference this checklist
+   row plus the exact candidate and evidence. Do not create new Linear issues.
 3. Items not exercised because hardware/setup is unavailable: explicitly
    write "n/a — no GPU available" rather than leaving the box unchecked.
 4. Update this file when you add/remove a category.

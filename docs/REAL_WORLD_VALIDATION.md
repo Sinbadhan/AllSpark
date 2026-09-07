@@ -7,8 +7,10 @@ The dated results below are historical evidence, not acceptance of the current
 candidate. In particular, selected-Chrome draft recovery, lifecycle immediate
 danger, VoiceOver and actual 200% zoom require their current-candidate runs.
 Current optimization evidence is linked from the [Feishu plan](https://my.feishu.cn/docx/Ps4mdBreKojEIMx3W15cJVBOnc0)
-and task list; Linear historical release records have not been refreshed while
-its connection is unavailable. Stable remains No-Go.
+and task list. Linear is retired by the maintainer's 2026-09-07 decision;
+SHA-* IDs are historical provenance, and missing approvals remain unverified.
+AS-15 owns current release decisions. Stable remains No-Go; merge authorization
+does not authorize publication.
 
 ## Scope
 
@@ -139,8 +141,8 @@ implemented in v1.0.3; channel detection must not be presented as transport.
 - First run, Dashboard, Repository, Executions, task outcomes, plan evidence,
   error states, modal isolation, and assistive labels received code and
   automated contract review.
-- The exact current commit, local test/coverage totals, CI run, open Linear
-  counts, and release health are maintained only in Linear SHA-158. This file
+- The exact current commit, local test/coverage totals, CI run, open task
+  counts, and release health are maintained only in the Feishu plan and task list. This file
   intentionally does not duplicate those fast-changing identifiers.
 - Real Chrome was not rerun locally in this audit because the available host
   browser path was environment-blocked. No browser-policy workaround was used;

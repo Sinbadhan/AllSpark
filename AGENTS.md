@@ -9,9 +9,10 @@ AllSpark（火种）— 离线人工智能生存系统，面向极客/生存主�
 ## 优化计划权威入口（2026-09-07 切换）
 
 - 本轮高 ROI 优化的目标、范围、验收和决策统一维护在[飞书知识库正式计划](https://my.feishu.cn/docx/Ps4mdBreKojEIMx3W15cJVBOnc0)。
-- AS-01 至 AS-15 的 TODO、负责人、下一步、状态和完成证据统一维护在[AllSpark 飞书任务清单](https://applink.feishu.cn/client/todo/task_list?guid=4c10dae7-8a5b-4808-a1ae-09a78b13458c)；本地计划只保留切换前快照，不再维护第二套进度。
+- AS-01 至 AS-16 及后续工作的 TODO、负责人、下一步、状态和完成证据统一维护在[AllSpark 飞书任务清单](https://applink.feishu.cn/client/todo/task_list?guid=4c10dae7-8a5b-4808-a1ae-09a78b13458c)；本地计划只保留切换前快照，不再维护第二套进度。
 - 原始计划、审计报告和机器证据保存在 [AS-01 任务附件](https://applink.feishu.cn/client/todo/detail?guid=ced39300-24df-4635-be36-e882789e0672)及本地证据目录；后续代码、机器契约和必要执行证据继续在本地持久保留。
-- 此次切换只覆盖该优化计划及其工作包。SHA-158 既有发布结论与历史签核仍须实际核对，不能由计划迁移推导为已同步或 Stable；以下历史基线记录不是本轮重新验证结果。锚定不授权启动修复、push/merge/tag/release，也不替代专家、真人、指定浏览器和干净设备证据。
+- 2026-09-07 用户明确停用 Linear；后续正式文档、任务、审计与发布决策全部使用上述飞书入口。SHA-* 仅保留历史追溯标识，不再读取、写入或要求恢复 Linear；缺失历史签核标为未核实，不推导为已通过。发布决策统一归 AS-15。
+- 用户已授权本轮候选推送、PR、主分支保护与合并；发布必须另有用户明确要求，合并和 CI 通过不等于 tag、GitHub Release、PyPI 发布或 Stable。专家、真人、指定浏览器和干净设备门禁不变。
 
 ## 常用命令
 
@@ -105,7 +106,7 @@ allspark/
 
 ## 当前状态（v1.0.3 Release Candidate）
 
-- v1.0.3 尚未 tag 或发布；SHA-158 是实时发布状态权威入口，当前工程基线 On track，但 M4 产品门禁与外部复核未完成，因此 Stable 结论仍为 No-Go
+- v1.0.3 尚未 tag 或发布；飞书 AS-15 是实时发布决策权威入口，M4 产品门禁与外部复核未完成，因此 Stable 结论仍为 No-Go；以下 SHA-* 为历史证据标识
 - 2026-07-15 发现的 8 个 High/P1、本轮 CLI/Repository/CI P2、执行中心入口、CSP enforcing、发布事务一致性与最终 RC 跨流程复验均已闭环
 - 完整 tracked tests 已收集（以 `pytest tests/ -q` / CI 实际输出为准；CI 在 Python 3.10/3.11/3.12 复现，SHA-28）
 - SHA-151 质量门禁：Python 3.10 为权威覆盖环境，总行覆盖率 ≥75%，10 个关键路径模块分支覆盖率均 ≥90%；3.10/3.11/3.12 均运行完整测试与收集数防回退门禁
@@ -120,6 +121,6 @@ allspark/
 - M4 信息架构、支持状态语义与 Stable 声明已闭环；Apple Silicon macOS 离线 RC 构建、完整性校验、安装/回滚和无模型启动已在本机通过，SHA-245 仍需干净断网设备验收；Developer ID/公证仅适用于可选官方 App/DMG 渠道
 - SHA-262 已闭环；SHA-264 的未发布首启草稿、原子发布、CLI/Web 失败恢复、并发与覆盖率门禁已在本机通过，真实 Chrome 恢复/放弃验收因当前配置缺少 ChatGPT Chrome Extension 保持 `not_run`
 - 2026-07-20 内部复审已补齐知识操作内容双门禁、危机支持子句作用域与联系方式真实性、即时危险热/冷/中毒/窒息分支及 20 个可执行对抗变体，并收敛首启、Dashboard、Repository、Executions、任务结果与计划证据的错误/无障碍契约；外部专业签核、五人试点、干净断网设备与隔离浏览器证据仍不得由自动化替代
-- Stable 仍受 SHA-241/260 外部专业复核、SHA-246 五人试点、SHA-245 干净断网交付及 SHA-264 隔离浏览器证据阻断；真实硬件、Docker daemon、独立介质与 v2+ 能力按 Linear 保持 Testing/Experimental 或未来版本边界
-- 当前开放轨道与实时计数以 Linear SHA-158 正文为准
-- 当前基线的精确 commit、测试计数和 GitHub Actions 证据维护在 Linear SHA-158，仓库文档不复制易漂移的 run 编号
+- Stable 仍受飞书 AS-10/11 专业与知识复核、AS-14 五人试点、AS-13 干净断网交付及 AS-12 指定浏览器/VoiceOver 证据阻断；真实硬件、Docker daemon、独立介质与 v2+ 能力保持 Testing/Experimental 或未来版本边界
+- 当前开放轨道与实时计数以飞书任务原生状态为准
+- 当前基线的精确 commit、测试计数、GitHub Actions 与发布证据维护在飞书正式成果及 AS-09/AS-15，仓库文档不复制易漂移的 run 编号

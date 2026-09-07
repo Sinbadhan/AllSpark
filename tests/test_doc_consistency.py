@@ -194,7 +194,10 @@ def test_public_docs_define_honest_release_support_boundary() -> None:
     assert "2026-07-20 Internal Re-audit Delta" in validation
     assert "continue Product RC validation" in validation
     assert "Stable remains No-Go" in validation
-    assert "maintained only in Linear SHA-158" in validation
+    assert "maintained only in the Feishu plan and task list" in validation
+    assert "AS-15 owns current release decisions" in validation
+    assert "Linear is retired" in validation
+    assert "发布必须另有用户明确要求" in agents
 
     assert "v1.0.3 Release Support Boundary" in readme
     assert "v1.0.3 发布支持边界" in readme_cn
