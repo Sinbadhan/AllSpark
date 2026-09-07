@@ -23,7 +23,7 @@ from allspark.bootstrap import (
 )
 from allspark.core.config import DEFAULT_DB_DIR
 from allspark.core.database import Database
-from allspark.core.i18n import MESSAGES, get_language, init_language, set_language, t
+from allspark.core.i18n import MESSAGES, get_language, language_context, set_language, t
 from allspark.infrastructure.hardware import compute_feature_flags, detect_hardware
 from allspark.infrastructure.module_loader import ModuleRegistry
 from allspark.services.immediate_danger import (
@@ -230,14 +230,14 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
         nonce = secrets.token_urlsafe(18)
         token = _CSP_NONCE.set(nonce)
         try:
-            response = await call_next(request)
+            with language_context(app.state.db):
+                response = await call_next(request)
             response.headers["Content-Security-Policy"] = build_csp_policy(nonce)
             return response
         finally:
             _CSP_NONCE.reset(token)
 
     db = Database(Path(db_path) if db_path else None)
-    init_language(db)
     app.state.db = db
     app.state.engine = None
     app.state.container = None
