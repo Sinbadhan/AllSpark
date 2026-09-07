@@ -7,7 +7,7 @@ Accepted, Deferred, Superseded).
 | # | Title | Status |
 |---|-------|--------|
 | [001](./001-spark-network-encryption.md) | Spark-to-Spark Communication Encryption | Deferred to v2.0+ |
-| [002](./002-tier3-knowledge-review.md)   | Tier 3 Knowledge Expert Review            | Deferred to v2.0+ |
+| [002](./002-tier3-knowledge-review.md)   | Bundled Knowledge Content and Risk Review | Accepted; larger panel workflow deferred |
 | [003](./003-skf-package-signing.md)      | SKF Knowledge-Pack Signing                | Deferred to v2.0+ |
 
 ## Conventions

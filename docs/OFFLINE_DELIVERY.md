@@ -119,9 +119,11 @@ supported upload containers are ZIP, flat PKG, and UDIF DMG.
    `Roll Back AllSpark.command`, and confirm the previous executable becomes
    current without changing `~/.allspark` data.
 
-Attach the artifact SHA256, manifest, target hardware/OS, elapsed time, result,
-and any recovery observations to SHA-245. An automated build or local smoke run
-does not replace this clean-device acceptance run.
+Record the artifact SHA256, manifest, target hardware/OS, elapsed time, result,
+and any recovery observations in Feishu AS-13 (historical key SHA-245). Per the
+2026-09-07 user decision, internal acceptance archives stay local and need not
+be uploaded. This removes only the upload dependency, not the clean-device
+gate. An automated build or local smoke run does not replace this acceptance.
 
 ## Optional Models And Content
 

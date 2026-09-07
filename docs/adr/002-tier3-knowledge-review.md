@@ -1,11 +1,37 @@
 # ADR 002 — Tier 3 Knowledge Expert Review
 
-- **Status:** Deferred to v2.0+
+- **Status:** Accepted — all bundled tiers require content and risk gates
 - **Date:** 2026-06-13
-- **Last review:** 2026-06-13
+- **Last review:** 2026-09-07
 - **Related:** PRD §6 knowledge tiers; `allspark/services/knowledge_verifier.py`
 
-## Context
+## Current decision (supersedes the historical v1 exception below)
+
+AS-11 requires the full bundled inventory, in both languages, to receive
+traceable domain risk review. Operational content must also pass the existing
+local content-evidence gate. The runtime contract is
+`core/models.py:is_actionable_knowledge`; source references alone do not grant
+risk approval, and an automated consistency check is not a professional review.
+Pending, missing or unknown classifications stay fail-closed. No tier, including
+Tier 0, is exempt; a future reviewer-panel workflow is not permission to defer
+the present safety gate to v2.
+
+Named reviews must cover the actual hazards and qualifications and pin the
+exact content/classification hash. Chinese and English records are separate
+review objects. Current source/reference gaps are reported without mutation by
+`scripts/knowledge_review_inventory.py`; bundled topics are not claimed to be
+cross-referenced merely because they were authored by maintainers.
+
+The cost is reduced immediately actionable content until real reviews exist.
+That is preferable to upgrading unverified survival instructions to trusted
+guidance. Organising a larger reviewer panel remains future work; cryptographic
+SKF transport signing remains separately deferred in ADR 003. Neither changes
+the current knowledge trust boundary. Formal decisions and review evidence live
+in the Feishu plan and AS-11 task, not Linear.
+
+## Historical context and decision (2026-06-13; superseded)
+
+The following records the original rationale, not the current acceptance rule.
 
 The knowledge base is split into tiers:
 
