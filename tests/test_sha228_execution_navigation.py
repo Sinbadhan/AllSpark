@@ -2,13 +2,51 @@
 
 from __future__ import annotations
 
+import asyncio
+import threading
 from pathlib import Path
 
 import pytest
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from allspark.core.i18n import get_language, set_language
 from tests.test_sha196_browser import _Chrome, _chrome_binary, _serve
 from tests.test_web_ui_v11 import _client
+
+
+class _DelayedExecutionHTML:
+    """Expose URL commitment before the real action-page body is parsed."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+        self.release_body = threading.Event()
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        async def delayed_send(message: Message) -> None:
+            if (
+                scope.get("path") == "/executions"
+                and message["type"] == "http.response.body"
+                and message.get("body")
+            ):
+                body = message["body"]
+                split = body.index(b"<body")
+                await send({**message, "body": body[:split], "more_body": True})
+                assert await asyncio.to_thread(self.release_body.wait, 10), (
+                    "Test did not release the delayed execution document"
+                )
+                await send({**message, "body": body[split:]})
+                return
+            await send(message)
+
+        await self.app(scope, receive, delayed_send)
+
+
+def _wait_for_execution_document(browser: _Chrome) -> None:
+    # Location changes when navigation commits, before HTML parsing finishes.
+    # Readiness is not a replacement for the exact navigation assertions below.
+    browser.wait_for(
+        "location.pathname === '/executions' && document.readyState === 'complete'"
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -29,7 +67,8 @@ def test_execution_navigation_is_consistent_across_pages_and_viewports(
     response = client.post("/api/system/language", json={"language": language})
     assert response.status_code == 200
 
-    with _serve(client.app) as base_url, _Chrome(
+    delayed_app = _DelayedExecutionHTML(client.app)
+    with _serve(delayed_app) as base_url, _Chrome(
         _chrome_binary(), tmp_path / f"chrome-profile-{language}"
     ) as browser:
         browser.call(
@@ -69,6 +108,12 @@ def test_execution_navigation_is_consistent_across_pages_and_viewports(
             "document.querySelector('.sidebar a[href=\"/executions\"]').click()"
         )
         browser.wait_for("location.pathname === '/executions'")
+        # Deterministically reproduce the former URL-only wait returning while
+        # both real navigation links are still absent from the incoming DOM.
+        assert browser.evaluate("document.readyState") == "loading"
+        assert browser.evaluate("document.querySelectorAll('a[href=\"/executions\"]').length") == 0
+        delayed_app.release_body.set()
+        _wait_for_execution_document(browser)
         current = browser.evaluate(
             """(() => {
               const links = Array.from(document.querySelectorAll('a[href="/executions"]'));
@@ -101,10 +146,14 @@ def test_execution_navigation_is_consistent_across_pages_and_viewports(
         browser.wait_for(
             "document.getElementById('mobile-nav').classList.contains('open')"
         )
+        delayed_app.release_body.clear()
         browser.evaluate(
             "document.querySelector('#mobile-nav a[href=\"/executions\"]').click()"
         )
         browser.wait_for("location.pathname === '/executions'")
+        assert browser.evaluate("document.readyState") == "loading"
+        delayed_app.release_body.set()
+        _wait_for_execution_document(browser)
         assert browser.evaluate(
             "document.querySelector('#mobile-nav a[href=\"/executions\"]')"
             ".getAttribute('aria-current')"
