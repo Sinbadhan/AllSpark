@@ -33,7 +33,7 @@ ruff check allspark/ tests/
 python3 -m mypy allspark/ --ignore-missing-imports  # pyproject 已启用 check_untyped_defs
 
 # 启动性能门槛
-python3 scripts/bench_import.py --check
+python3 scripts/bench_import.py --check --hard-fail
 
 # CI 等效本地检查（GitHub Actions 已配置：ruff + mypy + pytest on 3.10/3.11/3.12）
 ```
@@ -111,7 +111,7 @@ allspark/
 - SHA-151 质量门禁：Python 3.10 为权威覆盖环境，总行覆盖率 ≥75%，10 个关键路径模块分支覆盖率均 ≥90%；3.10/3.11/3.12 均运行完整测试与收集数防回退门禁
 - Ruff lint 0 errors
 - mypy 0 errors，`check_untyped_defs = true` 已启用
-- `scripts/bench_import.py --check` 同时执行 600ms sum-of-means 与 2000ms cold-wall 门禁，当前通过
+- `scripts/bench_import.py --check --hard-fail` 强制执行 600ms sum-of-means 与 2000ms cold-wall 门禁；导入失败、空测量和非法预算也必须失败。是否通过以当前候选输出为准
 - 知识数据已外置为 YAML（旧 Python dict 文件已删除）
 - i18n 已外置为 `locales/zh.yaml` + `locales/en.yaml`（i18n.py 157 行）
 - Scheduler 已接入 bootstrap
