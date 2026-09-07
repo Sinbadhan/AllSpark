@@ -121,6 +121,7 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     assert "python -m ensurepip" in workflow
     assert "FORCE_JAVASCRIPT_ACTIONS_TO_NODE" not in workflow
     assert "permissions:\n  contents: read" in workflow
+    assert "fail-fast: false" in workflow
     assert "pytest -q --tb=short --cov=allspark --cov-branch" in workflow
     assert "Run full tests (Python 3.11)" in workflow
     assert workflow.count("if: matrix.python-version == '3.10' || matrix.python-version == '3.12'") == 2

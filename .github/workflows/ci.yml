@@ -13,6 +13,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      # Keep independent runtime evidence when another matrix job fails.
+      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
 
