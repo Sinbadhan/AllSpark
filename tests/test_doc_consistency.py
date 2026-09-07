@@ -130,7 +130,11 @@ def test_ci_and_docs_use_current_executable_quality_gates() -> None:
     assert "CodeQL analysis" in Path("docs/RELEASE_CHECKLIST.md").read_text(
         encoding="utf-8"
     )
-    assert 'pip install -e ".[delivery]"' in workflow
+    assert 'pip install -e ".[delivery]"' not in workflow
+    assert "--require-hashes -r requirements/bootstrap-macos-arm64-py312.lock" in workflow
+    assert "--require-hashes --no-build-isolation -r requirements/release-macos-arm64-py312.lock" in workflow
+    assert "python scripts/verify_release_dependencies.py" in workflow
+    assert "python -m pip install --no-deps dist/*.whl" in workflow
     assert '"pytest-cov>=7.1,<8"' in pyproject
     assert '"httpx>=0.28,<1"' in pyproject
     assert 'patch = ["subprocess"]' in pyproject
