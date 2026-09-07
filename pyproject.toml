@@ -42,7 +42,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0,<10",
-    "ruff>=0.4,<1",
+    "ruff>=0.16.6,<1",
     "mypy>=1.8,<3",
     # starlette 1.x TestClient requires httpx2 (httpx is deprecated; SHA-145).
     # Declared so CI fresh installs can collect the Web/TestClient test modules.
