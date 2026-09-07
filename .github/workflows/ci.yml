@@ -78,7 +78,7 @@ jobs:
           pytest --collect-only -q > /tmp/allspark-collection.txt 2>&1
           COUNT=$(grep -oE '[0-9]+ tests? collected' /tmp/allspark-collection.txt | head -1 | grep -oE '[0-9]+' || echo 0)
           echo "Collected tests: $COUNT"
-          test "${COUNT:-0}" -ge 1875
+          test "${COUNT:-0}" -ge 2037
 
       - name: Module import performance gate
         # Both declared budgets are mandatory; missing imports also fail.
@@ -134,11 +134,15 @@ jobs:
           fetch-tags: true
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.10"
+          python-version: "3.12.14"
       - name: Install delivery build inputs
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[delivery]"
+          python -m pip install --require-hashes -r requirements/bootstrap-macos-arm64-py312.lock
+          python -m pip install --require-hashes --no-build-isolation -r requirements/release-macos-arm64-py312.lock
+          python -m build --no-isolation
+          python -m pip install --no-deps dist/*.whl
+      - name: Vulnerability, license and independent SBOM gates
+        run: python scripts/verify_release_dependencies.py --lock requirements/release-macos-arm64-py312.lock --output /tmp/release-dependency-evidence
       - name: Build and verify unsigned RC bundle
         run: |
           python scripts/build_offline_bundle.py build --output dist/offline

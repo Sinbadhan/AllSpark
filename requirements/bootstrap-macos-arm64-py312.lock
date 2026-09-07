@@ -1,0 +1,4 @@
+# Generated from pip --dry-run --ignore-installed --report; reviewed 2026-09-07.
+# Target: macOS arm64 / CPython 3.12. Not a lock for other targets.
+# Source registry: https://pypi.org/simple ; each selected artifact is SHA-256 checked.
+setuptools==84.0.0 --hash=sha256:51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670
