@@ -2532,3 +2532,5 @@ storage_parent_writable: "数据库路径祖先目录不安全 {path}（权限 {
 storage_path_not_regular: "敏感数据路径不是普通文件：{path}"
 storage_directory_symlink: "敏感数据目录不允许使用不受信任的符号链接：{path}"
 web_auth_bootstrap_token: "一次性 Web 登录令牌：{token}（请在 /login 输入，勿分享或记录）"
+error_untrusted_host: "请求主机与本机服务地址不符。"
+error_cross_origin_request: "请求已拒绝：请使用同源界面，或为 API 请求显式添加请求头。"

@@ -48,7 +48,7 @@ def main() -> int:
 
     try:
         with web_server(db) as base:
-            with httpx.Client(base_url=base) as c:
+            with httpx.Client(base_url=base, headers={"X-AllSpark-Request": "1"}) as c:
                 # 1. Init zh
                 H("GET", "/api/init/status", label="boot/uninitialized")
                 H(

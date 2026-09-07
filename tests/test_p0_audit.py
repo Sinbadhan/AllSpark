@@ -3,7 +3,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
 
 from allspark.adapters.web_ui import create_app
 from allspark.bootstrap import ApplicationBootstrap
@@ -15,6 +14,7 @@ from allspark.infrastructure.hardware import FeatureFlags
 from allspark.infrastructure.module_loader import ModuleRegistry
 from allspark.services.resource_manager import ResourceManager
 from allspark.services.survival_engine import SurvivalAssessmentEngine
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 class TempDb:

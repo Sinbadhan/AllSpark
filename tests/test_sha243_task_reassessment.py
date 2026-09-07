@@ -7,13 +7,13 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi.testclient import TestClient
 
 from allspark.adapters.web_ui import create_app
 from allspark.commands.knowledge import TaskCommand
 from allspark.core.database import Database
 from allspark.core.i18n import get_language, set_language
 from allspark.core.models import ResourceType
+from tests.http_helpers import LocalAPIClient as TestClient
 from tests.test_sha196_browser import _Chrome, _chrome_binary, _serve
 
 

@@ -4,7 +4,6 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi.testclient import TestClient
 
 from allspark.adapters.web_ui import create_app
 from allspark.commands.ai import LLMCommand
@@ -16,6 +15,7 @@ from allspark.infrastructure.module_loader import ModuleRegistry
 from allspark.services.psychology import PsychologyTracker, SelfHarmSupport
 from allspark.services.rule_engine import RuleEngine
 from allspark.services.voice import VoiceManager
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 @pytest.fixture(autouse=True)

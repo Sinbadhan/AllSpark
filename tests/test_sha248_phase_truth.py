@@ -4,7 +4,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi.testclient import TestClient
 from rich.console import Console
 
 from allspark.adapters.cli import SparkCLI
@@ -31,6 +30,7 @@ from allspark.services.psychology import PsychologyTracker
 from allspark.services.resource_manager import ResourceManager
 from allspark.services.rule_engine import RuleEngine
 from allspark.services.survival_engine import SurvivalAssessmentEngine
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 @pytest.fixture

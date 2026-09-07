@@ -7,7 +7,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi.testclient import TestClient
 
 from allspark.adapters import cli as cli_mod
 from allspark.adapters import web_ui as wui
@@ -21,6 +20,7 @@ from allspark.services.initial_assessment import validate_initial_assessment
 from allspark.services.resource_manager import ResourceManager
 from allspark.services.survival_plan import SurvivalPlanService
 from tests.assessment_helpers import valid_initial_assessment
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 class _ConnectionProxy:

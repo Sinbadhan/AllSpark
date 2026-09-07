@@ -229,7 +229,7 @@ def main() -> int:
     recorder = Recorder(jsonl)
     try:
         with web_server(db) as base:
-            with httpx.Client(base_url=base) as c:
+            with httpx.Client(base_url=base, headers={"X-AllSpark-Request": "1"}) as c:
                 _run_lang(c, recorder, "zh", fresh_init=True)
                 _run_lang(c, recorder, "en", fresh_init=False)
                 _run_negative_paths(c, recorder)

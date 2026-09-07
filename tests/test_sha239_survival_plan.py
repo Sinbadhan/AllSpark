@@ -3,8 +3,6 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 
-from fastapi.testclient import TestClient
-
 from allspark.adapters.web_ui import create_app
 from allspark.core.database import Database
 from allspark.core.i18n import get_language, set_language
@@ -20,6 +18,7 @@ from allspark.services.survival_plan import (
     SurvivalPlanValidationError,
 )
 from tests.assessment_helpers import valid_initial_assessment
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 def _assessment(*, confirmed: bool = True, complete_rates: bool = False) -> dict:

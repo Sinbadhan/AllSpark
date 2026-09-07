@@ -2,12 +2,11 @@
 import os
 import tempfile
 
-from fastapi.testclient import TestClient
-
 from allspark.adapters.web_ui import create_app
 from allspark.core.database import Database
 from allspark.infrastructure.hardware import FeatureFlags
 from allspark.infrastructure.module_loader import ModuleRegistry
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 def _init_client():

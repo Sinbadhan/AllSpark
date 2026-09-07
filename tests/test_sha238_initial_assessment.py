@@ -5,7 +5,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi.testclient import TestClient
 
 from allspark.adapters import web_ui as web_ui_module
 from allspark.adapters.web_ui import create_app
@@ -22,6 +21,7 @@ from allspark.services.initial_assessment import (
 )
 from allspark.services.resource_manager import ResourceManager
 from allspark.services.survival_plan import SurvivalPlanService
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 def assessment_payload(*, confirmed: bool = True) -> dict:

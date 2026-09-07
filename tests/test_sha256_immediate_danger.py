@@ -10,7 +10,6 @@ from pathlib import Path
 
 import httpx
 import yaml
-from fastapi.testclient import TestClient
 
 from allspark.adapters import web_ui
 from allspark.adapters.web_ui import create_app
@@ -22,6 +21,7 @@ from allspark.services.immediate_danger import (
     assess_immediate_danger,
     load_action_catalog,
 )
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 def _database_snapshot(app) -> tuple[str, ...]:

@@ -14,7 +14,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
 
 from allspark.adapters.web_ui import create_app
 from allspark.core.database import Database
@@ -22,6 +21,7 @@ from allspark.infrastructure.hardware import FeatureFlags
 from allspark.infrastructure.module_loader import ModuleRegistry
 from allspark.services.power_monitor import PowerReading
 from tests.assessment_helpers import confirmed_init_payload, valid_initial_assessment
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 class TempDb:

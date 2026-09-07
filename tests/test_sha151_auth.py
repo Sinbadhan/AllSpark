@@ -8,12 +8,11 @@ _load_engine without a saved module registry.
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from fastapi.testclient import TestClient
-
 import allspark.adapters.web_ui as wui
 from allspark.adapters.web_ui import MODEL_DOWNLOAD_URLS, create_app
 from allspark.core.database import Database
 from tests.assessment_helpers import confirmed_init_payload
+from tests.http_helpers import LocalAPIClient as TestClient
 
 
 def _client(db_path: str, token: str | None = None) -> TestClient:

@@ -54,6 +54,30 @@ If the package script is installed and on PATH:
 allspark
 ```
 
+## Web request trust boundary
+
+Use `localhost`, `127.0.0.1`, `[::1]`, or the concrete server socket IP and its
+actual port. Arbitrary DNS aliases, rewritten reverse-proxy authorities and
+forwarded Host headers do not expand this allowlist. Listening on a network
+interface is not proof that an incoming request came from a trusted page.
+
+State-changing requests must have an exact same-origin Origin/Referer. A
+non-browser API client without those headers must instead send
+`X-AllSpark-Request: 1`, `Content-Type: application/json`, or a valid explicit
+Bearer credential. A supplied foreign/null Origin is rejected even when an
+API marker or cookie is present. No cross-origin CORS access is enabled.
+Existing query-parameter write endpoints remain available under this rule.
+
+```bash
+curl -X POST -H 'X-AllSpark-Request: 1' \
+  'http://127.0.0.1:8000/api/resources?type=water&amount=3'
+```
+
+Authentication remains required in token mode; a request marker is not a
+credential. Tokens are isolated per application instance. This boundary
+protects against foreign-page requests and DNS rebinding, not malicious local
+processes or an already-compromised same-origin page.
+
 ## Local data
 
 AllSpark is offline-first and stores runtime data locally. Treat runtime data as sensitive because it may contain survivor profiles, locations, diaries, resources, local knowledge, and operational history.

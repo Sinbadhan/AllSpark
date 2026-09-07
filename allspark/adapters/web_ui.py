@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from jinja2 import Environment, FileSystemLoader
 
 from allspark import __version__
+from allspark.adapters.request_security import request_boundary_error
 from allspark.adapters.routes.helpers import http_exception_handler
 from allspark.bootstrap import (
     PreparedApplication,
@@ -181,6 +182,13 @@ def create_app(db_path: Optional[str] = None, token: Optional[str] = None) -> Fa
     # initialized) so an attacker cannot re-init/overwrite the system.
     @app.middleware("http")
     async def enforce_auth(request: Request, call_next):
+        boundary_error = request_boundary_error(request)
+        if boundary_error:
+            return JSONResponse(
+                status_code=400 if boundary_error == "untrusted_host" else 403,
+                content={"status": "error", "error": boundary_error,
+                         "detail": t(f"error_{boundary_error}"), "next_action": ""},
+            )
         path = request.url.path
         # One-time bootstrap: re-init forbidden once initialized.
         if path == "/api/init/complete" and app.state.initialized:

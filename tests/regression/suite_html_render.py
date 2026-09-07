@@ -92,7 +92,7 @@ def main() -> int:
 
     try:
         with web_server(db) as base:
-            with httpx.Client(base_url=base) as c:
+            with httpx.Client(base_url=base, headers={"X-AllSpark-Request": "1"}) as c:
                 for lang in ("zh", "en"):
                     c.post("/api/system/language", json={"language": lang})
                     (out_dir / lang).mkdir(parents=True, exist_ok=True)
