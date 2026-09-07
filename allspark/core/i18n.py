@@ -17,6 +17,9 @@ _request_lang: ContextVar[str | None] = ContextVar("allspark_language", default=
 _request_db: ContextVar[Any] = ContextVar("allspark_language_db", default=None)
 
 _LOCALES_DIR = Path(__file__).resolve().parent.parent / "locales"
+# Keep safe YAML semantics while avoiding pure-Python parsing on every cold
+# import. Source-only PyYAML installations retain the existing safe fallback.
+_LOCALE_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
 # Loaded messages cache
 MESSAGES: dict[str, dict[str, str]] = {}
@@ -30,7 +33,7 @@ def _load_locale(lang: str) -> dict[str, str]:
         return {}
     try:
         with open(path, "r", encoding="utf-8") as f:
-            data = yaml.safe_load(f)
+            data = yaml.load(f, Loader=_LOCALE_LOADER)
         return data if isinstance(data, dict) else {}
     except Exception as e:
         logger.error("Failed to load locale %s: %s", lang, e)
